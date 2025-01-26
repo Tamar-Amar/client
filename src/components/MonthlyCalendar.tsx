@@ -23,6 +23,9 @@ const CustomCalendar: React.FC = () => {
   if (isLoading) return <p>טוען כיתות...</p>;
   if (error) return <p>שגיאה בטעינת כיתות.</p>;
 
+  if (isLoadingP) return <p>טוען מפעילים...</p>;
+  if (errorP) return <p>שגיאה בטעינת מפעילים.</p>;
+
   const generateCalendarDays = (): (Date | null)[] => {
     const days: (Date | null)[] = [];
     let date = startDate;
@@ -102,18 +105,21 @@ const CustomCalendar: React.FC = () => {
     <div className="calendar-container">
       <div className="filters">
       <div className="operator-select">
-        <label htmlFor="operator">בחר מפעיל:</label>
-        <select id="operator" onChange={handleOperatorSelect} value={selectedOperatorId || ''}>
-            <option value="">-- כל המפעילים --</option>
-            {operators
-            .sort((a: Operator, b: Operator) => a.lastName.localeCompare(b.lastName)) // ממיין לפי שם משפחה
-            .map((operator: Operator) => (
-                <option key={operator._id} value={operator._id}>
-                {operator.firstName} {operator.lastName}
-                </option>
-            ))}
-        </select>
-        </div>
+  <label htmlFor="operator">בחר מפעיל:</label>
+  <select id="operator" onChange={handleOperatorSelect} value={selectedOperatorId || ''}>
+    <option value="">-- כל המפעילים --</option>
+    {operators
+      .sort((a: Operator, b: Operator) =>
+        (a.lastName || '').localeCompare(b.lastName || '')
+      ) // ממיין לפי lastName, מטפל במקרה שבו הוא חסר
+      .map((operator:Operator) => (
+        <option key={operator._id} value={operator._id}>
+          {operator.firstName} {operator.lastName}
+        </option>
+      ))}
+  </select>
+</div>
+
 
         <div className="class-select">
           <label htmlFor="class">בחר קבוצה:</label>
