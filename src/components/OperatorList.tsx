@@ -19,14 +19,16 @@ const OperatorList: React.FC = () => {
 
   const columnDefs = useMemo(
     () => [
+      {headerName: 'מספר ת"ז', field: 'id', sortable: true, filter: true  },
       { headerName: 'שם פרטי', field: 'firstName', sortable: true, filter: true },
       { headerName: 'שם משפחה', field: 'lastName', sortable: true, filter: true },
       { headerName: 'כתובת מגורים', field: 'address', sortable: true, filter: true },
       { headerName: 'טלפון', field: 'phone', sortable: true, filter: true },
       { headerName: 'תיאור', field: 'description', sortable: true, filter: true },
-      { headerName: 'מספר ת"ז', field: 'id', sortable: true, filter: true  },
+      { headerName: 'סטטוס', field:'status', sortable: true, filter: true},
       { headerName: 'סיסמא', field: 'password', sortable: true, filter: true },
       { headerName: 'כתובת אימייל', field: 'email', sortable: true, filter: true },
+      {headerName: 'תאריך הרשמה', field: 'signDate', sortable: true, filter: true },
       {
         headerName: 'פעולות',
         cellRendererFramework: (params: any) => (
@@ -43,12 +45,24 @@ const OperatorList: React.FC = () => {
   if (isError) return <div>Error loading operators.</div>;
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', minHeight: '100vh', marginLeft:"10%", marginRight:"10%" }}>
+    <div style={{ 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      flexDirection: 'column', 
+      minHeight: '100vh', 
+      marginLeft:"10%", 
+      marginRight:"10%" }}>
       <input
         type="text"
         placeholder="חיפוש מהיר"
         onChange={(e) => setQuickFilterText(e.target.value)}
-        style={{ marginBottom: '10px', padding: '8px', width: '300px' }}
+        style={{ 
+          marginBottom: '10px', 
+          padding: '8px', 
+          width: '300px',
+          borderRadius: '5px',
+          border: '1px solid #ccc',}}
       />
       <div className="ag-theme-alpine rtl" style={{ height: 600, width: '100%' }}>
         <AgGridReact

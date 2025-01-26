@@ -1,4 +1,5 @@
 export interface Class {
+  _id?: string; // class ID
     name: string;
     isSpecialEducation: boolean;
     gender: 'בנים' | 'בנות';

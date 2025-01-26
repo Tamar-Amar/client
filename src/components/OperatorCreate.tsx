@@ -22,6 +22,7 @@ import { PaymentMethodChoicesEnum } from "../types/Operator";
 import PasswordField from "./PasswordField";
 import { useAddOperator } from "../queries/operatorQueries";
 import { useNavigate } from "react-router-dom";
+import { date } from "yup";
 
 const OperatorCreate: React.FC = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -40,6 +41,7 @@ const OperatorCreate: React.FC = () => {
       phone: "",
       email: "",
       password: "",
+      status: "",
       id: "",
       address: "",
       paymentMethod: PaymentMethodChoicesEnum.NONE,

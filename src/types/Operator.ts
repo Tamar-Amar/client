@@ -16,12 +16,15 @@ export interface BankDetails {
   
   
   export interface Operator {
+    _id?: string; // מ��הה מפעי�� (או��ציו��לי)
     firstName: string;
     lastName: string;
     phone: string;
     id: string;
     email: string;
     password: string;
+    status:string;
+    signDate?: Date;
     address: string;
     description: string;
     paymentMethod: PaymentMethodChoicesEnum;

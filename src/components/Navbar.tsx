@@ -59,6 +59,13 @@ const Navbar = () => {
           >
             חשבוניות
           </Button>
+          <Button
+            color={location.pathname === '/attendance'? 'secondary' : 'inherit'}
+            sx={{ mx: 1 }}
+            href="/attendance"
+          >
+            נוכחות
+          </Button>
         </Box>
       </Toolbar>
     </AppBar>

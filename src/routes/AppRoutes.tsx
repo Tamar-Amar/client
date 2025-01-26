@@ -7,6 +7,7 @@ import ClassesPage from '../pages/ClassesPage';
 import ActivitiesPage from '../pages/ActivitiesPage';
 import InvoicesPage from '../pages/InvoicesPage';
 import PurchasesPage from '../pages/PurchasesPage';
+import AttendancePage from '../pages/AttendancePage';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -19,6 +20,8 @@ const AppRoutes: React.FC = () => {
       <Route path="/activities" element={<ActivitiesPage />} />
       <Route path="/invoices" element={<InvoicesPage/>}/>
       <Route path="/purchases" element={<PurchasesPage/>}/>
+      <Route path="/attendance" element={<AttendancePage/>}/>
+
     </Routes>
   );
 };

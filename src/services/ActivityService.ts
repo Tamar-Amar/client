@@ -33,7 +33,7 @@ export const fetchActivitiesByOperator = async (operatorId: string): Promise<Act
  * Add a new activity
  * @param activity - Activity data
  */
-export const addActivity = async (activity: Activity): Promise<Activity> => {
+export const createActivity = async (activity: Activity): Promise<Activity> => {
   const response = await axios.post(`${API_URL}/api/activities`, activity);
   return response.data;
 };
@@ -49,4 +49,8 @@ export const updatePresence = async (activityId: string, presence: any): Promise
     presence,
   });
   return response.data;
+};
+
+export const deleteActivity = async (id: string): Promise<void> => {
+  await axios.delete(`${API_URL}/${id}`);
 };
