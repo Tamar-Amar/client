@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { Class } from '../types/Class';
-const API_URL = process.env.REACT_APP_API_URL + '/api/classes';
+
+const API_URL = process.env.REACT_APP_API_URL+ '/api/classes' || "https://server-manage.onrender.com" + '/api/classes';
 
 export const fetchClasses = async () => {
   const response = await axios.get(API_URL);

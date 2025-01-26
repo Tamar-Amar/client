@@ -8,6 +8,8 @@ import ActivitiesPage from '../pages/ActivitiesPage';
 import InvoicesPage from '../pages/InvoicesPage';
 import PurchasesPage from '../pages/PurchasesPage';
 import AttendancePage from '../pages/AttendancePage';
+import LoginPage from '../pages/LoginPage';
+import DashboardPage from '../pages/DashboardPage';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -21,6 +23,8 @@ const AppRoutes: React.FC = () => {
       <Route path="/invoices" element={<InvoicesPage/>}/>
       <Route path="/purchases" element={<PurchasesPage/>}/>
       <Route path="/attendance" element={<AttendancePage/>}/>
+      <Route path="/login" element={<LoginPage/>}/>
+      <Route path="/dashboard" element={<DashboardPage/>}/>
 
     </Routes>
   );

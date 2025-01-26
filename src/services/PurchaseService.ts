@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { Purchase } from '../types/Purchase';
 
-const API_URL = process.env.REACT_APP_API_URL + '/api/purchases';
+const API_URL = process.env.REACT_APP_API_URL+ '/api/purchases' || "https://server-manage.onrender.com" + '/api/purchases';
+
 
 
 export const fetchPurchases = async (): Promise<Purchase[]> => {

@@ -38,12 +38,12 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd }) => {
   const [useWeekly, setUseWeekly] = useState(false);
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [formData, setFormData] = useState<{
-    classId: string;
+    classIds: string[];
     operatorId: string;
     dates: (Date | null)[];
     description: string;
   }>({
-    classId: '',
+    classIds: [],
     operatorId: '',
     dates: [null, null, null, null, null],
     description: '',
@@ -91,30 +91,34 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd }) => {
 
   const handleSubmit = () => {
     let newActivities: Activity[] = [];
-
-    if (useWeekly) {
-      const calculatedDates = calculateWeeklyDates();
-      newActivities = calculatedDates.map((date) => ({
-        classId: formData.classId,
-        operatorId: formData.operatorId,
-        date: date,
-        description: formData.description,
-      }));
-    } else {
-      newActivities = formData.dates
-        .filter((date) => date !== null)
-        .map((date) => ({
-          classId: formData.classId,
+  
+    formData.classIds.forEach((classId) => {
+      if (useWeekly) {
+        const calculatedDates = calculateWeeklyDates();
+        const activitiesForClass = calculatedDates.map((date) => ({
+          classId,
           operatorId: formData.operatorId,
-          date: date!,
+          date,
           description: formData.description,
         }));
-    }
-
-    onAdd(newActivities);
+        newActivities = [...newActivities, ...activitiesForClass];
+      } else {
+        const activitiesForClass = formData.dates
+          .filter((date) => date !== null)
+          .map((date) => ({
+            classId,
+            operatorId: formData.operatorId,
+            date: date!,
+            description: formData.description,
+          }));
+        newActivities = [...newActivities, ...activitiesForClass];
+      }
+    });
+  
+    onAdd(newActivities); // שולחים את כל הפעילויות שנוצרו
     onClose();
   };
-
+  
   return (
     <LocalizationProvider
       dateAdapter={AdapterDateFns}
@@ -123,23 +127,31 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd }) => {
       <Dialog open={open} onClose={onClose}>
         <DialogTitle>הוספת פעילות חדשה</DialogTitle>
         <DialogContent>
-          <FormControl fullWidth margin="normal">
-            <Autocomplete
-              options={classes.sort((a: Class, b: Class) =>
-                a.uniqueSymbol.localeCompare(b.uniqueSymbol)
-              )}
-              getOptionLabel={(option) => `${option.name} (${option.uniqueSymbol})`}
-              value={classes.find((cls:Class) => cls._id === formData.classId) || null}
-              onChange={(event, newValue) => {
-                if (newValue) {
-                  setFormData((prev) => ({ ...prev, classId: newValue._id }));
-                }
-              }}
-              renderInput={(params) => (
-                <TextField {...params} label="בחר קבוצה" variant="outlined" fullWidth margin="normal" />
-              )}
-            />
-          </FormControl>
+        <FormControl fullWidth margin="normal">
+  <Autocomplete
+    multiple
+    options={classes.sort((a: Class, b: Class) =>
+      a.uniqueSymbol.localeCompare(b.uniqueSymbol)
+    )}
+    getOptionLabel={(option) => `${option.name} (${option.uniqueSymbol})`}
+    value={classes.filter((cls: Class) => 
+      cls._id && formData.classIds.includes(cls._id)
+    ) || []}
+    
+    onChange={(event, newValue) => {
+      if (newValue.length <= 3) { // מאפשר בחירה של עד 3 סמלים
+        setFormData((prev) => ({
+          ...prev,
+          classIds: newValue.map((cls) => cls._id as string),
+        }));        
+      }
+    }}
+    renderInput={(params) => (
+      <TextField {...params} label="בחר עד 3 קבוצות" variant="outlined" fullWidth margin="normal" />
+    )}
+  />
+</FormControl>
+
           <FormControl fullWidth margin="normal">
             <InputLabel>בחר מפעיל</InputLabel>
             <Select name="operatorId" value={formData.operatorId} onChange={handleChange}>

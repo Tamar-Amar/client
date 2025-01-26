@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchOperators, createOperator, deleteOperator } from '../services/OperatorService';
+import { fetchOperators, createOperator, deleteOperator, updateOperatorDetails, fetchOperatorById } from '../services/OperatorService';
 import { Operator } from '../types/Operator';
 
 export const useFetchOperators = () => {
@@ -31,5 +31,23 @@ export const useDeleteOperator = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['operators'] });
     },
+  });
+};
+
+export const useUpdateOperator = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateOperatorDetails,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['operators'] });
+    },
+  });
+};
+
+export const useFetchOperator = () => {
+  return useQuery({
+    queryKey: ['operator'],
+    queryFn: fetchOperatorById,
+    staleTime: 1000 * 60 * 5, // נתונים נשמרים ל-5 דקות
   });
 };

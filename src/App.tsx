@@ -20,7 +20,10 @@ const App: React.FC = () => (
         <CssBaseline />
         <BrowserRouter>
           <Navbar />
-          <AppRoutes />
+          <div style={{ marginTop: '64px' }}>
+              {/* 64px זה גובה ה-Navbar */}
+              <AppRoutes />
+          </div>
         </BrowserRouter>
       </ThemeProvider>
   </CacheProvider>

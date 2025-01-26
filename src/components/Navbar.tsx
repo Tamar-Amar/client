@@ -10,7 +10,7 @@ const Navbar = () => {
   const location = useLocation();
 
   return (
-    <AppBar position="static" color="primary" elevation={3} sx={{ mb: 2 }} dir="rtl">
+    <AppBar position="fixed" color="primary" elevation={3} sx={{ mb: 2 }} dir="rtl">
 
       <Toolbar>
         <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchAllActivities, createActivity, deleteActivity } from '../services/ActivityService';
+import { fetchAllActivities, createActivity, deleteActivity, fetchActivitiesByOperator } from '../services/ActivityService';
 import { Activity } from '../types/Activity';
 
 // Fetch all activities
@@ -30,5 +30,13 @@ export const useDeleteActivity = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['activities'] }); // Refresh activities after deletion
     },
+  });
+};
+
+export const useFetchActivitiesByOperator = (operatorId: string) => {
+  return useQuery({
+    queryKey: ['activities', operatorId],
+    queryFn: () => fetchActivitiesByOperator(operatorId),
+    staleTime: 1000 * 60 * 5, // Keep data fresh for 5 minutes
   });
 };

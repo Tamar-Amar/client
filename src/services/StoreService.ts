@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { Store } from '../types/Store';
 
-const API_URL = process.env.REACT_APP_API_URL + '/api/stores';
+const API_URL = process.env.REACT_APP_API_URL+ '/api/stores' || "https://server-manage.onrender.com" + '/api/stores';
+
 
 // Fetch all stores
 export const fetchStores = async (): Promise<Store[]> => {
