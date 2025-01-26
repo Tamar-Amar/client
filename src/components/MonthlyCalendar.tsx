@@ -7,11 +7,12 @@ import { Activity } from '../types/Activity';
 import { useFetchClasses } from '../queries/classQueries';
 import { Class } from '../types/Class';
 import { Operator } from '../types/Operator';
+import { useFetchOperators } from '../queries/operatorQueries';
 
 const CustomCalendar: React.FC = () => {
   const { data: activities = [], isLoading, error } = useFetchActivities();
   const { data: classes = [], isLoading:isLoadingC , error: errorC } = useFetchClasses();
-  const { data: operators = [], isLoading:isLoadingP , error: errorP } = useFetchClasses();
+  const { data: operators = [], isLoading:isLoadingP , error: errorP } = useFetchOperators();
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedOperatorId, setSelectedOperatorId] = useState<string | null>(null);
