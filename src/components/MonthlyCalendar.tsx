@@ -4,9 +4,14 @@ import { he } from 'date-fns/locale';
 import './CustomCalendar.css';
 import { useFetchActivities } from '../queries/activitiesQueries';
 import { Activity } from '../types/Activity';
+import { useFetchClasses } from '../queries/classQueries';
+import { Class } from '../types/Class';
+import { Operator } from '../types/Operator';
 
 const CustomCalendar: React.FC = () => {
   const { data: activities = [], isLoading, error } = useFetchActivities();
+  const { data: classes = [], isLoading:isLoadingC , error: errorC } = useFetchClasses();
+  const { data: operators = [], isLoading:isLoadingP , error: errorP } = useFetchClasses();
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedOperatorId, setSelectedOperatorId] = useState<string | null>(null);
@@ -14,6 +19,9 @@ const CustomCalendar: React.FC = () => {
 
   const startDate = startOfMonth(currentDate);
   const endDate = endOfMonth(currentDate);
+
+  if (isLoading) return <p>טוען כיתות...</p>;
+  if (error) return <p>שגיאה בטעינת כיתות.</p>;
 
   const generateCalendarDays = (): (Date | null)[] => {
     const days: (Date | null)[] = [];
@@ -93,31 +101,32 @@ const CustomCalendar: React.FC = () => {
   return (
     <div className="calendar-container">
       <div className="filters">
-        <div className="operator-select">
-          <label htmlFor="operator">בחר מפעיל:</label>
-          <select id="operator" onChange={handleOperatorSelect} value={selectedOperatorId || ''}>
+      <div className="operator-select">
+        <label htmlFor="operator">בחר מפעיל:</label>
+        <select id="operator" onChange={handleOperatorSelect} value={selectedOperatorId || ''}>
             <option value="">-- כל המפעילים --</option>
-            {Array.from(new Set(activities.map((activity: Activity) => activity.operatorId)))
-              .filter((operator) => typeof operator !== 'string')
-              .map((operator: any) => (
+            {operators
+            .sort((a: Operator, b: Operator) => a.lastName.localeCompare(b.lastName)) // ממיין לפי שם משפחה
+            .map((operator: Operator) => (
                 <option key={operator._id} value={operator._id}>
-                  {operator.firstName} {operator.lastName}
+                {operator.firstName} {operator.lastName}
                 </option>
-              ))}
-          </select>
+            ))}
+        </select>
         </div>
+
         <div className="class-select">
           <label htmlFor="class">בחר קבוצה:</label>
           <select id="class" onChange={handleClassSelect} value={selectedClassId || ''}>
-            <option value="">-- כל הקבוצות --</option>
-            {Array.from(new Set(activities.map((activity: Activity) => activity.classId)))
-              .filter((cls) => typeof cls !== 'string')
-              .map((cls: any) => (
-                <option key={cls._id} value={cls._id}>
-                  {cls.name} ({cls.uniqueSymbol})
-                </option>
-              ))}
-          </select>
+        <option value="">-- כל הקבוצות --</option>
+        {classes
+          .sort((a: Class, b: Class) => a.uniqueSymbol.localeCompare(b.uniqueSymbol)) // ממיין לפי uniqueSymbol
+          .map((cls: Class) => (
+            <option key={cls._id} value={cls._id}>
+              {cls.name} ({cls.uniqueSymbol})
+            </option>
+          ))}
+      </select>
         </div>
       </div>
       <div className="calendar-header">
