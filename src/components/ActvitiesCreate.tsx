@@ -11,6 +11,8 @@ import {
   InputLabel,
   FormControl,
   Autocomplete,
+  Checkbox,
+  FormControlLabel,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -22,27 +24,28 @@ import { useFetchClasses } from '../queries/classQueries';
 import { useFetchOperators } from '../queries/operatorQueries';
 import { SelectChangeEvent } from '@mui/material';
 import { heIL } from '@mui/x-date-pickers/locales/heIL';
+import { startOfMonth, endOfMonth, addDays, getDay } from 'date-fns';
 
 interface AddActivityProps {
   open: boolean;
   onClose: () => void;
-  onAdd: (newActivities: Activity[]) => void; // Updated to handle multiple activities
+  onAdd: (newActivities: Activity[]) => void;
 }
 
 const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd }) => {
   const { data: classes = [] } = useFetchClasses();
   const { data: operators = [] } = useFetchOperators();
-  const [inputValue, setInputValue] = useState('');
-
+  const [useWeekly, setUseWeekly] = useState(false);
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [formData, setFormData] = useState<{
     classId: string;
     operatorId: string;
-    dates: (Date | null)[]; // Array of dates
+    dates: (Date | null)[];
     description: string;
   }>({
     classId: '',
     operatorId: '',
-    dates: [null, null, null, null, null], // Five date fields
+    dates: [null, null, null, null, null],
     description: '',
   });
 
@@ -60,15 +63,53 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd }) => {
     });
   };
 
+  const handleWeeklyChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setUseWeekly(event.target.checked);
+  };
+
+  const handleDaySelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { value, checked } = event.target;
+    if (checked) {
+      setSelectedDays((prev) => [...prev, value]);
+    } else {
+      setSelectedDays((prev) => prev.filter((day) => day !== value));
+    }
+  };
+
+  const calculateWeeklyDates = (): Date[] => {
+    const dates: Date[] = [];
+    const start = startOfMonth(new Date());
+    const end = endOfMonth(new Date());
+
+    for (let date = start; date <= end; date = addDays(date, 1)) {
+      if (selectedDays.includes(getDay(date).toString())) {
+        dates.push(new Date(date));
+      }
+    }
+    return dates;
+  };
+
   const handleSubmit = () => {
-    const newActivities: Activity[] = formData.dates
-      .filter((date) => date !== null) // Filter out null dates
-      .map((date) => ({
+    let newActivities: Activity[] = [];
+
+    if (useWeekly) {
+      const calculatedDates = calculateWeeklyDates();
+      newActivities = calculatedDates.map((date) => ({
         classId: formData.classId,
         operatorId: formData.operatorId,
-        date: date!,
+        date: date,
         description: formData.description,
       }));
+    } else {
+      newActivities = formData.dates
+        .filter((date) => date !== null)
+        .map((date) => ({
+          classId: formData.classId,
+          operatorId: formData.operatorId,
+          date: date!,
+          description: formData.description,
+        }));
+    }
 
     onAdd(newActivities);
     onClose();
@@ -82,27 +123,23 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd }) => {
       <Dialog open={open} onClose={onClose}>
         <DialogTitle>הוספת פעילות חדשה</DialogTitle>
         <DialogContent>
-        <FormControl fullWidth margin="normal">
-  <Autocomplete
-    options={classes.sort((a: Class, b: Class) => a.uniqueSymbol.localeCompare(b.uniqueSymbol))} // ממיין לפי uniqueSymbol
-    getOptionLabel={(option) => `${option.name} (${option.uniqueSymbol})`} // תווית להצגה
-    value={classes.find((cls: Class) => cls._id === formData.classId) || null} // הערך הנבחר
-    onChange={(event, newValue) => {
-      if (newValue) {
-        setFormData((prev) => ({ ...prev, classId: newValue._id }));
-      }
-    }}
-    renderInput={(params) => (
-      <TextField
-        {...params}
-        label="בחר קבוצה"
-        variant="outlined"
-        fullWidth
-        margin="normal"
-      />
-    )}
-  />
-</FormControl>
+          <FormControl fullWidth margin="normal">
+            <Autocomplete
+              options={classes.sort((a: Class, b: Class) =>
+                a.uniqueSymbol.localeCompare(b.uniqueSymbol)
+              )}
+              getOptionLabel={(option) => `${option.name} (${option.uniqueSymbol})`}
+              value={classes.find((cls:Class) => cls._id === formData.classId) || null}
+              onChange={(event, newValue) => {
+                if (newValue) {
+                  setFormData((prev) => ({ ...prev, classId: newValue._id }));
+                }
+              }}
+              renderInput={(params) => (
+                <TextField {...params} label="בחר קבוצה" variant="outlined" fullWidth margin="normal" />
+              )}
+            />
+          </FormControl>
           <FormControl fullWidth margin="normal">
             <InputLabel>בחר מפעיל</InputLabel>
             <Select name="operatorId" value={formData.operatorId} onChange={handleChange}>
@@ -115,21 +152,49 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd }) => {
                 ))}
             </Select>
           </FormControl>
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-            {formData.dates.map((date, index) => (
-              <DatePicker
-                key={index}
-                label={`תאריך ${index + 1}`}
-                value={date}
-                onChange={(date) => handleDateChange(index, date)}
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                  },
-                }}
-              />
-            ))}
-          </div>
+          <FormControlLabel
+            control={<Checkbox checked={useWeekly} onChange={handleWeeklyChange} />}
+            label="בוצעה הפעלה פעם בשבוע במהלך החודש, בימי:"
+          />
+          {useWeekly ? (
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {['0', '1', '2', '3', '4'].map((day) => (
+                <FormControlLabel
+                    key={day}
+                    control={
+                    <Checkbox
+                        checked={selectedDays.includes(day)}
+                        onChange={(event) => {
+                        const { value, checked } = event.target;
+                        setSelectedDays(checked ? [value] : []); // מאפשר בחירה של יום אחד בלבד
+                        }}
+                        value={day}
+                    />
+                    }
+                    label={['א', 'ב', 'ג', 'ד', 'ה'][parseInt(day)]} // מייצג ימים ראשון עד חמישי
+                />
+                ))}
+            </div>
+          ) : (
+            <div>
+                <p>או:</p>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+              {formData.dates.map((date, index) => (
+                <DatePicker
+                  key={index}
+                  label={`תאריך ${index + 1}`}
+                  value={date}
+                  onChange={(date) => handleDateChange(index, date)}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                    },
+                  }}
+                />
+              ))}
+            </div>
+            </div>
+          )}
           <TextField
             name="description"
             label="תיאור הפעילות"
