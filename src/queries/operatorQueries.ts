@@ -44,10 +44,10 @@ export const useUpdateOperator = () => {
   });
 };
 
-export const useFetchOperator = () => {
+export const useFetchOperator = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ['operator'],
-    queryFn: fetchOperatorById,
-    staleTime: 1000 * 60 * 5, // נתונים נשמרים ל-5 דקות
+    queryFn: fetchOperators,
+    enabled: options?.enabled ?? true, // ברירת מחדל: מאופשר
   });
 };

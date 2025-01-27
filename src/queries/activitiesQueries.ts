@@ -16,22 +16,36 @@ export const useAddActivity = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createActivity,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['activities'] }); // Refresh activities after adding
+    onSuccess: (newActivity: Activity) => {
+      queryClient.setQueryData(['activities', newActivity.operatorId], (oldData: Activity[] | undefined) => {
+        return oldData ? [...oldData, newActivity] : [newActivity];
+      });
     },
   });
 };
 
+
 // Delete an activity
 export const useDeleteActivity = () => {
   const queryClient = useQueryClient();
+
   return useMutation({
-    mutationFn: deleteActivity,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['activities'] }); // Refresh activities after deletion
+    mutationFn: deleteActivity, 
+    onSuccess: ({ operatorId, activityId }) => {
+
+      // עדכון הקאש
+      queryClient.setQueryData(['activities', operatorId], (oldData: Activity[] | undefined) => {
+        if (!oldData) {
+          console.warn('No old data found in cache');
+          return [];
+        }
+        const updatedData = oldData.filter((activity) => activity._id !== activityId);
+        return updatedData;
+      });
     },
   });
 };
+
 
 export const useFetchActivitiesByOperator = (operatorId: string) => {
   return useQuery({
@@ -40,3 +54,4 @@ export const useFetchActivitiesByOperator = (operatorId: string) => {
     staleTime: 1000 * 60 * 5, // Keep data fresh for 5 minutes
   });
 };
+

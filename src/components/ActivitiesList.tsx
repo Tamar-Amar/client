@@ -23,7 +23,9 @@ const ActivitiesList: React.FC = () => {
   };
 
   const handleActivityAdded = async (newActivities: Activity[]) => {
+    console.log("handleActivityAdded",newActivities);
     for (const activity of newActivities) {
+      console.log("ghk",activity);
       await addActivityMutation.mutateAsync(activity);
     }
     setIsDialogOpen(false);
@@ -122,7 +124,7 @@ const ActivitiesList: React.FC = () => {
           enableRtl={true}
         />
       </div>
-      <AddActivity open={isDialogOpen} onClose={handleDialogClose} onAdd={handleActivityAdded} />
+      <AddActivity open={isDialogOpen} onClose={handleDialogClose} onAdd={handleActivityAdded}  />
     </div>
   );
 };
