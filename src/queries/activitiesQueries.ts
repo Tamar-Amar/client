@@ -7,7 +7,7 @@ export const useFetchActivities = () => {
   return useQuery({
     queryKey: ['activities'],
     queryFn: fetchAllActivities,
-    staleTime: 1000 * 60 * 5, // Keep data fresh for 5 minutes
+    staleTime: 1000 * 60 * 5, 
   });
 };
 
@@ -17,7 +17,7 @@ export const useAddActivity = () => {
   return useMutation({
     mutationFn: createActivity,
     onSuccess: (newActivity: Activity) => {
-      queryClient.setQueryData(['activities', newActivity.operatorId], (oldData: Activity[] | undefined) => {
+      queryClient.setQueryData(['activities'], (oldData: Activity[] | undefined) => {
         return oldData ? [...oldData, newActivity] : [newActivity];
       });
     },
@@ -32,8 +32,6 @@ export const useDeleteActivity = () => {
   return useMutation({
     mutationFn: deleteActivity, 
     onSuccess: ({ operatorId, activityId }) => {
-
-      // עדכון הקאש
       queryClient.setQueryData(['activities', operatorId], (oldData: Activity[] | undefined) => {
         if (!oldData) {
           console.warn('No old data found in cache');

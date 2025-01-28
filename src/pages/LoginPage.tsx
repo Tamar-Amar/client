@@ -50,6 +50,7 @@ const LoginPage: React.FC = () => {
           borderRadius: 2,
           boxShadow: 3,
           bgcolor: 'background.paper',
+          mb: 32
         }}
       >
         <Typography variant="h4" align="center" gutterBottom>
