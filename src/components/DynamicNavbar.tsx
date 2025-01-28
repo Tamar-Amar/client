@@ -4,12 +4,7 @@ import { useRecoilValue } from 'recoil';
 import { userRoleState } from '../recoil/storeAtom';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-interface DynamicNavbarProps {
-    isAdmin: boolean; // האם המשתמש הוא מנהל
-    onLogout: () => void; // פונקציית יציאה
-  }
-
-const DynamicNavbar: React.FC<DynamicNavbarProps> = ({ isAdmin, onLogout }) => {
+const DynamicNavbar: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   const role = useRecoilValue(userRoleState); // האם המשתמש מנהל או מפעיל
   const navigate = useNavigate();
   const location = useLocation();
@@ -26,19 +21,19 @@ const DynamicNavbar: React.FC<DynamicNavbarProps> = ({ isAdmin, onLogout }) => {
     { label: 'היסטוריית הפעלות', path: '/activity-history' },
   ];
 
-  const tabs = role === 'admin' ? adminTabs : operatorTabs;
+  const loginTab = [{ label: 'התחבר', path: '/login' }];
 
-  const handleLogout = () => {
-    localStorage.removeItem('token'); 
-    window.location.href = '/login'; 
-    onLogout();
-  };
+  const tabs = role === 'admin' ? adminTabs : role === 'operator' ? operatorTabs : loginTab;
 
   return (
     <AppBar position="sticky">
       <Toolbar>
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
-          {role === 'admin' ? 'מנהל מערכת' : 'דשבורד למפעיל'}
+          {role === 'admin'
+            ? 'מנהל מערכת'
+            : role === 'operator'
+            ? 'דשבורד למפעיל'
+            : 'DISCONNECTED'}
         </Typography>
         <Tabs
           value={location.pathname}
@@ -50,9 +45,11 @@ const DynamicNavbar: React.FC<DynamicNavbarProps> = ({ isAdmin, onLogout }) => {
             <Tab key={tab.path} label={tab.label} value={tab.path} />
           ))}
         </Tabs>
-        <Button color="inherit" onClick={handleLogout}>
-          יציאה
-        </Button>
+        {role && (role === 'admin' || role === 'operator') && (
+          <Button color="inherit" onClick={onLogout}>
+            יציאה
+          </Button>
+        )}
       </Toolbar>
     </AppBar>
   );

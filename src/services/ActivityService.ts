@@ -26,9 +26,7 @@ export const fetchActivitiesByClass = async (classId: string): Promise<Activity[
  */
 
 export const fetchActivitiesByOperator = async (operatorId: string): Promise<Activity[]> => {
-  console.log('Fetching activities for operator:', operatorId);
   const response = await axios.get(`${API_URL}/actByOp/${operatorId}`);
-  console.log('Response data:', response.data);
   return response.data;
 };
 
@@ -37,7 +35,6 @@ export const fetchActivitiesByOperator = async (operatorId: string): Promise<Act
  * @param activity - Activity data
  */
 export const createActivity = async (activity: Activity): Promise<Activity> => {
-  console.log("---------", activity);
   const response = await axios.post(API_URL, activity);
   return response.data;
 };

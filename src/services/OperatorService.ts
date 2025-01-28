@@ -2,18 +2,14 @@ import axios from 'axios';
 import { Operator } from '../types/Operator';
 
 const API_URL = process.env.REACT_APP_API_URL+ '/api/operators' || "https://server-manage.onrender.com" + '/api/operators';
-console.log(API_URL);
 
 export const fetchOperators = async () => {
-  console.log("Fetching operators from API"); 
   const response = await axios.get(API_URL);
   return response.data;
 };
 
-export const createOperator = async (operator: Operator) => {
-  console.log("Sending operator to API:", operator); 
+export const createOperator = async (operator: Operator) => { 
   const response = await axios.post(API_URL, operator);
-  console.log("Response from API:", response.data);
   return response.data;
 };
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { ThemeProvider, CssBaseline, Box } from '@mui/material';
 import theme from './theme/theme';
 import { BrowserRouter } from 'react-router-dom';
@@ -19,8 +19,7 @@ interface DecodedToken {
   exp: number;
 }
 
-const App: React.FC = () => {
-  const [isAdmin, setIsAdmin] = useState(false);
+const AppContent: React.FC = () => {
   const setUserRole = useSetRecoilState(userRoleState);
   const setUserToken = useSetRecoilState(userTokenState);
 
@@ -32,7 +31,6 @@ const App: React.FC = () => {
       const decoded: DecodedToken = jwtDecode(token);
       setUserToken(token); // שמירת הטוקן ב-Recoil
       setUserRole(role); // שמירת ה-role ב-Recoil
-      setIsAdmin(role === 'admin'); // בדיקת האם זה מנהל
     }
   }, [setUserRole, setUserToken]);
 
@@ -43,22 +41,26 @@ const App: React.FC = () => {
   };
 
   return (
-    <RecoilRoot>
-      <QueryClientProvider client={queryClient}>
-        <CacheProvider value={rtlCache}>
-          <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <BrowserRouter>
-              <DynamicNavbar isAdmin={isAdmin} onLogout={handleLogout} />
-              <Box sx={{ paddingTop: '60px' }}>
-                <AppRoutes />
-              </Box>
-            </BrowserRouter>
-          </ThemeProvider>
-        </CacheProvider>
-      </QueryClientProvider>
-    </RecoilRoot>
+    <BrowserRouter>
+      <DynamicNavbar onLogout={handleLogout} />
+      <Box sx={{ paddingTop: '60px' }}>
+        <AppRoutes />
+      </Box>
+    </BrowserRouter>
   );
 };
+
+const App: React.FC = () => (
+  <RecoilRoot>
+    <QueryClientProvider client={queryClient}>
+      <CacheProvider value={rtlCache}>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <AppContent />
+        </ThemeProvider>
+      </CacheProvider>
+    </QueryClientProvider>
+  </RecoilRoot>
+);
 
 export default App;

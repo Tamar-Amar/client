@@ -8,9 +8,6 @@ const HomePage = () => {
     const [userRole, setUserRole] = useRecoilState(userRoleState);
     const [userToken, setUserToken] = useRecoilState(userTokenState);
 
-  console.log("User Role: ", userRole);
-  console.log("User Token: ", userToken);
-
   return (
     <Container maxWidth="md">
       <Box

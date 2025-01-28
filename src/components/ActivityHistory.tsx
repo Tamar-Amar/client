@@ -35,7 +35,6 @@ const ActivityHistory: React.FC = () => {
   const operatorId = decodedToken?.id;
 
   const queryClient = useQueryClient();
-console.log('Cached activities:', queryClient.getQueryData(['activities', operatorId]));
 
   const { data: activities = [], isLoading, error } = useFetchActivitiesByOperator(operatorId);
 

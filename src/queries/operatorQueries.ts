@@ -11,15 +11,11 @@ export const useFetchOperators = () => {
 };
 
 export const useAddOperator = () => {
-  console.log('use add operator');
   const queryClient = useQueryClient();
-  console.log('queryClient', queryClient);
   return useMutation({
     mutationFn: createOperator,
     onSuccess: () => {
-      console.log('onSuccess');
       queryClient.invalidateQueries({ queryKey: ['operators'] });
-      console.log('onSuccess');
     },
   });
 };
@@ -44,10 +40,9 @@ export const useUpdateOperator = () => {
   });
 };
 
-export const useFetchOperator = (options?: { enabled?: boolean }) => {
+export const useFetchOperatorById=(operatorId: string)=>{
   return useQuery({
-    queryKey: ['operator'],
-    queryFn: fetchOperators,
-    enabled: options?.enabled ?? true, // ברירת מחדל: מאופשר
+    queryKey: ['operator', operatorId],
+    queryFn: fetchOperatorById,
   });
-};
+}

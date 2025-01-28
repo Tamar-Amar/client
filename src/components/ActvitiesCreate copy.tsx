@@ -35,7 +35,6 @@ interface AddActivityProps {
 }
 
 const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd, defaultOperatorId }) => {
-  console.log("operatorId: ", defaultOperatorId);
   const { data: classes = [] } = useFetchClasses();
   const { data: operators = [] } = useFetchOperators();
   const [useWeekly, setUseWeekly] = useState(false);
