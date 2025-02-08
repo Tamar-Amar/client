@@ -2,7 +2,7 @@ import React from 'react';
 import { useFetchActivitiesByOperator, useDeleteActivity } from '../queries/activitiesQueries';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, CircularProgress } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
-import jwtDecode from 'jwt-decode'; // לשימוש אם הטוקן מכיל את ה-operatorId
+import {jwtDecode} from 'jwt-decode';
 
 const ActivityHistory: React.FC = () => {
   const token = localStorage.getItem('token');
