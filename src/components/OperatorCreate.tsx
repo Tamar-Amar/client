@@ -57,7 +57,6 @@ const OperatorCreate: React.FC = () => {
     },
     validationSchema: OperatorSchema,
     onSubmit: (values) => {
-      console.log(values, "submitted");
       addOperatorMutation.mutate(values,{
         onError: (error) => {
           setSnackbarMessage(error?.message || "שגיאה בהוספת מפעיל");

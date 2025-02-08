@@ -11,78 +11,61 @@ import {
   InputLabel,
   FormControl,
   Autocomplete,
-  Checkbox,
+  Box,
+  RadioGroup,
   FormControlLabel,
+  Radio,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { heIL } from '@mui/x-date-pickers/locales/heIL';
 import { Activity } from '../types/Activity';
 import { Class } from '../types/Class';
 import { Operator } from '../types/Operator';
 import { useFetchClasses } from '../queries/classQueries';
 import { useFetchOperators } from '../queries/operatorQueries';
-import { SelectChangeEvent } from '@mui/material';
-import { heIL } from '@mui/x-date-pickers/locales/heIL';
 import { startOfMonth, endOfMonth, addDays, getDay } from 'date-fns';
 
 interface AddActivityProps {
   open: boolean;
   onClose: () => void;
   onAdd: (newActivities: Activity[]) => void;
+  defaultOperatorId?: string;
 }
 
-const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd }) => {
+const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd, defaultOperatorId }) => {
   const { data: classes = [] } = useFetchClasses();
   const { data: operators = [] } = useFetchOperators();
-  const [useWeekly, setUseWeekly] = useState(false);
-  const [selectedDays, setSelectedDays] = useState<string[]>([]);
-  const [formData, setFormData] = useState<{
-    classIds: string[];
-    operatorId: string;
-    dates: (Date | null)[];
-    description: string;
-  }>({
-    classIds: [],
-    operatorId: '',
-    dates: [null, null, null, null, null],
-    description: '',
-  });
+  const [selectedOption, setSelectedOption] = useState<'weekly' | 'single'>('weekly');
+  const [weeklyActivities, setWeeklyActivities] = useState<{ classId: string; dayOfWeek: string; description: string }[]>([
+    { classId: '', dayOfWeek: '', description: '' },
+  ]);
+  const [singleActivities, setSingleActivities] = useState<{ classId: string; date: Date | null; description: string }[]>([
+    { classId: '', date: null, description: '' },
+  ]);
+  const [selectedMonth, setSelectedMonth] = useState<Date | null>(new Date());
+  const [operatorId, setOperatorId] = useState<string>(defaultOperatorId || '');
 
-  const handleChange = (e: SelectChangeEvent<string>) => {
-    const { name, value } = e.target;
-    if (!name) return;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleWeeklyChange = (index: number, field: 'classId' | 'dayOfWeek' | 'description', value: string) => {
+    const updated = [...weeklyActivities];
+    updated[index][field] = value;
+    setWeeklyActivities(updated);
   };
 
-  const handleDateChange = (index: number, date: Date | null) => {
-    setFormData((prev) => {
-      const updatedDates = [...prev.dates];
-      updatedDates[index] = date;
-      return { ...prev, dates: updatedDates };
-    });
+  const handleSingleChange = (index: number, field: 'classId' | 'date' | 'description', value: any) => {
+    const updated = [...singleActivities];
+    updated[index][field] = value;
+    setSingleActivities(updated);
   };
 
-  const handleWeeklyChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setUseWeekly(event.target.checked);
-  };
-
-  const handleDaySelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const { value, checked } = event.target;
-    if (checked) {
-      setSelectedDays((prev) => [...prev, value]);
-    } else {
-      setSelectedDays((prev) => prev.filter((day) => day !== value));
-    }
-  };
-
-  const calculateWeeklyDates = (): Date[] => {
+  const calculateWeeklyDates = (dayOfWeek: string): Date[] => {
+    if (!selectedMonth) return [];
+    const start = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() - 1, 26);
+    const end = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), 25);
     const dates: Date[] = [];
-    const start = startOfMonth(new Date());
-    const end = endOfMonth(new Date());
-
     for (let date = start; date <= end; date = addDays(date, 1)) {
-      if (selectedDays.includes(getDay(date).toString())) {
+      if (getDay(date).toString() === dayOfWeek) {
         dates.push(new Date(date));
       }
     }
@@ -91,135 +74,156 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd }) => {
 
   const handleSubmit = () => {
     let newActivities: Activity[] = [];
-  
-    formData.classIds.forEach((classId) => {
-      if (useWeekly) {
-        const calculatedDates = calculateWeeklyDates();
+    if (selectedOption === 'weekly') {
+      weeklyActivities.forEach((activity) => {
+        const calculatedDates = calculateWeeklyDates(activity.dayOfWeek);
         const activitiesForClass = calculatedDates.map((date) => ({
-          classId,
-          operatorId: formData.operatorId,
+          classId: activity.classId,
+          operatorId,
           date,
-          description: formData.description,
+          description: activity.description,
         }));
         newActivities = [...newActivities, ...activitiesForClass];
-      } else {
-        const activitiesForClass = formData.dates
-          .filter((date) => date !== null)
-          .map((date) => ({
-            classId,
-            operatorId: formData.operatorId,
-            date: date!,
-            description: formData.description,
-          }));
-        newActivities = [...newActivities, ...activitiesForClass];
-      }
-    });
-  
-    onAdd(newActivities); // שולחים את כל הפעילויות שנוצרו
+      });
+    } else if (selectedOption === 'single') {
+      singleActivities.forEach((activity) => {
+        if (activity.date) {
+          newActivities.push({
+            classId: activity.classId,
+            operatorId,
+            date: activity.date,
+            description: activity.description,
+          });
+        }
+      });
+    }
+    onAdd(newActivities);
     onClose();
   };
-  
-  return (
-    <LocalizationProvider
-      dateAdapter={AdapterDateFns}
-      localeText={heIL.components.MuiLocalizationProvider.defaultProps.localeText}
-    >
-      <Dialog open={open} onClose={onClose}>
-        <DialogTitle>הוספת פעילות חדשה</DialogTitle>
-        <DialogContent>
-        <FormControl fullWidth margin="normal">
-  <Autocomplete
-    multiple
-    options={classes.sort((a: Class, b: Class) =>
-      a.uniqueSymbol.localeCompare(b.uniqueSymbol)
-    )}
-    getOptionLabel={(option) => `${option.name} (${option.uniqueSymbol})`}
-    value={classes.filter((cls: Class) => 
-      cls._id && formData.classIds.includes(cls._id)
-    ) || []}
-    
-    onChange={(event, newValue) => {
-      if (newValue.length <= 3) { // מאפשר בחירה של עד 3 סמלים
-        setFormData((prev) => ({
-          ...prev,
-          classIds: newValue.map((cls) => cls._id as string),
-        }));        
-      }
-    }}
-    renderInput={(params) => (
-      <TextField {...params} label="בחר עד 3 קבוצות" variant="outlined" fullWidth margin="normal" />
-    )}
-  />
-</FormControl>
 
-          <FormControl fullWidth margin="normal">
+  const addWeeklyRow = () => setWeeklyActivities([...weeklyActivities, { classId: '', dayOfWeek: '', description: '' }]);
+  const addSingleRow = () => setSingleActivities([...singleActivities, { classId: '', date: null, description: '' }]);
+
+  return (
+    <LocalizationProvider dateAdapter={AdapterDateFns} localeText={heIL.components.MuiLocalizationProvider.defaultProps.localeText}>
+      <Dialog open={open} onClose={onClose}>
+        <DialogTitle>דיווח נוכחות</DialogTitle>
+        <DialogContent>
+          <FormControl fullWidth margin="normal" disabled={!!defaultOperatorId}>
             <InputLabel>בחר מפעיל</InputLabel>
-            <Select name="operatorId" value={formData.operatorId} onChange={handleChange}>
-              {operators
-                .sort((a: Operator, b: Operator) => a.lastName.localeCompare(b.lastName))
-                .map((op: Operator) => (
-                  <MenuItem key={op._id} value={op._id}>
-                    {op.firstName} {op.lastName}
-                  </MenuItem>
-                ))}
+            <Select
+              value={operatorId}
+              onChange={(e) => setOperatorId(e.target.value)}
+              sx={{
+                '& .MuiInputBase-root.Mui-disabled': {
+                  color: 'black',
+                  backgroundColor: 'rgba(117, 214, 252, 0.37)',
+                  WebkitTextFillColor: 'black',
+                },
+              }}
+            >
+              {operators.map((op: Operator) => (
+                <MenuItem key={op._id} value={op._id}>
+                  {op.firstName} {op.lastName}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
-          <FormControlLabel
-            control={<Checkbox checked={useWeekly} onChange={handleWeeklyChange} />}
-            label="בוצעה הפעלה פעם בשבוע במהלך החודש, בימי:"
-          />
-          {useWeekly ? (
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {['0', '1', '2', '3', '4'].map((day) => (
-                <FormControlLabel
-                    key={day}
-                    control={
-                    <Checkbox
-                        checked={selectedDays.includes(day)}
-                        onChange={(event) => {
-                        const { value, checked } = event.target;
-                        setSelectedDays(checked ? [value] : []); // מאפשר בחירה של יום אחד בלבד
-                        }}
-                        value={day}
-                    />
-                    }
-                    label={['א', 'ב', 'ג', 'ד', 'ה'][parseInt(day)]} // מייצג ימים ראשון עד חמישי
-                />
-                ))}
-            </div>
-          ) : (
-            <div>
-                <p>או:</p>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-              {formData.dates.map((date, index) => (
+          <Box mb={2}>
+            <RadioGroup
+              value={selectedOption}
+              onChange={(e) => setSelectedOption(e.target.value as 'weekly' | 'single')}
+              row
+            >
+              <FormControlLabel value="weekly" control={<Radio />} label="דיווח שבועי" />
+              <FormControlLabel value="single" control={<Radio />} label="דיווח יחיד" />
+            </RadioGroup>
+          </Box>
+
+          {selectedOption === 'weekly' && (
+            <>
+            <p>שים לב- בדיווח שבועי ידווחו הפעלות בסמלים הנבחרים, לפי היום הנבחר, בכל שבוע לאורך חודש הנוכחות</p>
+              <FormControl fullWidth margin="normal">
                 <DatePicker
-                  key={index}
-                  label={`תאריך ${index + 1}`}
-                  value={date}
-                  onChange={(date) => handleDateChange(index, date)}
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                    },
-                  }}
+                  views={['year', 'month']}
+                  label="בחר חודש לדיווח נוכחות"
+                  value={selectedMonth}
+                  onChange={(newMonth) => setSelectedMonth(newMonth)}
                 />
+              </FormControl>
+              {weeklyActivities.map((activity, index) => (
+                <Box display="flex" gap={2} mb={2} key={index}>
+                  <Autocomplete
+                    options={classes}
+                    getOptionLabel={(option) => `${option.name} (${option.uniqueSymbol})`}
+                    value={classes.find((cls:Class) => cls._id === activity.classId) || null}
+                    onChange={(e, newValue) =>
+                      handleWeeklyChange(index, 'classId', (newValue as Class)?._id || '')
+                    }
+                    
+                    renderInput={(params) => <TextField {...params} label="בחר סמל" />}
+                    fullWidth
+                    sx={{ width: '170%' }}
+                  />
+                  <FormControl fullWidth>
+                    <InputLabel>יום בשבוע</InputLabel>
+                    <Select
+                      value={activity.dayOfWeek}
+                      onChange={(e) => handleWeeklyChange(index, 'dayOfWeek', e.target.value)}
+                    >
+                      {['א', 'ב', 'ג', 'ד', 'ה'].map((day, idx) => (
+                        <MenuItem value={idx.toString()} key={idx}>
+                          {day}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <TextField
+                    label="תיאור פעילות"
+                    value={activity.description}
+                    onChange={(e) => handleWeeklyChange(index, 'description', e.target.value)}
+                    fullWidth
+                  />
+                </Box>
               ))}
-            </div>
-            </div>
+              <Button onClick={addWeeklyRow} variant="outlined">
+                הוסף שורה
+              </Button>
+            </>
           )}
-          <TextField
-            name="description"
-            label="תיאור הפעילות"
-            value={formData.description}
-            onChange={(e) =>
-              setFormData((prev) => ({
-                ...prev,
-                description: e.target.value,
-              }))
-            }
-            fullWidth
-            margin="normal"
-          />
+
+          {selectedOption === 'single' && (
+            <>
+              {singleActivities.map((activity, index) => (
+                <Box display="flex" gap={2} mb={2} key={index}>
+                  <Autocomplete
+                    options={classes}
+                    getOptionLabel={(option) => `${option.name} (${option.uniqueSymbol})`}
+                    value={classes.find((cls:Class) => cls._id === activity.classId) || null}
+                    onChange={(e, newValue) =>
+                      handleSingleChange(index, 'classId', (newValue as Class)?._id || '')
+                    }
+                    renderInput={(params) => <TextField {...params} label="בחר סמל" />}
+                    fullWidth
+                  />
+                  <DatePicker
+                    label="בחר תאריך"
+                    value={activity.date}
+                    onChange={(newDate) => handleSingleChange(index, 'date', newDate)}
+                  />
+                  <TextField
+                    label="תיאור פעילות"
+                    value={activity.description}
+                    onChange={(e) => handleSingleChange(index, 'description', e.target.value)}
+                    fullWidth
+                  />
+                </Box>
+              ))}
+              <Button onClick={addSingleRow} variant="outlined">
+                הוסף שורה
+              </Button>
+            </>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={onClose}>ביטול</Button>

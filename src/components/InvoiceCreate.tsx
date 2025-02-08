@@ -37,7 +37,6 @@ const InvoiceCreate: React.FC = () => {
     },
     validationSchema: InvoiceSchema,
     onSubmit: (values) => {
-    console.log("Validated values:", values);
       addInvoice.mutate(
         {
             ...values,
@@ -53,7 +52,6 @@ const InvoiceCreate: React.FC = () => {
           setSnackbarOpen(true);
         },
         onSuccess: () => {
-            console.log("Invoice added successfully");
           setSnackbarMessage("חשבונית נוספה בהצלחה");
           setSnackbarSeverity("success");
           setSnackbarOpen(true);
@@ -205,7 +203,7 @@ const InvoiceCreate: React.FC = () => {
           <Button variant="outlined" onClick={() => formik.resetForm()}>
             אפס טופס
           </Button>
-          <Button type="submit" variant="contained" color="primary" onClick={() => {console.log("values", formik.values); console.log("Formik Errors:", formik.errors)}}>
+          <Button type="submit" variant="contained" color="primary" onClick={() => {}}>
             הוספת חשבונית
           </Button>
         </Grid>

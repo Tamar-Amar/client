@@ -122,7 +122,7 @@ const ActivitiesList: React.FC = () => {
           enableRtl={true}
         />
       </div>
-      <AddActivity open={isDialogOpen} onClose={handleDialogClose} onAdd={handleActivityAdded} />
+      <AddActivity open={isDialogOpen} onClose={handleDialogClose} onAdd={handleActivityAdded}  />
     </div>
   );
 };

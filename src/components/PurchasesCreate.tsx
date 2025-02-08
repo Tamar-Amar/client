@@ -43,15 +43,12 @@ const PurchasesCreate: React.FC = () => {
     },
     validationSchema: PurchaseSchema,
     onSubmit: (values) => {
-      // הסרת `purchaseType` שאינו נדרש בשרת
       const { purchaseType, ...dataToSend } = values;
-  
       addPurchaseMutation.mutate(dataToSend, {
         onError: (error) => {
           console.error("שגיאה בשליחת רכישה:", error.message);
         },
         onSuccess: () => {
-          console.log("הרכישה נוספה בהצלחה!");
           formik.resetForm();
         },
       });

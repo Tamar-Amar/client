@@ -1,13 +1,13 @@
 import axios from 'axios';
 import { Activity } from '../types/Activity';
 
-const API_URL = process.env.REACT_APP_API_URL|| "https://server-manage.onrender.com" || 'http://localhost:5000';
+const API_URL = process.env.REACT_APP_API_URL+ "/api/activities";
 
 /**
  * Fetch all activities
  */
 export const fetchAllActivities = async (): Promise<Activity[]> => {
-  const response = await axios.get(`${API_URL}/api/activities`);
+  const response = await axios.get(API_URL);
   return response.data;
 };
 
@@ -16,7 +16,7 @@ export const fetchAllActivities = async (): Promise<Activity[]> => {
  * @param classId - Class ID
  */
 export const fetchActivitiesByClass = async (classId: string): Promise<Activity[]> => {
-  const response = await axios.get(`${API_URL}/api/activities/class/${classId}`);
+  const response = await axios.get(`${API_URL}/class/${classId}`);
   return response.data;
 };
 
@@ -24,8 +24,9 @@ export const fetchActivitiesByClass = async (classId: string): Promise<Activity[
  * Fetch activities by operator ID
  * @param operatorId - Operator ID
  */
+
 export const fetchActivitiesByOperator = async (operatorId: string): Promise<Activity[]> => {
-  const response = await axios.get(`${API_URL}/api/activities/operator/${operatorId}`);
+  const response = await axios.get(`${API_URL}/actByOp/${operatorId}`);
   return response.data;
 };
 
@@ -34,7 +35,7 @@ export const fetchActivitiesByOperator = async (operatorId: string): Promise<Act
  * @param activity - Activity data
  */
 export const createActivity = async (activity: Activity): Promise<Activity> => {
-  const response = await axios.post(`${API_URL}/api/activities`, activity);
+  const response = await axios.post(API_URL, activity);
   return response.data;
 };
 
@@ -44,13 +45,15 @@ export const createActivity = async (activity: Activity): Promise<Activity> => {
  * @param presence - Presence data
  */
 export const updatePresence = async (activityId: string, presence: any): Promise<Activity> => {
-  const response = await axios.put(`${API_URL}/api/activities/presence`, {
+  const response = await axios.put(`${API_URL}/presence`, {
     activityId,
     presence,
   });
   return response.data;
 };
 
-export const deleteActivity = async (id: string): Promise<void> => {
-  await axios.delete(`${API_URL}/${id}`);
+export const deleteActivity = async (id: string): Promise<{ operatorId: string; activityId: string }> => {
+  const response = await axios.delete(`${API_URL}/${id}`);
+  return response.data;
 };
+
