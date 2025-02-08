@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchOperators, createOperator, deleteOperator, updateOperatorDetails, fetchOperatorById } from '../services/OperatorService';
+import { fetchOperators, createOperator, deleteOperator, updateOperatorDetails, fetchOperatorById, fetchCurrentOperator } from '../services/OperatorService';
 import { Operator } from '../types/Operator';
 
 export const useFetchOperators = () => {
@@ -40,9 +40,24 @@ export const useUpdateOperator = () => {
   });
 };
 
-export const useFetchOperatorById=(operatorId: string)=>{
+export const useFetchOperatorById = (operatorId: string) => {
   return useQuery({
     queryKey: ['operator', operatorId],
-    queryFn: fetchOperatorById,
+    queryFn: () => fetchOperatorById(operatorId), 
+    enabled: !!operatorId, 
   });
-}
+};
+
+export const useFetchCurrentOperator = () => {
+  const token = localStorage.getItem('token');
+
+  return useQuery({
+    queryKey: ['currentOperator'],
+    queryFn: fetchCurrentOperator,
+    enabled: !!token, 
+    staleTime: 1000 * 60 * 5,
+  });
+};
+
+
+

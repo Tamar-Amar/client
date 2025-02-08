@@ -3,7 +3,7 @@ import { useUpdateOperator } from '../queries/operatorQueries';
 import { TextField, Button, Box, CircularProgress } from '@mui/material';
 //import { fetchOperatorById } from '../queries/operatorQueries';
 import { Operator } from '../types/Operator';
-import { fetchOperatorById } from '../services/OperatorService';
+import { fetchCurrentOperator } from '../services/OperatorService';
 
 const PersonalDetails: React.FC = () => {
   const [operator, setOperator] = useState<Operator | null>(null);
@@ -13,7 +13,7 @@ const PersonalDetails: React.FC = () => {
   useEffect(() => {
     const fetchOperator = async () => {
       try {
-        const data = await fetchOperatorById();
+        const data = await fetchCurrentOperator();
         setOperator(data);
       } catch (error) {
         console.error('Failed to fetch operator details:', error);

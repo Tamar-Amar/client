@@ -5,7 +5,7 @@ import { userRoleState } from '../recoil/storeAtom';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const DynamicNavbar: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
-  const role = useRecoilValue(userRoleState); // האם המשתמש מנהל או מפעיל
+  const role = useRecoilValue(userRoleState);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -13,12 +13,14 @@ const DynamicNavbar: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     { label: 'ניהול מוסדות', path: '/institutions' },
     { label: 'דוח הפעלות', path: '/activities' },
     { label: 'ניהול מפעילים', path: '/operators' },
-    { label: 'יצירת מסמך נוכחות', path: '/attendance' },
+    { label: 'יצירת מסמך נוכחות', path: '/report-pdf' },
+    { label: 'יומן נוכחות', path: '/attendance' },
   ];
 
   const operatorTabs = [
     { label: 'פרטים אישיים', path: '/personal-details' },
     { label: 'היסטוריית הפעלות', path: '/activity-history' },
+    { label: 'יצירת מסמך נוכחות', path: '/report-pdf' },
   ];
 
   const loginTab = [{ label: 'התחבר', path: '/login' }];
@@ -28,7 +30,6 @@ const DynamicNavbar: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   return (
     <AppBar position="sticky" sx={{ bgcolor: '#f5f5f5', boxShadow: 'none', borderBottom: '1px solid #ddd' }}>
       <Toolbar sx={{ justifyContent: 'space-between' }}>
-        {/* כותרת */}
         <Typography variant="h6" sx={{ flexGrow: 1, color: '#333', fontWeight: 'bold' }}>
           {role === 'admin'
             ? 'מנהל מערכת'
@@ -37,7 +38,6 @@ const DynamicNavbar: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
             : 'DISCONNECTED'}
         </Typography>
 
-        {/* טאבים במרכז */}
         <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
           <Tabs
             value={location.pathname}

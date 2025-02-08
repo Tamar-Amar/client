@@ -25,10 +25,22 @@ export const updateOperatorDetails = async (operator: Operator): Promise<Operato
   return response.data;
 };
 
-export const fetchOperatorById = async (): Promise<Operator> => {
+export const fetchOperatorById = async (operatorId: string): Promise<Operator> => {
+  const response = await axios.get(`${API_URL}/${operatorId}`);
+  return response.data;
+};
+
+export const fetchCurrentOperator = async (): Promise<Operator> => {
   const token = localStorage.getItem('token');
+  
+  if (!token) {
+    throw new Error("No token found. User might not be logged in.");
+  }
+
   const response = await axios.get(`${API_URL}/me`, {
     headers: { Authorization: `Bearer ${token}` },
   });
+
   return response.data;
 };
+

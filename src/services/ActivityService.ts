@@ -35,6 +35,7 @@ export const fetchActivitiesByOperator = async (operatorId: string): Promise<Act
  * @param activity - Activity data
  */
 export const createActivity = async (activity: Activity): Promise<Activity> => {
+  console.log(activity);
   const response = await axios.post(API_URL, activity);
   return response.data;
 };

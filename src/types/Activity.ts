@@ -13,6 +13,7 @@ export interface Activity {
         _id: string;
         firstName: string;
         lastName: string;
+        
       }; // אם זה מפורט לאחר populate
   date: Date; // תאריך הפעילות
   description?: string; // תיאור הפעילות
