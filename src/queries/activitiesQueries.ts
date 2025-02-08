@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchAllActivities, createActivity, deleteActivity, fetchActivitiesByOperator } from '../services/ActivityService';
 import { Activity } from '../types/Activity';
 
-// Fetch all activities
 export const useFetchActivities = () => {
   return useQuery({
     queryKey: ['activities'],
@@ -11,7 +10,6 @@ export const useFetchActivities = () => {
   });
 };
 
-// Add a new activity
 export const useAddActivity = () => {
   const queryClient = useQueryClient();
   return useMutation({

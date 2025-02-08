@@ -90,7 +90,6 @@ const AttendanceReport: React.FC = () => {
       return;
     }
   
-    // המרת מפעיל נוכחי ל-ID בלבד
     const operatorId = selectedOperator === "currentUser" ? currentOperator?._id : selectedOperator;  
     if (!operatorId) {
       alert("לא נמצא מזהה מפעיל. נסה שוב.");
@@ -102,7 +101,6 @@ const AttendanceReport: React.FC = () => {
       return;
     }
   
-    // סינון נתונים רלוונטיים בלבד
     const entries = Object.entries(attendanceData).filter(([_, classId]) => classId);
     if (entries.length === 0) {
       alert("אין נתונים לשמור.");
@@ -112,12 +110,12 @@ const AttendanceReport: React.FC = () => {
     try {
       await Promise.all(
         entries.map(async ([dateString, classId]) => {
-          const dateS = new Date(dateString); // ניסיון להמיר את התאריך
+          const dateS = new Date(dateString);
           console.log("📤 שולח לשרת:", { operatorId, classId, dateS, dateString });
           await addActivityMutation.mutateAsync({
-            operatorId, // מזהה מפעיל בלבד
-            classId, // מזהה כיתה בלבד
-            date: new Date(dateString), // המרת מחרוזת לתאריך
+            operatorId, 
+            classId, 
+            date: new Date(dateString), 
             description: " ",
           });
         })
@@ -153,7 +151,6 @@ const AttendanceReport: React.FC = () => {
     <div>
       <h1>דוח נוכחות</h1>
 
-      {/* בחירת חודש */}
       <TextField
         label="בחר חודש"
         type="month"
@@ -162,7 +159,6 @@ const AttendanceReport: React.FC = () => {
         sx={{ marginBottom: 2 }}
       />
 
-      {/* בחירת מפעיל (אם המשתמש מנהל) */}
       {role === "admin" && (
         <FormControl fullWidth sx={{ marginBottom: 2 }}>
           <InputLabel>בחר מפעיל</InputLabel>
@@ -179,7 +175,6 @@ const AttendanceReport: React.FC = () => {
         </FormControl>
       )}
 
-      {/* טבלת נוכחות */}
       {report.length > 0 && (
         <Table>
           <TableHead>
@@ -215,7 +210,6 @@ const AttendanceReport: React.FC = () => {
         </Table>
       )}
 
-      {/* כפתור שמירת נוכחות */}
       <Button
         variant="contained"
         color="primary"
@@ -225,7 +219,6 @@ const AttendanceReport: React.FC = () => {
         שמור נוכחות
       </Button>
 
-      {/* כפתור הורדת דוח PDF */}
       <Button
         variant="contained"
         color="secondary"
