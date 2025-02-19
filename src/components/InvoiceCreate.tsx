@@ -15,7 +15,8 @@ import {
 } from "@mui/material";
 import { useAddInvoice } from "../queries/invoiceQueries";
 import { useNavigate } from "react-router-dom";
-import { InvoiceStatus, InvoiceType } from "../types/Invoice";
+import { InvoiceStatus, InvoiceType } from "../types";
+
 
 const InvoiceCreate: React.FC = () => {
   const { data: stores, isLoading, isError } = useFetchStores();

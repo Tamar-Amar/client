@@ -10,9 +10,10 @@ import PurchasesPage from '../pages/PurchasesPage';
 import AttendancePage from '../pages/CalendarPage';
 import LoginPage from '../pages/LoginPage';
 import PersonalDetails from '../components/PersonalDetails';
-import ActivityHistory from '../components/ActivityHistory';
+import ActivityHistory from '../components/activities/ActivityHistory';
 import ProtectedRoute from '../components/ProtectedRoute';
 import ReportPdfPage from '../pages/ReportPdfPage';
+import OperatorDetails from '../components/operators/OperatorDetails';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -33,6 +34,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/purchases" element={<PurchasesPage/>}/>
         <Route path="/attendance" element={<AttendancePage/>}/>
         <Route path="/report-pdf" element={<ReportPdfPage/>} />
+        <Route path="/operators/:id" element={<OperatorDetails />} />
       </Route>
 
       {/* נתיבים למפעיל */}

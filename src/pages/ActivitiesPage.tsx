@@ -1,5 +1,5 @@
 import React from "react";
-import Activities from "../components/ActivitiesList";
+import Activities from "../components/activities/ActivitiesList";
 
 const ActivitiesPage = () => {
     return <div>

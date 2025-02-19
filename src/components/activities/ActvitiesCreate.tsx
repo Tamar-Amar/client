@@ -20,11 +20,11 @@ import { DatePicker } from '@mui/x-date-pickers';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { heIL } from '@mui/x-date-pickers/locales/heIL';
-import { Activity } from '../types/Activity';
-import { Class } from '../types/Class';
-import { Operator } from '../types/Operator';
-import { useFetchClasses } from '../queries/classQueries';
-import { useFetchOperators } from '../queries/operatorQueries';
+import { Activity } from '../../types';
+import { Class } from '../../types';
+import { Operator } from '../../types';
+import { useFetchClasses } from '../../queries/classQueries';
+import { useFetchOperators } from '../../queries/operatorQueries';
 import { startOfMonth, endOfMonth, addDays, getDay } from 'date-fns';
 
 interface AddActivityProps {

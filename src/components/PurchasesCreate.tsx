@@ -43,8 +43,14 @@ const PurchasesCreate: React.FC = () => {
     },
     validationSchema: PurchaseSchema,
     onSubmit: (values) => {
-      const { purchaseType, ...dataToSend } = values;
-      addPurchaseMutation.mutate(dataToSend, {
+      const { purchaseType,purchaseDate, ...dataToSend } = values;
+      
+      const formattedData = {
+        ...dataToSend,
+        purchaseDate: new Date(purchaseDate),
+      };
+
+      addPurchaseMutation.mutate(formattedData, {
         onError: (error) => {
           console.error("שגיאה בשליחת רכישה:", error.message);
         },

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchAllActivities, createActivity, deleteActivity, fetchActivitiesByOperator } from '../services/ActivityService';
-import { Activity } from '../types/Activity';
+import { Activity } from '../types/index';
 
 export const useFetchActivities = () => {
   return useQuery({

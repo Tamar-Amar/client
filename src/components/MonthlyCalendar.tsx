@@ -3,10 +3,9 @@ import { format, startOfMonth, endOfMonth, addDays, getDay, isSameDay } from 'da
 import { he } from 'date-fns/locale';
 import './CustomCalendar.css';
 import { useFetchActivities } from '../queries/activitiesQueries';
-import { Activity } from '../types/Activity';
+import { Activity, Operator } from '../types/index';
 import { useFetchClasses } from '../queries/classQueries';
-import { Class } from '../types/Class';
-import { Operator } from '../types/Operator';
+import { Class } from '../types/index';
 import { useFetchOperators } from '../queries/operatorQueries';
 
 const CustomCalendar: React.FC = () => {

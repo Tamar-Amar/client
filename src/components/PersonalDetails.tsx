@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useUpdateOperator } from '../queries/operatorQueries';
 import { TextField, Button, Box, CircularProgress } from '@mui/material';
 //import { fetchOperatorById } from '../queries/operatorQueries';
-import { Operator } from '../types/Operator';
+import { Operator } from '../types/index';
 import { fetchCurrentOperator } from '../services/OperatorService';
 
 const PersonalDetails: React.FC = () => {

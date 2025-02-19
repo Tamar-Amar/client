@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Class } from '../types/Class';
+import { Class } from '../types/index';
 
 const API_URL = process.env.REACT_APP_API_URL+ '/api/classes' || "https://server-manage.onrender.com" + '/api/classes';
 

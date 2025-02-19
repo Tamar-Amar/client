@@ -4,9 +4,9 @@ import { ClientSideRowModelModule } from '@ag-grid-community/client-side-row-mod
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 import { Button, CircularProgress, Typography } from '@mui/material';
-import { useFetchActivities, useAddActivity } from '../queries/activitiesQueries';
+import { useFetchActivities, useAddActivity } from '../../queries/activitiesQueries';
+import { Activity } from '../../types';
 import AddActivity from './ActvitiesCreate';
-import { Activity } from '../types/Activity';
 
 const ActivitiesList: React.FC = () => {
   const { data: activities = [], isLoading, isError } = useFetchActivities();

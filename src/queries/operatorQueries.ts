@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchOperators, createOperator, deleteOperator, updateOperatorDetails, fetchOperatorById, fetchCurrentOperator } from '../services/OperatorService';
-import { Operator } from '../types/Operator';
+import { Operator } from '../types/index';
 
 export const useFetchOperators = () => {
   return useQuery({

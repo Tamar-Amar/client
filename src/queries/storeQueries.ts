@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchStores, createStore, deleteStore } from '../services/StoreService';
-import { Store } from '../types/Store';
+import { Store } from '../types/index';
 
 // Fetch all stores
 export const useFetchStores = () => {

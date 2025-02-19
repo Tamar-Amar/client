@@ -5,7 +5,7 @@ import {
   createInvoice,
   updateInvoice,
 } from '../services/InvoiceService';
-import { Invoice } from '../types/Invoice';
+import { Invoice } from '../types/index';
 
 // Fetch all invoices
 export const useFetchAllInvoices = () => {

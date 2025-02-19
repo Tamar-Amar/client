@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Store } from '../types/Store';
+import { Store } from '../types/index';
 
 const API_URL = process.env.REACT_APP_API_URL+ '/api/stores' || "https://server-manage.onrender.com" + '/api/stores';
 

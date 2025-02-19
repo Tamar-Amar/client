@@ -9,27 +9,8 @@ import { useFetchStores } from '../queries/storeQueries';
 
 const PurchaseList: React.FC = () => {
   const { data: purchases, isLoading, isError } = useFetchAllPurchases();
-  const { data: stores, isLoading: isStoresLoading, isError: isStoresError } = useFetchStores();
 
   const [quickFilterText, setQuickFilterText] = useState('');
-
-  const storeMap = useMemo(() => {
-    const map = new Map();
-    if (stores) {
-      stores.forEach((store: any) => {
-        map.set(store._id, store.name);
-      });
-    }
-    return map;
-  }, [stores]);
-
-  const mappedPurchases = useMemo(() => {
-    if (!purchases || !storeMap) return [];
-    return purchases.map((purchase: any) => ({
-      ...purchase,
-      storeName: storeMap.get(purchase.storeId) || 'חנות לא ידועה',
-    }));
-  }, [purchases, storeMap]);
 
   const columnDefs = useMemo(
     () => [

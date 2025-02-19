@@ -5,7 +5,7 @@ import {
   fetchPurchasesByStore,
   createPurchase,
 } from '../services/PurchaseService';
-import { Purchase } from '../types/Purchase';
+import { Purchase } from '../types/index';
 
 // Fetch all purchases
 export const useFetchAllPurchases = () => {

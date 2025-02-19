@@ -17,12 +17,11 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 import BusinessIcon from "@mui/icons-material/Business";
 import CreditCardIcon from "@mui/icons-material/CreditCard";
 import { useFormik } from "formik";
-import { OperatorSchema } from "../types/validations/OperatorValidation";
-import { PaymentMethodChoicesEnum } from "../types/Operator";
-import PasswordField from "./PasswordField";
-import { useAddOperator } from "../queries/operatorQueries";
+import { OperatorSchema } from "../../types/validations/OperatorValidation";
+import PasswordField from "../PasswordField";
+import { useAddOperator } from "../../queries/operatorQueries";
 import { useNavigate } from "react-router-dom";
-import { date } from "yup";
+import { EducationType, Gender, PaymentMethodChoicesEnum } from "../../types";
 
 const OperatorCreate: React.FC = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -54,9 +53,12 @@ const OperatorCreate: React.FC = () => {
         accountNumber: "",
         branchNumber: "",
       },
+      gender:Gender.ALL,
+      educationType:EducationType.ALL,
     },
     validationSchema: OperatorSchema,
     onSubmit: (values) => {
+
       addOperatorMutation.mutate(values,{
         onError: (error) => {
           setSnackbarMessage(error?.message || "שגיאה בהוספת מפעיל");
@@ -248,21 +250,21 @@ const OperatorCreate: React.FC = () => {
         </Typography>
         <Grid container spacing={3}>
           <Grid item xs={6}>
-            <TextField
-              select
-              label="אופן תשלום"
-              name="paymentMethod"
-              value={formik.values.paymentMethod}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              error={formik.touched.paymentMethod && Boolean(formik.errors.paymentMethod)}
-              helperText={formik.touched.paymentMethod && formik.errors.paymentMethod}
-              fullWidth
-            >
-              <MenuItem value="לא נבחר">לא נבחר</MenuItem>
-              <MenuItem value="חשבונית">חשבונית</MenuItem>
-              <MenuItem value="תלוש">תלוש</MenuItem>
-            </TextField>
+          <TextField
+            select
+            label="אופן תשלום"
+            name="paymentMethod"
+            value={formik.values.paymentMethod}
+            onChange={formik.handleChange}
+            onBlur={formik.handleBlur}
+            error={formik.touched.paymentMethod && Boolean(formik.errors.paymentMethod)}
+            helperText={formik.touched.paymentMethod && formik.errors.paymentMethod}
+            fullWidth
+          >
+            <MenuItem value={PaymentMethodChoicesEnum.NONE}>{PaymentMethodChoicesEnum.NONE}</MenuItem>
+            <MenuItem value={PaymentMethodChoicesEnum.CHEABONIT}>{PaymentMethodChoicesEnum.CHEABONIT}</MenuItem>
+            <MenuItem value={PaymentMethodChoicesEnum.TLUSH}>{PaymentMethodChoicesEnum.TLUSH}</MenuItem>
+          </TextField>
           </Grid>
         </Grid>
 

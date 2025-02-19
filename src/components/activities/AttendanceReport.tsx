@@ -13,13 +13,13 @@ import {
   InputLabel 
 } from "@mui/material";
 import dayjs from "dayjs";
-import { useFetchCurrentOperator, useFetchOperators } from "../queries/operatorQueries";
-import { useFetchClasses } from "../queries/classQueries";
-import { Class } from "../types/Class";
-import { Operator } from "../types/Operator";
+import { useFetchCurrentOperator, useFetchOperators } from "../../queries/operatorQueries";
+import { useFetchClasses } from "../../queries/classQueries";
+import { Class } from '../../types';
+import { Operator } from '../../types';
 import { useRecoilValue } from "recoil";
-import { userRoleState, userTokenState } from "../recoil/storeAtom";
-import { useAddActivity } from "../queries/activitiesQueries";
+import { userRoleState, userTokenState } from "../../recoil/storeAtom";
+import { useAddActivity } from "../../queries/activitiesQueries";
 
 const daysOfWeekHebrew: { [key: string]: string } = {
   Sunday: "ראשון",

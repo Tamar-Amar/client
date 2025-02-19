@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Invoice } from '../types/Invoice';
+import { Invoice } from '../types/index';
 
 const API_URL = process.env.REACT_APP_API_URL+ '/api/operators' || "https://server-manage.onrender.com" + '/api/invoices';
 

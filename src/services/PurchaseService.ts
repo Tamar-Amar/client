@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Purchase } from '../types/Purchase';
+import { Purchase } from '../types/index';
 
 const API_URL = process.env.REACT_APP_API_URL+ '/api/purchases' || "https://server-manage.onrender.com" + '/api/purchases';
 

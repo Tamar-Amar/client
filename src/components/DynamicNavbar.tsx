@@ -38,7 +38,7 @@ const DynamicNavbar: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
             : 'DISCONNECTED'}
         </Typography>
 
-        <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
+        <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'right' }}>
           <Tabs
             value={location.pathname}
             onChange={(e, newValue) => navigate(newValue)}
@@ -61,11 +61,7 @@ const DynamicNavbar: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                 }}
               />
             ))}
-          </Tabs>
-        </Box>
-
-        {/* כפתור יציאה */}
-        {role && (role === 'admin' || role === 'operator') && (
+                      {role && (role === 'admin' || role === 'operator') && (
           <Button
             color="primary"
             variant="outlined"
@@ -82,6 +78,10 @@ const DynamicNavbar: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
             יציאה
           </Button>
         )}
+          </Tabs>
+        </Box>
+
+
       </Toolbar>
     </AppBar>
   );

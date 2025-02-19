@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Institution } from '../types/Institution';
+import { Institution } from '../types/index';
 
 const API_URL = process.env.REACT_APP_API_URL + '/api/institutions' || "https://server-manage.onrender.com" + '/api/institutions';
 

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Button, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
-import OperatorList from "../components/OperatorList";
-import OperatorCreate from "../components/OperatorCreate";
+import OperatorList from "../components/operators/OperatorList";
+import OperatorCreate from "../components/operators/OperatorCreate";
 
 const OperatorsPage: React.FC = () => {
   const [open, setOpen] = useState(false);

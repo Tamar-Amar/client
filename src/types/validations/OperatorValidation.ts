@@ -11,7 +11,6 @@ export const BankDetailsSchema = Yup.object({
     .required("מספר הסניף הוא שדה חובה"),
 });
 
-// BusinessDetails validation schema
 export const BusinessDetailsSchema = Yup.object({
   businessId: Yup.string().when("paymentMethod", {
     is: "חשבונית", // Applies only if paymentMethod is "חשבונית"
@@ -36,7 +35,7 @@ export const OperatorSchema = Yup.object({
     .matches(/^\d+$/, "מספר תעודת הזהות חייב לכלול רק ספרות")
     .required("מספר תעודת הזהות הוא שדה חובה"),
   password: Yup.string()
-   .min(6, "סיסמא חייבת להכיל 6 תווים"),
+    .min(6, "סיסמא חייבת להכיל 6 תווים"),
   email: Yup.string()
     .email("כתובת האימייל אינה תקינה")
     .required("כתובת האימייל היא שדה חובה"),
@@ -46,5 +45,12 @@ export const OperatorSchema = Yup.object({
     .oneOf(["חשבונית", "תלוש", "לא נבחר"], "שיטת התשלום אינה תקינה")
     .required("שיטת התשלום היא שדה חובה"),
   businessDetails: BusinessDetailsSchema,
-  bankDetails: BankDetailsSchema,
+  bankDetails: BankDetailsSchema, 
+  gender: Yup.string()
+    .oneOf(["בנים", "בנות", "גם וגם"], "הזן ערך תקין עבור מגדר")
+    .required("מגדר הוא שדה חובה"),
+  educationType: Yup.string()
+    .oneOf(["רגיל", "מיוחד", "גם וגם"], "הזן ערך תקין עבור סוג חינוך")
+    .required("סוג החינוך הוא שדה חובה"),
+  isActive: Yup.boolean().default(true),
 });

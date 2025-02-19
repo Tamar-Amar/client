@@ -1,5 +1,5 @@
 import React from "react";
-import AttendanceReport from "../components/AttendanceReport";
+import AttendanceReport from "../components/activities/AttendanceReport";
 import MonthlyCalendar from "../components/MonthlyCalendar";
 
 const AttendancePage = () => {

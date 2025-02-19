@@ -1,7 +1,7 @@
 // src/queries/institutionQueries.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import { Institution } from '../types/Institution';
+import { Institution } from '../types/index';
 import { createInstitution, deleteInstitution, fetchInstitutions } from '../services/InstitutionService';
 
 // Fetch all institutions
