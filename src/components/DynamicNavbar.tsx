@@ -13,6 +13,8 @@ const DynamicNavbar: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     { label: 'ניהול מוסדות', path: '/institutions' },
     { label: 'דוח הפעלות', path: '/activities' },
     { label: 'ניהול מפעילים', path: '/operators' },
+    { label: 'ניהול קבוצות', path: '/classes' },
+    { label: 'ניהול אנשי קשר', path: '/contacts' },
     { label: 'יצירת מסמך נוכחות', path: '/report-pdf' },
     { label: 'יומן נוכחות', path: '/attendance' },
   ];
@@ -61,7 +63,7 @@ const DynamicNavbar: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                 }}
               />
             ))}
-                      {role && (role === 'admin' || role === 'operator') && (
+          {role && (role === 'admin' || role === 'operator') && (
           <Button
             color="primary"
             variant="outlined"

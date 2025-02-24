@@ -161,6 +161,8 @@ export interface Activity {
     phone: string;
     email: string;
     description: string;
-    institutionId: string;
+    entityType: "Institution" | "Store" | "Class"; 
+    entityId: string; 
   }
+  
   

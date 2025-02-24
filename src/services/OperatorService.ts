@@ -40,18 +40,17 @@ export const deleteOperator = async (id: string) => {
   await axios.delete(`${API_URL}/${id}`);
 };
 
-export const updateOperatorDetails = async (operator: Operator): Promise<Operator> => {
-  const token = localStorage.getItem('token'); 
-  const response = await axios.put(`${API_URL}/${operator._id}`, operator, {
+export const updateOperatorDetails = async ({ id, ...updatedFields }: { id: string; [key: string]: any }) => {
+  const token = localStorage.getItem('token');
+  const response = await axios.put(`${API_URL}/${id}`, updatedFields, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return response.data;
 };
 
+
 export const fetchOperatorById = async (operatorId: string): Promise<Operator> => {
-  console.log('Fetching operator with id:', operatorId);
   const response = await axios.get(`${API_URL}/${operatorId}`);
-  console.log("ope",response.data);
   return response.data;
 };
 

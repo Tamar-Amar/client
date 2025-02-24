@@ -32,13 +32,19 @@ export const useDeleteOperator = () => {
 
 export const useUpdateOperator = () => {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: updateOperatorDetails,
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      const { id } = variables;
+
+      queryClient.invalidateQueries({ queryKey: ['operator', id] });
+
       queryClient.invalidateQueries({ queryKey: ['operators'] });
     },
   });
 };
+
 
 export const useFetchOperatorById = (operatorId: string) => {
   return useQuery({

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchStores, createStore, deleteStore } from '../services/StoreService';
+import { fetchStores, createStore, deleteStore, updateStoreDetails } from '../services/StoreService';
 import { Store } from '../types/index';
 
 // Fetch all stores
@@ -29,6 +29,20 @@ export const useDeleteStore = () => {
     mutationFn: deleteStore,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stores'] });
+    },
+  });
+};
+
+
+export const useUpdateStore = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, updatedStore }: { id: string; updatedStore: Partial<Store> }) => {
+      return updateStoreDetails(id, updatedStore);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["stores"] }); // מרענן את כל החנויות
     },
   });
 };

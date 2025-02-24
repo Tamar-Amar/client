@@ -14,6 +14,9 @@ import ActivityHistory from '../components/activities/ActivityHistory';
 import ProtectedRoute from '../components/ProtectedRoute';
 import ReportPdfPage from '../pages/ReportPdfPage';
 import OperatorDetails from '../components/operators/OperatorDetails';
+import { EditCalendarTwoTone } from '@mui/icons-material';
+import EditClass from '../pages/EditClass';
+import ContactList from '../components/ContactList';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -35,6 +38,9 @@ const AppRoutes: React.FC = () => {
         <Route path="/attendance" element={<AttendancePage/>}/>
         <Route path="/report-pdf" element={<ReportPdfPage/>} />
         <Route path="/operators/:id" element={<OperatorDetails />} />
+        <Route path="/edit-class/:id" element={<EditClass />} />
+        <Route path="/add-class" element={<OperatorDetails />} />
+        <Route path="/contacts" element={<ContactList />} />
       </Route>
 
       {/* נתיבים למפעיל */}

@@ -20,3 +20,8 @@ export const createStore = async (store: Store): Promise<Store> => {
 export const deleteStore = async (id: string): Promise<void> => {
   await axios.delete(`${API_URL}/${id}`);
 };
+
+export const updateStoreDetails = async (id: string, updatedStore: Partial<Store>) => {
+  const response = await axios.put(`${API_URL}/${id}`, updatedStore);
+  return response.data;
+}

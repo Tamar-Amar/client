@@ -16,3 +16,8 @@ export const createClass = async (classData: Class) => {
 export const deleteClass = async (id: string) => {
   await axios.delete(`${API_URL}/${id}`);
 };
+
+export const updateClass = async (id: string, updatedClass: Partial<Class>) => {
+  const response = await axios.put(`${API_URL}/${id}`, updatedClass);
+  return response.data;
+};
