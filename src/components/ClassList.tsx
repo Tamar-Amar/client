@@ -8,15 +8,8 @@ import {
   Typography,
   Menu,
   MenuItem,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Select,
-  FormControl,
-  InputLabel,
 } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { DataGrid, GridColDef, GridRenderCellParams  } from "@mui/x-data-grid";
 import { useFetchClasses, useDeleteClass, useUpdateClass } from "../queries/classQueries";
 import { useFetchInstitutions } from "../queries/institutionQueries";
 import { useFetchContacts } from "../queries/contactQueries";
@@ -132,7 +125,7 @@ const [assignDialogType, setAssignDialogType] = useState<"assignContact" | "assi
         field: "institutionId",
         headerName: "קוד מוסד",
         flex: 1,
-        renderCell: (params) => {
+        renderCell: (params: { value: string }) => {
           const institution = institutions?.find((inst: Institution) => inst._id === params.value);
           return institution ? institution.institutionCode : "N/A";
         },
@@ -146,7 +139,7 @@ const [assignDialogType, setAssignDialogType] = useState<"assignContact" | "assi
         field: "chosenStore",
         headerName: "חנות ניצול",
         flex: 1,
-        renderCell: (params) => {
+        renderCell: (params: { value: string }) => {
           const store = stores?.find((s) => s._id === params.value);
           return store ? store.name : "N/A";
         },
@@ -155,16 +148,18 @@ const [assignDialogType, setAssignDialogType] = useState<"assignContact" | "assi
         field: "contactsId",
         headerName: "איש קשר",
         flex: 1,
-        renderCell: (params) => {
-          const contactNames = params.value
-            ?.map((contactId: string) => {
+        renderCell: (params: GridRenderCellParams) => {
+            const contactNames = Array.isArray(params.value)
+              ? params.value
+            .map((contactId: string) => {
               const contact = contacts?.find((c: Contact) => c._id === contactId);
               return contact ? contact.name : null;
             })
             .filter(Boolean)
-            .join(", "); 
+            .join(", ")
+            : "N/A";
       
-          return contactNames || "N/A";
+          return contactNames;
         },
       },
       {
@@ -182,7 +177,7 @@ const [assignDialogType, setAssignDialogType] = useState<"assignContact" | "assi
         field: "actions",
         headerName: "פעולות",
         flex: 1,
-        renderCell: (params) => (
+        renderCell: (params: GridRenderCellParams<any>) => (
           <Box>
             <IconButton color="primary" onClick={() => handleEdit(params.row._id)}>
               <EditIcon />
@@ -192,7 +187,7 @@ const [assignDialogType, setAssignDialogType] = useState<"assignContact" | "assi
             </IconButton>
           </Box>
         ),
-      },
+      }
     ],
     [institutions, contacts, stores]
   );
@@ -247,8 +242,8 @@ const [assignDialogType, setAssignDialogType] = useState<"assignContact" | "assi
           },
         }}
         checkboxSelection
-        getRowId={(row) => row._id}
-        onRowSelectionModelChange={(selection) => setSelectedRows(selection as string[])}
+        getRowId={(row: { _id: string }) => row._id}
+        onRowSelectionModelChange={(selection: string[] | undefined) => setSelectedRows(selection as string[])}
         autoHeight
       />
 
@@ -281,4 +276,5 @@ const [assignDialogType, setAssignDialogType] = useState<"assignContact" | "assi
 };
 
 export default ClassList;
+
 

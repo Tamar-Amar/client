@@ -10,6 +10,8 @@ import AddActivity from './ActvitiesCreate';
 
 const ActivitiesList: React.FC = () => {
   const { data: activities = [], isLoading, isError } = useFetchActivities();
+  console.log("Fetched activities:", activities);
+
   const addActivityMutation = useAddActivity();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [quickFilterText, setQuickFilterText] = useState('');
