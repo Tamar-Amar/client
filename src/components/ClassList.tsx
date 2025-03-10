@@ -24,9 +24,9 @@ import AssignDialog from "./AssignDialog";
 
 const ClassList: React.FC = () => {
   const { data: classes, isLoading, isError } = useFetchClasses();
+  console.log("data", classes, isLoading, isError);
   const { data: institutions } = useFetchInstitutions();
   const { data: contacts } = useFetchContacts();
-  const chosenC= contacts.find((c: Contact) => c._id === classes[0].contactsId);
   const { data: operators } = useFetchOperators();
   const { data: stores } = useFetchStores();
   const deleteMutation = useDeleteClass();
@@ -125,21 +125,23 @@ const [assignDialogType, setAssignDialogType] = useState<"assignContact" | "assi
         field: "institutionId",
         headerName: "קוד מוסד",
         flex: 1,
-        renderCell: (params: { value: string }) => {
+        type: "string",
+        renderCell: (params: GridRenderCellParams) => {
           const institution = institutions?.find((inst: Institution) => inst._id === params.value);
           return institution ? institution.institutionCode : "N/A";
         },
       },
-      { field: "uniqueSymbol", headerName: "סמל קבוצה", flex: 1 },
-      { field: "name", headerName: "שם", flex: 1 },
-      { field: "address", headerName: "כתובת", flex: 1 },
-      { field: "type", headerName: "סוג קבוצה", flex: 1 },
-      { field: "monthlyBudget", headerName: "תקציב חודשי", flex: 1 },
+      { field: "uniqueSymbol", headerName: "סמל קבוצה", flex: 1, type: "string" },
+      { field: "name", headerName: "שם", flex: 1, type: "string" },
+      { field: "address", headerName: "כתובת", flex: 1, type: "string" },
+      { field: "type", headerName: "סוג קבוצה", flex: 1, type: "string" },
+      { field: "monthlyBudget", headerName: "תקציב חודשי", flex: 1, type: "number" },
       {
         field: "chosenStore",
         headerName: "חנות ניצול",
         flex: 1,
-        renderCell: (params: { value: string }) => {
+        type: "string",
+        renderCell: (params: GridRenderCellParams) => {
           const store = stores?.find((s) => s._id === params.value);
           return store ? store.name : "N/A";
         },
@@ -148,17 +150,18 @@ const [assignDialogType, setAssignDialogType] = useState<"assignContact" | "assi
         field: "contactsId",
         headerName: "איש קשר",
         flex: 1,
+        type: "string",
         renderCell: (params: GridRenderCellParams) => {
-            const contactNames = Array.isArray(params.value)
-              ? params.value
-            .map((contactId: string) => {
-              const contact = contacts?.find((c: Contact) => c._id === contactId);
-              return contact ? contact.name : null;
-            })
-            .filter(Boolean)
-            .join(", ")
+          const contactNames = Array.isArray(params.value)
+            ? params.value
+                .map((contactId: string) => {
+                  const contact = contacts?.find((c: Contact) => c._id === contactId);
+                  return contact ? contact.name : null;
+                })
+                .filter(Boolean)
+                .join(", ")
             : "N/A";
-      
+  
           return contactNames;
         },
       },
@@ -166,18 +169,20 @@ const [assignDialogType, setAssignDialogType] = useState<"assignContact" | "assi
         field: "gender",
         headerName: "בנים או בנות",
         flex: 1,
+        type: "string",
       },
       {
         field: "isSpecialEducation",
         headerName: "חינוך מיוחד",
         flex: 1,
-        renderCell: (params) => (params.value ? "כן" : "לא"),
+        type: "boolean",
+        renderCell: (params: GridRenderCellParams) => (params.value ? "כן" : "לא"),
       },
       {
         field: "actions",
         headerName: "פעולות",
         flex: 1,
-        renderCell: (params: GridRenderCellParams<any>) => (
+        renderCell: (params: GridRenderCellParams) => (
           <Box>
             <IconButton color="primary" onClick={() => handleEdit(params.row._id)}>
               <EditIcon />
@@ -187,10 +192,11 @@ const [assignDialogType, setAssignDialogType] = useState<"assignContact" | "assi
             </IconButton>
           </Box>
         ),
-      }
+      },
     ],
     [institutions, contacts, stores]
   );
+  
   
 
   if (isLoading) return <Typography>Loading...</Typography>;
@@ -243,7 +249,11 @@ const [assignDialogType, setAssignDialogType] = useState<"assignContact" | "assi
         }}
         checkboxSelection
         getRowId={(row: { _id: string }) => row._id}
-        onRowSelectionModelChange={(selection: string[] | undefined) => setSelectedRows(selection as string[])}
+        onRowSelectionModelChange={(rowSelectionModel) => {
+          setSelectedRows(rowSelectionModel.map(id => String(id)));
+      }}
+      
+      
         autoHeight
       />
 

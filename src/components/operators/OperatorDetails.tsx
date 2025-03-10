@@ -20,7 +20,7 @@ const OperatorDetails: React.FC = () => {
     const updatedClasses = [...(operator.regularClasses || []), selectedClassId];
 
     updateOperatorMutation.mutate(
-      { id: operator._id?? "", regularClasses: updatedClasses },
+      { id: operator._id as string, regularClasses: updatedClasses },
       {
         onSuccess: () => {
           setSelectedClassId(''); 
@@ -90,7 +90,6 @@ const OperatorDetails: React.FC = () => {
 
             <Divider sx={{ my: 3 }} />
 
-            {/* ✅ בחירת קבוצה להפעלה קבועה */}
             <Typography variant="h6" sx={{ mb: 2 }}>הוספת כיתה להפעלה קבועה</Typography>
             <TextField
               select
@@ -101,13 +100,13 @@ const OperatorDetails: React.FC = () => {
               sx={{ marginBottom: 2 }}
             >
               <MenuItem value="">-- כל הקבוצות --</MenuItem>
-              {classes
-                .sort((a: any, b: any) => a.uniqueSymbol.localeCompare(b.uniqueSymbol))
-                .map((cls: any) => (
-                  <MenuItem key={cls._id} value={cls._id}>
-                    {cls.name} ({cls.uniqueSymbol})
-                  </MenuItem>
-                ))}
+                {classes.slice().sort((a: any, b: any) => a.uniqueSymbol.localeCompare(b.uniqueSymbol))
+                  .map((cls:any) => (
+                    <MenuItem key={cls._id} value={cls._id}>
+                      {cls.name} ({cls.uniqueSymbol})
+                    </MenuItem>
+                  ))}
+
             </TextField>
             <Button 
               variant="contained" 

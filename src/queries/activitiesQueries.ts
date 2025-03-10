@@ -28,19 +28,17 @@ export const useDeleteActivity = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: deleteActivity, 
-    onSuccess: ({ operatorId, activityId }) => {
-      queryClient.setQueryData(['activities', operatorId], (oldData: Activity[] | undefined) => {
-        if (!oldData) {
-          console.warn('No old data found in cache');
-          return [];
-        }
-        const updatedData = oldData.filter((activity) => activity._id !== activityId);
-        return updatedData;
-      });
+    mutationFn: deleteActivity,
+    onSuccess: async ({ operatorId }) => {
+      await queryClient.invalidateQueries({ queryKey: ['activities'] });
+
+      if (operatorId) {
+        await queryClient.invalidateQueries({ queryKey: ['activities', operatorId] });
+      }
     },
   });
 };
+
 
 
 export const useFetchActivitiesByOperator = (operatorId: string) => {

@@ -3,10 +3,11 @@ import { AgGridReact } from 'ag-grid-react';
 import { ClientSideRowModelModule } from '@ag-grid-community/client-side-row-model';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
-import { Button, CircularProgress, Typography } from '@mui/material';
-import { useFetchActivities, useAddActivity } from '../../queries/activitiesQueries';
+import { Button, CircularProgress, IconButton, Typography } from '@mui/material';
+import { useFetchActivities, useAddActivity, useDeleteActivity } from '../../queries/activitiesQueries';
 import { Activity } from '../../types';
 import AddActivity from './ActvitiesCreate';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 const ActivitiesList: React.FC = () => {
   const { data: activities = [], isLoading, isError } = useFetchActivities();
@@ -15,6 +16,7 @@ const ActivitiesList: React.FC = () => {
   const addActivityMutation = useAddActivity();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [quickFilterText, setQuickFilterText] = useState('');
+  const deleteActivityMutation = useDeleteActivity();
 
   const handleAddClick = () => {
     setIsDialogOpen(true);
@@ -29,6 +31,10 @@ const ActivitiesList: React.FC = () => {
       await addActivityMutation.mutateAsync(activity);
     }
     setIsDialogOpen(false);
+  };
+
+  const handleDeleteActivity = (activityId: string) => {
+      deleteActivityMutation.mutate( activityId );
   };
 
   const columnDefs = useMemo(
@@ -76,6 +82,19 @@ const ActivitiesList: React.FC = () => {
         field: 'description',
         sortable: true,
         filter: true,
+      },
+      {
+        headerName: 'פעולות',
+        field: 'actions',
+        cellRenderer: (params: any) => (
+          <IconButton
+            onClick={() => handleDeleteActivity(params.data._id)}
+            color="error"
+          >
+            <DeleteIcon />
+          </IconButton>
+        ),
+        width: 100,
       },
     ],
     []

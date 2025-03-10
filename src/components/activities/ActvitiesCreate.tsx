@@ -98,6 +98,12 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd, default
       });
     }
     onAdd(newActivities);
+    setWeeklyActivities([{ classId: '', dayOfWeek: '', description: '' }]);
+    setSingleActivities([{ classId: '', date: null, description: '' }]);
+    setOperatorId( '');
+    setSelectedMonth(new Date());
+    setSelectedOption('weekly'); 
+
     onClose();
   };
 
