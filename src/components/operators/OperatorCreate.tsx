@@ -30,12 +30,9 @@ const OperatorCreate: React.FC = () => {
   const addOperatorMutation = useAddOperator();
   const navigate = useNavigate();
 
-
-
   const formik = useFormik({
     initialValues: {
       firstName: "",
-      description: "",
       lastName: "",
       phone: "",
       email: "",
@@ -43,23 +40,24 @@ const OperatorCreate: React.FC = () => {
       status: "",
       id: "",
       address: "",
+      description: "",
       paymentMethod: PaymentMethodChoicesEnum.NONE,
       businessDetails: {
         businessId: "",
         businessName: "",
       },
-      bankDetails: {
+      bankDetails: {              // הוספנו את השדה bankDetails כאן:
         bankName: "",
         accountNumber: "",
         branchNumber: "",
       },
-      gender:Gender.ALL,
-      educationType:EducationType.ALL,
+      gender: Gender.ALL,
+      educationType: EducationType.ALL,
+      isActive: true, 
     },
     validationSchema: OperatorSchema,
     onSubmit: (values) => {
-
-      addOperatorMutation.mutate(values,{
+      addOperatorMutation.mutate(values, {
         onError: (error) => {
           setSnackbarMessage(error?.message || "שגיאה בהוספת מפעיל");
           setSnackbarSeverity("error");
@@ -72,26 +70,35 @@ const OperatorCreate: React.FC = () => {
           formik.resetForm();
           setTimeout(() => navigate("/"), 3000);
         },
-      })
-    }
-});
+      });
+    },
+  });
 
   const handleSnackbarClose = () => {
     setSnackbarOpen(false);
   };
 
   return (
-    <Box sx={{ maxWidth: 700, margin: "auto", mt: 4, p: 3, boxShadow: 3, borderRadius: 2 }}>
+    <Box
+      sx={{
+        maxWidth: 700,
+        margin: "auto",
+        p: 3,
+        boxShadow: 3,
+        borderRadius: 2,
+        minHeight: 937,
+      }}
+    >
       <Typography variant="h4" gutterBottom color="primary">
         הוספת מפעיל חדש
       </Typography>
       <form onSubmit={formik.handleSubmit}>
-        {/* Personal Details */}
+        {/* פרטים אישיים */}
         <Typography variant="h6" gutterBottom>
           פרטים אישיים
         </Typography>
         <Grid container spacing={3}>
-          {/* First Name */}
+          {/* שם פרטי */}
           <Grid item xs={6}>
             <TextField
               label="שם פרטי"
@@ -112,7 +119,7 @@ const OperatorCreate: React.FC = () => {
             />
           </Grid>
 
-          {/* Last Name */}
+          {/* שם משפחה */}
           <Grid item xs={6}>
             <TextField
               label="שם משפחה"
@@ -133,7 +140,7 @@ const OperatorCreate: React.FC = () => {
             />
           </Grid>
 
-          {/* Phone */}
+          {/* טלפון */}
           <Grid item xs={6}>
             <TextField
               label="מספר טלפון"
@@ -154,7 +161,7 @@ const OperatorCreate: React.FC = () => {
             />
           </Grid>
 
-          {/* Email */}
+          {/* אימייל */}
           <Grid item xs={6}>
             <TextField
               label="כתובת אימייל"
@@ -175,7 +182,7 @@ const OperatorCreate: React.FC = () => {
             />
           </Grid>
 
-          {/* Id */}
+          {/* מספר זהות */}
           <Grid item xs={6}>
             <TextField
               label="מספר זהות"
@@ -189,7 +196,7 @@ const OperatorCreate: React.FC = () => {
             />
           </Grid>
 
-          {/* Password */}
+          {/* סיסמה */}
           <Grid item xs={6}>
             <PasswordField
               name="password"
@@ -198,12 +205,10 @@ const OperatorCreate: React.FC = () => {
               onBlur={formik.handleBlur}
               error={formik.touched.password && Boolean(formik.errors.password)}
             />
-          </Grid> 
-
-
+          </Grid>
         </Grid>
 
-        {/* Address */}
+        {/* כתובת */}
         <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
           כתובת
         </Typography>
@@ -228,8 +233,8 @@ const OperatorCreate: React.FC = () => {
             />
           </Grid>
 
-                  {/* Description */}
-                  <Grid item xs={12}>
+          {/* תיאור */}
+          <Grid item xs={12}>
             <TextField
               label="תיאור הפעלה"
               name="description"
@@ -241,46 +246,94 @@ const OperatorCreate: React.FC = () => {
               fullWidth
             />
           </Grid>
-
         </Grid>
 
-        {/* Payment Method */}
+        {/* פרטי תשלום */}
         <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
           פרטי תשלום
         </Typography>
         <Grid container spacing={3}>
           <Grid item xs={6}>
-          <TextField
-            select
-            label="אופן תשלום"
-            name="paymentMethod"
-            value={formik.values.paymentMethod}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={formik.touched.paymentMethod && Boolean(formik.errors.paymentMethod)}
-            helperText={formik.touched.paymentMethod && formik.errors.paymentMethod}
-            fullWidth
-          >
-            <MenuItem value={PaymentMethodChoicesEnum.NONE}>{PaymentMethodChoicesEnum.NONE}</MenuItem>
-            <MenuItem value={PaymentMethodChoicesEnum.CHEABONIT}>{PaymentMethodChoicesEnum.CHEABONIT}</MenuItem>
-            <MenuItem value={PaymentMethodChoicesEnum.TLUSH}>{PaymentMethodChoicesEnum.TLUSH}</MenuItem>
-          </TextField>
+            <TextField
+              select
+              label="אופן תשלום"
+              name="paymentMethod"
+              value={formik.values.paymentMethod}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              error={formik.touched.paymentMethod && Boolean(formik.errors.paymentMethod)}
+              helperText={formik.touched.paymentMethod && formik.errors.paymentMethod}
+              fullWidth
+            >
+              <MenuItem value={PaymentMethodChoicesEnum.NONE}>{PaymentMethodChoicesEnum.NONE}</MenuItem>
+              <MenuItem value={PaymentMethodChoicesEnum.CHEABONIT}>{PaymentMethodChoicesEnum.CHEABONIT}</MenuItem>
+              <MenuItem value={PaymentMethodChoicesEnum.TLUSH}>{PaymentMethodChoicesEnum.TLUSH}</MenuItem>
+            </TextField>
           </Grid>
         </Grid>
 
+        {/* פרטים נוספים: מגדר וסוג חינוך */}
+        <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
+          פרטים נוספים
+        </Typography>
+        <Grid container spacing={3}>
+          <Grid item xs={6}>
+            <TextField
+              select
+              label="מגדר"
+              name="gender"
+              value={formik.values.gender}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              error={formik.touched.gender && Boolean(formik.errors.gender)}
+              helperText={formik.touched.gender && formik.errors.gender}
+              fullWidth
+            >
+              <MenuItem value={Gender.MALE}>{Gender.MALE}</MenuItem>
+              <MenuItem value={Gender.FEMALE}>{Gender.FEMALE}</MenuItem>
+              <MenuItem value={Gender.ALL}>{Gender.ALL}</MenuItem>
+            </TextField>
+          </Grid>
 
-          {/* Business Details */}
-          <Typography variant="subtitle1">פרטי עסק</Typography>
-          <Grid container spacing={1}>
-          <Grid item xs={6} >
+          <Grid item xs={6}>
+            <TextField
+              select
+              label="סוג חינוך"
+              name="educationType"
+              value={formik.values.educationType}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              error={formik.touched.educationType && Boolean(formik.errors.educationType)}
+              helperText={formik.touched.educationType && formik.errors.educationType}
+              fullWidth
+            >
+              <MenuItem value={EducationType.BASIC}>{EducationType.BASIC}</MenuItem>
+              <MenuItem value={EducationType.SPECIAL}>{EducationType.SPECIAL}</MenuItem>
+              <MenuItem value={EducationType.ALL}>{EducationType.ALL}</MenuItem>
+            </TextField>
+          </Grid>
+        </Grid>
+
+        {/* פרטי עסק */}
+        <Typography variant="subtitle1" sx={{ mt: 3 }}>
+          פרטי עסק
+        </Typography>
+        <Grid container spacing={1}>
+          <Grid item xs={6}>
             <TextField
               label="ח.פ. עסק"
               name="businessDetails.businessId"
               value={formik.values.businessDetails.businessId}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              error={formik.touched.businessDetails?.businessId && Boolean(formik.errors.businessDetails?.businessId)}
-              helperText={formik.touched.businessDetails?.businessId && formik.errors.businessDetails?.businessId}
+              error={
+                formik.touched.businessDetails?.businessId &&
+                Boolean(formik.errors.businessDetails?.businessId)
+              }
+              helperText={
+                formik.touched.businessDetails?.businessId &&
+                formik.errors.businessDetails?.businessId
+              }
               fullWidth
               InputProps={{
                 startAdornment: (
@@ -292,15 +345,21 @@ const OperatorCreate: React.FC = () => {
             />
           </Grid>
 
-          <Grid item xs={6} >
+          <Grid item xs={6}>
             <TextField
               label="שם העסק"
               name="businessDetails.businessName"
               value={formik.values.businessDetails.businessName}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              error={formik.touched.businessDetails?.businessName && Boolean(formik.errors.businessDetails?.businessName)}
-              helperText={formik.touched.businessDetails?.businessName && formik.errors.businessDetails?.businessName}
+              error={
+                formik.touched.businessDetails?.businessName &&
+                Boolean(formik.errors.businessDetails?.businessName)
+              }
+              helperText={
+                formik.touched.businessDetails?.businessName &&
+                formik.errors.businessDetails?.businessName
+              }
               fullWidth
               InputProps={{
                 startAdornment: (
@@ -311,9 +370,8 @@ const OperatorCreate: React.FC = () => {
               }}
             />
           </Grid>
-          </Grid>
+        </Grid>
 
-        {/* Bank Details */}
         <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
           פרטי בנק
         </Typography>
@@ -379,7 +437,8 @@ const OperatorCreate: React.FC = () => {
           </Grid>
         </Grid>
 
-        {/* Submit Button */}
+        {/* ניתן להוסיף כאן שדות נוספים אם יש צורך לטפל בפרטי בנק, אך במודל Operator קיים רק bankDetailsId */}
+        {/* כפתור הגשה */}
         <Grid container justifyContent="center" sx={{ mt: 4 }}>
           <Button type="submit" variant="contained" color="primary">
             הוספת מפעיל
@@ -387,7 +446,7 @@ const OperatorCreate: React.FC = () => {
         </Grid>
       </form>
 
-      {/* Snackbar */}
+      {/* Snackbar להצגת הודעות */}
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={3000}

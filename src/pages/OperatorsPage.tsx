@@ -1,43 +1,64 @@
 import React, { useState } from "react";
-import { Button, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
+import { Container, Grid, Typography, Box, Button } from "@mui/material";
 import OperatorList from "../components/operators/OperatorList";
 import OperatorCreate from "../components/operators/OperatorCreate";
 
 const OperatorsPage: React.FC = () => {
-  const [open, setOpen] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
 
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
+  const toggleCreate = () => {
+    setShowCreate((prev) => !prev);
+  };
 
   return (
-    <div>
-      <h1>ניהול מפעילים</h1>
-      {/* כפתור לפתיחת החלון */}
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={handleOpen}
-        sx={{ marginBottom: "20px" }}
-      >
-        הוספת מפעיל חדש
-      </Button>
-      
-      {/* רשימת מפעילים */}
-      <OperatorList />
+    <Container maxWidth="xl" sx={{ mt: 4 }}>
+      {showCreate ? (
 
-      {/* פופאפ של הוספת מפעיל */}
-      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
-        <DialogTitle>הוספת מפעיל חדש</DialogTitle>
-        <DialogContent>
-          <OperatorCreate />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose} color="secondary">
-            ביטול וחזרה
+        <Grid container spacing={4}>
+
+          <Grid item xs={12} md={6}>
+            <Box sx={{ boxShadow: 3, p: 2, borderRadius: 2 }}>
+              <OperatorList />
+            </Box>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Box sx={{ boxShadow: 3, p: 2, borderRadius: 2 }}>
+              <OperatorCreate />
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={toggleCreate}
+                fullWidth
+                sx={{ mt: 2 }}
+              >
+                סגור טופס הוספת מפעיל
+              </Button>
+            </Box>
+          </Grid>
+        </Grid>
+      ) : (
+
+        <Box sx={{ position: "relative" }}>
+          <Box sx={{ boxShadow: 3, p: 2, borderRadius: 2 }}>
+            <OperatorList />
+          </Box>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={toggleCreate}
+            sx={{
+              position: "absolute",
+              top: 16,
+              right: 16,
+              minWidth: "auto",
+              padding: "8px 12px",
+            }}
+          >
+            הוסף מפעיל
           </Button>
-        </DialogActions>
-      </Dialog>
-    </div>
+        </Box>
+      )}
+    </Container>
   );
 };
 

@@ -22,6 +22,9 @@ const OperatorList: React.FC = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  const [page, setPage] = useState(0);
+  const pageSize = 9;
+
   const handleDelete = (id: string) => {
     if (window.confirm('Are you sure you want to delete this operator?')) {
       deleteMutation.mutate(id);
@@ -32,25 +35,29 @@ const OperatorList: React.FC = () => {
     setExpandedId(expandedId === id ? null : id);
   };
 
-  // ✅ מיון לפי שם משפחה בסדר עולה (א' → ת')
   const sortedOperators = useMemo(() => {
     if (!operators) return [];
     return [...operators].sort((a, b) => a.lastName.localeCompare(b.lastName, 'he'));
   }, [operators]);
 
+  const totalPages = Math.ceil(sortedOperators.length / pageSize);
+
+  const currentOperators = useMemo(() => {
+    return sortedOperators.slice(page * pageSize, (page + 1) * pageSize);
+  }, [sortedOperators, page]);
+
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Error loading operators.</div>;
 
   return (
-    <div style={{ padding: '20px', maxWidth: '1200px', margin: 'auto' }}>
+    <div style={{ padding: '20px', maxWidth: '1200px', margin: 'auto' , minHeight:937}}>
       <Typography variant="h4" gutterBottom textAlign="center" color="primary">
         רשימת מפעילים
       </Typography>
-      {sortedOperators.map((operator: any) => (
+      
+      {currentOperators.map((operator: any) => (
         <Card key={operator._id} sx={{ mb: 2, boxShadow: 3, borderRadius: 2 }}>
           <Grid container alignItems="center">
-            
-            {/* ✅ חלק ימני - כפתורים */}
             <Grid 
               item 
               xs={2} 
@@ -72,7 +79,6 @@ const OperatorList: React.FC = () => {
               </IconButton>
             </Grid>
 
-            {/* ✅ חלק שמאלי - שם מפעיל + חץ לפתיחה */}
             <Grid 
               item 
               xs={10} 
@@ -86,15 +92,15 @@ const OperatorList: React.FC = () => {
                 borderBottomRightRadius: '10px'
               }}
             >
-              <Typography variant="h6">{operator.lastName} {operator.firstName}</Typography>
+              <Typography variant="h6">
+                {operator.lastName} {operator.firstName}
+              </Typography>
               <IconButton onClick={() => toggleExpand(operator._id)}>
                 {expandedId === operator._id ? <ExpandLessIcon /> : <ExpandMoreIcon />}
               </IconButton>
             </Grid>
-
           </Grid>
 
-          {/* ✅ הרחבת השורה בלחיצה */}
           <Collapse in={expandedId === operator._id} timeout="auto" unmountOnExit>
             <Divider />
             <CardContent sx={{ backgroundColor: '#fafafa' }}>
@@ -108,6 +114,27 @@ const OperatorList: React.FC = () => {
           </Collapse>
         </Card>
       ))}
+
+
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', gap: '20px' }}>
+        <Button 
+          variant="contained" 
+          onClick={() => setPage(prev => prev - 1)} 
+          disabled={page === 0}
+        >
+          הקודם
+        </Button>
+        <Typography variant="body1" sx={{ alignSelf: 'center' }}>
+          עמוד {page + 1} מתוך {totalPages}
+        </Typography>
+        <Button 
+          variant="contained" 
+          onClick={() => setPage(prev => prev + 1)} 
+          disabled={page >= totalPages - 1}
+        >
+          הבא
+        </Button>
+      </div>
     </div>
   );
 };
