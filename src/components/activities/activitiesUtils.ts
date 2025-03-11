@@ -74,35 +74,32 @@ export const exportAnnualReportExcel = (
       const date = new Date(a.date);
       return date.getMonth() === monthIndex;
     });
+  
+    // יוצרים שורה אחת לכל חודש
+    const row: any[] = [month];
+  
+    // מוסיפים עד 5 הפעלות מקסימום
+    for (let j = 0; j < 5; j++) {
+      if (monthActivities[j]) {
+        const activity = monthActivities[j];
 
-    let maxRows = monthActivities.length;
-    if (maxRows === 0) maxRows = 1; // מינימום שורה אחת לכל חודש
-
-    for (let i = 0; i < maxRows; i++) {
-      const row: any[] = [i === 0 ? month : ""]; // רושמים את שם החודש רק פעם אחת
-
-      // מוסיפים זוגות של (תאריך, מפעיל) עבור כל חודש
-      for (let j = 0; j < 6; j++) { // עד 6 הפעלות בחודש
-        if (monthActivities[j]) {
-          const activity = monthActivities[j];
-      
-          // בודקים האם `operatorId` הוא מחרוזת או אובייקט
-          const operatorName = typeof activity.operatorId === 'string'
-            ? 'לא ידוע'
-            : `${activity.operatorId?.firstName ?? 'לא ידוע'} ${activity.operatorId?.lastName ?? ''}`.trim();
-      
-          row.push(new Date(activity.date).toLocaleDateString('he-IL'));
-          row.push(operatorName);
-        } else {
-          row.push("");
-          row.push("");
-        }
+        // בודקים האם `operatorId` הוא מחרוזת או אובייקט
+        const operatorName = typeof activity.operatorId === 'string'
+          ? 'לא ידוע'
+          : `${activity.operatorId?.firstName ?? 'לא ידוע'} ${activity.operatorId?.lastName ?? ''}`.trim();
+    
+        row.push(new Date(activity.date).toLocaleDateString('he-IL'));
+        row.push(operatorName);
+      } else {
+        row.push(""); // אם אין נתונים, מוסיפים תאים ריקים
+        row.push("");
       }
-      
-      row.push(monthActivities.length); // סה"כ הפעלות בחודש
-      reportData.push(row);
     }
+  
+    row.push(monthActivities.length); // עמודת סכום כולל
+    reportData.push(row);
   });
+  
 
   // יצירת גיליון עבודה (worksheet)
   const worksheet = XLSX.utils.aoa_to_sheet(reportData);
