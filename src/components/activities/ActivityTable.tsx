@@ -1,15 +1,15 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { AgGridReact } from 'ag-grid-react';
-import { Box, TextField } from '@mui/material';
-import IconButton from '@mui/material/IconButton';
+import { Box, TextField, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Button, List, ListItem, ListItemText, Typography } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { AggregatedRow } from './activitiesUtils'; // שימוש בטיפוס הנכון
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import { AggregatedRow } from './activitiesUtils';
 
 interface ActivityTableProps {
   filteredAggregatedData: AggregatedRow[];
   quickFilterText: string;
   setQuickFilterText: (value: string) => void;
-  handleDeleteActivity: (activityId: string) => void;
+  handleDeleteActivity: (activityIds: string[]) => void;
 }
 
 const ActivityTable: React.FC<ActivityTableProps> = ({
@@ -18,16 +18,58 @@ const ActivityTable: React.FC<ActivityTableProps> = ({
   setQuickFilterText,
   handleDeleteActivity
 }) => {
+  const [openDetails, setOpenDetails] = useState(false);
+  const [selectedActivities, setSelectedActivities] = useState<any[]>([]);
+
+  // פונקציה לפתיחת המודל
+  const handleOpenDetails = (activities: any[]) => {
+    setSelectedActivities(activities);
+    setOpenDetails(true);
+  };
+
+  // פונקציה לסגירת המודל
+  const handleCloseDetails = () => {
+    setOpenDetails(false);
+    setSelectedActivities([]);
+  };
+
+  // פונקציה למחיקת פעילות אחת מתוך המודל
+  const handleDeleteSingleActivity = (activityId: string) => {
+    handleDeleteActivity([activityId]);
+    setSelectedActivities(prev => prev.filter(activity => activity._id !== activityId));
+  };
+
   const columnDefs = useMemo(() => [
     { headerName: 'חודש', field: 'month', sortable: true, filter: true },
     { headerName: 'מפעיל', field: 'operator', sortable: true, filter: true },
     { headerName: 'סה"כ הפעלות', field: 'count', sortable: true, filter: true },
-    { headerName: 'פעולות', field: 'actions', 
-      cellRenderer: (params: any) => (
-        <IconButton onClick={() => handleDeleteActivity(params.data._id)} color="error">
-          <DeleteIcon />
-        </IconButton>
-      ) 
+    { 
+      headerName: 'פעולות', 
+      field: 'actions',
+      cellRenderer: (params: any) => {
+        const activityIds = params.data.activities?.map((activity: any) => activity._id) || [];
+        
+        return (
+          <div>
+            {/* כפתור עין לפתיחת המידע */}
+            <IconButton 
+              onClick={() => handleOpenDetails(params.data.activities || [])} 
+              color="primary"
+            >
+              <VisibilityIcon />
+            </IconButton>
+
+            {/* כפתור מחיקה לכל השורה */}
+            <IconButton 
+              onClick={() => handleDeleteActivity(activityIds)} 
+              color="error"
+              disabled={activityIds.length === 0} 
+            >
+              <DeleteIcon />
+            </IconButton>
+          </div>
+        );
+      } 
     }
   ], []);
 
@@ -48,6 +90,36 @@ const ActivityTable: React.FC<ActivityTableProps> = ({
           enableRtl={true} 
         />
       </div>
+
+      {/* דיאלוג הצגת הפעילויות */}
+      <Dialog open={openDetails} onClose={handleCloseDetails} fullWidth>
+        <DialogTitle>פרטי הפעלות</DialogTitle>
+        <DialogContent>
+          {selectedActivities.length > 0 ? (
+            <List>
+              {selectedActivities.map(activity => (
+                <ListItem key={activity._id} sx={{ display: "flex", justifyContent: "space-between" }}>
+                  <ListItemText 
+                    primary={`תאריך: ${new Date(activity.date).toLocaleDateString('he-IL')}`}
+                    secondary={`סמל קבוצה: ${typeof activity.classId === 'string' ? 'לא ידוע' : activity.classId.uniqueSymbol}`}
+                  />
+                  <IconButton 
+                    onClick={() => handleDeleteSingleActivity(activity._id)} 
+                    color="error"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Typography>אין פעילויות להצגה.</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDetails} color="primary">סגור</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

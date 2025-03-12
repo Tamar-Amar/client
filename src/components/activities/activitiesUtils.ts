@@ -9,6 +9,7 @@ export interface AggregatedRow {
   groupSymbol: string;
   compositeKey: string;
   count: number;
+  activities: Activity[];
 }
 
 export const exportAnnualReportExcel = (
@@ -243,8 +244,43 @@ export const exportMonthlyReportExcel = (activities: Activity[], detailInfo: any
   };
   
 
+// export const getAggregatedDataO = (activities: Activity[]): AggregatedRow[] => {
+//   const groups: Record<string, AggregatedRow> = {};
+//   activities.forEach(activity => {
+//     const date = new Date(activity.date);
+//     const monthStr = date.toLocaleString('he-IL', { month: 'long', year: 'numeric' });
+//     const operatorName =
+//       typeof activity.operatorId === 'string'
+//         ? 'לא ידוע'
+//         : `${activity.operatorId.firstName} ${activity.operatorId.lastName}`;
+//     const groupName =
+//       typeof activity.classId === 'string'
+//         ? 'לא ידוע'
+//         : activity.classId.name;
+//     const groupSymbol =
+//       typeof activity.classId === 'string'
+//         ? 'לא ידוע'
+//         : activity.classId.uniqueSymbol;
+//     const compositeKey = `${groupSymbol} ${groupName}`.trim();
+//     const key = `${monthStr} ${operatorName} ${groupName} ${groupSymbol}`;
+//     if (!groups[key]) {
+//       groups[key] = {
+//         month: monthStr,
+//         operator: operatorName,
+//         groupName,
+//         groupSymbol,
+//         compositeKey,
+//         count: 0,
+//       };
+//     }
+//     groups[key].count++;
+//   });
+//   return Object.values(groups);
+// };
+
 export const getAggregatedData = (activities: Activity[]): AggregatedRow[] => {
   const groups: Record<string, AggregatedRow> = {};
+
   activities.forEach(activity => {
     const date = new Date(activity.date);
     const monthStr = date.toLocaleString('he-IL', { month: 'long', year: 'numeric' });
@@ -262,6 +298,7 @@ export const getAggregatedData = (activities: Activity[]): AggregatedRow[] => {
         : activity.classId.uniqueSymbol;
     const compositeKey = `${groupSymbol} ${groupName}`.trim();
     const key = `${monthStr} ${operatorName} ${groupName} ${groupSymbol}`;
+
     if (!groups[key]) {
       groups[key] = {
         month: monthStr,
@@ -270,12 +307,17 @@ export const getAggregatedData = (activities: Activity[]): AggregatedRow[] => {
         groupSymbol,
         compositeKey,
         count: 0,
+        activities: [] // נוסיף כאן רשימה של הפעילויות
       };
     }
+
     groups[key].count++;
+    groups[key].activities.push(activity); // נוסיף את הפעילות כאן
   });
+
   return Object.values(groups);
 };
+
 
 export const getMonthOptions = (aggregatedData: AggregatedRow[]): string[] => {
   const set = new Set<string>();

@@ -14,10 +14,11 @@ export const useAddActivity = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createActivity,
-    onSuccess: (newActivity: Activity) => {
-      queryClient.setQueryData(['activities'], (oldData: Activity[] | undefined) => {
-        return oldData ? [...oldData, newActivity] : [newActivity];
-      });
+    onSuccess: async(newActivity: Activity) => {
+      // queryClient.setQueryData(['activities'], (oldData: Activity[] | undefined) => {
+      //   return oldData ? [...oldData, newActivity] : [newActivity];
+      // });
+      await queryClient.invalidateQueries({ queryKey: ['activities'] });
     },
   });
 };

@@ -43,9 +43,7 @@ const AppContent: React.FC = () => {
   return (
     <BrowserRouter>
       <DynamicNavbar onLogout={handleLogout} />
-      <Box sx={{ paddingTop: '60px' }}>
         <AppRoutes />
-      </Box>
     </BrowserRouter>
   );
 };

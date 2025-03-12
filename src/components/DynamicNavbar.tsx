@@ -15,14 +15,11 @@ const DynamicNavbar: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     { label: 'ניהול מפעילים', path: '/operators' },
     { label: 'ניהול קבוצות', path: '/classes' },
     { label: 'ניהול אנשי קשר', path: '/contacts' },
-    { label: 'יצירת מסמך נוכחות', path: '/report-pdf' },
-    { label: 'יומן נוכחות', path: '/attendance' },
   ];
 
   const operatorTabs = [
     { label: 'פרטים אישיים', path: '/personal-details' },
     { label: 'היסטוריית הפעלות', path: '/activity-history' },
-    { label: 'יצירת מסמך נוכחות', path: '/report-pdf' },
   ];
 
   const loginTab = [{ label: 'התחבר', path: '/login' }];
