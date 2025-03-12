@@ -1,9 +1,10 @@
 import React from "react";
-import Activities from "../components/activities/ActivitiesList";
+import ActivitiesList from "../components/activities/ActivitiesList";
+
 
 const ActivitiesPage = () => {
     return <div>
-        <Activities/>
+        <ActivitiesList/>
       </div>;
   };
   
