@@ -15,6 +15,7 @@ import {
   RadioGroup,
   FormControlLabel,
   Radio,
+  Checkbox,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -37,6 +38,7 @@ interface AddActivityProps {
 const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd, defaultOperatorId }) => {
   const { data: classes = [] } = useFetchClasses();
   const { data: operators = [] } = useFetchOperators();
+  const [excludeHanukkah, setExcludeHanukkah] = useState(false);
   const [selectedOption, setSelectedOption] = useState<'weekly' | 'single'>('weekly');
   const [weeklyActivities, setWeeklyActivities] = useState<{ classId: string; dayOfWeek: string; description: string }[]>([
     { classId: '', dayOfWeek: '', description: '' },
@@ -64,8 +66,16 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd, default
     const start = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() - 1, 26);
     const end = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), 25);
     const dates: Date[] = [];
+
     for (let date = start; date <= end; date = addDays(date, 1)) {
       if (getDay(date).toString() === dayOfWeek) {
+        if (
+          excludeHanukkah &&
+          date >= new Date(selectedMonth.getFullYear() - 1, 11, 29) &&
+          date <= new Date(selectedMonth.getFullYear(), 0, 2)
+        ) {
+          continue;
+        }
         dates.push(new Date(date));
       }
     }
@@ -148,6 +158,12 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd, default
                   onChange={(newMonth) => setSelectedMonth(newMonth)}
                 />
               </FormControl>
+              {selectedMonth?.getMonth() === 0 && (
+            <FormControlLabel
+              control={<Checkbox checked={excludeHanukkah} onChange={(e) => setExcludeHanukkah(e.target.checked)} />}
+              label="אין לרשום פעילויות בחג החנוכה"
+            />
+          )}
               {weeklyActivities.map((activity, index) => (
                 <Box display="flex" gap={2} mb={2} key={index}>
                   <Autocomplete
