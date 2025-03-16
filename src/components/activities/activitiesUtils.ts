@@ -283,19 +283,35 @@ export const getAggregatedData = (activities: Activity[]): AggregatedRow[] => {
 
   activities.forEach(activity => {
     const date = new Date(activity.date);
-    const monthStr = date.toLocaleString('he-IL', { month: 'long', year: 'numeric' });
+    
+    // חישוב החודש לפי 26 של החודש הקודם עד 25 של החודש הנוכחי
+    let month = date.getMonth();
+    let year = date.getFullYear();
+    if (date.getDate() >= 26) {
+      month++;
+      if (month > 11) {
+        month = 0;
+        year++;
+      }
+    }
+
+    const monthStr = new Date(year, month).toLocaleString('he-IL', { month: 'long', year: 'numeric' });
+
     const operatorName =
       typeof activity.operatorId === 'string'
         ? 'לא ידוע'
         : `${activity.operatorId.firstName} ${activity.operatorId.lastName}`;
+    
     const groupName =
       typeof activity.classId === 'string'
         ? 'לא ידוע'
         : activity.classId.name;
+    
     const groupSymbol =
       typeof activity.classId === 'string'
         ? 'לא ידוע'
         : activity.classId.uniqueSymbol;
+    
     const compositeKey = `${groupSymbol} ${groupName}`.trim();
     const key = `${monthStr} ${operatorName} ${groupName} ${groupSymbol}`;
 
@@ -307,16 +323,17 @@ export const getAggregatedData = (activities: Activity[]): AggregatedRow[] => {
         groupSymbol,
         compositeKey,
         count: 0,
-        activities: [] // נוסיף כאן רשימה של הפעילויות
+        activities: []
       };
     }
 
     groups[key].count++;
-    groups[key].activities.push(activity); // נוסיף את הפעילות כאן
+    groups[key].activities.push(activity);
   });
 
   return Object.values(groups);
 };
+
 
 
 export const getMonthOptions = (aggregatedData: AggregatedRow[]): string[] => {
