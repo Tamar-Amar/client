@@ -7,7 +7,8 @@ import {
   Collapse, 
   Grid, 
   Divider, 
-  Button 
+  Button, 
+  TextField 
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
@@ -21,7 +22,7 @@ const OperatorList: React.FC = () => {
   const deleteMutation = useDeleteOperator();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const navigate = useNavigate();
-
+  const [searchTerm, setSearchTerm] = useState(""); // 🔍 משתנה לחיפוש
   const [page, setPage] = useState(0);
   const pageSize = 9;
 
@@ -40,21 +41,37 @@ const OperatorList: React.FC = () => {
     return [...operators].sort((a, b) => a.lastName.localeCompare(b.lastName, 'he'));
   }, [operators]);
 
-  const totalPages = Math.ceil(sortedOperators.length / pageSize);
+  // 🔍 סינון רשימת המפעילים לפי החיפוש
+  const filteredOperators = useMemo(() => {
+    return sortedOperators.filter((operator: any) =>
+      `${operator.firstName} ${operator.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [sortedOperators, searchTerm]);
+
+  const totalPages = Math.ceil(filteredOperators.length / pageSize);
 
   const currentOperators = useMemo(() => {
-    return sortedOperators.slice(page * pageSize, (page + 1) * pageSize);
-  }, [sortedOperators, page]);
+    return filteredOperators.slice(page * pageSize, (page + 1) * pageSize);
+  }, [filteredOperators, page]);
 
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Error loading operators.</div>;
 
   return (
-    <div style={{ padding: '20px', maxWidth: '1200px', margin: 'auto' , minHeight:937}}>
+    <div style={{ padding: '20px', maxWidth: '1200px', margin: 'auto', minHeight: 937 }}>
       <Typography variant="h4" gutterBottom textAlign="center" color="primary">
         רשימת מפעילים
       </Typography>
-      
+
+      {/* 🔍 שדה חיפוש */}
+      <TextField
+        label="חפש מפעיל"
+        variant="outlined"
+        fullWidth
+        sx={{ mb: 2 }}
+        onChange={(e) => setSearchTerm(e.target.value)}
+      />
+
       {currentOperators.map((operator: any) => (
         <Card key={operator._id} sx={{ mb: 2, boxShadow: 3, borderRadius: 2 }}>
           <Grid container alignItems="center">
@@ -115,7 +132,7 @@ const OperatorList: React.FC = () => {
         </Card>
       ))}
 
-
+      {/* ניווט בין דפים */}
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', gap: '20px' }}>
         <Button 
           variant="contained" 

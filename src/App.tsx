@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router-dom';
 import AppRoutes from './routes/AppRoutes';
 import { CacheProvider } from '@emotion/react';
 import rtlCache from './theme/mui-rtl';
+//hadas
 import { QueryClientProvider } from '@tanstack/react-query';
 import { RecoilRoot, useSetRecoilState } from 'recoil';
 import queryClient from './queryClient';
