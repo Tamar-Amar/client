@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Box, Button, Typography, CircularProgress, Grid, TextField } from '@mui/material';
+import { Box, Button, Typography, CircularProgress, Grid, TextField, Snackbar, Alert } from '@mui/material';
 import { useFetchActivities, useAddActivity, useDeleteActivity } from '../../queries/activitiesQueries';
 import { Activity } from '../../types';
 import { getAggregatedData, filterAggregatedData, getDetailInfo, AggregatedRow, DetailInfo } from './activitiesUtils';
@@ -11,7 +11,7 @@ import GeneralStats from './GeneralStats';
 
 const Activities: React.FC = () => {
   const { data: activities = [], isLoading, isError } = useFetchActivities();
-  const addActivityMutation = useAddActivity();
+  const { mutation: addActivityMutation, errorMessage, setErrorMessage } = useAddActivity();
   const deleteActivityMutation = useDeleteActivity();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -25,12 +25,15 @@ const Activities: React.FC = () => {
   const handleAddClick = () => setIsDialogOpen(true);
   const handleDialogClose = () => setIsDialogOpen(false);
 
+
   const handleActivityAdded = async (newActivities: Activity[]) => {
     for (const activity of newActivities) {
       await addActivityMutation.mutateAsync(activity);
     }
     setIsDialogOpen(false);
   };
+
+  
 
   const handleDeleteActivity = (activityIds: string[]) => {
     activityIds.forEach(activityId => {
@@ -132,6 +135,19 @@ const Activities: React.FC = () => {
       </Grid>
 
       <AddActivity open={isDialogOpen} onClose={handleDialogClose} onAdd={handleActivityAdded} />
+
+            {/* הוספת הודעת שגיאה מעוצבת */}
+            <Snackbar
+              open={!!errorMessage}
+              autoHideDuration={5000}
+              onClose={() => setErrorMessage(null)}
+              anchorOrigin={{ vertical: "top", horizontal: "center" }}
+            >
+              <Alert severity="warning" onClose={() => setErrorMessage(null)}>
+                {errorMessage}
+              </Alert>
+            </Snackbar>
+
     </Box>
   );
   

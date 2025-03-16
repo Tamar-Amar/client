@@ -115,26 +115,17 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd, default
       <Dialog open={open} onClose={onClose}>
         <DialogTitle>דיווח נוכחות</DialogTitle>
         <DialogContent>
-          <FormControl fullWidth margin="normal" disabled={!!defaultOperatorId}>
-            <InputLabel>בחר מפעיל</InputLabel>
-            <Select
-              value={operatorId}
-              onChange={(e) => setOperatorId(e.target.value)}
-              sx={{
-                '& .MuiInputBase-root.Mui-disabled': {
-                  color: 'black',
-                  backgroundColor: 'rgba(117, 214, 252, 0.37)',
-                  WebkitTextFillColor: 'black',
-                },
-              }}
-            >
-              {operators.map((op: Operator) => (
-                <MenuItem key={op._id} value={op._id}>
-                  {op.firstName} {op.lastName}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+        <FormControl fullWidth margin="normal" disabled={!!defaultOperatorId}>
+          <Autocomplete
+            options={[...operators].sort((a, b) => a.lastName.localeCompare(b.lastName))} // מיון לפי שם משפחה
+            getOptionLabel={(option) => `${option.lastName}  ${option.firstName} (${option.id})`} // תצוגת השם
+            value={operators.find((op:Operator) => op._id === operatorId) || null} // תומך בבחירת מפעיל קיים
+            onChange={(event, newValue) => setOperatorId(newValue ? newValue._id : '')} // עדכון ID של מפעיל
+            renderInput={(params) => <TextField {...params} label="בחר מפעיל" />}
+            fullWidth
+          />
+        </FormControl>
+
           <Box mb={2}>
             <RadioGroup
               value={selectedOption}

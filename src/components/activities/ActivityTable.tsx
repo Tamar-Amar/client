@@ -21,25 +21,23 @@ const ActivityTable: React.FC<ActivityTableProps> = ({
   const [openDetails, setOpenDetails] = useState(false);
   const [selectedActivities, setSelectedActivities] = useState<any[]>([]);
 
-  // פונקציה לפתיחת המודל
   const handleOpenDetails = (activities: any[]) => {
     setSelectedActivities(activities);
     setOpenDetails(true);
   };
 
-  // פונקציה לסגירת המודל
   const handleCloseDetails = () => {
     setOpenDetails(false);
     setSelectedActivities([]);
   };
 
-  // פונקציה למחיקת פעילות אחת מתוך המודל
   const handleDeleteSingleActivity = (activityId: string) => {
     handleDeleteActivity([activityId]);
     setSelectedActivities(prev => prev.filter(activity => activity._id !== activityId));
   };
 
   const columnDefs = useMemo(() => [
+    { headerName: 'סמל קבוצה', field: 'groupSymbol', sortable: true, filter: true, width: 120 },
     { headerName: 'חודש', field: 'month', sortable: true, filter: true },
     { headerName: 'מפעיל', field: 'operator', sortable: true, filter: true },
     { headerName: 'סה"כ הפעלות', field: 'count', sortable: true, filter: true },
@@ -48,23 +46,18 @@ const ActivityTable: React.FC<ActivityTableProps> = ({
       field: 'actions',
       cellRenderer: (params: any) => {
         const activityIds = params.data.activities?.map((activity: any) => activity._id) || [];
-        
         return (
           <div>
-            {/* כפתור עין לפתיחת המידע */}
             <IconButton 
               onClick={() => handleOpenDetails(params.data.activities || [])} 
               color="primary"
             >
               <VisibilityIcon />
             </IconButton>
-
-            {/* כפתור מחיקה לכל השורה */}
             <IconButton 
               onClick={() => handleDeleteActivity(activityIds)} 
               color="error"
-              disabled={activityIds.length === 0} 
-            >
+              disabled={activityIds.length === 0} >
               <DeleteIcon />
             </IconButton>
           </div>
@@ -88,10 +81,14 @@ const ActivityTable: React.FC<ActivityTableProps> = ({
           pagination={true} 
           quickFilterText={quickFilterText} 
           enableRtl={true} 
+          defaultColDef={{
+            flex: 1, 
+            minWidth: 100, 
+            resizable: true,
+          }}
         />
       </div>
 
-      {/* דיאלוג הצגת הפעילויות */}
       <Dialog open={openDetails} onClose={handleCloseDetails} fullWidth>
         <DialogTitle>פרטי הפעלות</DialogTitle>
         <DialogContent>
