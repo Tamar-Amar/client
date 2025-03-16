@@ -19,11 +19,28 @@ export const fetchActivitiesByOperator = async (operatorId: string): Promise<Act
   return response.data;
 };
 
-export const createActivity = async (activity: Activity): Promise<Activity> => {
-  console.log(activity);
-  const response = await axios.post(API_URL, activity);
-  return response.data;
-};
+type ActivityResponse =
+  | Activity 
+  | { message: string; existingActivity: Activity };
+
+  export const createActivity = async (activity: Activity): Promise<Activity | null> => {
+    try {
+      console.log("Creating activity:", activity);
+      const response = await axios.post<ActivityResponse>(API_URL, activity);
+  
+      if ("message" in response.data) {
+        return response.data.existingActivity; 
+      }
+  
+      return response.data; 
+    } catch (error: any) {
+      console.error("Error adding activity:", error);
+      return null; 
+    }
+  };
+  
+
+
 
 export const updatePresence = async (activityId: string, presence: any): Promise<Activity> => {
   const response = await axios.put(`${API_URL}/presence`, {
