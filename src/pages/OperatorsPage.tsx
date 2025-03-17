@@ -1,63 +1,47 @@
 import React, { useState } from "react";
-import { Container, Grid, Typography, Box, Button } from "@mui/material";
+import { Container, Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, Typography } from "@mui/material";
 import OperatorList from "../components/operators/OperatorList";
 import OperatorCreate from "../components/operators/OperatorCreate";
 
 const OperatorsPage: React.FC = () => {
-  const [showCreate, setShowCreate] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
 
-  const toggleCreate = () => {
-    setShowCreate((prev) => !prev);
+  const handleOpenDialog = () => {
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
   };
 
   return (
     <Container maxWidth="xl" sx={{ mt: 4 }}>
-      {showCreate ? (
+      {/* כותרת עם כפתור מתחתיה */}
+      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 3 }}>
+        <Typography variant="h4" fontWeight="bold">ניהול מפעילים</Typography>
+        <Button 
+          variant="contained" 
+          color="primary" 
+          onClick={handleOpenDialog}
+          sx={{ mt: 2, px: 4, py: 1.5, fontSize: "1.1rem" }}
+        >
+          הוסף מפעיל
+        </Button>
+      </Box>
 
-        <Grid container spacing={4}>
+      <OperatorList />
 
-          <Grid item xs={12} md={6}>
-            <Box sx={{ boxShadow: 3, p: 2, borderRadius: 2 }}>
-              <OperatorList />
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Box sx={{ boxShadow: 3, p: 2, borderRadius: 2 }}>
-              <OperatorCreate />
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={toggleCreate}
-                fullWidth
-                sx={{ mt: 2 }}
-              >
-                סגור טופס הוספת מפעיל
-              </Button>
-            </Box>
-          </Grid>
-        </Grid>
-      ) : (
-
-        <Box sx={{ position: "relative" }}>
-          <Box sx={{ boxShadow: 3, p: 2, borderRadius: 2 }}>
-            <OperatorList />
-          </Box>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={toggleCreate}
-            sx={{
-              position: "absolute",
-              top: 16,
-              right: 16,
-              minWidth: "auto",
-              padding: "8px 12px",
-            }}
-          >
-            הוסף מפעיל
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>הוסף מפעיל</DialogTitle>
+        <DialogContent>
+          <OperatorCreate />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="secondary">
+            סגור
           </Button>
-        </Box>
-      )}
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };

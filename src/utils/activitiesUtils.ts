@@ -1,5 +1,5 @@
 // activitiesUtils.ts
-import { Activity } from '../../types';
+import { Activity } from '../types';
 import * as XLSX from 'xlsx';
 
 export interface AggregatedRow {
@@ -283,8 +283,7 @@ export const getAggregatedData = (activities: Activity[]): AggregatedRow[] => {
 
   activities.forEach(activity => {
     const date = new Date(activity.date);
-    
-    // חישוב החודש לפי 26 של החודש הקודם עד 25 של החודש הנוכחי
+
     let month = date.getMonth();
     let year = date.getFullYear();
     if (date.getDate() >= 26) {

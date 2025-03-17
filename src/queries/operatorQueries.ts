@@ -37,9 +37,7 @@ export const useUpdateOperator = () => {
     mutationFn: updateOperatorDetails,
     onSuccess: (_, variables) => {
       const { id } = variables;
-
       queryClient.invalidateQueries({ queryKey: ['operator', id] });
-
       queryClient.invalidateQueries({ queryKey: ['operators'] });
     },
   });

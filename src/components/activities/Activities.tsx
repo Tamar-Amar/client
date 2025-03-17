@@ -1,18 +1,21 @@
 import React, { useMemo, useState } from 'react';
-import { Box, Button, Typography, CircularProgress, Grid, TextField, Snackbar, Alert } from '@mui/material';
+import { Box, Button, Typography, CircularProgress, Grid, TextField, Snackbar, Alert, Autocomplete } from '@mui/material';
 import { useFetchActivities, useAddActivity, useDeleteActivity } from '../../queries/activitiesQueries';
-import { Activity } from '../../types';
-import { getAggregatedData, filterAggregatedData, getDetailInfo, AggregatedRow, DetailInfo } from './activitiesUtils';
+import { Activity, Operator } from '../../types';
+import { getAggregatedData, filterAggregatedData, getDetailInfo, AggregatedRow, DetailInfo } from '../../utils/activitiesUtils';
 import Filters from './Filters';
 import ActivityTable from './ActivityTable';
 import ActivityDetails from './ActivityDetails';
 import AddActivity from './ActvitiesCreate';
 import GeneralStats from './GeneralStats';
+import { useFetchOperators } from '../../queries/operatorQueries';
 
 const Activities: React.FC = () => {
   const { data: activities = [], isLoading, isError } = useFetchActivities();
   const { mutation: addActivityMutation, errorMessage, setErrorMessage } = useAddActivity();
   const deleteActivityMutation = useDeleteActivity();
+  const { data: operators = [] } = useFetchOperators(); 
+
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [quickFilterText, setQuickFilterText] = useState('');
@@ -21,6 +24,8 @@ const Activities: React.FC = () => {
   const [filterGroup, setFilterGroup] = useState('all');
   const [detailMonth, setDetailMonth] = useState('');
   const [attendanceMonth, setAttendanceMonth] = useState<string>("");
+  const [selectedOperator, setSelectedOperator] = useState<string | null>(null);
+
 
   const handleAddClick = () => setIsDialogOpen(true);
   const handleDialogClose = () => setIsDialogOpen(false);
@@ -58,6 +63,8 @@ const Activities: React.FC = () => {
     link.download = `דוח_נוכחות_${attendanceMonth}.pdf`;
     link.click();
   };
+
+
 
   const aggregatedData: AggregatedRow[] = useMemo(() => getAggregatedData(activities), [activities]);
   const filteredAggregatedData: AggregatedRow[] = useMemo(
@@ -136,7 +143,6 @@ const Activities: React.FC = () => {
 
       <AddActivity open={isDialogOpen} onClose={handleDialogClose} onAdd={handleActivityAdded} />
 
-            {/* הוספת הודעת שגיאה מעוצבת */}
             <Snackbar
               open={!!errorMessage}
               autoHideDuration={5000}

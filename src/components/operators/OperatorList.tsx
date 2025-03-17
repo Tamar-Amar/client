@@ -22,7 +22,7 @@ const OperatorList: React.FC = () => {
   const deleteMutation = useDeleteOperator();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState(""); // 🔍 משתנה לחיפוש
+  const [searchTerm, setSearchTerm] = useState(""); 
   const [page, setPage] = useState(0);
   const pageSize = 9;
 
@@ -41,7 +41,6 @@ const OperatorList: React.FC = () => {
     return [...operators].sort((a, b) => a.lastName.localeCompare(b.lastName, 'he'));
   }, [operators]);
 
-  // 🔍 סינון רשימת המפעילים לפי החיפוש
   const filteredOperators = useMemo(() => {
     return sortedOperators.filter((operator: any) =>
       `${operator.firstName} ${operator.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
@@ -58,12 +57,8 @@ const OperatorList: React.FC = () => {
   if (isError) return <div>Error loading operators.</div>;
 
   return (
-    <div style={{ padding: '20px', maxWidth: '1200px', margin: 'auto', minHeight: 937 }}>
-      <Typography variant="h4" gutterBottom textAlign="center" color="primary">
-        רשימת מפעילים
-      </Typography>
+    <div style={{ padding: '20px', maxWidth: 700, margin: 'auto', minHeight: 937 }}>
 
-      {/* 🔍 שדה חיפוש */}
       <TextField
         label="חפש מפעיל"
         variant="outlined"
@@ -132,7 +127,6 @@ const OperatorList: React.FC = () => {
         </Card>
       ))}
 
-      {/* ניווט בין דפים */}
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', gap: '20px' }}>
         <Button 
           variant="contained" 

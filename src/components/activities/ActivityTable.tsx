@@ -3,7 +3,7 @@ import { AgGridReact } from 'ag-grid-react';
 import { Box, TextField, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Button, List, ListItem, ListItemText, Typography } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { AggregatedRow } from './activitiesUtils';
+import { AggregatedRow } from '../../utils/activitiesUtils';
 
 interface ActivityTableProps {
   filteredAggregatedData: AggregatedRow[];

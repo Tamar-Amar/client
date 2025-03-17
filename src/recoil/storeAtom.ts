@@ -1,12 +1,33 @@
-// state/authState.ts
-import { atom } from 'recoil';
+import { atom } from "recoil";
 
-export const userRoleState = atom({
-  key: 'userRoleState', 
-  default: null as 'admin' | 'operator' | null, 
+export const userTokenState = atom<string | null>({
+  key: "userTokenState",
+  default: localStorage.getItem("token"),
+  effects_UNSTABLE: [
+    ({ onSet }) => {
+      onSet((newToken) => {
+        if (newToken) {
+          localStorage.setItem("token", newToken);
+        } else {
+          localStorage.removeItem("token");
+        }
+      });
+    },
+  ],
 });
 
-export const userTokenState = atom({
-  key: 'userTokenState', 
-  default: null as string | null,
+export const userRoleState = atom<string | null>({
+  key: "userRoleState",
+  default: localStorage.getItem("role"), 
+  effects_UNSTABLE: [
+    ({ onSet }) => {
+      onSet((newRole) => {
+        if (newRole) {
+          localStorage.setItem("role", newRole);
+        } else {
+          localStorage.removeItem("role");
+        }
+      });
+    },
+  ],
 });

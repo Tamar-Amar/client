@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Grid, TextField, MenuItem, Box, Typography } from '@mui/material';
-import { getMonthOptions, getOperatorOptions, getGroupOptions, AggregatedRow } from './activitiesUtils';
+import { getMonthOptions, getOperatorOptions, getGroupOptions, AggregatedRow } from '../../utils/activitiesUtils';
 
 interface FiltersProps {
   filterMonth: string;

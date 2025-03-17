@@ -9,6 +9,12 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
   const userRole = useRecoilValue(userRoleState);
+  
+  if (userRole === null) {
+    return <div>טוען...</div>;
+  }
+
+  
   if (!userRole || !allowedRoles.includes(userRole)) {
     return <Navigate to="/" replace />; 
   }

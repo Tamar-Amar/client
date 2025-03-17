@@ -21,13 +21,11 @@ import ContactList from '../components/ContactList';
 const AppRoutes: React.FC = () => {
   return (
     <Routes>
-      {/* נתיבים לכולם */}
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage/>}/>
       <Route path="*" element={<div>404</div>} />
       <Route path="/report-pdf" element={<ReportPdfPage/>} />
       
-      {/* נתיבים למנהל */}
       <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
         <Route path="/operators" element={<OperatorsPage />} />
         <Route path="/institutions" element={<InstitutionsPage />} />
@@ -43,7 +41,6 @@ const AppRoutes: React.FC = () => {
         <Route path="/contacts" element={<ContactList />} />
       </Route>
 
-      {/* נתיבים למפעיל */}
       <Route element={<ProtectedRoute allowedRoles={['operator']} />}>
         <Route path="/personal-details" element={<PersonalDetails/>} />
         <Route path="/activity-history" element={<ActivityHistory/>} />

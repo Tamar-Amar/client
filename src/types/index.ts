@@ -1,4 +1,4 @@
-// Activity.ts - מודל מעודכן ללקוח
+
 export interface Activity {
     _id?: string; 
     classId:
@@ -19,7 +19,6 @@ export interface Activity {
     description?: string; 
   }
   
-  // Class.ts - מודל מעודכן ללקוח
   export interface Class {
     _id?: string;
     name: string;
@@ -38,8 +37,7 @@ export interface Activity {
     contactsId?: string[];
     description?: string;
   }
-  
-  // Institution.ts - מודל מעודכן ללקוח
+
   export interface Institution {
     _id?: string;
     institutionCode: string;
@@ -48,8 +46,7 @@ export interface Activity {
     contacts: string[];
     isActive: boolean;
   }
-  
-  // Invoice.ts - מודל מעודכן ללקוח
+
   export enum InvoiceType {
     CHARGE = 'חיוב',
     CREDIT = 'זיכוי',
@@ -154,7 +151,7 @@ export interface Activity {
     branchNumber: string;
   }
   
-  // Contact.ts - מודל מעודכן ללקוח
+
   export interface Contact {
     _id?: string;
     name: string;

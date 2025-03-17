@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Box, Typography, Divider, List, ListItem, ListItemText, TextField, Button } from '@mui/material';
-import { exportMonthlyReportExcel, exportAnnualReportExcel, DetailInfo, getMonthlyCountForOperator, getMonthlyCountForGroup } from './activitiesUtils';
+import { exportMonthlyReportExcel, exportAnnualReportExcel, DetailInfo, getMonthlyCountForOperator, getMonthlyCountForGroup } from '../../utils/activitiesUtils';
 import { Activity } from '../../types';
 
 interface ActivityDetailsProps {

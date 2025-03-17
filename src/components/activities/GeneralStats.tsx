@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Box, Typography, Divider, TextField, Button } from '@mui/material';
-import { getTotalMonthlyActivities, getTotalActivities, exportGeneralAnnualReport, exportDetailedAnnualReport } from './activitiesUtils';
+import { getTotalMonthlyActivities, getTotalActivities, exportGeneralAnnualReport, exportDetailedAnnualReport } from '../../utils/activitiesUtils';
 import { Activity } from '../../types';
 
 interface GeneralStatsProps {

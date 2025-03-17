@@ -26,7 +26,7 @@ import { Class } from '../../types';
 import { Operator } from '../../types';
 import { useFetchClasses } from '../../queries/classQueries';
 import { useFetchOperators } from '../../queries/operatorQueries';
-import { startOfMonth, endOfMonth, addDays, getDay } from 'date-fns';
+import { addDays, getDay } from 'date-fns';
 
 interface AddActivityProps {
   open: boolean;
@@ -127,8 +127,8 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd, default
         <DialogContent>
         <FormControl fullWidth margin="normal" disabled={!!defaultOperatorId}>
           <Autocomplete
-            options={[...operators].sort((a, b) => a.lastName.localeCompare(b.lastName))} // מיון לפי שם משפחה
-            getOptionLabel={(option) => `${option.lastName}  ${option.firstName} (${option.id})`} // תצוגת השם
+            options={[...operators].sort((a, b) => a.lastName.localeCompare(b.lastName))}
+            getOptionLabel={(option) => `${option.lastName}  ${option.firstName} (${option.id})`} 
             value={operators.find((op:Operator) => op._id === operatorId) || null} // תומך בבחירת מפעיל קיים
             onChange={(event, newValue) => setOperatorId(newValue ? newValue._id : '')} // עדכון ID של מפעיל
             renderInput={(params) => <TextField {...params} label="בחר מפעיל" />}

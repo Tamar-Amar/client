@@ -1,9 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchAllActivities, createActivity, deleteActivity, fetchActivitiesByOperator } from '../services/ActivityService';
 import { Activity } from '../types/index';
-
 import { useState } from "react";
-import { Snackbar, Alert } from "@mui/material";
+
 
 export const useFetchActivities = () => {
   return useQuery({
@@ -15,7 +14,6 @@ export const useFetchActivities = () => {
 
 
 export const useAddActivity = () => {
-  const queryClient = useQueryClient();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const mutation = useMutation<Activity | null, any, Activity>({
@@ -23,13 +21,11 @@ export const useAddActivity = () => {
     onSuccess: async (newActivity) => {
       if (!newActivity) return;
 
-      // בדיקה האם `classId` הוא אובייקט ולא `string`
       const classInfo =
         typeof newActivity.classId === "object" && "name" in newActivity.classId
           ? newActivity.classId
           : { name: "לא ידוע", uniqueSymbol: "לא ידוע" };
 
-      // בדיקה האם `operatorId` הוא אובייקט ולא `string`
       const operatorInfo =
         typeof newActivity.operatorId === "object" && "firstName" in newActivity.operatorId
           ? newActivity.operatorId
@@ -48,8 +44,6 @@ export const useAddActivity = () => {
 
   return { mutation, errorMessage, setErrorMessage };
 };
-
-
 
 
 // Delete an activity
@@ -74,7 +68,7 @@ export const useFetchActivitiesByOperator = (operatorId: string) => {
   return useQuery({
     queryKey: ['activities', operatorId],
     queryFn: () => fetchActivitiesByOperator(operatorId),
-    staleTime: 1000 * 60 * 5, // Keep data fresh for 5 minutes
+    staleTime: 1000 * 60 * 5, 
   });
 };
 
