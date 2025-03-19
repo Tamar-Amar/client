@@ -22,22 +22,32 @@ export const fetchActivitiesByOperator = async (operatorId: string): Promise<Act
 type ActivityResponse =
   | Activity 
   | { message: string; existingActivity: Activity };
-
+  
   export const createActivity = async (activity: Activity): Promise<Activity | null> => {
     try {
-      console.log("Creating activity:", activity);
-      const response = await axios.post<ActivityResponse>(API_URL, activity);
+      const localDate = new Date(activity.date); 
+      const utcDate = new Date(Date.UTC(localDate.getFullYear(), localDate.getMonth(), localDate.getDate()));
+  
+      const activityToSend = {
+        ...activity,
+        date: utcDate.toISOString(), 
+      };
+  
+      const response = await axios.post<ActivityResponse>(API_URL, activityToSend);
   
       if ("message" in response.data) {
-        return response.data.existingActivity; 
+        return response.data.existingActivity;
       }
   
-      return response.data; 
+      return response.data;
     } catch (error: any) {
-      console.error("Error adding activity:", error);
-      return null; 
+      console.error("❌ Error adding activity:", error);
+      return null;
     }
   };
+  
+  
+  
   
 
 
