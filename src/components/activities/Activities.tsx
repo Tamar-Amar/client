@@ -8,14 +8,11 @@ import ActivityTable from './ActivityTable';
 import ActivityDetails from './ActivityDetails';
 import AddActivity from './ActvitiesCreate';
 import GeneralStats from './GeneralStats';
-import { useFetchOperators } from '../../queries/operatorQueries';
 
 const Activities: React.FC = () => {
   const { data: activities = [], isLoading, isError } = useFetchActivities();
   const { mutation: addActivityMutation, errorMessage, setErrorMessage } = useAddActivity();
   const deleteActivityMutation = useDeleteActivity();
-  const { data: operators = [] } = useFetchOperators(); 
-
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [quickFilterText, setQuickFilterText] = useState('');
@@ -24,7 +21,6 @@ const Activities: React.FC = () => {
   const [filterGroup, setFilterGroup] = useState('all');
   const [detailMonth, setDetailMonth] = useState('');
   const [attendanceMonth, setAttendanceMonth] = useState<string>("");
-  const [selectedOperator, setSelectedOperator] = useState<string | null>(null);
 
 
   const handleAddClick = () => setIsDialogOpen(true);

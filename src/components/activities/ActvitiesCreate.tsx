@@ -43,8 +43,8 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd, default
   const [weeklyActivities, setWeeklyActivities] = useState<{ classId: string; dayOfWeek: string; description: string }[]>([
     { classId: '', dayOfWeek: '', description: '' },
   ]);
-  const [singleActivities, setSingleActivities] = useState<{ classId: string; date: Date | null; description: string }[]>([
-    { classId: '', date: null, description: '' },
+  const [singleActivities, setSingleActivities] = useState<{ classId: string; dates: (Date | null)[]; description: string }[]>([
+    { classId: '', dates: [null, null, null, null, null], description: '' },
   ]);
   const [selectedMonth, setSelectedMonth] = useState<Date | null>(new Date());
   const [operatorId, setOperatorId] = useState<string>(defaultOperatorId || '');
@@ -55,7 +55,7 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd, default
     setWeeklyActivities(updated);
   };
 
-  const handleSingleChange = (index: number, field: 'classId' | 'date' | 'description', value: any) => {
+  const handleSingleChange = (index: number, field: 'classId' | 'dates' | 'description', value: any) => {
     const updated = [...singleActivities];
     updated[index][field] = value;
     setSingleActivities(updated);
@@ -95,21 +95,23 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd, default
         }));
         newActivities = [...newActivities, ...activitiesForClass];
       });
-    } else if (selectedOption === 'single') {
+    }  else if (selectedOption === 'single') {
       singleActivities.forEach((activity) => {
-        if (activity.date) {
-          newActivities.push({
-            classId: activity.classId,
-            operatorId,
-            date: activity.date,
-            description: activity.description,
-          });
-        }
+        activity.dates.forEach((date) => {
+          if (date) {
+            newActivities.push({
+              classId: activity.classId,
+              operatorId,
+              date,
+              description: activity.description,
+            });
+          }
+        });
       });
     }
     onAdd(newActivities);
     setWeeklyActivities([{ classId: '', dayOfWeek: '', description: '' }]);
-    setSingleActivities([{ classId: '', date: null, description: '' }]);
+    setSingleActivities([{ classId: '', dates: [null, null, null, null, null], description: '' }]);
     setOperatorId( '');
     setSelectedMonth(new Date());
     setSelectedOption('weekly'); 
@@ -118,19 +120,19 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd, default
   };
 
   const addWeeklyRow = () => setWeeklyActivities([...weeklyActivities, { classId: '', dayOfWeek: '', description: '' }]);
-  const addSingleRow = () => setSingleActivities([...singleActivities, { classId: '', date: null, description: '' }]);
+  const addSingleRow = () => setSingleActivities([...singleActivities, { classId: '', dates: [null, null, null, null, null], description: '' }]);
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} localeText={heIL.components.MuiLocalizationProvider.defaultProps.localeText}>
-      <Dialog open={open} onClose={onClose}>
+      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
         <DialogTitle>דיווח נוכחות</DialogTitle>
         <DialogContent>
         <FormControl fullWidth margin="normal" disabled={!!defaultOperatorId}>
           <Autocomplete
             options={[...operators].sort((a, b) => a.lastName.localeCompare(b.lastName))}
             getOptionLabel={(option) => `${option.lastName}  ${option.firstName} (${option.id})`} 
-            value={operators.find((op:Operator) => op._id === operatorId) || null} // תומך בבחירת מפעיל קיים
-            onChange={(event, newValue) => setOperatorId(newValue ? newValue._id : '')} // עדכון ID של מפעיל
+            value={operators.find((op:Operator) => op._id === operatorId) || null} 
+            onChange={(event, newValue) => setOperatorId(newValue ? newValue._id : '')} 
             renderInput={(params) => <TextField {...params} label="בחר מפעיל" />}
             fullWidth
           />
@@ -207,31 +209,40 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd, default
 
           {selectedOption === 'single' && (
             <>
-              {singleActivities.map((activity, index) => (
-                <Box display="flex" gap={2} mb={2} key={index}>
+             {singleActivities.map((activity, index) => (
+              <Box key={index} display="flex" flexDirection="column" gap={2} mb={2}>
+                {/* שורה ראשונה - בחירת סמל */}
+                <Box display="flex" justifyContent="center">
                   <Autocomplete
                     options={classes}
                     getOptionLabel={(option) => `${option.name} (${option.uniqueSymbol})`}
-                    value={classes.find((cls:Class) => cls._id === activity.classId) || null}
+                    value={classes.find((cls: Class) => cls._id === activity.classId) || null}
                     onChange={(e, newValue) =>
                       handleSingleChange(index, 'classId', (newValue as Class)?._id || '')
                     }
                     renderInput={(params) => <TextField {...params} label="בחר סמל" />}
                     fullWidth
                   />
-                  <DatePicker
-                    label="בחר תאריך"
-                    value={activity.date}
-                    onChange={(newDate) => handleSingleChange(index, 'date', newDate)}
-                  />
-                  <TextField
-                    label="תיאור פעילות"
-                    value={activity.description}
-                    onChange={(e) => handleSingleChange(index, 'description', e.target.value)}
-                    fullWidth
-                  />
                 </Box>
-              ))}
+
+                <Box display="flex" gap={2} justifyContent="center">
+                  {activity.dates.map((date, dateIndex) => (
+                    <DatePicker
+                      key={dateIndex}
+                      label={`תאריך ${dateIndex + 1}`}
+                      value={date}
+                      onChange={(newDate) => {
+                        const updatedDates = [...activity.dates];
+                        updatedDates[dateIndex] = newDate;
+                        handleSingleChange(index, 'dates', updatedDates);
+                      }}
+                      sx={{ minWidth: 150, flexGrow: 1 }}
+                    />
+                  ))}
+                </Box>
+              </Box>
+            ))}
+
               <Button onClick={addSingleRow} variant="outlined">
                 הוסף שורה
               </Button>
