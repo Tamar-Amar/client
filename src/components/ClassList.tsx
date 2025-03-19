@@ -24,7 +24,6 @@ import AssignDialog from "./AssignDialog";
 
 const ClassList: React.FC = () => {
   const { data: classes, isLoading, isError } = useFetchClasses();
-  console.log("data", classes, isLoading, isError);
   const { data: institutions } = useFetchInstitutions();
   const { data: contacts } = useFetchContacts();
   const { data: operators } = useFetchOperators();

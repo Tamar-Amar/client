@@ -3,7 +3,6 @@ import { fetchClasses, createClass, deleteClass, updateClass } from '../services
 import { Class } from '../types/index';
 
 export const useFetchClasses = () => {
-  console.log('Fetching classes');
   return useQuery({
     queryKey: ['classes'],
     queryFn: fetchClasses,

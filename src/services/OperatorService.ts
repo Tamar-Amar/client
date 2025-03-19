@@ -31,7 +31,6 @@ export const createOperator = async (newOperator: {
   gender: "בנים" | "בנות" | "גם וגם";
   educationType: "רגיל" | "מיוחד" | "גם וגם";
 }) => {
-  console.log("newOperator", newOperator)
   const response = await axios.post(API_URL, newOperator);
   return response.data;
 };
@@ -56,7 +55,6 @@ export const updateOperatorWeeklySchedule = async ({
   operatorId: string;
   weeklySchedule: WeeklySchedule[];
 }) => {
-  console.log(`Update operator ${operatorId} weekly schedule`, weeklySchedule);
   const response = await axios.put(`${API_URL}/${operatorId}/weekly-schedule`, { weeklySchedule });
   return response.data;
 };

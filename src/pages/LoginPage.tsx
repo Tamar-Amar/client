@@ -15,7 +15,6 @@ const LoginPage: React.FC = () => {
 
   const handleLogin = async () => {
     try {
-      console.log('Login:', id, password)
       const response = await axios.post(API_URL, { id, password });
       const { role, token } = response.data;
 

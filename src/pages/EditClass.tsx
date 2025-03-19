@@ -13,7 +13,6 @@ const EditClass: React.FC = () => {
   const { data: contacts } = useFetchContacts();
   const { data: stores } = useFetchStores();
   const { data: operators } = useFetchOperators();
-  console.log("operators", operators);
   const updateClassMutation = useUpdateClass();
 
   const [classData, setClassData] = useState({

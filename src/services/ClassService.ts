@@ -4,9 +4,7 @@ import { Class } from '../types/index';
 const API_URL = process.env.REACT_APP_API_URL+ '/api/classes' || "https://server-manage.onrender.com" + '/api/classes';
 
 export const fetchClasses = async () => {
-  console.log('Fetching classes from', API_URL);
   const response = await axios.get(API_URL);
-  console.log("response", response.data);
   return response.data;
 };
 

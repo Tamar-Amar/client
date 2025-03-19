@@ -51,15 +51,12 @@ export const exportAnnualReportExcel = (
     "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"
   ];
 
-  // יצירת מבנה מתאים עם עמודות לפי חודשים
   const reportData: any[] = [];
 
-  // כותרת ראשית
   reportData.push(["סמל", detailInfo.groupSymbol, "", "", "", "", "", "", "", "", "", "", ""]);
   reportData.push(["שם", detailInfo.groupName, "", "", "", "", "", "", "", "", "", "", ""]);
   reportData.push(["", "", "", "", "", "", "", "", "", "", "", "", ""]);
   
-  // שורת כותרת חודשי פעילות
   const headerRow = ["חודש"];
   months.forEach(month => {
     headerRow.push("תאריך");
@@ -68,22 +65,18 @@ export const exportAnnualReportExcel = (
   headerRow.push("סה\"כ בחודש זה");
   reportData.push(headerRow);
 
-  // יצירת מבנה החודשים עם הנתונים
   months.forEach((month, monthIndex) => {
     const monthActivities = filteredActivities.filter(a => {
       const date = new Date(a.date);
       return date.getMonth() === monthIndex;
     });
   
-    // יוצרים שורה אחת לכל חודש
     const row: any[] = [month];
   
-    // מוסיפים עד 5 הפעלות מקסימום
     for (let j = 0; j < 5; j++) {
       if (monthActivities[j]) {
         const activity = monthActivities[j];
 
-        // בודקים האם `operatorId` הוא מחרוזת או אובייקט
         const operatorName = typeof activity.operatorId === 'string'
           ? 'לא ידוע'
           : `${activity.operatorId?.firstName ?? 'לא ידוע'} ${activity.operatorId?.lastName ?? ''}`.trim();
@@ -91,36 +84,32 @@ export const exportAnnualReportExcel = (
         row.push(new Date(activity.date).toLocaleDateString('he-IL'));
         row.push(operatorName);
       } else {
-        row.push(""); // אם אין נתונים, מוסיפים תאים ריקים
+        row.push(""); 
         row.push("");
       }
     }
   
-    row.push(monthActivities.length); // עמודת סכום כולל
+    row.push(monthActivities.length); 
     reportData.push(row);
   });
   
 
-  // יצירת גיליון עבודה (worksheet)
   const worksheet = XLSX.utils.aoa_to_sheet(reportData);
 
-  // קביעת רוחב עמודות
   worksheet['!cols'] = [
-    { wch: 10 }, // חודש
-    { wch: 12 }, { wch: 20 }, // תאריך + מפעיל חודשי
+    { wch: 10 }, 
+    { wch: 12 }, { wch: 20 }, 
     { wch: 12 }, { wch: 20 },
     { wch: 12 }, { wch: 20 },
     { wch: 12 }, { wch: 20 },
     { wch: 12 }, { wch: 20 },
     { wch: 12 }, { wch: 20 },
-    { wch: 15 }, // סה"כ בחודש
+    { wch: 15 }, 
   ];
 
-  // יצירת ספר עבודה
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "דוח שנתי");
 
-  // שמירת הקובץ
   XLSX.writeFile(workbook, `דוח_שנתי_${detailInfo.groupSymbol}.xlsx`);
 };
 
@@ -135,15 +124,12 @@ export interface DetailInfo {
 }
 
 export const exportMonthlyReportExcel = (activities: Activity[], detailInfo: any, detailMonth: string) => {
-    console.log('exportMonthlyReportExcel', detailInfo);
     if (!detailMonth || !detailInfo) return;
     const [yearStr, monthStr] = detailMonth.split("-");
     const year = parseInt(yearStr, 10);
     const month = parseInt(monthStr, 10);
-  
-    // תאריך סיום: 25 של החודש הנבחר (כולל)
     const endDate = new Date(year, month - 1, 25, 23, 59, 59, 999);
-    // תאריך התחלה: 26 של החודש הקודם (כולל)
+
     let prevYear = year;
     let prevMonth = month - 1;
     if (prevMonth < 1) {
