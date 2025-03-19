@@ -93,7 +93,10 @@ export interface Activity {
     ALL = 'גם וגם'
   }
   
-  // Operator.ts 
+  export interface WeeklySchedule {
+    day: 'ראשון' | 'שני' | 'שלישי' | 'רביעי' | 'חמישי';
+    classes: string[]; 
+  }
   export interface Operator {
     _id?: string;
     firstName: string;
@@ -116,6 +119,7 @@ export interface Activity {
     gender: Gender;
     educationType: EducationType;
     isActive: boolean;
+    weeklySchedule?: WeeklySchedule[];
   }
   
   // Purchases.ts 

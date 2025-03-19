@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchOperators, createOperator, deleteOperator, updateOperatorDetails, fetchOperatorById, fetchCurrentOperator } from '../services/OperatorService';
-import { Operator } from '../types/index';
+import { fetchOperators, createOperator, deleteOperator, updateOperatorDetails, fetchOperatorById, fetchCurrentOperator, updateOperatorWeeklySchedule } from '../services/OperatorService';
+import { Operator, WeeklySchedule } from '../types/index';
+import axios from 'axios';
 
 export const useFetchOperators = () => {
   return useQuery({
@@ -38,6 +39,21 @@ export const useUpdateOperator = () => {
     onSuccess: (_, variables) => {
       const { id } = variables;
       queryClient.invalidateQueries({ queryKey: ['operator', id] });
+      queryClient.invalidateQueries({ queryKey: ['operators'] });
+    },
+  });
+};
+
+
+
+export const useUpdateOperatorWeeklySchedule = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateOperatorWeeklySchedule,
+    onSuccess: (_, variables) => {
+      const { operatorId } = variables;
+      queryClient.invalidateQueries({ queryKey: ['operator', operatorId] });
       queryClient.invalidateQueries({ queryKey: ['operators'] });
     },
   });

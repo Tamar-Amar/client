@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Operator } from '../types/index';
+import { Operator, WeeklySchedule } from '../types/index';
 
 const API_URL = process.env.REACT_APP_API_URL+ '/api/operators' || "https://server-manage.onrender.com" + '/api/operators';
 
@@ -46,6 +46,18 @@ export const updateOperatorDetails = async ({ id, ...updatedFields }: { id: stri
   const response = await axios.put(`${API_URL}/${id}`, updatedFields, {
     headers: { Authorization: `Bearer ${token}` },
   });
+  return response.data;
+};
+
+export const updateOperatorWeeklySchedule = async ({
+  operatorId,
+  weeklySchedule,
+}: {
+  operatorId: string;
+  weeklySchedule: WeeklySchedule[];
+}) => {
+  console.log(`Update operator ${operatorId} weekly schedule`, weeklySchedule);
+  const response = await axios.put(`${API_URL}/${operatorId}/weekly-schedule`, { weeklySchedule });
   return response.data;
 };
 
