@@ -8,11 +8,14 @@ import ActivityTable from './ActivityTable';
 import ActivityDetails from './ActivityDetails';
 import AddActivity from './ActvitiesCreate';
 import GeneralStats from './GeneralStats';
+import ActivationsDashboard from './ActivationsDashboard';
 
 const Activities: React.FC = () => {
   const { data: activities = [], isLoading, isError } = useFetchActivities();
   const { mutation: addActivityMutation, errorMessage, setErrorMessage } = useAddActivity();
   const deleteActivityMutation = useDeleteActivity();
+  const [showDashboard, setShowDashboard] = useState(false);
+
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [quickFilterText, setQuickFilterText] = useState('');
@@ -80,6 +83,13 @@ const Activities: React.FC = () => {
       <Typography variant="h4" gutterBottom>סיכום פעילויות</Typography>
 
       <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+        <Button
+        variant="outlined"
+        onClick={() => setShowDashboard(!showDashboard)}
+      >
+        {showDashboard ? 'חזור לסיכום רגיל' : 'הצג לוח בקרה'}
+      </Button>
+
         <Button variant="contained" color="primary" onClick={handleAddClick}>
           הוסף פעילות חדשה
         </Button>
@@ -103,41 +113,43 @@ const Activities: React.FC = () => {
         </Button>
       </Box>
 
-      <Grid container spacing={2}>
-
-        <Grid item xs={12} md={3}>
-          <Filters
-            filterMonth={filterMonth} setFilterMonth={setFilterMonth}
-            filterOperator={filterOperator} setFilterOperator={setFilterOperator}
-            filterGroup={filterGroup} setFilterGroup={setFilterGroup}
-            aggregatedData={aggregatedData}
-          />
-  
-          <ActivityDetails
-            detailInfo={detailInfo}
-            activities={activities}
-            detailMonth={detailMonth}
-            setDetailMonth={setDetailMonth}
-          />
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <ActivityTable
-            filteredAggregatedData={filteredAggregatedData}
-            quickFilterText={quickFilterText}
-            setQuickFilterText={setQuickFilterText}
-            handleDeleteActivity={(activityIds) => handleDeleteActivity(activityIds)}
-          />
-        </Grid>
-
-
-        <Grid item xs={12} md={3}>
-          <GeneralStats activities={activities} />
-        </Grid>
-
+      {showDashboard ? (
+  <ActivationsDashboard activities={activities} />
+) : (
+  <>
+    <Grid container spacing={2}>
+      <Grid item xs={12} md={3}>
+        <Filters
+          filterMonth={filterMonth} setFilterMonth={setFilterMonth}
+          filterOperator={filterOperator} setFilterOperator={setFilterOperator}
+          filterGroup={filterGroup} setFilterGroup={setFilterGroup}
+          aggregatedData={aggregatedData}
+        />
+        <ActivityDetails
+          detailInfo={detailInfo}
+          activities={activities}
+          detailMonth={detailMonth}
+          setDetailMonth={setDetailMonth}
+        />
       </Grid>
 
-      <AddActivity open={isDialogOpen} onClose={handleDialogClose} onAdd={handleActivityAdded} />
+      <Grid item xs={12} md={6}>
+        <ActivityTable
+          filteredAggregatedData={filteredAggregatedData}
+          quickFilterText={quickFilterText}
+          setQuickFilterText={setQuickFilterText}
+          handleDeleteActivity={(activityIds) => handleDeleteActivity(activityIds)}
+        />
+      </Grid>
+
+      <Grid item xs={12} md={3}>
+        <GeneralStats activities={activities} />
+      </Grid>
+    </Grid>
+
+    <AddActivity open={isDialogOpen} onClose={handleDialogClose} onAdd={handleActivityAdded} />
+  </>
+)}
 
             <Snackbar
               open={!!errorMessage}
