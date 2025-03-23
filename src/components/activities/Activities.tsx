@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Button, Typography, CircularProgress, Grid, TextField, Snackbar, Alert, Autocomplete } from '@mui/material';
 import { useFetchActivities, useAddActivity, useDeleteActivity } from '../../queries/activitiesQueries';
 import { Activity, Operator } from '../../types';
@@ -24,6 +24,19 @@ const Activities: React.FC = () => {
   const [filterGroup, setFilterGroup] = useState('all');
   const [detailMonth, setDetailMonth] = useState('');
   const [attendanceMonth, setAttendanceMonth] = useState<string>("");
+  const [operatorId, setOperatorId] = useState<string>('');
+  const [operators, setOperators] = useState<Operator[]>([]);
+  const [operator, setOperator] = useState<Operator | null>(null);
+
+useEffect(() => {
+  const fetchOperators = async () => {
+    const res = await fetch("http://localhost:5000/api/operators");
+    const data = await res.json();
+    setOperators(data);
+  };
+  fetchOperators();
+}, []);
+
 
 
   const handleAddClick = () => setIsDialogOpen(true);
@@ -37,7 +50,16 @@ const Activities: React.FC = () => {
     setIsDialogOpen(false);
   };
 
-  
+    useEffect(() => {
+      const fetchOperator = async () => {
+        if (!operatorId) return;
+        const res = await fetch(`http://localhost:5000/api/operators/${operatorId}`);
+        const data = await res.json();
+        setOperator(data);
+        console.log('�� העו��כים:', operator);
+      };
+      fetchOperator();
+    }, [operatorId]);
 
   const handleDeleteActivity = (activityIds: string[]) => {
     activityIds.forEach(activityId => {
@@ -45,23 +67,36 @@ const Activities: React.FC = () => {
     });
   };
 
-  const downloadAttendanceReport = async () => {
+  const handleDownloadAttendanceReport = async () => {
     if (!attendanceMonth) return;
-
-    const response = await fetch("http://localhost:5000/api/generate-pdf", {
+  
+    const url = operatorId
+      ? "http://localhost:5000/api/generate-pdf-by-op"
+      : "http://localhost:5000/api/generate-pdf";
+  
+    const body = operatorId
+      ? { month: attendanceMonth, operatorId }
+      : { month: attendanceMonth };
+  
+    const response = await fetch(url, {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ month: attendanceMonth }),
+      body: JSON.stringify(body),
     });
-
+  
     const blob = await response.blob();
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `דוח_נוכחות_${attendanceMonth}.pdf`;
+    const namePart = operator
+      ? `_${operator.firstName}_${operator.lastName}`
+      : "";
+
+    link.download = `דוח_נוכחות_${attendanceMonth}${namePart}.pdf`;
     link.click();
   };
+  
 
 
 
@@ -103,14 +138,24 @@ const Activities: React.FC = () => {
           InputLabelProps={{ shrink: true }}
         />
 
-        <Button
-          variant="contained"
-          color="secondary"
-          onClick={downloadAttendanceReport}
-          disabled={!attendanceMonth}
-        >
-          הורד דוח נוכחות (PDF)
-        </Button>
+        <Autocomplete
+          options={operators}
+          getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
+          onChange={(_, newValue) => setOperatorId(newValue?._id ?? '')}
+          renderInput={(params) => (
+            <TextField {...params} label="בחר מפעיל" sx={{ width: 200 }} />
+          )}
+        />
+
+      <Button
+        variant="contained"
+        color="secondary"
+        onClick={handleDownloadAttendanceReport}
+        disabled={!attendanceMonth}
+      >
+        {operatorId ? 'יצירת דוח מותאם מפעיל' : 'יצירת דוח ריק'}
+      </Button>
+
       </Box>
 
       {showDashboard ? (

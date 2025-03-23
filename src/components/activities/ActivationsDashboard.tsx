@@ -8,8 +8,10 @@ import {
   TableCell,
   TableBody,
   Paper,
+  Button,
+  TextField,
 } from '@mui/material';
-import { Activity } from '../../types';
+import { Activity, Operator } from '../../types';
 import { eachWeekOfInterval, isSaturday } from 'date-fns';
 
 interface Props {
@@ -31,9 +33,11 @@ const TODAY = new Date('2025-06-01');
 const ActivationsDashboard: React.FC<Props> = ({ activities }) => {
   const [excludedWeeks, setExcludedWeeks] = useState<ExcludedWeek[]>([]);
   const [validWeeks, setValidWeeks] = useState<Date[]>([]);
-  const [holidays, setHolidays] = useState<{ date: string; name: string }[]>(
-    []
-  );
+  const [holidays, setHolidays] = useState<{ date: string; name: string }[]>( []);
+  const [attendanceMonth, setAttendanceMonth] = useState<string>("");
+  const [operatorId, setOperatorId] = useState<string>("");
+  const [operator, setOperator] = useState<Operator | null>(null);
+
 
   useEffect(() => {
     const fetchHolidays = async () => {
@@ -78,7 +82,7 @@ const ActivationsDashboard: React.FC<Props> = ({ activities }) => {
       });
 
       const isAllHolidaysOrShabbat = weekDays.every((day) => {
-        const iso = day.toISOString().split('T')[0];
+        const iso = day.toLocaleDateString('en-CA'); 
         const isHoliday = holidays.some((h) => h.date === iso);
         return isHoliday || isSaturday(day);
       });
@@ -86,7 +90,7 @@ const ActivationsDashboard: React.FC<Props> = ({ activities }) => {
       if (isAllHolidaysOrShabbat) {
         const reasons = weekDays
         .map((day) => {
-          const iso = day.toISOString().split('T')[0];
+          const iso = day.toLocaleDateString('en-CA');
           const dayIndex = day.getDay();
           const dayName = dayNames[dayIndex];
       
@@ -123,6 +127,17 @@ const ActivationsDashboard: React.FC<Props> = ({ activities }) => {
     setExcludedWeeks(excluded);
   }, [holidays]);
 
+  useEffect(() => {
+    const fetchOperator = async () => {
+      if (!operatorId) return;
+      const res = await fetch(`http://localhost:5000/api/operators/${operatorId}`);
+      const data = await res.json();
+      setOperator(data);
+      console.log('�� העו��כים:', operator);
+    };
+    fetchOperator();
+  }, [operatorId]);
+
   const actualActivationsCount = useMemo(() => {
     return activities.filter((act) => new Date(act.date) >= START_DATE).length;
   }, [activities]);
@@ -131,11 +146,56 @@ const ActivationsDashboard: React.FC<Props> = ({ activities }) => {
     return validWeeks.length * TOTAL_GROUPS;
   }, [validWeeks]);
 
+  const downloadAttendanceReport = async () => {
+    console.log('attendanceReport:', attendanceMonth, operatorId);
+    if (!attendanceMonth || !operatorId) return;
+     console.log('attendanceReport:', attendanceMonth, operatorId);
+  
+    const response = await fetch("http://localhost:5000/api/generate-pdf-by-op", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        month: attendanceMonth,
+        operatorId, 
+      }),
+    });
+  
+    const blob = await response.blob();
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    const namePart = operator
+      ? `_${operator.firstName}_${operator.lastName}`
+      : "";
+
+    link.download = `דוח_נוכחות_${attendanceMonth}${namePart}.pdf`;
+    link.click();
+  };
+
   return (
     <Box sx={{ m: 4 }}>
       <Typography variant="h5" gutterBottom>
         לוח בקרה לניצול הפעלות שנתיות
       </Typography>
+
+      <TextField
+        label="בחר חודש לדוח נוכחות"
+        type="month"
+        value={attendanceMonth}
+        onChange={(e) => setAttendanceMonth(e.target.value)}
+        sx={{ width: '200px' }}
+        InputLabelProps={{ shrink: true }}
+      />
+
+      <Button
+        variant="contained"
+        color="secondary"
+        onClick={downloadAttendanceReport}
+        disabled={!attendanceMonth}
+      >
+        הורד דוח נוכחות (PDF)
+      </Button>
 
       <Paper sx={{ p: 2, mb: 4 }}>
         <Typography>
