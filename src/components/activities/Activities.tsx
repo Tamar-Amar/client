@@ -29,9 +29,6 @@ const Activities: React.FC = () => {
   const { data: operators = [], isLoading: operatorsLoading } = useFetchOperators();
   const { data: operator, isLoading: operatorLoading } = useFetchOperatorById(operatorId);
 
-
-
-
   const handleAddClick = () => setIsDialogOpen(true);
   const handleDialogClose = () => setIsDialogOpen(false);
 
@@ -80,8 +77,6 @@ const Activities: React.FC = () => {
   };
   
 
-  if (isLoading || operatorsLoading) return <CircularProgress />;
-
   const aggregatedData: AggregatedRow[] = useMemo(() => getAggregatedData(activities), [activities]);
   const filteredAggregatedData: AggregatedRow[] = useMemo(
     () => filterAggregatedData(aggregatedData, filterMonth, filterOperator, filterGroup),
@@ -92,7 +87,7 @@ const Activities: React.FC = () => {
     return getDetailInfo(aggregatedData, filterOperator, filterGroup);
   }, [aggregatedData, filterOperator, filterGroup]);
 
-  if (isLoading) return <CircularProgress />;
+  if (isLoading || operatorsLoading) return <CircularProgress />;
   if (isError) return <Typography color="error">שגיאה בטעינת הפעילויות.</Typography>;
 
   return (
