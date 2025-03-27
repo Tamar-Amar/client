@@ -9,6 +9,7 @@ import ActivityDetails from './ActivityDetails';
 import AddActivity from './ActvitiesCreate';
 import GeneralStats from './GeneralStats';
 import ActivationsDashboard from './ActivationsDashboard';
+import { useFetchOperatorById, useFetchOperators } from '../../queries/operatorQueries';
 
 const Activities: React.FC = () => {
   const { data: activities = [], isLoading, isError } = useFetchActivities();
@@ -25,17 +26,9 @@ const Activities: React.FC = () => {
   const [detailMonth, setDetailMonth] = useState('');
   const [attendanceMonth, setAttendanceMonth] = useState<string>("");
   const [operatorId, setOperatorId] = useState<string>('');
-  const [operators, setOperators] = useState<Operator[]>([]);
-  const [operator, setOperator] = useState<Operator | null>(null);
+  const { data: operators = [], isLoading: operatorsLoading } = useFetchOperators();
+  const { data: operator, isLoading: operatorLoading } = useFetchOperatorById(operatorId);
 
-useEffect(() => {
-  const fetchOperators = async () => {
-    const res = await fetch("http://localhost:5000/api/operators");
-    const data = await res.json();
-    setOperators(data);
-  };
-  fetchOperators();
-}, []);
 
 
 
@@ -49,17 +42,6 @@ useEffect(() => {
     }
     setIsDialogOpen(false);
   };
-
-    useEffect(() => {
-      const fetchOperator = async () => {
-        if (!operatorId) return;
-        const res = await fetch(`http://localhost:5000/api/operators/${operatorId}`);
-        const data = await res.json();
-        setOperator(data);
-        console.log('�� העו��כים:', operator);
-      };
-      fetchOperator();
-    }, [operatorId]);
 
   const handleDeleteActivity = (activityIds: string[]) => {
     activityIds.forEach(activityId => {
@@ -98,7 +80,7 @@ useEffect(() => {
   };
   
 
-
+  if (isLoading || operatorsLoading) return <CircularProgress />;
 
   const aggregatedData: AggregatedRow[] = useMemo(() => getAggregatedData(activities), [activities]);
   const filteredAggregatedData: AggregatedRow[] = useMemo(
@@ -140,7 +122,7 @@ useEffect(() => {
 
         <Autocomplete
           options={operators}
-          getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
+          getOptionLabel={(option:Operator) => `${option.firstName} ${option.lastName}`}
           onChange={(_, newValue) => setOperatorId(newValue?._id ?? '')}
           renderInput={(params) => (
             <TextField {...params} label="בחר מפעיל" sx={{ width: 200 }} />

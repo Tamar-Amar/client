@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { Activity, Operator } from '../../types';
 import { eachWeekOfInterval, isSaturday } from 'date-fns';
+import { useFetchOperatorById } from '../../queries/operatorQueries';
 
 interface Props {
   activities: Activity[];
@@ -36,7 +37,7 @@ const ActivationsDashboard: React.FC<Props> = ({ activities }) => {
   const [holidays, setHolidays] = useState<{ date: string; name: string }[]>( []);
   const [attendanceMonth, setAttendanceMonth] = useState<string>("");
   const [operatorId, setOperatorId] = useState<string>("");
-  const [operator, setOperator] = useState<Operator | null>(null);
+  const { data: operator, isLoading: operatorLoading } = useFetchOperatorById(operatorId);
 
 
   useEffect(() => {
@@ -127,16 +128,6 @@ const ActivationsDashboard: React.FC<Props> = ({ activities }) => {
     setExcludedWeeks(excluded);
   }, [holidays]);
 
-  useEffect(() => {
-    const fetchOperator = async () => {
-      if (!operatorId) return;
-      const res = await fetch(`http://localhost:5000/api/operators/${operatorId}`);
-      const data = await res.json();
-      setOperator(data);
-      console.log('�� העו��כים:', operator);
-    };
-    fetchOperator();
-  }, [operatorId]);
 
   const actualActivationsCount = useMemo(() => {
     return activities.filter((act) => new Date(act.date) >= START_DATE).length;
