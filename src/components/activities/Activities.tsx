@@ -46,12 +46,14 @@ const Activities: React.FC = () => {
     });
   };
 
+  const API_URL = process.env.REACT_APP_API_URL || "https://server-manage.onrender.com";
+
   const handleDownloadAttendanceReport = async () => {
     if (!attendanceMonth) return;
   
     const url = operatorId
-      ? "http://localhost:5000/api/generate-pdf-by-op"
-      : "http://localhost:5000/api/generate-pdf";
+      ? API_URL+"/api/generate-pdf-by-op"
+      : API_URL+"/api/generate-pdf";
   
     const body = operatorId
       ? { month: attendanceMonth, operatorId }

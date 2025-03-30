@@ -30,6 +30,7 @@ interface ExcludedWeek {
 const TOTAL_GROUPS = 292;
 const START_DATE = new Date('2024-11-01');
 const TODAY = new Date('2025-06-01');
+const API_URL = process.env.REACT_APP_API_URL || "https://server-manage.onrender.com";
 
 const ActivationsDashboard: React.FC<Props> = ({ activities }) => {
   const [excludedWeeks, setExcludedWeeks] = useState<ExcludedWeek[]>([]);
@@ -142,7 +143,7 @@ const ActivationsDashboard: React.FC<Props> = ({ activities }) => {
     if (!attendanceMonth || !operatorId) return;
      console.log('attendanceReport:', attendanceMonth, operatorId);
   
-    const response = await fetch("http://localhost:5000/api/generate-pdf-by-op", {
+    const response = await fetch(API_URL+"/api/generate-pdf-by-op", {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
