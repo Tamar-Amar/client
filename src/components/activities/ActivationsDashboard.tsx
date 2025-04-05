@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { Activity, Operator } from '../../types';
 import { eachWeekOfInterval, isSaturday } from 'date-fns';
+import { useFetchOperatorById } from '../../queries/operatorQueries';
 
 interface Props {
   activities: Activity[];
@@ -29,6 +30,7 @@ interface ExcludedWeek {
 const TOTAL_GROUPS = 292;
 const START_DATE = new Date('2024-11-01');
 const TODAY = new Date('2025-06-01');
+const API_URL = process.env.REACT_APP_API_URL || "https://server-manage.onrender.com";
 
 const ActivationsDashboard: React.FC<Props> = ({ activities }) => {
   const [excludedWeeks, setExcludedWeeks] = useState<ExcludedWeek[]>([]);
@@ -36,7 +38,7 @@ const ActivationsDashboard: React.FC<Props> = ({ activities }) => {
   const [holidays, setHolidays] = useState<{ date: string; name: string }[]>( []);
   const [attendanceMonth, setAttendanceMonth] = useState<string>("");
   const [operatorId, setOperatorId] = useState<string>("");
-  const [operator, setOperator] = useState<Operator | null>(null);
+  const { data: operator, isLoading: operatorLoading } = useFetchOperatorById(operatorId);
 
 
   useEffect(() => {
@@ -127,16 +129,6 @@ const ActivationsDashboard: React.FC<Props> = ({ activities }) => {
     setExcludedWeeks(excluded);
   }, [holidays]);
 
-  useEffect(() => {
-    const fetchOperator = async () => {
-      if (!operatorId) return;
-      const res = await fetch(`http://localhost:5000/api/operators/${operatorId}`);
-      const data = await res.json();
-      setOperator(data);
-      console.log('�� העו��כים:', operator);
-    };
-    fetchOperator();
-  }, [operatorId]);
 
   const actualActivationsCount = useMemo(() => {
     return activities.filter((act) => new Date(act.date) >= START_DATE).length;
@@ -151,7 +143,7 @@ const ActivationsDashboard: React.FC<Props> = ({ activities }) => {
     if (!attendanceMonth || !operatorId) return;
      console.log('attendanceReport:', attendanceMonth, operatorId);
   
-    const response = await fetch("http://localhost:5000/api/generate-pdf-by-op", {
+    const response = await fetch(API_URL+"/api/generate-pdf-by-op", {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",

@@ -9,6 +9,7 @@ import ActivityDetails from './ActivityDetails';
 import AddActivity from './ActvitiesCreate';
 import GeneralStats from './GeneralStats';
 import ActivationsDashboard from './ActivationsDashboard';
+import { useFetchOperatorById, useFetchOperators } from '../../queries/operatorQueries';
 
 const Activities: React.FC = () => {
   const { data: activities = [], isLoading, isError } = useFetchActivities();
@@ -25,19 +26,8 @@ const Activities: React.FC = () => {
   const [detailMonth, setDetailMonth] = useState('');
   const [attendanceMonth, setAttendanceMonth] = useState<string>("");
   const [operatorId, setOperatorId] = useState<string>('');
-  const [operators, setOperators] = useState<Operator[]>([]);
-  const [operator, setOperator] = useState<Operator | null>(null);
-
-useEffect(() => {
-  const fetchOperators = async () => {
-    const res = await fetch("http://localhost:5000/api/operators");
-    const data = await res.json();
-    setOperators(data);
-  };
-  fetchOperators();
-}, []);
-
-
+  const { data: operators = [], isLoading: operatorsLoading } = useFetchOperators();
+  const { data: operator, isLoading: operatorLoading } = useFetchOperatorById(operatorId);
 
   const handleAddClick = () => setIsDialogOpen(true);
   const handleDialogClose = () => setIsDialogOpen(false);
@@ -50,29 +40,20 @@ useEffect(() => {
     setIsDialogOpen(false);
   };
 
-    useEffect(() => {
-      const fetchOperator = async () => {
-        if (!operatorId) return;
-        const res = await fetch(`http://localhost:5000/api/operators/${operatorId}`);
-        const data = await res.json();
-        setOperator(data);
-        console.log('�� העו��כים:', operator);
-      };
-      fetchOperator();
-    }, [operatorId]);
-
   const handleDeleteActivity = (activityIds: string[]) => {
     activityIds.forEach(activityId => {
       deleteActivityMutation.mutate(activityId);
     });
   };
 
+  const API_URL = process.env.REACT_APP_API_URL || "https://server-manage.onrender.com";
+
   const handleDownloadAttendanceReport = async () => {
     if (!attendanceMonth) return;
   
     const url = operatorId
-      ? "http://localhost:5000/api/generate-pdf-by-op"
-      : "http://localhost:5000/api/generate-pdf";
+      ? API_URL+"/api/generate-pdf-by-op"
+      : API_URL+"/api/generate-pdf";
   
     const body = operatorId
       ? { month: attendanceMonth, operatorId }
@@ -98,8 +79,6 @@ useEffect(() => {
   };
   
 
-
-
   const aggregatedData: AggregatedRow[] = useMemo(() => getAggregatedData(activities), [activities]);
   const filteredAggregatedData: AggregatedRow[] = useMemo(
     () => filterAggregatedData(aggregatedData, filterMonth, filterOperator, filterGroup),
@@ -110,7 +89,7 @@ useEffect(() => {
     return getDetailInfo(aggregatedData, filterOperator, filterGroup);
   }, [aggregatedData, filterOperator, filterGroup]);
 
-  if (isLoading) return <CircularProgress />;
+  if (isLoading || operatorsLoading) return <CircularProgress />;
   if (isError) return <Typography color="error">שגיאה בטעינת הפעילויות.</Typography>;
 
   return (
@@ -140,7 +119,7 @@ useEffect(() => {
 
         <Autocomplete
           options={operators}
-          getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
+          getOptionLabel={(option:Operator) => `${option.firstName} ${option.lastName}`}
           onChange={(_, newValue) => setOperatorId(newValue?._id ?? '')}
           renderInput={(params) => (
             <TextField {...params} label="בחר מפעיל" sx={{ width: 200 }} />
