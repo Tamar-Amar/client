@@ -81,11 +81,21 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd, default
     }
     return dates;
   };
-
   const handleSubmit = () => {
     let newActivities: Activity[] = [];
+  
+    if (!operatorId) {
+      alert('יש לבחור מפעיל');
+      return;
+    }
+  
     if (selectedOption === 'weekly') {
-      weeklyActivities.forEach((activity) => {
+      for (const activity of weeklyActivities) {
+        if (!activity.classId || activity.dayOfWeek === '' || !activity.description) {
+          alert('יש למלא את כל השדות בכל השורות (סמל, יום, תיאור)');
+          return;
+        }
+  
         const calculatedDates = calculateWeeklyDates(activity.dayOfWeek);
         const activitiesForClass = calculatedDates.map((date) => ({
           classId: activity.classId,
@@ -93,32 +103,42 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd, default
           date,
           description: activity.description,
         }));
+  
         newActivities = [...newActivities, ...activitiesForClass];
-      });
-    }  else if (selectedOption === 'single') {
-      singleActivities.forEach((activity) => {
-        activity.dates.forEach((date) => {
-          if (date) {
-            newActivities.push({
-              classId: activity.classId,
-              operatorId,
-              date,
-              description: activity.description,
-            });
-          }
+      }
+    } else if (selectedOption === 'single') {
+      for (const activity of singleActivities) {
+        if (!activity.classId ) {
+          alert('יש לבחור סמל מוסד בכל השורות');
+          return;
+        }
+  
+        const validDates = activity.dates.filter((d) => d !== null);
+        if (validDates.length === 0) {
+          alert('יש לבחור לפחות תאריך אחד לכל שורה בדיווח יחיד');
+          return;
+        }
+  
+        validDates.forEach((date) => {
+          newActivities.push({
+            classId: activity.classId,
+            operatorId,
+            date: date!,
+            description: activity.description,
+          });
         });
-      });
+      }
     }
+  
     onAdd(newActivities);
     setWeeklyActivities([{ classId: '', dayOfWeek: '', description: '' }]);
     setSingleActivities([{ classId: '', dates: [null, null, null, null, null], description: '' }]);
-    setOperatorId( '');
+    setOperatorId('');
     setSelectedMonth(new Date());
-    setSelectedOption('weekly'); 
-
+    setSelectedOption('weekly');
     onClose();
   };
-
+  
   const addWeeklyRow = () => setWeeklyActivities([...weeklyActivities, { classId: '', dayOfWeek: '', description: '' }]);
   const addSingleRow = () => setSingleActivities([...singleActivities, { classId: '', dates: [null, null, null, null, null], description: '' }]);
 
