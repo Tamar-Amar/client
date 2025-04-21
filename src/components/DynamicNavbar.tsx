@@ -15,6 +15,7 @@ const DynamicNavbar: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     { label: 'ניהול מפעילים', path: '/operators' },
     { label: 'ניהול קבוצות', path: '/classes' },
     { label: 'ניהול אנשי קשר', path: '/contacts' },
+    { label: 'מיילים', path: '/emails' },
   ];
 
   const operatorTabs = [

@@ -58,6 +58,9 @@ const Activities: React.FC = () => {
     const body = operatorId
       ? { month: attendanceMonth, operatorId }
       : { month: attendanceMonth };
+
+      console.log("body", body);
+      console.log("JSON.stringify(body)", JSON.stringify(body));
   
     const response = await fetch(url, {
       method: "POST",

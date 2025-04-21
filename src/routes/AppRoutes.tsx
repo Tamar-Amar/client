@@ -17,6 +17,7 @@ import OperatorDetails from '../components/operators/OperatorDetails';
 import { EditCalendarTwoTone } from '@mui/icons-material';
 import EditClass from '../pages/EditClass';
 import ContactList from '../components/ContactList';
+import EmailPage from '../pages/EmailPage';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -39,6 +40,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/edit-class/:id" element={<EditClass />} />
         <Route path="/add-class" element={<OperatorDetails />} />
         <Route path="/contacts" element={<ContactList />} />
+        <Route path="/emails" element={<EmailPage />} />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={['operator']} />}>
