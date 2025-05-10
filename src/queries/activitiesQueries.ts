@@ -20,7 +20,8 @@ export const useAddActivity = () => {
     mutationFn: createActivity,
     onSuccess: async (newActivity) => {
       if (!newActivity) return;
-
+    },
+    onError:  async (newActivity) => {
       const classInfo =
         typeof newActivity.classId === "object" && "name" in newActivity.classId
           ? newActivity.classId
@@ -30,15 +31,9 @@ export const useAddActivity = () => {
         typeof newActivity.operatorId === "object" && "firstName" in newActivity.operatorId
           ? newActivity.operatorId
           : { firstName: "לא ידוע", lastName: "" };
-
       setErrorMessage(
         `כבר קיימת פעילות בסמל ${classInfo.uniqueSymbol} (${classInfo.name}) על ידי ${operatorInfo.firstName} ${operatorInfo.lastName} בתאריך ${newActivity.date}`
       );
-
-      return;
-    },
-    onError: () => {
-      setErrorMessage("שגיאה בהוספת הפעילות. נסה שוב.");
     },
   });
 

@@ -13,6 +13,7 @@ import { useFetchOperatorById, useFetchOperators } from '../../queries/operatorQ
 
 const Activities: React.FC = () => {
   const { data: activities = [], isLoading, isError } = useFetchActivities();
+  console.log("activities", activities)
   const { mutation: addActivityMutation, errorMessage, setErrorMessage } = useAddActivity();
   const deleteActivityMutation = useDeleteActivity();
   const [showDashboard, setShowDashboard] = useState(false);
@@ -59,8 +60,6 @@ const Activities: React.FC = () => {
       ? { month: attendanceMonth, operatorId }
       : { month: attendanceMonth };
 
-      console.log("body", body);
-      console.log("JSON.stringify(body)", JSON.stringify(body));
   
     const response = await fetch(url, {
       method: "POST",

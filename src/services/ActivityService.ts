@@ -27,7 +27,6 @@ type ActivityResponse =
     try {
       const localDate = new Date(activity.date); 
       const utcDate = new Date(Date.UTC(localDate.getFullYear(), localDate.getMonth(), localDate.getDate()));
-  
       const activityToSend = {
         ...activity,
         date: utcDate.toISOString(), 
@@ -38,8 +37,9 @@ type ActivityResponse =
       if ("message" in response.data) {
         return response.data.existingActivity;
       }
-  
+
       return response.data;
+
     } catch (error: any) {
       console.error("❌ Error adding activity:", error);
       return null;

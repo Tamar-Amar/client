@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useRecoilValue } from 'recoil';
-import { userRoleState } from '../recoil/storeAtom';
+import { userRoleState } from '../../recoil/storeAtom';
 
 interface ProtectedRouteProps {
   allowedRoles: string[]; 

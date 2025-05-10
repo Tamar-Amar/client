@@ -17,6 +17,7 @@ export interface Activity {
         }; 
     date: Date; 
     description?: string; 
+    monthPayment: string;
   }
   
   export interface Class {

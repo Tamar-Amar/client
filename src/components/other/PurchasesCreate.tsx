@@ -10,10 +10,10 @@ import {
   Alert,
 } from "@mui/material";
 import { useFormik } from "formik";
-import { PurchaseSchema } from "../types/validations/PurchaseValidation";
-import {useAddPurchase } from "../queries/purchaseQueries";
-import { useFetchClasses } from "../queries/classQueries";
-import { useFetchStores } from "../queries/storeQueries";
+import { PurchaseSchema } from "../../types/validations/PurchaseValidation";
+import {useAddPurchase } from "../../queries/purchaseQueries";
+import { useFetchClasses } from "../../queries/classQueries";
+import { useFetchStores } from "../../queries/storeQueries";
 
 
 

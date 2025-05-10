@@ -3,30 +3,26 @@ import { AgGridReact } from 'ag-grid-react';
 import { ClientSideRowModelModule } from '@ag-grid-community/client-side-row-model';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
-import { Button } from '@mui/material';
-import { useFetchAllPurchases } from '../queries/purchaseQueries';
-import { useFetchStores } from '../queries/storeQueries';
+import { useFetchAllInvoices } from '../../queries/invoiceQueries';
 
-const PurchaseList: React.FC = () => {
-  const { data: purchases, isLoading, isError } = useFetchAllPurchases();
-
+const InvoiceList: React.FC = () => {
+  const { data: invoices, isLoading, isError } = useFetchAllInvoices();
   const [quickFilterText, setQuickFilterText] = useState('');
 
   const columnDefs = useMemo(
     () => [
-      { headerName: 'סמל כיתה', field: 'classId', sortable: true, filter: true },
-      { headerName: 'חנות', field: 'storeName', sortable: true, filter: true },
-      { headerName: 'מספר חשבונית', field: 'invoiceId', sortable: true, filter: true },
-      { headerName: 'חודש רכש', field: 'purchaseDate', sortable: true, filter: true },
-      { headerName: 'סכום רכישה (כולל מע"מ)', field: 'amount', sortable: true, filter: true },
-      { headerName: 'ניצול בפועל', field: 'actualamount', sortable: true, filter: true },
-      { headerName: 'תיאור', field: 'description', sortable: true, filter: true },
+      { headerName: 'מספר חשבונית', field: 'invoiceNumber', sortable: true, filter: true },
+      { headerName: 'תאריך חשבונית', field: 'invoiceDate', sortable: true, filter: true },
+      { headerName: 'סכום סופי', field: 'totalAmount', sortable: true, filter: true },
+      { headerName: 'מעמ', field: 'typeVat', sortable: true, filter: true },
+      { headerName: 'סטטוס', field: 'status', sortable: true, filter: true },
+      { headerName: 'סוג חשבונית', field: 'type', sortable: true, filter: true },
     ],
     []
   );
 
   if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>Error loading purchases.</div>;
+  if (isError) return <div>Error loading invoices.</div>;
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', minHeight: '100vh', marginLeft:"10%", marginRight:"10%" }}>
@@ -38,7 +34,7 @@ const PurchaseList: React.FC = () => {
       />
       <div className="ag-theme-alpine rtl" style={{ height: 600, width: '100%' }}>
         <AgGridReact
-          rowData={purchases}
+          rowData={invoices}
           columnDefs={columnDefs}
           modules={[ClientSideRowModelModule]}
           pagination={true}
@@ -50,4 +46,4 @@ const PurchaseList: React.FC = () => {
   );
 };
 
-export default PurchaseList;
+export default InvoiceList;

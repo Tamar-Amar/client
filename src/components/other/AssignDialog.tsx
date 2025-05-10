@@ -13,7 +13,7 @@ import {
   Box,
   Typography,
 } from "@mui/material";
-import { useAddContact } from "../queries/contactQueries";
+import { useAddContact } from "../../queries/contactQueries";
 
 interface AssignDialogProps {
   open: boolean;

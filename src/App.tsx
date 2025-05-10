@@ -10,7 +10,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { RecoilRoot, useSetRecoilState } from 'recoil';
 import queryClient from './queryClient';
 import './App.css';
-import DynamicNavbar from './components/DynamicNavbar';
+import DynamicNavbar from './components/other/DynamicNavbar';
 import { jwtDecode } from 'jwt-decode';
 import { userRoleState, userTokenState } from './recoil/storeAtom';
 

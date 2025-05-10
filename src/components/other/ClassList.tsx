@@ -10,15 +10,15 @@ import {
   MenuItem,
 } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams  } from "@mui/x-data-grid";
-import { useFetchClasses, useDeleteClass, useUpdateClass } from "../queries/classQueries";
-import { useFetchInstitutions } from "../queries/institutionQueries";
-import { useFetchContacts } from "../queries/contactQueries";
-import { useFetchOperators, useUpdateOperator } from "../queries/operatorQueries";
-import { useFetchStores, useUpdateStore } from "../queries/storeQueries";
+import { useFetchClasses, useDeleteClass, useUpdateClass } from "../../queries/classQueries";
+import { useFetchInstitutions } from "../../queries/institutionQueries";
+import { useFetchContacts } from "../../queries/contactQueries";
+import { useFetchOperators, useUpdateOperator } from "../../queries/operatorQueries";
+import { useFetchStores, useUpdateStore } from "../../queries/storeQueries";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import { Contact, Institution, Operator } from "../types";
+import { Contact, Institution, Operator } from "../../types";
 import AssignDialog from "./AssignDialog";
 
 

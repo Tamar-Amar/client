@@ -18,7 +18,7 @@ import BusinessIcon from "@mui/icons-material/Business";
 import CreditCardIcon from "@mui/icons-material/CreditCard";
 import { useFormik } from "formik";
 import { OperatorSchema } from "../../types/validations/OperatorValidation";
-import PasswordField from "../PasswordField";
+import PasswordField from "../other/PasswordField";
 import { useAddOperator } from "../../queries/operatorQueries";
 import { useNavigate } from "react-router-dom";
 import { EducationType, Gender, PaymentMethodChoicesEnum } from "../../types";

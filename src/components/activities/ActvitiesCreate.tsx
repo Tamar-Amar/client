@@ -41,13 +41,15 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd, default
   const [excludeHanukkah, setExcludeHanukkah] = useState(false);
   const [selectedOption, setSelectedOption] = useState<'weekly' | 'single'>('weekly');
   const [weeklyActivities, setWeeklyActivities] = useState<{ classId: string; dayOfWeek: string; description: string }[]>([
-    { classId: '', dayOfWeek: '', description: '' },
+    { classId: '', dayOfWeek: '', description: 'הפעלה' },
   ]);
   const [singleActivities, setSingleActivities] = useState<{ classId: string; dates: (Date | null)[]; description: string }[]>([
     { classId: '', dates: [null, null, null, null, null], description: '' },
   ]);
   const [selectedMonth, setSelectedMonth] = useState<Date | null>(new Date());
   const [operatorId, setOperatorId] = useState<string>(defaultOperatorId || '');
+  const [singlePaymentMonth, setSinglePaymentMonth] = useState<Date | null>(null);
+
 
   const handleWeeklyChange = (index: number, field: 'classId' | 'dayOfWeek' | 'description', value: string) => {
     const updated = [...weeklyActivities];
@@ -81,6 +83,14 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd, default
     }
     return dates;
   };
+
+  const getMonthPayment = (date: Date): string => {
+  const month = date.getMonth() + 1; 
+  const year = date.getFullYear() % 100;
+  return `${month.toString().padStart(2, '0')}-${year.toString().padStart(2, '0')}`;
+};
+ const monthPayment = selectedMonth ? getMonthPayment(selectedMonth) : getMonthPayment(new Date());
+
   const handleSubmit = () => {
     let newActivities: Activity[] = [];
   
@@ -91,18 +101,21 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd, default
   
     if (selectedOption === 'weekly') {
       for (const activity of weeklyActivities) {
-        if (!activity.classId || activity.dayOfWeek === '' || !activity.description) {
+        if (!activity.classId || activity.dayOfWeek === '' ) {
           alert('יש למלא את כל השדות בכל השורות (סמל, יום, תיאור)');
           return;
         }
   
         const calculatedDates = calculateWeeklyDates(activity.dayOfWeek);
+       
         const activitiesForClass = calculatedDates.map((date) => ({
           classId: activity.classId,
           operatorId,
           date,
           description: activity.description,
+          monthPayment,
         }));
+
   
         newActivities = [...newActivities, ...activitiesForClass];
       }
@@ -125,22 +138,29 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd, default
             operatorId,
             date: date!,
             description: activity.description,
+            monthPayment: monthPayment,
           });
         });
+
       }
     }
   
+    if (selectedOption === 'single' && !singlePaymentMonth) {
+        alert('יש לבחור חודש תשלום בדיווח יחיד');
+        return;
+      }
+
     onAdd(newActivities);
-    setWeeklyActivities([{ classId: '', dayOfWeek: '', description: '' }]);
-    setSingleActivities([{ classId: '', dates: [null, null, null, null, null], description: '' }]);
+    setWeeklyActivities([{ classId: '', dayOfWeek: '', description: 'פעילות' }]);
+    setSingleActivities([{ classId: '', dates: [null, null, null, null, null], description: 'פעילות' }]);
     setOperatorId('');
     setSelectedMonth(new Date());
     setSelectedOption('weekly');
     onClose();
   };
   
-  const addWeeklyRow = () => setWeeklyActivities([...weeklyActivities, { classId: '', dayOfWeek: '', description: '' }]);
-  const addSingleRow = () => setSingleActivities([...singleActivities, { classId: '', dates: [null, null, null, null, null], description: '' }]);
+  const addWeeklyRow = () => setWeeklyActivities([...weeklyActivities, { classId: '', dayOfWeek: '', description: 'פעילות' }]);
+  const addSingleRow = () => setSingleActivities([...singleActivities, { classId: '', dates: [null, null, null, null, null], description: 'פעילות' }]);
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} localeText={heIL.components.MuiLocalizationProvider.defaultProps.localeText}>
@@ -179,6 +199,11 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd, default
                   value={selectedMonth}
                   onChange={(newMonth) => setSelectedMonth(newMonth)}
                 />
+                {selectedMonth && (
+                  <Box mt={1}>
+                    <strong>חודש תשלום:</strong> {getMonthPayment(selectedMonth)}
+                  </Box>
+                )}
               </FormControl>
               {selectedMonth?.getMonth() === 0 && (
             <FormControlLabel
@@ -229,6 +254,20 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd, default
 
           {selectedOption === 'single' && (
             <>
+            <FormControl fullWidth margin="normal">
+            <DatePicker
+              views={['year', 'month']}
+              label="בחר חודש תשלום"
+              value={singlePaymentMonth}
+              onChange={(newMonth) => setSinglePaymentMonth(newMonth)}
+            />
+          </FormControl>
+          {singlePaymentMonth && (
+            <Box mt={1}>
+              <strong>חודש תשלום שנבחר:</strong> {getMonthPayment(singlePaymentMonth)}
+            </Box>
+          )}
+
              {singleActivities.map((activity, index) => (
               <Box key={index} display="flex" flexDirection="column" gap={2} mb={2}>
                 {/* שורה ראשונה - בחירת סמל */}

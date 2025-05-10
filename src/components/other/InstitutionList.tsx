@@ -4,8 +4,8 @@ import { ClientSideRowModelModule } from '@ag-grid-community/client-side-row-mod
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 import { Button } from '@mui/material';
-import { useFetchInstitutions, useAddInstitution,useDeleteInstitution } from '../queries/institutionQueries';
-import '../App.css';
+import { useFetchInstitutions, useAddInstitution,useDeleteInstitution } from '../../queries/institutionQueries';
+//import '../App.css';
 
 const InstitutionList: React.FC = () => {
   const { data: institutions, isLoading, isError } = useFetchInstitutions();

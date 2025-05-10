@@ -1,7 +1,7 @@
 import React from "react";
-import { useFetchContacts, useDeleteContact } from "../queries/contactQueries";
+import { useFetchContacts, useDeleteContact } from "../../queries/contactQueries";
 import { Box, Button, Typography } from "@mui/material";
-import { Contact } from "../types";
+import { Contact } from "../../types";
 
 const ContactList: React.FC = () => {
   const { data: contacts, isLoading, isError } = useFetchContacts();

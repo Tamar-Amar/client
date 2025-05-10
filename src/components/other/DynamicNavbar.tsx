@@ -1,7 +1,7 @@
 import React from 'react';
 import { AppBar, Toolbar, Typography, Button, Tabs, Tab, Box } from '@mui/material';
 import { useRecoilValue } from 'recoil';
-import { userRoleState } from '../recoil/storeAtom';
+import { userRoleState } from '../../recoil/storeAtom';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const DynamicNavbar: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {

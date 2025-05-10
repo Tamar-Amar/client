@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Button, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
-import InvoiceCreate from "../components/InvoiceCreate";
-import InvoiceList from "../components/InvoicesList";
+import InvoiceCreate from "../components/other/InvoiceCreate";
+import InvoiceList from "../components/other/InvoicesList";
 
 const InvoicesPage: React.FC = () => {
   const [open, setOpen] = useState(false);

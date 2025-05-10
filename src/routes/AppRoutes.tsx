@@ -9,14 +9,14 @@ import InvoicesPage from '../pages/InvoicesPage';
 import PurchasesPage from '../pages/PurchasesPage';
 import AttendancePage from '../pages/CalendarPage';
 import LoginPage from '../pages/LoginPage';
-import PersonalDetails from '../components/PersonalDetails';
+import PersonalDetails from '../components/other/PersonalDetails';
 import ActivityHistory from '../components/activities/ActivityHistory';
-import ProtectedRoute from '../components/ProtectedRoute';
+import ProtectedRoute from '../components/other/ProtectedRoute';
 import ReportPdfPage from '../pages/ReportPdfPage';
 import OperatorDetails from '../components/operators/OperatorDetails';
 import { EditCalendarTwoTone } from '@mui/icons-material';
 import EditClass from '../pages/EditClass';
-import ContactList from '../components/ContactList';
+import ContactList from '../components/other/ContactList';
 import EmailPage from '../pages/EmailPage';
 
 const AppRoutes: React.FC = () => {

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useFormik } from "formik";
-import { useFetchStores } from "../queries/storeQueries";
-import { InvoiceSchema } from "../types/validations/InvoiceValidation";
+import { useFetchStores } from "../../queries/storeQueries";
+import { InvoiceSchema } from "../../types/validations/InvoiceValidation";
 import {
   TextField,
   Button,
@@ -13,9 +13,9 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
-import { useAddInvoice } from "../queries/invoiceQueries";
+import { useAddInvoice } from "../../queries/invoiceQueries";
 import { useNavigate } from "react-router-dom";
-import { InvoiceStatus, InvoiceType } from "../types";
+import { InvoiceStatus, InvoiceType } from "../../types";
 
 
 const InvoiceCreate: React.FC = () => {
