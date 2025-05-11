@@ -6,10 +6,11 @@ import { getAggregatedData, filterAggregatedData, getDetailInfo, AggregatedRow, 
 import Filters from './Filters';
 import ActivityTable from './ActivityTable';
 import ActivityDetails from './ActivityDetails';
-import AddActivity from './ActvitiesCreate';
+
 import GeneralStats from './GeneralStats';
 import ActivationsDashboard from './ActivationsDashboard';
 import { useFetchOperatorById, useFetchOperators } from '../../queries/operatorQueries';
+import AddActivity from './addActivity/AddActivity';
 
 const Activities: React.FC = () => {
   const { data: activities = [], isLoading, isError } = useFetchActivities();
