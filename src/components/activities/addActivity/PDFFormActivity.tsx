@@ -8,15 +8,13 @@ import { useFetchOperators } from '../../../queries/operatorQueries';
 import { useFetchActivitiesByOperator } from '../../../queries/activitiesQueries';
 import PersonIcon from '@mui/icons-material/Person';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-
-
+import { useQueryClient } from '@tanstack/react-query';
 
 interface PDFFormActivityProps {
   onAdd: (newActivities: Activity[]) => Promise<void>;
   onClose: () => void;
   defaultOperatorId?: string;
 }
-
 interface PDFRow {
   date: string;
   day: string;
@@ -32,6 +30,7 @@ const PDFFormActivity: React.FC<PDFFormActivityProps> = ({ onAdd, onClose, defau
   const { data: operators = [] } = useFetchOperators();
   const [isLoading, setIsLoading] = useState(false);
   const { data: activities = [] } = useFetchActivitiesByOperator(operatorId);
+  const queryClient = useQueryClient();
 
   const generateMonthDays = (month: string) => {
     const [year, monthNum] = month.split('-').map(Number);
@@ -120,6 +119,7 @@ const PDFFormActivity: React.FC<PDFFormActivityProps> = ({ onAdd, onClose, defau
     try {
       setIsLoading(true);
       await onAdd(activities);
+      queryClient.invalidateQueries({ queryKey: ['activities'] });
       setIsLoading(false);
       onClose();
     } catch (error) {

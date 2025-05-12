@@ -22,6 +22,7 @@ import { addDays, getDay } from 'date-fns';
 import { Activity, Class, Operator } from '../../../types';
 import { useFetchClasses } from '../../../queries/classQueries';
 import { useFetchOperators } from '../../../queries/operatorQueries';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface WeeklyFormProps {
   onAdd: (newActivities: Activity[]) => Promise<void>;
@@ -32,6 +33,8 @@ interface WeeklyFormProps {
 const WeeklyForm: React.FC<WeeklyFormProps> = ({ onAdd, onClose, defaultOperatorId }) => {
   const { data: classes = [] } = useFetchClasses();
   const { data: operators = [] } = useFetchOperators();
+  const queryClient = useQueryClient();
+
 
   const [selectedMonth, setSelectedMonth] = useState<Date | null>(new Date());
   const [excludeHanukkah, setExcludeHanukkah] = useState(false);
@@ -86,13 +89,10 @@ const WeeklyForm: React.FC<WeeklyFormProps> = ({ onAdd, onClose, defaultOperator
     let newActivities: Activity[] = [];
 
     for (const activity of weeklyActivities) {
-      if (!activity.classId || activity.dayOfWeek === '') {
-        alert('יש למלא את כל השדות בכל השורות');
-        return;
-      }
-
+    if (!activity.classId || activity.dayOfWeek === '') {
+        continue;
+    }
       const calculatedDates = calculateWeeklyDates(activity.dayOfWeek);
-
       const activitiesForClass = calculatedDates.map((date) => ({
         classId: activity.classId,
         operatorId,
@@ -105,9 +105,10 @@ const WeeklyForm: React.FC<WeeklyFormProps> = ({ onAdd, onClose, defaultOperator
     }
 
     try {
-      setIsLoading(true);  // ✅ התחלת טעינה
-      await onAdd(newActivities);  // מחכה ל-onAdd
-      setIsLoading(false);         // ✅ סיום טעינה
+      setIsLoading(true);
+      await onAdd(newActivities); 
+      queryClient.invalidateQueries({ queryKey: ['activities'] });
+      setIsLoading(false); 
       onClose();
     } catch (error) {
       setIsLoading(false);

@@ -10,6 +10,7 @@ import { heIL } from '@mui/x-date-pickers/locales/heIL';
 import { Activity, Class, Operator } from '../../../types';
 import { useFetchClasses } from '../../../queries/classQueries';
 import { useFetchOperators } from '../../../queries/operatorQueries';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface SingleFormProps {
   onAdd: (newActivities: Activity[]) => Promise<void>;
@@ -25,7 +26,10 @@ const SingleForm: React.FC<SingleFormProps> = ({ onAdd, onClose, defaultOperator
   ]);
   const [singlePaymentMonth, setSinglePaymentMonth] = useState<Date | null>(new Date());
   const [operatorId, setOperatorId] = useState<string>(defaultOperatorId || '');
-  const [isLoading, setIsLoading] = useState(false);  // ✅ חדש
+  const [isLoading, setIsLoading] = useState(false); 
+  const queryClient = useQueryClient();
+
+
 
   const handleSingleChange = (index: number, field: 'classId' | 'dates' | 'description', value: any) => {
     const updated = [...singleActivities];
@@ -73,9 +77,10 @@ const SingleForm: React.FC<SingleFormProps> = ({ onAdd, onClose, defaultOperator
     }
 
     try {
-      setIsLoading(true);  // ✅ התחלת טעינה
-      await onAdd(newActivities);  // מחכה לסיום onAdd
-      setIsLoading(false);         // ✅ סיום טעינה
+      setIsLoading(true);  
+      await onAdd(newActivities);  
+      queryClient.invalidateQueries({ queryKey: ['activities'] });
+      setIsLoading(false); 
       onClose();
     } catch (error) {
       setIsLoading(false);

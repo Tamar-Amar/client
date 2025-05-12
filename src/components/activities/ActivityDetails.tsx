@@ -11,7 +11,6 @@ interface ActivityDetailsProps {
 }
 
 const ActivityDetails: React.FC<ActivityDetailsProps> = ({ detailInfo, activities, detailMonth, setDetailMonth }) => {
-  // חישוב מספר ההפעלות בהתאם לסוג שנבחר (מפעיל/קבוצה)
   const monthlyCount = useMemo(() => {
     if (!detailInfo) return 0;
 
@@ -36,7 +35,6 @@ const ActivityDetails: React.FC<ActivityDetailsProps> = ({ detailInfo, activitie
           <Typography>שם: {detailInfo.operator}</Typography>
           <Typography>סה"כ הפעלות: {detailInfo.totalActivities}</Typography>
 
-          {/* בחירת חודש והצגת מספר ההפעלות */}
           <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
               label="בחר חודש ספציפי"
@@ -61,7 +59,6 @@ const ActivityDetails: React.FC<ActivityDetailsProps> = ({ detailInfo, activitie
           <Typography>סמל: {detailInfo.groupSymbol}</Typography>
           <Typography>סה"כ הפעלות: {detailInfo.totalActivities}</Typography>
 
-          {/* בחירת חודש והצגת מספר ההפעלות */}
           <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
               label="בחר חודש ספציפי"
@@ -78,13 +75,12 @@ const ActivityDetails: React.FC<ActivityDetailsProps> = ({ detailInfo, activitie
             )}
           </Box>
 
-          {/* כפתורי יצירת דוחות */}
           <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
             <Button 
               variant="contained" 
               color="secondary" 
               onClick={() => exportMonthlyReportExcel(activities, detailInfo, detailMonth)}
-              disabled={!detailMonth} // הכפתור יושבת אם לא נבחר חודש
+              disabled={!detailMonth}
             >
               יצירת דוח חודשי
             </Button>
@@ -93,7 +89,6 @@ const ActivityDetails: React.FC<ActivityDetailsProps> = ({ detailInfo, activitie
             </Button>
           </Box>
 
-          {/* רשימת מפעילים בקבוצה */}
           <Typography sx={{ mt: 2 }}>מפעילים בקבוצה זו:</Typography>
           <List>
             {detailInfo.operators?.map((op: string, index: number) => (

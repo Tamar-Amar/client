@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { Box, Typography, Divider, TextField, Button } from '@mui/material';
-import { getTotalMonthlyActivities, getTotalActivities, exportGeneralAnnualReport, exportDetailedAnnualReport } from '../../utils/activitiesUtils';
-import { Activity } from '../../types';
+import { getTotalMonthlyActivities, getTotalActivities, exportGeneralAnnualReport, exportDetailedAnnualReport, exportDetailedMonthlyReport } from '../../utils/activitiesUtils';
+import { Activity, Class } from '../../types';
+import { useFetchClasses } from '../../queries/classQueries';
 
 interface GeneralStatsProps {
   activities: Activity[];
@@ -10,10 +11,9 @@ interface GeneralStatsProps {
 const GeneralStats: React.FC<GeneralStatsProps> = ({ activities }) => {
   const [selectedMonth, setSelectedMonth] = useState('');
 
-  // סך כל ההפעלות הכללי
   const totalActivities = useMemo(() => getTotalActivities(activities), [activities]);
+  const { data: classes } = useFetchClasses();
 
-  // חישוב ההפעלות בחודש הנבחר
   const monthlyCount = useMemo(() => {
     if (!selectedMonth) return 0;
     return getTotalMonthlyActivities(activities, selectedMonth);
@@ -41,10 +41,22 @@ const GeneralStats: React.FC<GeneralStatsProps> = ({ activities }) => {
             סה"כ הפעלות שבוצעו בחודש {selectedMonth}: <strong>{monthlyCount}</strong>
           </Typography>
         )}
-
-        <Button variant="contained" color="secondary" disabled>
+        <Button 
+          variant="contained" 
+          color="secondary" 
+          disabled={!selectedMonth || !classes}
+          onClick={() => exportDetailedMonthlyReport(
+            activities,
+            selectedMonth,
+            (classes ?? []).map((c: Class) => ({
+              uniqueSymbol: c.uniqueSymbol,
+              name: c.name
+          }))
+          )}
+        >
           יצירת דוח חודשי כללי
         </Button>
+
         <Button 
             variant="contained" 
             color="secondary" 
