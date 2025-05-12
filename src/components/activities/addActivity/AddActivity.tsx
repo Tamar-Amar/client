@@ -29,9 +29,9 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd, default
             onChange={(e) => setSelectedOption(e.target.value as 'weekly' | 'single' | 'pdf')}
             row
           >
+            <FormControlLabel value="pdf" control={<Radio />} label="מילוי דוח PDF" />
             <FormControlLabel value="weekly" control={<Radio />} label="דיווח שבועי" />
             <FormControlLabel value="single" control={<Radio />} label="דיווח יחיד" />
-            <FormControlLabel value="pdf" control={<Radio />} label="מילוי דוח PDF" />
           </RadioGroup>
         </Box>
 
