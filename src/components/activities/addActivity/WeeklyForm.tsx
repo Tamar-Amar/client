@@ -11,7 +11,6 @@ import {
   Autocomplete,
   Checkbox,
   FormControlLabel,
-  Typography,
   CircularProgress
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
@@ -35,14 +34,14 @@ const WeeklyForm: React.FC<WeeklyFormProps> = ({ onAdd, onClose, defaultOperator
   const { data: operators = [] } = useFetchOperators();
   const queryClient = useQueryClient();
 
-
   const [selectedMonth, setSelectedMonth] = useState<Date | null>(new Date());
+  const [paymentMonth, setPaymentMonth] = useState<Date | null>(new Date());
   const [excludeHanukkah, setExcludeHanukkah] = useState(false);
   const [weeklyActivities, setWeeklyActivities] = useState<{ classId: string; dayOfWeek: string; description: string }[]>([
     { classId: '', dayOfWeek: '', description: 'הפעלה' },
   ]);
   const [operatorId, setOperatorId] = useState<string>(defaultOperatorId || '');
-  const [isLoading, setIsLoading] = useState(false);   // ✅ חדש
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleWeeklyChange = (index: number, field: 'classId' | 'dayOfWeek' | 'description', value: string) => {
     const updated = [...weeklyActivities];
@@ -71,27 +70,23 @@ const WeeklyForm: React.FC<WeeklyFormProps> = ({ onAdd, onClose, defaultOperator
     return dates;
   };
 
-  const getMonthPayment = (date: Date | null): string => {
-    if (!date) return '';
-    const month = date.getMonth() + 1;
-    const year = date.getFullYear() % 100;
-    return `${month.toString().padStart(2, '0')}-${year.toString().padStart(2, '0')}`;
-  };
-
-  const monthPayment = getMonthPayment(selectedMonth);
-
   const handleSubmit = async () => {
     if (!operatorId) {
       alert('יש לבחור מפעיל');
       return;
     }
 
+    const monthPayment = paymentMonth
+      ? `${(paymentMonth.getMonth() + 1).toString().padStart(2, '0')}-${(paymentMonth.getFullYear() % 100).toString().padStart(2, '0')}`
+      : '';
+
     let newActivities: Activity[] = [];
 
     for (const activity of weeklyActivities) {
-    if (!activity.classId || activity.dayOfWeek === '') {
-        continue;
-    }
+      if (!activity.classId || activity.dayOfWeek === '') {
+        continue; // ✅ דילוג על שורות לא מלאות
+      }
+
       const calculatedDates = calculateWeeklyDates(activity.dayOfWeek);
       const activitiesForClass = calculatedDates.map((date) => ({
         classId: activity.classId,
@@ -104,11 +99,16 @@ const WeeklyForm: React.FC<WeeklyFormProps> = ({ onAdd, onClose, defaultOperator
       newActivities = [...newActivities, ...activitiesForClass];
     }
 
+    if (newActivities.length === 0) {
+      alert('אין פעילויות לשמירה');
+      return;
+    }
+
     try {
       setIsLoading(true);
-      await onAdd(newActivities); 
+      await onAdd(newActivities);
       queryClient.invalidateQueries({ queryKey: ['activities'] });
-      setIsLoading(false); 
+      setIsLoading(false);
       onClose();
     } catch (error) {
       setIsLoading(false);
@@ -117,17 +117,17 @@ const WeeklyForm: React.FC<WeeklyFormProps> = ({ onAdd, onClose, defaultOperator
     }
   };
 
-  const addWeeklyRow = () => setWeeklyActivities([...weeklyActivities, { classId: '', dayOfWeek: '', description: 'הפעלה' }]);
+  const addWeeklyRow = () =>
+    setWeeklyActivities([...weeklyActivities, { classId: '', dayOfWeek: '', description: 'הפעלה' }]);
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} localeText={heIL.components.MuiLocalizationProvider.defaultProps.localeText}>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {isLoading && (
+        {isLoading ? (
           <Box display="flex" justifyContent="center" alignItems="center" height={200}>
             <CircularProgress />
           </Box>
-        )}
-        {!isLoading && (
+        ) : (
           <>
             <FormControl fullWidth disabled={!!defaultOperatorId}>
               <Autocomplete
@@ -136,18 +136,28 @@ const WeeklyForm: React.FC<WeeklyFormProps> = ({ onAdd, onClose, defaultOperator
                 value={operators.find((op: Operator) => op._id === operatorId) || null}
                 onChange={(event, newValue) => setOperatorId(newValue ? newValue._id : '')}
                 renderInput={(params) => <TextField {...params} label="בחר מפעיל" />}
-                fullWidth
               />
             </FormControl>
 
             <Box>
               <DatePicker
                 views={['year', 'month']}
-                label="בחר חודש לדיווח"
+                label="בחר חודש דיווח"
                 value={selectedMonth}
-                onChange={(newMonth) => setSelectedMonth(newMonth)}
+                onChange={(newDate) => {
+                  setSelectedMonth(newDate);
+                  setPaymentMonth(newDate); 
+                }}
               />
-              <Typography mt={1}><strong>חודש תשלום:</strong> {monthPayment}</Typography>
+            </Box>
+
+            <Box mt={2}>
+              <DatePicker
+                views={['year', 'month']}
+                label="בחר חודש תשלום"
+                value={paymentMonth}
+                onChange={(newDate) => setPaymentMonth(newDate)}
+              />
             </Box>
 
             {selectedMonth?.getMonth() === 0 && (
@@ -192,7 +202,9 @@ const WeeklyForm: React.FC<WeeklyFormProps> = ({ onAdd, onClose, defaultOperator
               </Box>
             ))}
 
-            <Button onClick={addWeeklyRow} variant="outlined">הוסף שורה</Button>
+            <Button onClick={addWeeklyRow} variant="outlined">
+              הוסף שורה
+            </Button>
 
             <Box display="flex" justifyContent="space-between" mt={2}>
               <Button onClick={onClose}>ביטול</Button>
