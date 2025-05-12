@@ -1,4 +1,3 @@
-// components/Activities/AddActivity/PDFFormActivity.tsx
 import React, { useState, useEffect } from 'react';
 import { Box, TextField, Button, Typography, Table, TableBody, TableCell, TableHead, TableRow, IconButton, Autocomplete, FormControl, CircularProgress } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
@@ -6,6 +5,7 @@ import { DateTime } from 'luxon';
 import { Activity, Class, Operator } from '../../../types';
 import { useFetchClasses } from '../../../queries/classQueries';
 import { useFetchOperators } from '../../../queries/operatorQueries';
+import { useFetchActivitiesByOperator } from '../../../queries/activitiesQueries';
 
 interface PDFFormActivityProps {
   onAdd: (newActivities: Activity[]) => Promise<void>;
@@ -17,6 +17,7 @@ interface PDFRow {
   date: string;
   day: string;
   symbols: string[];
+  readOnly?: boolean;
 }
 
 const PDFFormActivity: React.FC<PDFFormActivityProps> = ({ onAdd, onClose, defaultOperatorId }) => {
@@ -25,25 +26,58 @@ const PDFFormActivity: React.FC<PDFFormActivityProps> = ({ onAdd, onClose, defau
   const [selectedMonth, setSelectedMonth] = useState<string>(DateTime.now().toFormat('yyyy-MM'));
   const [operatorId, setOperatorId] = useState<string>(defaultOperatorId || '');
   const { data: operators = [] } = useFetchOperators();
-  const [isLoading, setIsLoading] = useState(false);  // ✅ חדש
-
-  useEffect(() => {
-    generateMonthDays(selectedMonth);
-  }, [selectedMonth]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { data: activities = [] } = useFetchActivitiesByOperator(operatorId);
+  console.log('activities', activities);
 
   const generateMonthDays = (month: string) => {
     const [year, monthNum] = month.split('-').map(Number);
-    const startDate = DateTime.local(year, monthNum - 1, 26);
+    const startDate = (monthNum === 1)
+    ? DateTime.local(year - 1, 12, 26) 
+    : DateTime.local(year, monthNum - 1, 26);
+
     const endDate = DateTime.local(year, monthNum, 25);
+
+    const startWeekday = startDate.weekday;
+    console.log('startWeekday', startWeekday);
+    console.log('startDate', startDate.toFormat('dd/MM/yyyy'));
+    const firstWeekStartDate = (startWeekday === 7 || startWeekday === 6)
+        ? startDate
+        : startDate.minus({ days: startWeekday });
+
+        
+    const activitiesInRange = activities.filter(a => {
+        const activityDate = DateTime.fromJSDate(new Date(a.date));
+        return activityDate >= firstWeekStartDate && activityDate <= endDate;
+    });
+
+    const existingActivities: { [date: string]: string[] } = {};
+    activitiesInRange.forEach(a => {
+        const dateStr = DateTime.fromJSDate(new Date(a.date)).toFormat('dd/MM/yyyy');
+        const uniqueSymbol = typeof a.classId === 'string' ? a.classId : a.classId?.uniqueSymbol;
+        if (!uniqueSymbol) return;
+        if (!existingActivities[dateStr]) existingActivities[dateStr] = [];
+        if (!existingActivities[dateStr].includes(uniqueSymbol)) {
+            existingActivities[dateStr].push(uniqueSymbol);
+        }
+    });
+
     const tempRows: PDFRow[] = [];
 
-    for (let date = startDate; date <= endDate; date = date.plus({ days: 1 })) {
+    for (let date = firstWeekStartDate; date <= endDate; date = date.plus({ days: 1 })) {
       const dayOfWeek = date.weekday;
       if (dayOfWeek === 5 || dayOfWeek === 6) continue;
+
+      const formattedDate = date.toFormat('dd/MM/yyyy');
+      const readOnlySymbols = existingActivities[formattedDate];
+      const previousPeriodEnd = DateTime.local(year, monthNum - 1, 25);
+      const isPreviousMonth = date <= previousPeriodEnd;
+
       tempRows.push({
-        date: date.toFormat('dd/MM/yyyy'),
+        date: formattedDate,
         day: date.setLocale('he').toFormat('cccc'),
-        symbols: ['']
+        symbols: readOnlySymbols ? readOnlySymbols : [''],
+        readOnly: isPreviousMonth
       });
     }
     setRows(tempRows);
@@ -69,12 +103,13 @@ const PDFFormActivity: React.FC<PDFFormActivityProps> = ({ onAdd, onClose, defau
 
     const activities: Activity[] = [];
     rows.forEach(row => {
+      if (row.readOnly) return;
       row.symbols
         .filter(symbol => symbol !== '')
         .forEach(symbol => {
           activities.push({
             classId: symbol,
-            operatorId: operatorId,
+            operatorId,
             date: DateTime.fromFormat(row.date, 'dd/MM/yyyy').toJSDate(),
             description: 'הפעלה',
             monthPayment: selectedMonth ? `${selectedMonth.split('-')[1]}-${selectedMonth.split('-')[0].slice(2)}` : '',
@@ -83,9 +118,9 @@ const PDFFormActivity: React.FC<PDFFormActivityProps> = ({ onAdd, onClose, defau
     });
 
     try {
-      setIsLoading(true);   
+      setIsLoading(true);
       await onAdd(activities);
-      setIsLoading(false); 
+      setIsLoading(false);
       onClose();
     } catch (error) {
       setIsLoading(false);
@@ -93,6 +128,11 @@ const PDFFormActivity: React.FC<PDFFormActivityProps> = ({ onAdd, onClose, defau
       alert('שגיאה בשמירת הפעילויות');
     }
   };
+
+  useEffect(() => {
+    if (!operatorId || !activities) return;
+    generateMonthDays(selectedMonth);
+}, [selectedMonth, operatorId, activities]);
 
   return (
     <Box>
@@ -109,7 +149,9 @@ const PDFFormActivity: React.FC<PDFFormActivityProps> = ({ onAdd, onClose, defau
             label="חודש נוכחות"
             type="month"
             value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
+            onChange={(e) => {
+                setSelectedMonth(e.target.value);
+            }}
             sx={{ mt: 2, mb: 2 }}
           />
 
@@ -118,7 +160,9 @@ const PDFFormActivity: React.FC<PDFFormActivityProps> = ({ onAdd, onClose, defau
               options={[...operators].sort((a, b) => a.lastName.localeCompare(b.lastName))}
               getOptionLabel={(option) => `${option.lastName} ${option.firstName} (${option.id})`}
               value={operators.find((op: Operator) => op._id === operatorId) || null}
-              onChange={(event, newValue) => setOperatorId(newValue ? newValue._id : '')}
+              onChange={(event, newValue) => {
+                  setOperatorId(newValue ? newValue._id : '');
+              }}
               renderInput={(params) => <TextField {...params} label="בחר מפעיל" />}
               fullWidth
             />
@@ -135,30 +179,46 @@ const PDFFormActivity: React.FC<PDFFormActivityProps> = ({ onAdd, onClose, defau
             <TableBody>
               {rows.map((row, rowIndex) => {
                 const isNewWeek = rowIndex > 0 && rows[rowIndex - 1].day === 'חמישי';
-                const cellStyle = isNewWeek ? { borderTop: '3px solid black' } : {};
                 return (
                   <TableRow key={rowIndex} sx={isNewWeek ? { '& > td': { borderTop: '4px solid black' } } : {}}>
-                    <TableCell sx={cellStyle}>{row.date}</TableCell>
-                    <TableCell sx={cellStyle}>{row.day}</TableCell>
-                    <TableCell sx={cellStyle}>
-                      <Box display="flex" flexWrap="wrap" gap={1}>
-                        {row.symbols.map((symbol, symbolIndex) => (
-                          <Autocomplete
-                            key={symbolIndex}
-                            options={classes}
-                            getOptionLabel={(option) => `${option.name} (${option.uniqueSymbol})`}
-                            value={classes.find((cls: Class) => cls._id === symbol) || null}
-                            onChange={(e, newValue) =>
-                              handleChangeSymbol(rowIndex, symbolIndex, (newValue as Class)?._id || '')
-                            }
-                            renderInput={(params) => <TextField {...params} label="סמל" size="small" />}
-                            sx={{ width: 150 }}
-                          />
-                        ))}
-                        <IconButton size="small" onClick={() => addSymbolField(rowIndex)}>
-                          <AddIcon fontSize="small" />
-                        </IconButton>
-                      </Box>
+                    <TableCell sx={row.readOnly ? { color: 'grey.600' } : {}}>
+                      {row.date}
+                    </TableCell>
+                    <TableCell sx={row.readOnly ? { color: 'grey.600' } : {}}>
+                      {row.day}
+                    </TableCell>
+                    <TableCell>
+                      {row.readOnly ? (
+                        <Box display="flex" flexWrap="wrap" gap={1}>
+                          {row.symbols.map((symbol, index) => {
+                            const cls = classes.find((cls: Class) => cls.uniqueSymbol === symbol);
+                            return (
+                              <Typography key={index} variant="body2" sx={{ color: 'grey.600' }}>
+                                {cls ? `${cls.name} (${cls.uniqueSymbol})` : symbol}
+                              </Typography>
+                            );
+                          })}
+                        </Box>
+                      ) : (
+                        <Box display="flex" flexWrap="wrap" gap={1}>
+                          {row.symbols.map((symbol, symbolIndex) => (
+                            <Autocomplete
+                              key={symbolIndex}
+                              options={classes}
+                              getOptionLabel={(option) => `${option.name} (${option.uniqueSymbol})`}
+                              value={classes.find((cls: Class) => cls._id === symbol) || null}
+                              onChange={(e, newValue) =>
+                                handleChangeSymbol(rowIndex, symbolIndex, (newValue as Class)?._id || '')
+                              }
+                              renderInput={(params) => <TextField {...params} label="סמל" size="small" />}
+                              sx={{ width: 150 }}
+                            />
+                          ))}
+                          <IconButton size="small" onClick={() => addSymbolField(rowIndex)}>
+                            <AddIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      )}
                     </TableCell>
                   </TableRow>
                 );
