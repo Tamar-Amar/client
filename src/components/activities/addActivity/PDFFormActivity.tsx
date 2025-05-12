@@ -6,6 +6,10 @@ import { Activity, Class, Operator } from '../../../types';
 import { useFetchClasses } from '../../../queries/classQueries';
 import { useFetchOperators } from '../../../queries/operatorQueries';
 import { useFetchActivitiesByOperator } from '../../../queries/activitiesQueries';
+import PersonIcon from '@mui/icons-material/Person';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+
+
 
 interface PDFFormActivityProps {
   onAdd: (newActivities: Activity[]) => Promise<void>;
@@ -28,7 +32,6 @@ const PDFFormActivity: React.FC<PDFFormActivityProps> = ({ onAdd, onClose, defau
   const { data: operators = [] } = useFetchOperators();
   const [isLoading, setIsLoading] = useState(false);
   const { data: activities = [] } = useFetchActivitiesByOperator(operatorId);
-  console.log('activities', activities);
 
   const generateMonthDays = (month: string) => {
     const [year, monthNum] = month.split('-').map(Number);
@@ -37,10 +40,7 @@ const PDFFormActivity: React.FC<PDFFormActivityProps> = ({ onAdd, onClose, defau
     : DateTime.local(year, monthNum - 1, 26);
 
     const endDate = DateTime.local(year, monthNum, 25);
-
     const startWeekday = startDate.weekday;
-    console.log('startWeekday', startWeekday);
-    console.log('startDate', startDate.toFormat('dd/MM/yyyy'));
     const firstWeekStartDate = (startWeekday === 7 || startWeekday === 6)
         ? startDate
         : startDate.minus({ days: startWeekday });
@@ -136,8 +136,6 @@ const PDFFormActivity: React.FC<PDFFormActivityProps> = ({ onAdd, onClose, defau
 
   return (
     <Box>
-      <Typography variant="h6">מילוי טבלת דוח PDF</Typography>
-
       {isLoading && (
         <Box display="flex" justifyContent="center" alignItems="center" height={200}>
           <CircularProgress />
@@ -145,28 +143,36 @@ const PDFFormActivity: React.FC<PDFFormActivityProps> = ({ onAdd, onClose, defau
       )}
       {!isLoading && (
         <>
-          <TextField
-            label="חודש נוכחות"
-            type="month"
-            value={selectedMonth}
-            onChange={(e) => {
+          <Box display="flex" alignItems="center" gap={2} mb={2}>
+            <CalendarTodayIcon color="action" sx={{ fontSize: 30 }} />
+            <TextField
+              label="בחר חודש תשלום"
+              type="month"
+              value={selectedMonth}
+              onChange={(e) => {
                 setSelectedMonth(e.target.value);
-            }}
-            sx={{ mt: 2, mb: 2 }}
-          />
+                generateMonthDays(e.target.value);
+              }}
+              sx={{ minWidth: 200 }}
+              InputLabelProps={{ shrink: true }}
+            />
 
-          <FormControl fullWidth margin="normal" disabled={!!defaultOperatorId}>
+            <PersonIcon color="action" sx={{ fontSize: 30 }} />
             <Autocomplete
+              sx={{ minWidth: 250 }}
               options={[...operators].sort((a, b) => a.lastName.localeCompare(b.lastName))}
               getOptionLabel={(option) => `${option.lastName} ${option.firstName} (${option.id})`}
               value={operators.find((op: Operator) => op._id === operatorId) || null}
-              onChange={(event, newValue) => {
-                  setOperatorId(newValue ? newValue._id : '');
-              }}
-              renderInput={(params) => <TextField {...params} label="בחר מפעיל" />}
-              fullWidth
+              onChange={(event, newValue) => setOperatorId(newValue ? newValue._id : '')}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="בחר מפעיל"
+                  error={!operatorId}
+                />
+              )}
             />
-          </FormControl>
+          </Box>
 
           <Table size="small">
             <TableHead>

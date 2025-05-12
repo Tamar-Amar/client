@@ -64,6 +64,7 @@ export const useFetchActivitiesByOperator = (operatorId: string) => {
     queryKey: ['activities', operatorId],
     queryFn: () => fetchActivitiesByOperator(operatorId),
     staleTime: 1000 * 60 * 5, 
+    enabled: !!operatorId, 
   });
 };
 
