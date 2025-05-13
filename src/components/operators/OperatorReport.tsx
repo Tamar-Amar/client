@@ -3,9 +3,9 @@ import { Paper, Typography, Divider, Table, TableBody, TableCell, TableContainer
 import dayjs from "dayjs";
 import { useFetchActivitiesByOperator } from "../../queries/activitiesQueries";
 import { Class, Operator, PaymentMethodChoicesEnum } from "../../types";
-import AddActivity from "../activities/ActvitiesCreate";
 import { useFetchClasses } from "../../queries/classQueries";
 import { useFetchOperators, useUpdateOperatorWeeklySchedule } from "../../queries/operatorQueries";
+import AddActivity from "../activities/addActivity/AddActivity";
 
 
 const getMonthLabel = (date: Date) => {
@@ -208,7 +208,7 @@ const handleRemoveClassFromDay = (day: string, classId: string) => {
       </TableContainer>
 
       {/* דיאלוג הוספת פעילות עם המפעיל הנוכחי כברירת מחדל */}
-      <AddActivity open={openDialog} onClose={handleCloseDialog} onAdd={() => {}} defaultOperatorId={operator._id} />
+      {/* <AddActivity open={openDialog} onClose={handleCloseDialog} onAdd={() => {}} defaultOperatorId={operator._id} /> */}
     </Paper>
   );
 };

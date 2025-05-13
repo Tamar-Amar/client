@@ -17,9 +17,9 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useFetchActivitiesByOperator, useDeleteActivity, useAddActivity } from '../../queries/activitiesQueries';
 import { jwtDecode } from 'jwt-decode';
-import AddActivity from './ActvitiesCreate';
 import { handleActivityAdded, handleDeleteSelected, handleRowSelect } from '../../utils/ActivityHistoryUtils';
 import { useQueryClient } from '@tanstack/react-query';
+import AddActivity from './addActivity/AddActivity';
 
 const ActivityHistory: React.FC = () => {
   
