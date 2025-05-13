@@ -1,39 +1,24 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  Typography, 
-  Card, 
-  CardContent, 
-  IconButton, 
-  Collapse, 
-  Grid, 
-  Divider, 
-  Button, 
-  TextField 
-} from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import { Typography, Paper, IconButton, Grid, Button, TextField, InputAdornment, Box } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
 import DeleteIcon from '@mui/icons-material/Delete';
-import VisibilityIcon from '@mui/icons-material/Visibility';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { useNavigate } from 'react-router-dom';
 import { useDeleteOperator, useFetchOperators } from '../../queries/operatorQueries';
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 
 const OperatorList: React.FC = () => {
   const { data: operators, isLoading, isError } = useFetchOperators();
   const deleteMutation = useDeleteOperator();
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState(""); 
+  const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(0);
-  const pageSize = 9;
+  const pageSize = 8;
 
   const handleDelete = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this operator?')) {
+    if (window.confirm('האם את/ה בטוח/ה שברצונך למחוק מפעיל זה?')) {
       deleteMutation.mutate(id);
     }
-  };
-
-  const toggleExpand = (id: string) => {
-    setExpandedId(expandedId === id ? null : id);
   };
 
   const sortedOperators = useMemo(() => {
@@ -48,105 +33,70 @@ const OperatorList: React.FC = () => {
   }, [sortedOperators, searchTerm]);
 
   const totalPages = Math.ceil(filteredOperators.length / pageSize);
+  const currentOperators = useMemo(() => filteredOperators.slice(page * pageSize, (page + 1) * pageSize), [filteredOperators, page]);
 
-  const currentOperators = useMemo(() => {
-    return filteredOperators.slice(page * pageSize, (page + 1) * pageSize);
-  }, [filteredOperators, page]);
-
-  if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>Error loading operators.</div>;
+  if (isLoading) return <Typography>טוען...</Typography>;
+  if (isError) return <Typography color="error">שגיאה בטעינת מפעילים.</Typography>;
 
   return (
-    <div style={{ padding: '20px', maxWidth: 700, margin: 'auto', minHeight: 937 }}>
-
+    <>
       <TextField
-        label="חפש מפעיל"
         variant="outlined"
+        placeholder="חפש מפעיל"
         fullWidth
-        sx={{ mb: 2 }}
+        sx={{ mb: 3, backgroundColor: '#f9f9f9', borderRadius: 2 }}
+        value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon />
+            </InputAdornment>
+          ),
+        }}
       />
 
       {currentOperators.map((operator: any) => (
-        <Card key={operator._id} sx={{ mb: 2, boxShadow: 3, borderRadius: 2 }}>
-          <Grid container alignItems="center">
-            <Grid 
-              item 
-              xs={2} 
-              sx={{ 
-                display: 'flex', 
-                justifyContent: 'center', 
-                gap: 1, 
-                padding: '15px',
-                backgroundColor: '#f4f4f4', 
-                borderTopLeftRadius: '10px',
-                borderBottomLeftRadius: '10px'
-              }}
-            >
+        <Paper
+          key={operator._id}
+          elevation={3}
+          sx={{
+            mb: 2,
+            borderRadius: 3,
+            overflow: 'hidden',
+            transition: '0.3s',
+            '&:hover': { boxShadow: 6 }
+          }}
+        >
+          <Grid container alignItems="center" sx={{ p: 1 }}>
+            <Grid item xs="auto" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', pl: 1 }}>
+              <AccountCircleIcon fontSize="large" color="primary" />
+            </Grid>
+
+            <Grid item xs sx={{ display: 'flex', alignItems: 'center', pl: 2 }}>
+              <Typography variant="h6">{operator.lastName} {operator.firstName}</Typography>
+            </Grid>
+
+            <Grid item xs="auto" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <IconButton color="error" onClick={() => handleDelete(operator._id)}>
                 <DeleteIcon />
               </IconButton>
               <IconButton color="primary" onClick={() => navigate(`/operators/${operator._id}`)}>
-                <VisibilityIcon />
-              </IconButton>
-            </Grid>
-
-            <Grid 
-              item 
-              xs={10} 
-              sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'space-between', 
-                padding: '15px',
-                backgroundColor: '#ffffff',
-                borderTopRightRadius: '10px',
-                borderBottomRightRadius: '10px'
-              }}
-            >
-              <Typography variant="h6">
-                {operator.lastName} {operator.firstName}
-              </Typography>
-              <IconButton onClick={() => toggleExpand(operator._id)}>
-                {expandedId === operator._id ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                <ArrowBackIosNewIcon />
               </IconButton>
             </Grid>
           </Grid>
-
-          <Collapse in={expandedId === operator._id} timeout="auto" unmountOnExit>
-            <Divider />
-            <CardContent sx={{ backgroundColor: '#fafafa' }}>
-              <Typography variant="body2">ת"ז: {operator.id}</Typography>
-              <Typography variant="body2">טלפון: {operator.phone}</Typography>
-              <Typography variant="body2">כתובת: {operator.address}</Typography>
-              <Typography variant="body2">אימייל: {operator.email}</Typography>
-              <Typography variant="body2">סטטוס: {operator.status}</Typography>
-              <Typography variant="body2">תיאור: {operator.description}</Typography>
-            </CardContent>
-          </Collapse>
-        </Card>
+        </Paper>
       ))}
 
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', gap: '20px' }}>
-        <Button 
-          variant="contained" 
-          onClick={() => setPage(prev => prev - 1)} 
-          disabled={page === 0}
-        >
-          הקודם
-        </Button>
-        <Typography variant="body1" sx={{ alignSelf: 'center' }}>
-          עמוד {page + 1} מתוך {totalPages}
-        </Typography>
-        <Button 
-          variant="contained" 
-          onClick={() => setPage(prev => prev + 1)} 
-          disabled={page >= totalPages - 1}
-        >
-          הבא
-        </Button>
-      </div>
-    </div>
+      {filteredOperators.length > pageSize && (
+        <Box display="flex" justifyContent="center" mt={4} gap={2}>
+          <Button variant="outlined" onClick={() => setPage(prev => prev - 1)} disabled={page === 0}>הקודם</Button>
+          <Typography variant="body1" alignSelf="center">עמוד {page + 1} מתוך {totalPages}</Typography>
+          <Button variant="outlined" onClick={() => setPage(prev => prev + 1)} disabled={page >= totalPages - 1}>הבא</Button>
+        </Box>
+      )}
+    </>
   );
 };
 

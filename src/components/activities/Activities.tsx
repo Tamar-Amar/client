@@ -157,18 +157,16 @@ const Activities: React.FC = () => {
     <AddActivity open={isDialogOpen} onClose={handleDialogClose} onAdd={handleActivityAdded} />
   </>
 )}
-
-            <Snackbar
-              open={!!errorMessage}
-              autoHideDuration={5000}
-              onClose={() => setErrorMessage(null)}
-              anchorOrigin={{ vertical: "top", horizontal: "center" }}
-            >
-              <Alert severity="warning" onClose={() => setErrorMessage(null)}>
-                {errorMessage}
-              </Alert>
-            </Snackbar>
-
+    <Snackbar
+      open={!!errorMessage}
+      autoHideDuration={5000}
+      onClose={() => setErrorMessage(null)}
+      anchorOrigin={{ vertical: "top", horizontal: "center" }}
+    >
+      <Alert severity="warning" onClose={() => setErrorMessage(null)}>
+        {errorMessage}
+      </Alert>
+    </Snackbar>
     </Box>
   );
   

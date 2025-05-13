@@ -571,9 +571,10 @@ export const exportDetailedAnnualReport = (activities: Activity[]) => {
     if (monthData.entries.length < MAX_ACTIVITIES_PER_MONTH) {
       monthData.entries.push({
         date: date.toLocaleDateString('he-IL'),
-        operator: typeof activity.operatorId === 'string'
-          ? 'לא ידוע'
-          : `${activity.operatorId.firstName} ${activity.operatorId.lastName}`
+operator: !activity.operatorId || typeof activity.operatorId === 'string'
+    ? 'לא ידוע'
+    : `${activity.operatorId.firstName} ${activity.operatorId.lastName}`
+
       });
     }
 
