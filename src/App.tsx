@@ -1,3 +1,4 @@
+// App.tsx (מתוקן עם LocalizationProvider)
 import React, { useEffect } from 'react';
 import { ThemeProvider, CssBaseline, Box } from '@mui/material';
 import theme from './theme/theme';
@@ -5,7 +6,6 @@ import { BrowserRouter } from 'react-router-dom';
 import AppRoutes from './routes/AppRoutes';
 import { CacheProvider } from '@emotion/react';
 import rtlCache from './theme/mui-rtl';
-//hadas
 import { QueryClientProvider } from '@tanstack/react-query';
 import { RecoilRoot, useSetRecoilState } from 'recoil';
 import queryClient from './queryClient';
@@ -13,6 +13,10 @@ import './App.css';
 import DynamicNavbar from './components/other/DynamicNavbar';
 import { jwtDecode } from 'jwt-decode';
 import { userRoleState, userTokenState } from './recoil/storeAtom';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { he } from 'date-fns/locale';
+
 
 interface DecodedToken {
   id: string;
@@ -30,8 +34,8 @@ const AppContent: React.FC = () => {
 
     if (token && role) {
       const decoded: DecodedToken = jwtDecode(token);
-      setUserToken(token); // שמירת הטוקן ב-Recoil
-      setUserRole(role); // שמירת ה-role ב-Recoil
+      setUserToken(token);
+      setUserRole(role);
     }
   }, [setUserRole, setUserToken]);
 
@@ -44,7 +48,7 @@ const AppContent: React.FC = () => {
   return (
     <BrowserRouter>
       <DynamicNavbar onLogout={handleLogout} />
-        <AppRoutes />
+      <AppRoutes />
     </BrowserRouter>
   );
 };
@@ -55,7 +59,9 @@ const App: React.FC = () => (
       <CacheProvider value={rtlCache}>
         <ThemeProvider theme={theme}>
           <CssBaseline />
-          <AppContent />
+          <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={he}>
+            <AppContent />
+          </LocalizationProvider>
         </ThemeProvider>
       </CacheProvider>
     </QueryClientProvider>

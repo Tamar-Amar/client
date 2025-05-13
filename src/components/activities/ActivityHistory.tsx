@@ -57,7 +57,6 @@ const ActivityHistory: React.FC = () => {
           open={openDialog}
           onClose={() => setOpenDialog(false)}
           onAdd={(newActivities) => handleActivityAdded(newActivities, addActivityMutation, setOpenDialog)}
-          defaultOperatorId={operatorId}
         />
       </>
     );
@@ -121,7 +120,6 @@ const ActivityHistory: React.FC = () => {
         open={openDialog}
         onClose={() => setOpenDialog(false)}
         onAdd={(newActivities) => handleActivityAdded(newActivities, addActivityMutation, setOpenDialog)}
-        defaultOperatorId={operatorId}
       />
     </>
   );
