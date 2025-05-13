@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { Institution } from '../types/index';
-import { createInstitution, deleteInstitution, fetchInstitutions } from '../services/InstitutionService';
+import { createInstitution, deleteInstitution, fetchInstitutions, updateInstitution } from '../services/InstitutionService';
 
 // Fetch all institutions
 export const useFetchInstitutions = () => {
@@ -37,6 +37,18 @@ export const useDeleteInstitution = () => {
         },
     onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['institutions'] });
+    },
+  });
+};
+
+export const useUpdateInstitution = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, updatedInstitution }: { id: string; updatedInstitution: Partial<Institution> }) => {
+      await updateInstitution(id, updatedInstitution as Institution);  
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['institutions'] });
     },
   });
 };
