@@ -330,17 +330,17 @@ export const getAggregatedData = (activities: Activity[]): AggregatedRow[] => {
     const monthStr = new Date(year, month).toLocaleString('he-IL', { month: 'long', year: 'numeric' });
 
     const operatorName =
-      typeof activity.operatorId === 'string'
+      !activity.operatorId || typeof activity.operatorId === 'string'
         ? 'לא ידוע'
         : `${activity.operatorId.firstName} ${activity.operatorId.lastName}`;
     
     const groupName =
-      typeof activity.classId === 'string'
+      !activity.classId || typeof activity.classId === 'string'
         ? 'לא ידוע'
         : activity.classId.name;
     
     const groupSymbol =
-      typeof activity.classId === 'string'
+      !activity.classId || typeof activity.classId === 'string'
         ? 'לא ידוע'
         : activity.classId.uniqueSymbol;
     

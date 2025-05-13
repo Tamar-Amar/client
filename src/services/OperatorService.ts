@@ -66,8 +66,9 @@ export const fetchOperatorById = async (operatorId: string): Promise<Operator> =
 };
 
 export const fetchCurrentOperator = async (): Promise<Operator> => {
-  const token = localStorage.getItem('token');
   
+  const token = localStorage.getItem('token');
+  console.log("token:", token);
   if (!token) {
     throw new Error("No token found. User might not be logged in.");
   }
@@ -76,6 +77,8 @@ export const fetchCurrentOperator = async (): Promise<Operator> => {
     headers: { Authorization: `Bearer ${token}` },
   });
 
+
+  console.log("response.data",response.data)
   return response.data;
 };
 

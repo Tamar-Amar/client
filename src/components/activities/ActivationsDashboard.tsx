@@ -11,7 +11,7 @@ import {
   Button,
   TextField,
 } from '@mui/material';
-import { Activity, Operator } from '../../types';
+import { Activity } from '../../types';
 import { eachWeekOfInterval, isSaturday } from 'date-fns';
 import { useFetchOperatorById } from '../../queries/operatorQueries';
 
