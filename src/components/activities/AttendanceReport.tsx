@@ -1,64 +1,54 @@
-import React, { useState } from "react";
-import { 
-  TextField, 
-  Button, 
-} from "@mui/material";
+import React from 'react';
+import { Box, TextField, Button, Autocomplete } from '@mui/material';
+import { Operator } from '../../types';
 
-import { userTokenState } from "../../recoil/storeAtom";
-import { useRecoilValue } from "recoil";
+interface AttendanceReportProps {
+  attendanceMonth: string;
+  setAttendanceMonth: (month: string) => void;
+  operatorId: string;
+  setOperatorId: (id: string) => void;
+  handleDownloadAttendanceReport: () => void;
+  operators: Operator[];
+}
 
-
-
-const AttendanceReport: React.FC = () => {
-  const token = useRecoilValue(userTokenState); 
-  const [month, setMonth] = useState<string>("");
-
-
-  const [attendanceData, setAttendanceData] = useState<{ [key: string]: string }>({});
-
-
-  
-  
-  const downloadPDF = async () => {
-    const response = await fetch("http://localhost:5000/api/generate-pdf", {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ month, attendance: attendanceData }),
-    });
-
-    const blob = await response.blob();
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "attendance_report.pdf";
-    link.click();
-  };
-
+const AttendanceReport: React.FC<AttendanceReportProps> = ({
+  attendanceMonth,
+  setAttendanceMonth,
+  operatorId,
+  setOperatorId,
+  handleDownloadAttendanceReport,
+  operators
+}) => {
   return (
-    <div>
-      <h1>דוח נוכחות</h1>
-
+    <Box sx={{ boxShadow: 3, p: 2, borderRadius: 2, mb: 2 }}>
       <TextField
-        label="בחר חודש"
+        label="בחר חודש לדוח נוכחות"
         type="month"
-        value={month}
-        onChange={(e) => setMonth(e.target.value)}
-        sx={{ marginBottom: 2 }}
+        value={attendanceMonth}
+        onChange={(e) => setAttendanceMonth(e.target.value)}
+        sx={{ width: '100%', mb: 2 }}
+        InputLabelProps={{ shrink: true }}
       />
 
-
+      <Autocomplete
+        options={operators}
+        getOptionLabel={(option: Operator) => `${option.firstName} ${option.lastName}`}
+        onChange={(_, newValue) => setOperatorId(newValue?._id ?? '')}
+        renderInput={(params) => (
+          <TextField {...params} label="בחר מפעיל" sx={{ width: '100%', mb: 2 }} />
+        )}
+      />
 
       <Button
         variant="contained"
         color="secondary"
-        onClick={downloadPDF}
-        sx={{ marginTop: 2 , ml:3}}
+        onClick={handleDownloadAttendanceReport}
+        fullWidth
+        disabled={!attendanceMonth}
       >
-        הורד דוח נוכחות (PDF)
+        {operatorId ? 'יצירת דוח מותאם מפעיל' : 'יצירת דוח ריק'}
       </Button>
-    </div>
+    </Box>
   );
 };
 

@@ -6,6 +6,7 @@ import { getAggregatedData, filterAggregatedData, getDetailInfo, AggregatedRow, 
 import Filters from './Filters';
 import ActivityTable from './ActivityTable';
 import ActivityDetails from './ActivityDetails';
+import AttendanceReport from './AttendanceReport';
 
 import GeneralStats from './GeneralStats';
 import ActivationsDashboard from './ActivationsDashboard';
@@ -97,8 +98,6 @@ const Activities: React.FC = () => {
 
   return (
     <Box sx={{ m: 6 }}>
-      <Typography variant="h4" gutterBottom>סיכום פעילויות</Typography>
-
       <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
         <Button
         variant="outlined"
@@ -110,33 +109,6 @@ const Activities: React.FC = () => {
         <Button variant="contained" color="primary" onClick={handleAddClick}>
           הוסף פעילות חדשה
         </Button>
-
-        <TextField
-          label="בחר חודש לדוח נוכחות"
-          type="month"
-          value={attendanceMonth}
-          onChange={(e) => setAttendanceMonth(e.target.value)}
-          sx={{ width: '200px' }}
-          InputLabelProps={{ shrink: true }}
-        />
-
-        <Autocomplete
-          options={operators}
-          getOptionLabel={(option:Operator) => `${option.firstName} ${option.lastName}`}
-          onChange={(_, newValue) => setOperatorId(newValue?._id ?? '')}
-          renderInput={(params) => (
-            <TextField {...params} label="בחר מפעיל" sx={{ width: 200 }} />
-          )}
-        />
-
-      <Button
-        variant="contained"
-        color="secondary"
-        onClick={handleDownloadAttendanceReport}
-        disabled={!attendanceMonth}
-      >
-        {operatorId ? 'יצירת דוח מותאם מפעיל' : 'יצירת דוח ריק'}
-      </Button>
 
       </Box>
 
@@ -170,6 +142,14 @@ const Activities: React.FC = () => {
       </Grid>
 
       <Grid item xs={12} md={3}>
+            <AttendanceReport
+      attendanceMonth={attendanceMonth}
+      setAttendanceMonth={setAttendanceMonth}
+      operatorId={operatorId}
+      setOperatorId={setOperatorId}
+      handleDownloadAttendanceReport={handleDownloadAttendanceReport}
+      operators={operators}
+    />
         <GeneralStats activities={activities} />
       </Grid>
     </Grid>
