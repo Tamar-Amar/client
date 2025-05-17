@@ -33,12 +33,12 @@
     "xlsx": "^0.18.5",
     "yup": "^1.6.1"
   },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
-  },
+"scripts": {
+  "start": "react-scripts start",
+  "build": "react-scripts build && javascript-obfuscator build --output build",
+  "test": "react-scripts test",
+  "eject": "react-scripts eject"
+},
   "eslintConfig": {
     "extends": [
       "react-app",
@@ -61,6 +61,7 @@
     "@types/jwt-decode": "^2.2.1",
     "@types/luxon": "^3.6.2",
     "@types/react-router-dom": "^5.3.3",
+    "javascript-obfuscator": "^4.1.1",
     "ts": "^0.2.2",
     "typescript": "^5.8.3"
   }
