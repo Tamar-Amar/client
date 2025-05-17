@@ -71,14 +71,19 @@ const PDFFormActivity: React.FC<PDFFormActivityProps> = ({
     for (let date = firstWeekStartDate; date <= endDate; date = date.plus({ days: 1 })) {
       if ([5, 6].includes(date.weekday)) continue;
       const formattedDate = date.toFormat('dd/MM/yyyy');
-      const readOnly = date <= DateTime.local(year, monthNum - 1, 25);
+      const dayOfWeek = date.setLocale('he').toFormat('cccc');
+      const existing = existingActivities[formattedDate] ?? [];
+      const readOnly = date < startDate; // רק תאריכים לפני 26 לחודש הקודם הם readOnly
+      const symbols = readOnly ? existing : [...existing, ''];
+
       tempRows.push({
         date: formattedDate,
-        day: date.setLocale('he').toFormat('cccc'),
-        symbols: existingActivities[formattedDate] ?? [''],
+        day: dayOfWeek,
+        symbols,
         readOnly
       });
     }
+
     setRows(tempRows);
   };
 
@@ -103,15 +108,21 @@ const PDFFormActivity: React.FC<PDFFormActivityProps> = ({
 
     const newActivities: Activity[] = [];
     rows.forEach(row => {
-      if (row.readOnly) return;
-      row.symbols.filter(symbol => symbol !== '').forEach(symbol => {
-        newActivities.push({
-          classId: symbol,
-          operatorId,
-          date: DateTime.fromFormat(row.date, 'dd/MM/yyyy').toJSDate(),
-          description: 'הפעלה',
-          monthPayment
-        });
+      row.symbols.forEach(symbol => {
+        const isExisting = activities.some(a =>
+          DateTime.fromJSDate(new Date(a.date)).toFormat('dd/MM/yyyy') === row.date &&
+          ((typeof a.classId === 'string' && a.classId === symbol) ||
+            (typeof a.classId === 'object' && a.classId.uniqueSymbol === symbol))
+        );
+        if (symbol && !isExisting) {
+          newActivities.push({
+            classId: symbol,
+            operatorId,
+            date: DateTime.fromFormat(row.date, 'dd/MM/yyyy').toJSDate(),
+            description: 'הפעלה',
+            monthPayment
+          });
+        }
       });
     });
 
@@ -166,32 +177,52 @@ const PDFFormActivity: React.FC<PDFFormActivityProps> = ({
             <TableBody>
               {rows.map((row, rowIndex) => (
                 <TableRow key={rowIndex}>
-                  <TableCell sx={row.readOnly ? { color: 'grey.600' } : {}}>{row.date}</TableCell>
-                  <TableCell sx={row.readOnly ? { color: 'grey.600' } : {}}>{row.day}</TableCell>
+                  <TableCell>{row.date}</TableCell>
+                  <TableCell>{row.day}</TableCell>
                   <TableCell>
-                    {row.readOnly ? (
-                      <Box display="flex" flexWrap="wrap" gap={1}>
-                        {row.symbols.map((symbol, index) => {
+                    <Box display="flex" flexWrap="wrap" gap={1}>
+                      {row.symbols.map((symbol, symbolIndex) => {
+                        const isExisting = classes.find((c: Class) => c.uniqueSymbol === symbol) && activities.some((a) =>
+                          DateTime.fromJSDate(new Date(a.date)).toFormat('dd/MM/yyyy') === row.date &&
+                          ((typeof a.classId === 'string' && a.classId === symbol) ||
+                          (typeof a.classId === 'object' && a.classId.uniqueSymbol === symbol))
+                        );
+
+                        if (isExisting) {
                           const cls = classes.find((c: Class) => c.uniqueSymbol === symbol);
-                          return <Typography key={index} variant="body2" sx={{ color: 'grey.600' }}>{cls ? `${cls.name} (${cls.uniqueSymbol})` : symbol}</Typography>;
-                        })}
-                      </Box>
-                    ) : (
-                      <Box display="flex" flexWrap="wrap" gap={1}>
-                        {row.symbols.map((symbol, symbolIndex) => (
+                          return (
+                            <Typography
+                              key={symbolIndex}
+                              variant="body2"
+                              sx={{
+                                color: 'grey.600',
+                                display: 'flex',
+                                alignItems: 'center',
+                              }}
+                            >
+                              {cls ? `${cls.uniqueSymbol}` : symbol}
+                            </Typography>
+                          );
+                        }
+
+                        return (
                           <Autocomplete
                             key={symbolIndex}
                             options={classes}
-                            getOptionLabel={(option: Class) => `${option.name} (${option.uniqueSymbol})`}
+                            getOptionLabel={(option: Class) => `${option.uniqueSymbol} ${option.name}`}
                             value={classes.find((c: Class) => c._id === symbol) ?? null}
                             onChange={(e, newValue) => handleChangeSymbol(rowIndex, symbolIndex, (newValue as Class)?._id ?? '')}
                             renderInput={(params) => <TextField {...params} label="סמל" size="small" />}
                             sx={{ width: 150 }}
                           />
-                        ))}
-                        <IconButton size="small" onClick={() => addSymbolField(rowIndex)}><AddIcon fontSize="small" /></IconButton>
-                      </Box>
-                    )}
+                        );
+                      })}
+                      {!row.readOnly && (
+                        <IconButton size="small" onClick={() => addSymbolField(rowIndex)}>
+                          <AddIcon fontSize="small" />
+                        </IconButton>
+                      )}
+                    </Box>
                   </TableCell>
                 </TableRow>
               ))}
