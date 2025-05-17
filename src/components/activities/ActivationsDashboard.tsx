@@ -1,3 +1,4 @@
+// ActivationsDashboard.tsx
 import React, { useState, useMemo } from 'react';
 import {
   Box,
@@ -7,9 +8,13 @@ import {
   List,
   ListItem,
   ListItemText,
+  Button,
+  Divider
 } from '@mui/material';
 import { Activity, Class } from '../../types';
 import { useFetchClasses } from '../../queries/classQueries';
+import { holidays } from '../../utils/holidays';
+import { DateTime } from 'luxon';
 
 interface Props {
   activities: Activity[];
@@ -55,6 +60,13 @@ const ActivationsDashboard: React.FC<Props> = ({ activities }) => {
     return classes.filter((cls: Class) => cls._id && !activeGroupIds.has(cls._id));
   }, [classes, activeGroupIds]);
 
+  const sortedHolidays = useMemo(() => {
+    return holidays.map(h => ({
+      ...h,
+      dateObj: DateTime.fromISO(h.date)
+    })).sort((a, b) => a.dateObj.toMillis() - b.dateObj.toMillis());
+  }, []);
+
   return (
     <Box sx={{ m: 4 }}>
       <Typography variant="h5" gutterBottom>
@@ -62,7 +74,6 @@ const ActivationsDashboard: React.FC<Props> = ({ activities }) => {
       </Typography>
 
       <Grid container spacing={3}>
-        {/* ✅ Column 1: Main Dashboard */}
         <Grid item xs={12} md={4}>
           <Paper sx={{ p: 2 ,  minHeight: 400}}>
             <Typography variant="h6">פרטים כלליים</Typography>
@@ -81,7 +92,6 @@ const ActivationsDashboard: React.FC<Props> = ({ activities }) => {
           </Paper>
         </Grid>
 
-        {/* ✅ Column 2: Monthly Summary */}
         <Grid item xs={12} md={4}>
           <Paper sx={{ p: 2,  minHeight: 400 }}>
             <Typography variant="h6">סיכום חודשי</Typography>
@@ -100,7 +110,6 @@ const ActivationsDashboard: React.FC<Props> = ({ activities }) => {
           </Paper>
         </Grid>
 
-        {/* ✅ Column 3: Groups Without Activities */}
         <Grid item xs={12} md={4}>
           <Paper sx={{ p: 2, maxHeight: 400, overflowY: 'auto' }}>
             <Typography
@@ -125,6 +134,34 @@ const ActivationsDashboard: React.FC<Props> = ({ activities }) => {
               )}
             </List>
           </Paper>
+        </Grid>
+
+        <Grid item xs={12}>
+        <Paper sx={{ p: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            ימים ללא פעילות
+          </Typography>
+
+          <Box sx={{ maxHeight: 300, overflowY: 'auto', pr: 1 }}>
+            <List dense>
+              {sortedHolidays.map(({ dateObj, reason }, idx) => (
+                <ListItem key={idx} disablePadding>
+                  <ListItemText
+                    primary={`${dateObj.toFormat('dd/MM/yyyy')} (${dateObj.setLocale('he').toFormat('cccc')}) – ${reason}`}
+                    primaryTypographyProps={{ variant: 'body2' }}
+                    sx={{ px: 1 }}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          </Box>
+
+          <Divider sx={{ my: 2 }} />
+          <Typography variant="body1">
+            סה"כ ימים ללא פעילות: <strong>{sortedHolidays.length}</strong>
+          </Typography>
+        </Paper>
+
         </Grid>
       </Grid>
     </Box>
