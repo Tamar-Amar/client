@@ -12,6 +12,7 @@ import GeneralStats from './GeneralStats';
 import ActivationsDashboard from './ActivationsDashboard';
 import { useFetchOperatorById, useFetchOperators } from '../../queries/operatorQueries';
 import AddActivity from './addActivity/AddActivity';
+import ExportToSheetsButton from './ExportButton';
 
 const Activities: React.FC = () => {
   const { data: activities = [], isLoading, isError } = useFetchActivities();
@@ -109,6 +110,9 @@ const Activities: React.FC = () => {
         <Button variant="contained" color="primary" onClick={handleAddClick}>
           הוסף פעילות חדשה
         </Button>
+
+        <ExportToSheetsButton />
+
 
       </Box>
 

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Box, Typography, Divider, TextField, Button } from '@mui/material';
-import { getTotalMonthlyActivities, getTotalActivities, exportGeneralAnnualReport, exportDetailedAnnualReport, exportDetailedMonthlyReport } from '../../utils/activitiesUtils';
+import { getTotalMonthlyActivities, getTotalActivities, exportGeneralAnnualReport, exportDetailedAnnualReport, exportDetailedMonthlyReport, exportWeeklyReport } from '../../utils/activitiesUtils';
 import { Activity, Class } from '../../types';
 import { useFetchClasses } from '../../queries/classQueries';
 
@@ -58,20 +58,28 @@ const GeneralStats: React.FC<GeneralStatsProps> = ({ activities }) => {
         </Button>
 
         <Button 
-            variant="contained" 
-            color="secondary" 
-            onClick={() => exportGeneralAnnualReport(activities)}
-            >
-            יצירת דוח שנתי כללי
-            </Button>
+          variant="contained" 
+          color="secondary" 
+          onClick={() => exportWeeklyReport(activities)}
+          >
+          יצירת דוח שנתי שבועי
+        </Button>
 
-            <Button 
-            variant="contained" 
-            color="secondary" 
-            onClick={() => exportDetailedAnnualReport(activities)}
-            >
-            יצירת דוח שנתי מפורט
-            </Button>
+        <Button 
+          variant="contained" 
+          color="secondary" 
+          onClick={() => exportGeneralAnnualReport(activities)}
+          >
+          יצירת דוח שנתי כללי
+        </Button>
+
+        <Button 
+          variant="contained" 
+          color="secondary" 
+          onClick={() => exportDetailedAnnualReport(activities)}
+          >
+          יצירת דוח שנתי מפורט
+        </Button>
       </Box>
     </Box>
   );

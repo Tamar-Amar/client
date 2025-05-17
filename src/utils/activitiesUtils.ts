@@ -483,32 +483,6 @@ export const getMonthlyCountForOperator = (
   return relevantActivities.length;
 };
 
-export const getMonthlyCountForGroupO = (
-  activities: Activity[],
-  detailInfo: any,
-  detailMonth: string
-): number => {
-  if (!detailInfo || detailInfo.type !== 'group' || !detailMonth) return 0;
-  const [yearStr, monthStr] = detailMonth.split("-");
-  const year = parseInt(yearStr, 10);
-  const month = parseInt(monthStr, 10);
-  const endDate = new Date(year, month - 1, 25, 23, 59, 59, 999);
-  let prevYear = year;
-  let prevMonth = month - 1;
-  if (prevMonth < 1) {
-    prevMonth = 12;
-    prevYear = year - 1;
-  }
-  const startDate = new Date(prevYear, prevMonth - 1, 26, 0, 0, 0, 0);
-  const relevantActivities = activities.filter(a => {
-    if (typeof a.classId === 'string') return false;
-    if (a.classId.name !== detailInfo.groupName) return false;
-    const date = new Date(a.date);
-    return date >= startDate && date <= endDate;
-  });
-  return relevantActivities.length;
-};
-
 export const getMonthlyCountForGroup = (
   activities: Activity[],
   detailInfo: DetailInfo,
@@ -626,3 +600,77 @@ operator: !activity.operatorId || typeof activity.operatorId === 'string'
 };
 
 
+
+export const exportWeeklyReport = (activities: Activity[]) => {
+  const startDate = new Date('2024-11-27');
+  const endDate = new Date('2025-06-30');
+
+  const weeks: { start: Date; end: Date }[] = [];
+  let current = new Date(startDate);
+  while (current <= endDate) {
+    const start = new Date(current);
+    const end = new Date(current);
+    end.setDate(end.getDate() + 6);
+    weeks.push({ start, end });
+    current.setDate(current.getDate() + 7);
+  }
+
+  const reportData: Record<string, { name: string; weeklyOperators: string[][] }> = {};
+
+  activities.forEach(activity => {
+    if (
+      typeof activity.classId === 'string' ||
+      !activity.classId ||
+      !activity.date
+    ) return;
+
+    const date = new Date(activity.date);
+
+    let operator = 'לא ידוע';
+    if (activity.operatorId && typeof activity.operatorId !== 'string') {
+      operator = `${activity.operatorId.firstName} ${activity.operatorId.lastName}`;
+    }
+
+    const weekIndex = weeks.findIndex(
+      ({ start, end }) => date >= start && date <= end
+    );
+    if (weekIndex === -1) return;
+
+    const key = activity.classId.uniqueSymbol;
+    const name = activity.classId.name;
+
+    if (!reportData[key]) {
+      reportData[key] = {
+        name,
+        weeklyOperators: Array.from({ length: weeks.length }, () => []),
+      };
+    }
+
+    reportData[key].weeklyOperators[weekIndex].push(operator);
+  });
+
+
+  const excelData: any[][] = [];
+
+  const row1 = ['סמל', 'שם', ...weeks.map((_, i) => `שבוע ${i + 1}`)];
+  excelData.push(row1);
+
+  const row2 = ['', '', ...weeks.map(w => w.start.toLocaleDateString('he-IL'))];
+  excelData.push(row2);
+
+  const row3 = ['', '', ...weeks.map(w => w.end.toLocaleDateString('he-IL'))];
+  excelData.push(row3);
+
+  Object.entries(reportData).forEach(([symbol, { name, weeklyOperators }]) => {
+    const row = [symbol, name];
+    weeklyOperators.forEach(ops => {
+      row.push(ops.join(', '));
+    });
+    excelData.push(row);
+  });
+
+  const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'דו"ח שבועי');
+  XLSX.writeFile(workbook, 'דו"ח_שבועי.xlsx');
+};
