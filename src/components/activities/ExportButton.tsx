@@ -5,7 +5,12 @@ import { Button, Typography } from '@mui/material';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
-const ExportToSheetsButton = () => {
+interface Props {
+  onSuccess?: () => void;
+}
+
+
+const ExportToSheetsButton: React.FC<Props> = ({ onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -15,6 +20,7 @@ const ExportToSheetsButton = () => {
     try {
       const res = await axios.post(`${API_URL}/api/activities/export-to-sheets`);
       setMessage(res.data.message);
+      if (onSuccess) onSuccess();
     } catch (err) {
       setMessage('שגיאה בשליחה לגיליון');
     } finally {

@@ -75,8 +75,6 @@ const OperatorCreate: React.FC = () => {
     },
   });
 
-  console.log(formik.values)
-
   const handleSnackbarClose = () => setSnackbarOpen(false);
 
   return (
