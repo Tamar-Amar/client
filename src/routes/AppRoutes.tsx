@@ -14,12 +14,14 @@ import ProtectedRoute from '../components/other/ProtectedRoute';
 import OperatorDetails from '../components/operators/OperatorDetails';
 import ContactList from '../components/other/ContactList';
 import EmailPage from '../pages/EmailPage';
+import PublicReportPage from '../components/activities/addActivity/PublicReportPage';
 
 const AppRoutes: React.FC = () => {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage/>}/>
+<Route path="/public-report" element={<PublicReportPage />} />
       <Route path="*" element={<div>404</div>} />
       <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
         <Route path="/operators" element={<OperatorsPage />} />
