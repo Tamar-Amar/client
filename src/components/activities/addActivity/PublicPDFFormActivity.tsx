@@ -74,7 +74,7 @@ const PDFFormActivity: React.FC<PDFFormActivityProps> = ({
       const formattedDate = date.toFormat('dd/MM/yyyy');
       const dayOfWeek = date.setLocale('he').toFormat('cccc');
       const existing = existingActivities[formattedDate] ?? [];
-      const readOnly = date < startDate; // רק תאריכים לפני 26 לחודש הקודם הם readOnly
+      const readOnly = date < startDate; 
       const symbols = readOnly ? existing : [...existing, ''];
 
       tempRows.push({
@@ -129,12 +129,10 @@ const dayOfWeek = date.setLocale('he').toFormat('cccc').replace('יום ', '');
 
     if (operatorId && operator && operator.weeklySchedule) {
       const currentDaySchedule = operator.weeklySchedule.find(d => d.day === dayOfWeek);
-      console.log("currentDaySchedule",currentDaySchedule);
       if (currentDaySchedule) {
         regularSymbols = currentDaySchedule.classes.map((id: any) => {
           const classIdStr = typeof id === 'string' ? id : id?.$oid || `${id}`;
           const cls = classes.find((c:Class) => `${c._id}` === classIdStr);
-          console.log("🔍 מחפש classId:", classIdStr, "=> נמצא?", !!cls, cls?.uniqueSymbol);
           return cls?.uniqueSymbol ?? '';
         }).filter(Boolean);
 
@@ -143,7 +141,7 @@ const dayOfWeek = date.setLocale('he').toFormat('cccc').replace('יום ', '');
 
     const symbols = readOnly
       ? existing
-      : [...new Set([...existing, ...regularSymbols, ''])]; // מסיר כפילויות ומוסיף שדה ריק להזנה
+      : [...new Set([...existing, ...regularSymbols, ''])]; 
 
     tempRows.push({
       date: formattedDate,
@@ -283,10 +281,10 @@ useEffect(() => {
                             key={symbolIndex}
                             options={classes}
                             getOptionLabel={(option: Class) => `${option.uniqueSymbol} ${option.name}`}
-value={classes.find((c: Class) => c.uniqueSymbol === symbol) ?? null}
+                            value={classes.find((c: Class) => c.uniqueSymbol === symbol) ?? null}
                             onChange={(e, newValue) => handleChangeSymbol(rowIndex, symbolIndex, (newValue as Class)?._id ?? '')}
                             renderInput={(params) => <TextField {...params} label="סמל" size="small" />}
-                            sx={{ width: 150 }}
+                            sx={{ width: 140 }}
                           />
                         );
                       })}
