@@ -41,52 +41,6 @@ const PDFFormActivity: React.FC<PDFFormActivityProps> = ({
   const queryClient = useQueryClient();
   const { data: operator } = useFetchOperatorById(operatorId);
 
-  const generateMonthDays1 = (month: string) => {
-    const [year, monthNum] = month.split('-').map(Number);
-    const startDate = (monthNum === 1)
-      ? DateTime.local(year - 1, 12, 26)
-      : DateTime.local(year, monthNum - 1, 26);
-    const endDate = DateTime.local(year, monthNum, 25);
-    const startWeekday = startDate.weekday;
-    const firstWeekStartDate = (startWeekday >= 6)
-      ? startDate
-      : startDate.minus({ days: startWeekday });
-
-    const activitiesInRange = activities.filter(a => {
-      const activityDate = DateTime.fromJSDate(new Date(a.date));
-      return activityDate >= firstWeekStartDate && activityDate <= endDate;
-    });
-
-    const existingActivities: Record<string, string[]> = {};
-    activitiesInRange.forEach(a => {
-      const dateStr = DateTime.fromJSDate(new Date(a.date)).toFormat('dd/MM/yyyy');
-      const uniqueSymbol = typeof a.classId === 'string' ? a.classId : a.classId?.uniqueSymbol;
-      if (!uniqueSymbol) return;
-      if (!existingActivities[dateStr]) existingActivities[dateStr] = [];
-      if (!existingActivities[dateStr].includes(uniqueSymbol)) {
-        existingActivities[dateStr].push(uniqueSymbol);
-      }
-    });
-
-    const tempRows: PDFRow[] = [];
-    for (let date = firstWeekStartDate; date <= endDate; date = date.plus({ days: 1 })) {
-      if ([5, 6].includes(date.weekday)) continue;
-      const formattedDate = date.toFormat('dd/MM/yyyy');
-      const dayOfWeek = date.setLocale('he').toFormat('cccc');
-      const existing = existingActivities[formattedDate] ?? [];
-      const readOnly = date < startDate; 
-      const symbols = readOnly ? existing : [...existing, ''];
-
-      tempRows.push({
-        date: formattedDate,
-        day: dayOfWeek,
-        symbols,
-        readOnly
-      });
-    }
-
-    setRows(tempRows);
-  };
 
   const generateMonthDays = (month: string) => {
   const [year, monthNum] = month.split('-').map(Number);
@@ -141,7 +95,7 @@ const dayOfWeek = date.setLocale('he').toFormat('cccc').replace('יום ', '');
 
     const symbols = readOnly
       ? existing
-      : [...new Set([...existing, ...regularSymbols, ''])]; 
+      : [...new Set([...existing, ...regularSymbols])]; 
 
     tempRows.push({
       date: formattedDate,
@@ -153,6 +107,20 @@ const dayOfWeek = date.setLocale('he').toFormat('cccc').replace('יום ', '');
 
   setRows(tempRows);
 };
+
+const allowedClassIds = operator?.weeklySchedule?.flatMap(day =>
+  day.classes.map((id: any) => {
+    if (typeof id === 'string') return id;
+    if (typeof id === 'object' && '$oid' in id) return id.$oid;
+    return `${id}`;
+  })
+) ?? [];
+
+
+const filteredClasses = classes.filter((cls:Class) =>
+  allowedClassIds.includes(`${cls._id}`)
+);
+
 
   const handleChangeSymbol = (rowIndex: number, symbolIndex: number, newValue: string) => {
     const updatedRows = [...rows];
@@ -219,6 +187,11 @@ useEffect(() => {
 }, [selectedMonth, operatorId, activities, operator, classes]);
 
 
+const totalActivities = rows.reduce((acc, row) => {
+  const count = row.symbols.filter(s => s && s.trim() !== '').length;
+  return acc + count;
+}, 0);
+
 
   return (
     <>
@@ -235,19 +208,25 @@ useEffect(() => {
         <Box display="flex" justifyContent="center" alignItems="center" height={200}><CircularProgress /></Box>
       ) : (
         <Box sx={{ m: 4 }}>
-          <Typography variant="h6" gutterBottom>סיכום פעילויות</Typography>
-
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>תאריך</TableCell>
-                <TableCell>יום</TableCell>
-                <TableCell>סמלים</TableCell>
+                <TableCell><b>תאריך</b></TableCell>
+                <TableCell><b>יום</b></TableCell>
+                <TableCell><b>סמלים</b></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {rows.map((row, rowIndex) => (
-                <TableRow key={rowIndex}>
+              {rows.map((row, rowIndex) => {
+                const isNextSunday = rows[rowIndex + 1]?.day === 'ראשון';
+
+                return (
+                  <TableRow
+                    key={rowIndex}
+                    sx={{
+                      borderBottom: isNextSunday ? '3px solid black' : undefined,
+                    }}
+                  >
                   <TableCell>{row.date}</TableCell>
                   <TableCell>{row.day}</TableCell>
                   <TableCell>
@@ -277,15 +256,36 @@ useEffect(() => {
                         }
 
                         return (
-                          <Autocomplete
-                            key={symbolIndex}
-                            options={classes}
-                            getOptionLabel={(option: Class) => `${option.uniqueSymbol} ${option.name}`}
-                            value={classes.find((c: Class) => c.uniqueSymbol === symbol) ?? null}
-                            onChange={(e, newValue) => handleChangeSymbol(rowIndex, symbolIndex, (newValue as Class)?._id ?? '')}
-                            renderInput={(params) => <TextField {...params} label="סמל" size="small" />}
-                            sx={{ width: 140 }}
+                        <Autocomplete
+                          key={symbolIndex}
+                          options={filteredClasses}
+                          getOptionLabel={(option: Class) => `${option.uniqueSymbol} ${option.name}`}
+                          value={classes.find((c: Class) => c.uniqueSymbol === symbol) ?? null}
+                          onChange={(e, newValue) => handleChangeSymbol(rowIndex, symbolIndex, (newValue as Class)?._id ?? '')}                            
+                          sx={{ minWidth: 200, maxWidth: 300 }}
+                        componentsProps={{
+                          paper: { sx: { direction: 'rtl' } },
+                          popper: { modifiers: [{ name: 'offset', options: { offset: [0, 4] } }] }
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label="סמל"
+                            size="small"
+                            inputProps={{
+                              ...params.inputProps,
+                              style: {
+                                ...params.inputProps.style,
+                                textOverflow: 'unset',
+                                fontSize: '0.8rem', 
+                              }
+                            }}
+                            InputLabelProps={{
+                              sx: { fontSize: '0.75rem' } 
+                            }}
                           />
+                        )}
+                        />
                         );
                       })}
                       {!row.readOnly && (
@@ -296,9 +296,16 @@ useEffect(() => {
                     </Box>
                   </TableCell>
                 </TableRow>
-              ))}
+              )})}
             </TableBody>
           </Table>
+
+          <Box mt={2}>
+  <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+    סה"כ פעילויות לחודש זה: {totalActivities}
+  </Typography>
+</Box>
+
 
           <Box display="flex" justifyContent="space-between" mt={2}>
             <Button onClick={onClose}>ביטול</Button>

@@ -30,29 +30,60 @@ const handleAddActivities = async (activities: Activity[]) => {
   return (
     <Box sx={{ p: 4, maxWidth: 1000, mx: 'auto' }}>
       <Typography variant="h4" gutterBottom>דיווח פעילות</Typography>
-      <div>
-      <Typography variant="h6">
-        {operator ? `דוח עבור ${operator.firstName} ${operator.lastName}` : 'טוען מפעיל...'}
-    </Typography>
-    <DatePicker
-  views={['year', 'month']}
-  label="חודש דיווח"
-  value={selectedMonth}
-  onChange={(newDate) => {
-    setSelectedMonth(newDate);
-    if (newDate) setPaymentMonth(newDate); // או לוגיקה אחרת
+<Box
+  display="flex"
+  alignItems="center"
+  justifyContent="space-between"
+  sx={{
+    backgroundColor: '#f0f4f8',
+    borderRadius: 2,
+    px: 3,
+    py: 2,
+    mb: 3,
   }}
-  sx={{ mb: 2, minWidth: 100, maxWidth:150 }}
-/>
-</div>
+>
+  <Typography variant="h6" sx={{ fontWeight: 500 }}>
+    {operator ? `דוח עבור ${operator.firstName} ${operator.lastName}` : 'טוען מפעיל...'}
+  </Typography>
 
-      <PublicPDFFormActivity
-        selectedMonth={selectedMonth}
-        paymentMonth={paymentMonth}
-        operatorId={operatorId}
-        onAdd={handleAddActivities}
-        onClose={() => {}}
-      />
+  <DatePicker
+    views={['year', 'month']}
+    label="חודש דיווח"
+    value={selectedMonth}
+    onChange={() => {}}
+    disabled
+    slotProps={{
+      textField: {
+        size: 'small',
+        sx: { maxWidth: 160, backgroundColor: 'white', borderRadius: 1 },
+      },
+    }}
+  />
+</Box>
+
+
+<Box
+  sx={{
+    border: '1px solid #ddd',
+    borderRadius: 2,
+    p: 3,
+    maxHeight: '70vh',
+    overflowY: 'auto',
+    backgroundColor: '#fafafa',
+    maxWidth: '100%',
+    width: '100%', 
+  }}
+>
+  <PublicPDFFormActivity
+    selectedMonth={selectedMonth}
+    paymentMonth={paymentMonth}
+    operatorId={operatorId}
+    onAdd={handleAddActivities}
+    onClose={() => {}}
+  />
+</Box>
+
+
     </Box>
   );
 };
