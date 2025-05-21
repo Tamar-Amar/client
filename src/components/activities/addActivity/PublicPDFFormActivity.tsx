@@ -6,12 +6,13 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { DateTime } from 'luxon';
-import { Activity, Class, Operator } from '../../../types';
+import { Activity, Class } from '../../../types';
 import { useFetchClasses } from '../../../queries/classQueries';
 import { useFetchOperatorById, useFetchOperators } from '../../../queries/operatorQueries';
 import { useFetchActivitiesByOperator } from '../../../queries/activitiesQueries';
 import { useQueryClient } from '@tanstack/react-query';
 import PendingActivitiesDialog from './PendingActivitiesDialog';
+import { holidays } from '../../../utils/holidays';
 
 interface PDFFormActivityProps {
   onAdd: (newActivities: Activity[]) => Promise<void>;
@@ -28,6 +29,8 @@ interface PDFRow {
   readOnly?: boolean;
 }
 
+type ExtendedClass = Class & { disabled?: boolean };
+
 const PDFFormActivity: React.FC<PDFFormActivityProps> = ({
   onAdd, onClose, selectedMonth, paymentMonth, operatorId
 }) => {
@@ -41,86 +44,83 @@ const PDFFormActivity: React.FC<PDFFormActivityProps> = ({
   const queryClient = useQueryClient();
   const { data: operator } = useFetchOperatorById(operatorId);
 
+  const holidayMap = holidays.reduce((acc, item) => {
+    acc[item.date] = item.reason;
+    return acc;
+  }, {} as Record<string, string>);
 
   const generateMonthDays = (month: string) => {
-  const [year, monthNum] = month.split('-').map(Number);
-  const startDate = (monthNum === 1)
-    ? DateTime.local(year - 1, 12, 26)
-    : DateTime.local(year, monthNum - 1, 26);
-  const endDate = DateTime.local(year, monthNum, 25);
-  const startWeekday = startDate.weekday;
-  const firstWeekStartDate = (startWeekday >= 6)
-    ? startDate
-    : startDate.minus({ days: startWeekday });
+    const [year, monthNum] = month.split('-').map(Number);
+    const startDate = (monthNum === 1)
+      ? DateTime.local(year - 1, 12, 26)
+      : DateTime.local(year, monthNum - 1, 26);
+    const endDate = DateTime.local(year, monthNum, 25);
+    const startWeekday = startDate.weekday;
+    const firstWeekStartDate = (startWeekday === 7)
+      ? startDate
+      : startDate.minus({ days: startWeekday });
 
-  const activitiesInRange = activities.filter(a => {
-    const activityDate = DateTime.fromJSDate(new Date(a.date));
-    return activityDate >= firstWeekStartDate && activityDate <= endDate;
-  });
-
-  const existingActivities: Record<string, string[]> = {};
-  activitiesInRange.forEach(a => {
-    const dateStr = DateTime.fromJSDate(new Date(a.date)).toFormat('dd/MM/yyyy');
-    const uniqueSymbol = typeof a.classId === 'string' ? a.classId : a.classId?.uniqueSymbol;
-    if (!uniqueSymbol) return;
-    if (!existingActivities[dateStr]) existingActivities[dateStr] = [];
-    if (!existingActivities[dateStr].includes(uniqueSymbol)) {
-      existingActivities[dateStr].push(uniqueSymbol);
-    }
-  });
-
-  const tempRows: PDFRow[] = [];
-
-  for (let date = firstWeekStartDate; date <= endDate; date = date.plus({ days: 1 })) {
-    if ([5, 6].includes(date.weekday)) continue;
-
-    const formattedDate = date.toFormat('dd/MM/yyyy');
-const dayOfWeek = date.setLocale('he').toFormat('cccc').replace('יום ', '');
-    const existing = existingActivities[formattedDate] ?? [];
-    const readOnly = date < startDate;
-
-    let regularSymbols: string[] = [];
-
-    if (operatorId && operator && operator.weeklySchedule) {
-      const currentDaySchedule = operator.weeklySchedule.find(d => d.day === dayOfWeek);
-      if (currentDaySchedule) {
-        regularSymbols = currentDaySchedule.classes.map((id: any) => {
-          const classIdStr = typeof id === 'string' ? id : id?.$oid || `${id}`;
-          const cls = classes.find((c:Class) => `${c._id}` === classIdStr);
-          return cls?.uniqueSymbol ?? '';
-        }).filter(Boolean);
-
-      }
-    }
-
-    const symbols = readOnly
-      ? existing
-      : [...new Set([...existing, ...regularSymbols])]; 
-
-    tempRows.push({
-      date: formattedDate,
-      day: dayOfWeek,
-      symbols,
-      readOnly
+    const activitiesInRange = activities.filter(a => {
+      const activityDate = DateTime.fromJSDate(new Date(a.date));
+      return activityDate >= firstWeekStartDate && activityDate <= endDate;
     });
-  }
 
-  setRows(tempRows);
-};
+    const existingActivities: Record<string, string[]> = {};
+    activitiesInRange.forEach(a => {
+      const dateStr = DateTime.fromJSDate(new Date(a.date)).toFormat('dd/MM/yyyy');
+      const uniqueSymbol = typeof a.classId === 'string' ? a.classId : a.classId?.uniqueSymbol;
+      if (!uniqueSymbol) return;
+      if (!existingActivities[dateStr]) existingActivities[dateStr] = [];
+      if (!existingActivities[dateStr].includes(uniqueSymbol)) {
+        existingActivities[dateStr].push(uniqueSymbol);
+      }
+    });
 
-const allowedClassIds = operator?.weeklySchedule?.flatMap(day =>
-  day.classes.map((id: any) => {
-    if (typeof id === 'string') return id;
-    if (typeof id === 'object' && '$oid' in id) return id.$oid;
-    return `${id}`;
-  })
-) ?? [];
+    const tempRows: PDFRow[] = [];
 
+    for (let date = firstWeekStartDate; date <= endDate; date = date.plus({ days: 1 })) {
+      if ([5, 6].includes(date.weekday)) continue;
 
-const filteredClasses = classes.filter((cls:Class) =>
-  allowedClassIds.includes(`${cls._id}`)
-);
+      const formattedDate = date.toFormat('dd/MM/yyyy');
+      const dayOfWeek = date.setLocale('he').toFormat('cccc').replace('יום ', '');
+      const existing = existingActivities[formattedDate] ?? [];
+      const readOnly = date < startDate;
 
+      let regularSymbols: string[] = [];
+
+      if (operatorId && operator && operator.weeklySchedule) {
+        const currentDaySchedule = operator.weeklySchedule.find(d => d.day === dayOfWeek);
+        if (currentDaySchedule) {
+          regularSymbols = currentDaySchedule.classes.map((id: any) => {
+            const classIdStr = typeof id === 'string' ? id : id?.$oid || `${id}`;
+            const cls = classes.find((c: Class) => `${c._id}` === classIdStr);
+            return cls?.uniqueSymbol ?? '';
+          }).filter(Boolean);
+        }
+      }
+
+      const symbols = readOnly
+        ? existing
+        : [...new Set([...existing, ...regularSymbols])];
+
+      tempRows.push({
+        date: formattedDate,
+        day: dayOfWeek,
+        symbols,
+        readOnly
+      });
+    }
+
+    setRows(tempRows);
+  };
+
+  const allowedClassIds = operator?.weeklySchedule?.flatMap(day =>
+    day.classes.map((id: any) => typeof id === 'string' ? id : id?.$oid || `${id}`)
+  ) ?? [];
+
+  const filteredClasses = classes.filter((cls: Class) =>
+    allowedClassIds.includes(`${cls._id}`)
+  );
 
   const handleChangeSymbol = (rowIndex: number, symbolIndex: number, newValue: string) => {
     const updatedRows = [...rows];
@@ -143,6 +143,9 @@ const filteredClasses = classes.filter((cls:Class) =>
 
     const newActivities: Activity[] = [];
     rows.forEach(row => {
+      const rowDateISO = DateTime.fromFormat(row.date, 'dd/MM/yyyy').toISODate();
+      if (!rowDateISO || holidayMap[rowDateISO]) return;
+
       row.symbols.forEach(symbol => {
         const isExisting = activities.some(a =>
           DateTime.fromJSDate(new Date(a.date)).toFormat('dd/MM/yyyy') === row.date &&
@@ -179,19 +182,25 @@ const filteredClasses = classes.filter((cls:Class) =>
     }
   };
 
-useEffect(() => {
-  if (!selectedMonth || !activities || !classes.length) return;
-  if (operatorId && !operator) return;
+  useEffect(() => {
+    if (!selectedMonth || !activities || !classes.length) return;
+    if (operatorId && !operator) return;
+    generateMonthDays(DateTime.fromJSDate(selectedMonth).toFormat('yyyy-MM'));
+  }, [selectedMonth, operatorId, activities, operator, classes]);
 
-  generateMonthDays(DateTime.fromJSDate(selectedMonth).toFormat('yyyy-MM'));
-}, [selectedMonth, operatorId, activities, operator, classes]);
+  const totalActivities = rows.reduce((acc, row) => {
+    const rowDateISO = DateTime.fromFormat(row.date, 'dd/MM/yyyy').toISODate();
+    if (rowDateISO && holidayMap[rowDateISO]) return acc;
+    return acc + row.symbols.filter(s => s && s.trim() !== '').length;
+  }, 0);
 
-
-const totalActivities = rows.reduce((acc, row) => {
-  const count = row.symbols.filter(s => s && s.trim() !== '').length;
-  return acc + count;
-}, 0);
-
+  const getWeekKey = (dateStr: string) => {
+    const date = DateTime.fromFormat(dateStr, 'dd/MM/yyyy');
+    const weekday = date.weekday;
+    const daysToSubtract = weekday === 7 ? 0 : weekday;
+    const sunday = date.minus({ days: daysToSubtract });
+    return sunday.toFormat('yyyy-MM-dd');
+  };
 
   return (
     <>
@@ -219,93 +228,121 @@ const totalActivities = rows.reduce((acc, row) => {
             <TableBody>
               {rows.map((row, rowIndex) => {
                 const isNextSunday = rows[rowIndex + 1]?.day === 'ראשון';
+                const date = DateTime.fromFormat(row.date, 'dd/MM/yyyy');
+                const rowDateISO = date.isValid ? date.toISODate() : '';
+                const holidayReason = rowDateISO ? holidayMap[rowDateISO] : undefined;
 
                 return (
                   <TableRow
                     key={rowIndex}
                     sx={{
                       borderBottom: isNextSunday ? '3px solid black' : undefined,
+                      backgroundColor: holidayReason ? '#f5f5f5' : undefined,
                     }}
                   >
-                  <TableCell>{row.date}</TableCell>
-                  <TableCell>{row.day}</TableCell>
-                  <TableCell>
-                    <Box display="flex" flexWrap="wrap" gap={1}>
-                      {row.symbols.map((symbol, symbolIndex) => {
-                        const isExisting = classes.find((c: Class) => c.uniqueSymbol === symbol) && activities.some((a) =>
-                          DateTime.fromJSDate(new Date(a.date)).toFormat('dd/MM/yyyy') === row.date &&
-                          ((typeof a.classId === 'string' && a.classId === symbol) ||
-                          (typeof a.classId === 'object' && a.classId.uniqueSymbol === symbol))
-                        );
+                    <TableCell>{row.date}</TableCell>
+                    <TableCell>{row.day}</TableCell>
+                    <TableCell>
+                      {holidayReason ? (
+                        <Typography variant="body2" color="text.secondary">
+                          {holidayReason} -לא מתקיימת פעילות צהרון
+                        </Typography>
+                      ) : (
+                        <Box display="flex" flexWrap="wrap" gap={1}>
+                          {row.symbols.map((symbol, symbolIndex) => {
+                            const weekKey = getWeekKey(row.date);
+                            const usedSymbolsThisWeek = rows
+                              .filter((r) => getWeekKey(r.date) === weekKey)
+                              .flatMap((r) => r.symbols)
+                              .filter((s) => s && s !== symbol);
 
-                        if (isExisting) {
-                          const cls = classes.find((c: Class) => c.uniqueSymbol === symbol);
-                          return (
-                            <Typography
-                              key={symbolIndex}
-                              variant="body2"
-                              sx={{
-                                color: 'grey.600',
-                                display: 'flex',
-                                alignItems: 'center',
-                              }}
-                            >
-                              {cls ? `${cls.uniqueSymbol}` : symbol}
-                            </Typography>
-                          );
-                        }
+                            const isExisting = classes.find((c: Class) => c.uniqueSymbol === symbol) && activities.some((a) =>
+                              DateTime.fromJSDate(new Date(a.date)).toFormat('dd/MM/yyyy') === row.date &&
+                              ((typeof a.classId === 'string' && a.classId === symbol) ||
+                                (typeof a.classId === 'object' && a.classId.uniqueSymbol === symbol))
+                            );
 
-                        return (
-                        <Autocomplete
-                          key={symbolIndex}
-                          options={filteredClasses}
-                          getOptionLabel={(option: Class) => `${option.uniqueSymbol} ${option.name}`}
-                          value={classes.find((c: Class) => c.uniqueSymbol === symbol) ?? null}
-                          onChange={(e, newValue) => handleChangeSymbol(rowIndex, symbolIndex, (newValue as Class)?._id ?? '')}                            
-                          sx={{ minWidth: 200, maxWidth: 300 }}
-                        componentsProps={{
-                          paper: { sx: { direction: 'rtl' } },
-                          popper: { modifiers: [{ name: 'offset', options: { offset: [0, 4] } }] }
-                        }}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            label="סמל"
-                            size="small"
-                            inputProps={{
-                              ...params.inputProps,
-                              style: {
-                                ...params.inputProps.style,
-                                textOverflow: 'unset',
-                                fontSize: '0.8rem', 
-                              }
-                            }}
-                            InputLabelProps={{
-                              sx: { fontSize: '0.75rem' } 
-                            }}
-                          />
-                        )}
-                        />
-                        );
-                      })}
-                      {!row.readOnly && (
-                        <IconButton size="small" onClick={() => addSymbolField(rowIndex)}>
-                          <AddIcon fontSize="small" />
-                        </IconButton>
+                            if (isExisting) {
+                              const cls = classes.find((c: Class) => c.uniqueSymbol === symbol);
+                              return (
+                                <Typography
+                                  key={symbolIndex}
+                                  variant="body2"
+                                  sx={{
+                                    color: 'grey.600',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                  }}
+                                >
+                                  {cls ? `${cls.uniqueSymbol}` : symbol}
+                                </Typography>
+                              );
+                            }
+
+                            return (
+                              <Autocomplete<ExtendedClass>
+                                key={symbolIndex}
+                                options={filteredClasses.map((c: Class): ExtendedClass => ({
+                                  ...c,
+                                  disabled: usedSymbolsThisWeek.includes(c.uniqueSymbol),
+                                }))}
+                                getOptionDisabled={(option) => option.disabled ?? false}
+                                getOptionLabel={(option) => `${option.uniqueSymbol} ${option.name ?? ''}`.trim()}
+                                value={
+                                  !symbol
+                                    ? null
+                                    : filteredClasses.find((c: Class) => c.uniqueSymbol === symbol) ??
+                                      classes.find((c: Class) => c.uniqueSymbol === symbol) ??
+                                      { _id: '', uniqueSymbol: symbol, name: 'סמל לא מזוהה' }
+                                }
+                                onChange={(e, newValue) =>
+                                  handleChangeSymbol(rowIndex, symbolIndex, (newValue as Class)?.uniqueSymbol ?? '')
+                                }
+                                sx={{ minWidth: 200, maxWidth: 300 }}
+                                componentsProps={{
+                                  paper: { sx: { direction: 'rtl' } },
+                                  popper: { modifiers: [{ name: 'offset', options: { offset: [0, 4] } }] }
+                                }}
+                                renderInput={(params) => (
+                                  <TextField
+                                    {...params}
+                                    label="סמל"
+                                    size="small"
+                                    inputProps={{
+                                      ...params.inputProps,
+                                      style: {
+                                        ...params.inputProps.style,
+                                        textOverflow: 'unset',
+                                        fontSize: '0.8rem',
+                                      },
+                                    }}
+                                    InputLabelProps={{
+                                      sx: { fontSize: '0.75rem' },
+                                    }}
+                                  />
+                                )}
+                              />
+                            );
+                          })}
+                          {!row.readOnly && row.symbols.length < 4 && (
+                            <IconButton size="small" onClick={() => addSymbolField(rowIndex)}>
+                              <AddIcon fontSize="small" />
+                            </IconButton>
+                          )}
+                        </Box>
                       )}
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              )})}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
 
           <Box mt={2}>
-  <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-    סה"כ פעילויות לחודש זה: {totalActivities}
-  </Typography>
-</Box>
-
+            <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+              סה"כ פעילויות לחודש זה: {totalActivities}
+            </Typography>
+          </Box>
 
           <Box display="flex" justifyContent="space-between" mt={2}>
             <Button onClick={onClose}>ביטול</Button>

@@ -13,10 +13,11 @@ const PublicReportPage = () => {
   const [searchParams] = useSearchParams();
   const operatorId = searchParams.get('operatorId') || ''; 
   const { data: operator } = useFetchOperatorById(operatorId);
-  const monthParam = searchParams.get('month'); // למשל "2025-04"
-const initialMonth = monthParam
-  ? new Date(`${monthParam}-01`)
-  : new Date();
+  const monthParam = searchParams.get('month'); 
+  const initialMonth = monthParam
+    ? new Date(`${monthParam}-01`)
+    : new Date();
+
 const [selectedMonth, setSelectedMonth] = useState<Date | null>(initialMonth);
 const [paymentMonth, setPaymentMonth] = useState<Date | null>(initialMonth);
 
@@ -28,7 +29,8 @@ const handleAddActivities = async (activities: Activity[]) => {
 };
 
   return (
-    <Box sx={{ p: 4, maxWidth: 1000, mx: 'auto' }}>
+    <Box sx={{ p: 4, maxWidth: '1250px', mx: 'auto', width: '100%' }}>
+
       <Typography variant="h4" gutterBottom>דיווח פעילות</Typography>
 <Box
   display="flex"
@@ -50,7 +52,7 @@ const handleAddActivities = async (activities: Activity[]) => {
     views={['year', 'month']}
     label="חודש דיווח"
     value={selectedMonth}
-    onChange={() => {}}
+    onChange={() => {setSelectedMonth(selectedMonth);}}
     disabled
     slotProps={{
       textField: {
