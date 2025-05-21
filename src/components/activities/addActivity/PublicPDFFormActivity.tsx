@@ -31,7 +31,7 @@ interface PDFRow {
 
 type ExtendedClass = Class & { disabled?: boolean };
 
-const PDFFormActivity: React.FC<PDFFormActivityProps> = ({
+const PublicPDFFormActivity: React.FC<PDFFormActivityProps> = ({
   onAdd, onClose, selectedMonth, paymentMonth, operatorId
 }) => {
   const { data: classes = [] } = useFetchClasses();
@@ -134,53 +134,62 @@ const PDFFormActivity: React.FC<PDFFormActivityProps> = ({
     setRows(updatedRows);
   };
 
-  const handleSubmit = () => {
-    if (!operatorId) return alert('יש לבחור מפעיל');
+const handleSubmit = () => {
+  if (!operatorId) return alert('יש לבחור מפעיל');
 
-    const monthPayment = paymentMonth
-      ? `${(paymentMonth.getMonth() + 1).toString().padStart(2, '0')}-${(paymentMonth.getFullYear() % 100).toString().padStart(2, '0')}`
-      : '';
+  const monthPayment = paymentMonth
+    ? `${(paymentMonth.getMonth() + 1).toString().padStart(2, '0')}-${(paymentMonth.getFullYear() % 100).toString().padStart(2, '0')}`
+    : '';
 
-    const newActivities: Activity[] = [];
-    rows.forEach(row => {
-      const rowDateISO = DateTime.fromFormat(row.date, 'dd/MM/yyyy').toISODate();
-      if (!rowDateISO || holidayMap[rowDateISO]) return;
+  const newActivities: Activity[] = [];
 
-      row.symbols.forEach(symbol => {
-        const isExisting = activities.some(a =>
-          DateTime.fromJSDate(new Date(a.date)).toFormat('dd/MM/yyyy') === row.date &&
-          ((typeof a.classId === 'string' && a.classId === symbol) ||
-            (typeof a.classId === 'object' && a.classId.uniqueSymbol === symbol))
-        );
-        if (symbol && !isExisting) {
-          newActivities.push({
-            classId: symbol,
-            operatorId,
-            date: DateTime.fromFormat(row.date, 'dd/MM/yyyy').toJSDate(),
-            description: 'הפעלה',
-            monthPayment
-          });
-        }
-      });
+  rows.forEach(row => {
+    const rowDateISO = DateTime.fromFormat(row.date, 'dd/MM/yyyy').toISODate();
+    if (!rowDateISO || holidayMap[rowDateISO]) return;
+
+    row.symbols.forEach(symbol => {
+      const classObj = classes.find((c:Class) => c.uniqueSymbol === symbol);
+      if (!classObj) return; // אם לא נמצאה קבוצה עם הסמל הזה — דלג
+
+      const isExisting = activities.some(a =>
+        DateTime.fromJSDate(new Date(a.date)).toFormat('dd/MM/yyyy') === row.date &&
+        ((typeof a.classId === 'string' && a.classId === classObj._id.toString()) ||
+          (typeof a.classId === 'object' && a.classId._id === classObj._id.toString()))
+      );
+
+      if (!isExisting) {
+        newActivities.push({
+          classId: classObj._id, // 🟢 כאן במקום symbol
+          operatorId,
+          date: DateTime.fromFormat(row.date, 'dd/MM/yyyy').toJSDate(),
+          description: 'הפעלה',
+          monthPayment
+        });
+      }
     });
+  });
 
-    setPendingActivities(newActivities);
-    setShowSummary(true);
-  };
+  setPendingActivities(newActivities);
+  setShowSummary(true);
+};
 
-  const confirmAdd = async () => {
-    try {
-      setIsLoading(true);
-      await onAdd(pendingActivities);
-      queryClient.invalidateQueries({ queryKey: ['activities'] });
-      setIsLoading(false);
-      setShowSummary(false);
-      onClose();
-    } catch {
-      setIsLoading(false);
-      alert('שגיאה בשמירה');
-    }
-  };
+
+const confirmAdd = async () => {
+  setShowSummary(false);
+  try {
+    setIsLoading(true);
+    await onAdd(pendingActivities);
+    queryClient.invalidateQueries({ queryKey: ['activities'] });
+    setIsLoading(false);
+    setShowSummary(false);
+    onClose(); 
+
+  } catch {
+    setIsLoading(false);
+    alert('שגיאה בשמירה');
+  }
+};
+
 
   useEffect(() => {
     if (!selectedMonth || !activities || !classes.length) return;
@@ -354,4 +363,4 @@ const PDFFormActivity: React.FC<PDFFormActivityProps> = ({
   );
 };
 
-export default PDFFormActivity;
+export default PublicPDFFormActivity;

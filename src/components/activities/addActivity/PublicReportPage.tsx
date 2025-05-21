@@ -7,6 +7,7 @@ import { useFetchOperatorById } from '../../../queries/operatorQueries';
 import { Activity } from '../../../types';
 import PublicPDFFormActivity from './PublicPDFFormActivity';
 import { DatePicker } from '@mui/x-date-pickers';
+import OperatorVerificationDialog from './OperatorVerificationDialog';
 
 const PublicReportPage = () => {
   const { mutation: addActivity } = useAddActivity();
@@ -20,15 +21,28 @@ const PublicReportPage = () => {
 
 const [selectedMonth, setSelectedMonth] = useState<Date | null>(initialMonth);
 const [paymentMonth, setPaymentMonth] = useState<Date | null>(initialMonth);
+const [isVerified, setIsVerified] = useState(false);
+const [formVisible, setFormVisible] = useState(true);
+
+
 
 
 const handleAddActivities = async (activities: Activity[]) => {
   for (const activity of activities) {
+    console.log("ACti",activity)
     await addActivity.mutateAsync(activity);
   }
 };
 
   return (
+    <>
+        {!isVerified ? (
+      <OperatorVerificationDialog
+        operatorId={operatorId}
+        onVerified={() => setIsVerified(true)}
+      />
+    ) : formVisible ? (
+      
     <Box sx={{ p: 4, maxWidth: '1250px', mx: 'auto', width: '100%' }}>
 
       <Typography variant="h4" gutterBottom>דיווח פעילות</Typography>
@@ -81,12 +95,19 @@ const handleAddActivities = async (activities: Activity[]) => {
     paymentMonth={paymentMonth}
     operatorId={operatorId}
     onAdd={handleAddActivities}
-    onClose={() => {}}
+    onClose={() => setFormVisible(false)}
+
   />
 </Box>
 
 
     </Box>
+    ) : (
+  <Typography variant="h5" align="center" mt={5}>
+    ✅ דוח נוכחות עבור חודש {selectedMonth?.toLocaleDateString('he-IL', { year: 'numeric', month: 'long' })} למפעיל {operator?.firstName} {operator?.lastName} נשלח בהצלחה
+  </Typography>
+    )}
+    </>
   );
 };
 
