@@ -36,10 +36,6 @@ export const holidays = [
     "reason": "שמחת תורה"
   },
   {
-    "date": "2024-12-26",
-    "reason": "חנוכה"
-  },
-  {
     "date": "2024-12-29",
     "reason": "חנוכה"
   },
