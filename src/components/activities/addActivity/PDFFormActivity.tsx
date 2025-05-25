@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { DateTime } from 'luxon';
-import { Activity, Class } from '../../../types';
+import { Activity, Class, Operator } from '../../../types';
 import { useFetchClasses } from '../../../queries/classQueries';
 import { useFetchOperators } from '../../../queries/operatorQueries';
 import { useFetchActivitiesByOperator } from '../../../queries/activitiesQueries';
@@ -18,7 +18,7 @@ interface PDFFormActivityProps {
   onClose: () => void;
   selectedMonth: Date | null;
   paymentMonth: Date | null;
-  operatorId: string;
+  operatorId?: string;
 }
 
 interface PDFRow {
@@ -35,13 +35,17 @@ const PDFFormActivity: React.FC<PDFFormActivityProps> = ({
 }) => {
   const { data: classes = [] } = useFetchClasses();
   const { data: operators = [] } = useFetchOperators();
-  const { data: activities = [] } = useFetchActivitiesByOperator(operatorId);
+
+  const [selectedOperator, setSelectedOperator] = useState<string>(operatorId || '');
+  const { data: activities = [] } = useFetchActivitiesByOperator(selectedOperator);
   const [rows, setRows] = useState<PDFRow[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [pendingActivities, setPendingActivities] = useState<Activity[]>([]);
   const [showSummary, setShowSummary] = useState(false);
-  const queryClient = useQueryClient();
   const [duplicateWeek, setDuplicateWeek] = useState(false);
+  const queryClient = useQueryClient();
+
+  const operatorName = operators.find((op:Operator) => op._id === selectedOperator);
 
   const holidayMap = holidays.reduce((acc, h) => {
     acc[h.date] = h.reason;
@@ -101,33 +105,26 @@ const PDFFormActivity: React.FC<PDFFormActivityProps> = ({
 
   const handleChangeSymbol = (rowIndex: number, symbolIndex: number, newValue: string) => {
     const targetDay = rows[rowIndex].day;
-
     setRows(prevRows => {
       const updatedRows = [...prevRows];
-
       if (duplicateWeek) {
         updatedRows.forEach((row) => {
           if (row.day === targetDay && !row.isHoliday && !row.readOnly) {
-            while (row.symbols.length <= symbolIndex) {
-              row.symbols.push('');
-            }
+            while (row.symbols.length <= symbolIndex) row.symbols.push('');
             row.symbols[symbolIndex] = newValue;
           }
         });
       } else {
         updatedRows[rowIndex].symbols[symbolIndex] = newValue;
       }
-
       return updatedRows;
     });
   };
 
   const addSymbolField = (rowIndex: number) => {
     const targetDay = rows[rowIndex].day;
-
     setRows(prevRows => {
       const updatedRows = [...prevRows];
-
       if (duplicateWeek) {
         updatedRows.forEach((row) => {
           if (row.day === targetDay && !row.isHoliday && !row.readOnly) {
@@ -137,13 +134,12 @@ const PDFFormActivity: React.FC<PDFFormActivityProps> = ({
       } else {
         updatedRows[rowIndex].symbols.push('');
       }
-
       return updatedRows;
     });
   };
 
   const handleSubmit = () => {
-    if (!operatorId) return alert('יש לבחור מפעיל');
+    if (!selectedOperator) return alert('יש לבחור מפעיל');
 
     const monthPayment = paymentMonth
       ? `${(paymentMonth.getMonth() + 1).toString().padStart(2, '0')}-${(paymentMonth.getFullYear() % 100).toString().padStart(2, '0')}`
@@ -163,7 +159,7 @@ const PDFFormActivity: React.FC<PDFFormActivityProps> = ({
         if (symbol && !isExisting) {
           newActivities.push({
             classId: symbol,
-            operatorId,
+            operatorId: selectedOperator,
             date: DateTime.fromFormat(row.date, 'dd/MM/yyyy').toJSDate(),
             description: 'הפעלה',
             monthPayment
@@ -191,9 +187,9 @@ const PDFFormActivity: React.FC<PDFFormActivityProps> = ({
   };
 
   useEffect(() => {
-    if (!selectedMonth || !operatorId || !activities) return;
+    if (!selectedMonth || !selectedOperator || !activities) return;
     generateMonthDays(DateTime.fromJSDate(selectedMonth).toFormat('yyyy-MM'));
-  }, [selectedMonth, operatorId, activities]);
+  }, [selectedMonth, selectedOperator, activities]);
 
   return (
     <>
@@ -203,15 +199,14 @@ const PDFFormActivity: React.FC<PDFFormActivityProps> = ({
         classes={classes}
         onClose={() => setShowSummary(false)}
         onConfirm={confirmAdd}
-        operatorId={operatorId}
+        operatorId={selectedOperator}
         operators={operators}
       />
+
       {isLoading ? (
         <Box display="flex" justifyContent="center" alignItems="center" height={200}><CircularProgress /></Box>
       ) : (
         <Box sx={{ m: 4 }}>
-          <Typography variant="h6" gutterBottom>סיכום פעילויות</Typography>
-
           <Box display="flex" alignItems="center" gap={2} mt={2}>
             <Typography variant="body2">הכפלה אוטומטית לכל ימי השבוע</Typography>
             <input

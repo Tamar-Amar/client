@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { AppBar, Toolbar, Typography, Button, Tabs, Tab, Box, Stack } from '@mui/material';
 import { useRecoilValue } from 'recoil';
 import { userRoleState } from '../../recoil/storeAtom';
@@ -10,11 +10,36 @@ import EmailIcon from '@mui/icons-material/Email';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import HistoryIcon from '@mui/icons-material/History';
 import LoginIcon from '@mui/icons-material/Login';
+import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
+import { jwtDecode } from 'jwt-decode';
+import { fetchOperatorById } from '../../services/OperatorService';
+import { Operator } from '../../types';
+
 
 const DynamicNavbar: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   const role = useRecoilValue(userRoleState);
   const navigate = useNavigate();
   const location = useLocation();
+
+const [operatorName, setOperatorName] = useState<string | null>(null);
+
+useEffect(() => {
+  const token = localStorage.getItem('token');
+  const decodedToken: any = token ? jwtDecode(token) : null;
+  const operatorId = decodedToken?.id;
+
+  if (operatorId && role === 'operator') {
+    fetchOperatorById(operatorId)
+      .then((data: Operator) => {
+        setOperatorName(`${data.firstName} ${data.lastName}`);
+      })
+      .catch((err) => {
+        console.error('Failed to fetch operator name:', err);
+      });
+  }
+}, [role]);
+
+
 
   const adminTabs = [
     { label: 'דוח הפעלות', path: '/activities', icon: <AssessmentIcon fontSize="small" /> },
@@ -25,10 +50,11 @@ const DynamicNavbar: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         // { label: 'ניהול אנשי קשר', path: '/contacts' },
   ];
 
-  const operatorTabs = [
-    { label: 'פרטים אישיים', path: '/personal-details', icon: <AccountCircleIcon fontSize="small" /> },
-    { label: 'היסטוריית הפעלות', path: '/activity-history', icon: <HistoryIcon fontSize="small" /> },
-  ];
+const operatorTabs = [
+  { label: 'פרטים אישיים', path: '/personal-details', icon: <AccountCircleIcon fontSize="small" /> },
+  { label: 'היסטוריית הפעלות', path: '/activity-history', icon: <HistoryIcon fontSize="small" /> },
+  { label: 'מסמכים', path: '/personal-documents', icon: <InsertDriveFileIcon fontSize="small" /> },
+];
 
   const loginTab = [{ label: 'התחבר', path: '/login', icon: <LoginIcon fontSize="small" /> }];
 
@@ -46,11 +72,15 @@ const DynamicNavbar: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     >
       <Toolbar sx={{ justifyContent: 'space-between' }}>
         <Typography variant="h6" sx={{ flexGrow: 1, color: 'white', fontWeight: 'bold' }}>
-          {role === 'admin'
-            ? 'מערכת מנהל'
-            : role === 'operator'
-            ? 'דשבורד מפעיל'
-            : 'DISCONNECTED'}
+{role === 'operator'
+  ? operatorName
+    ? `שלום ${operatorName}`
+    : 'טוען מפעיל...'
+  : role === 'admin'
+  ? 'מערכת מנהל'
+  : 'DISCONNECTED'}
+
+
         </Typography>
 
         <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'right' }}>

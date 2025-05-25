@@ -15,6 +15,18 @@ import OperatorDetails from '../components/operators/OperatorDetails';
 import ContactList from '../components/other/ContactList';
 import EmailPage from '../pages/EmailPage';
 import PublicReportPage from '../components/activities/addActivity/PublicReportPage';
+import OperatorDocuments from '../components/operators/OperatorDocuments';
+import { jwtDecode } from 'jwt-decode';
+import PersonalDocuments from '../components/operators/PersonalDocuments';
+
+const OperatorDocumentsWrapper = () => {
+  const token = localStorage.getItem('token');
+  const decodedToken: any = token ? jwtDecode(token) : null;
+  const operatorId = decodedToken?.id;
+
+  return <PersonalDocuments operatorId={operatorId} />;
+};
+
 
 const AppRoutes: React.FC = () => {
   return (
@@ -38,6 +50,7 @@ const AppRoutes: React.FC = () => {
       <Route element={<ProtectedRoute allowedRoles={['operator']} />}>
         <Route path="/personal-details" element={<PersonalDetails/>} />
         <Route path="/activity-history" element={<ActivityHistory/>} />
+        <Route path="/personal-documents" element={<OperatorDocumentsWrapper />} />
       </Route>
 
     </Routes>
