@@ -55,6 +55,7 @@ const OperatorCreate: React.FC = () => {
       gender: Gender.ALL,
       educationType: EducationType.ALL,
       isActive: true,
+      regularClasses: [],
     },
     validationSchema: OperatorSchema,
     onSubmit: (values) => {

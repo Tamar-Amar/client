@@ -30,6 +30,7 @@ export const createOperator = async (newOperator: {
   };
   gender: "בנים" | "בנות" | "גם וגם";
   educationType: "רגיל" | "מיוחד" | "גם וגם";
+  regularClasses?: string[];
 }) => {
   const response = await axios.post(API_URL, newOperator);
   return response.data;
