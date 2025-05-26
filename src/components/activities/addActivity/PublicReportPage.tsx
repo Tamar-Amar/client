@@ -29,7 +29,6 @@ const [formVisible, setFormVisible] = useState(true);
 
 const handleAddActivities = async (activities: Activity[]) => {
   for (const activity of activities) {
-    console.log("ACti",activity)
     await addActivity.mutateAsync(activity);
   }
 };
