@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   TextField,
   Button,
@@ -17,7 +17,10 @@ import {
   Select,
   Chip,
   OutlinedInput,
-  IconButton
+  IconButton,
+  Paper,
+  CircularProgress,
+  Autocomplete
 } from "@mui/material";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import PhoneIcon from "@mui/icons-material/Phone";
@@ -28,13 +31,18 @@ import CreditCardIcon from "@mui/icons-material/CreditCard";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CancelIcon from '@mui/icons-material/Cancel';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { useFormik } from "formik";
 import { OperatorSchema } from "../../types/validations/OperatorValidation";
 import PasswordField from "../other/PasswordField";
 import { useAddOperator } from "../../queries/operatorQueries";
+import { useUpdateDocuments } from "../../queries/useDocuments";
 import { useNavigate } from "react-router-dom";
 import { EducationType, Gender, PaymentMethodChoicesEnum } from "../../types";
 import { useFetchClasses } from "../../queries/classQueries";
+import OperatorDocuments from "./OperatorDocuments";
+import { useUploadDocument } from "../../queries/useDocuments";
+import { styled } from '@mui/material/styles';
 
 interface Class {
   _id: string;
@@ -48,23 +56,56 @@ interface TabPanelProps {
   value: number;
 }
 
+const StyledTabPanel = styled(Box)(({ theme }) => ({
+  backgroundColor: '#fff',
+  borderRadius: theme.spacing(2),
+  padding: theme.spacing(3),
+  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+  margin: theme.spacing(2, 0),
+}));
+
+const StyledTab = styled(Tab)(({ theme }) => ({
+  fontWeight: 600,
+  fontSize: '1rem',
+  textTransform: 'none',
+  minWidth: 120,
+  '&.Mui-selected': {
+    color: theme.palette.primary.main,
+  },
+}));
+
+const AnimatedButton = styled(Button)(({ theme }) => ({
+  transition: 'transform 0.2s, box-shadow 0.2s',
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+  },
+}));
+
+const StyledChip = styled(Chip)(({ theme }) => ({
+  borderRadius: '8px',
+  padding: theme.spacing(0.5),
+  '& .MuiChip-label': {
+    fontWeight: 500,
+  },
+  '&:hover': {
+    backgroundColor: theme.palette.error.light,
+  },
+}));
+
 function TabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props;
 
   return (
-    <div
+    <StyledTabPanel
       role="tabpanel"
       hidden={value !== index}
       id={`simple-tabpanel-${index}`}
       aria-labelledby={`simple-tab-${index}`}
       {...other}
     >
-      {value === index && (
-        <Box sx={{ p: 3 }}>
-          {children}
-        </Box>
-      )}
-    </div>
+      {value === index && children}
+    </StyledTabPanel>
   );
 }
 
@@ -72,20 +113,247 @@ interface Props {
   onSuccess?: () => void;
 }
 
+interface FormValues {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
+  password: string;
+  status: string;
+  id: string;
+  address: string;
+  description: string;
+  paymentMethod: PaymentMethodChoicesEnum;
+  businessDetails: {
+    businessId: string;
+    businessName: string;
+  };
+  bankDetails: {
+    bankName: string;
+    accountNumber: string;
+    branchNumber: string;
+  };
+  gender: Gender;
+  educationType: EducationType;
+  isActive: boolean;
+  regularClasses: string[];
+}
+
+const NewOperatorDocuments: React.FC<{ tempOperatorId: string }> = ({ tempOperatorId }) => {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [tag, setTag] = useState('');
+  const [customTag, setCustomTag] = useState('');
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const uploadMutation = useUploadDocument();
+  const [uploadedFiles, setUploadedFiles] = useState<Array<{ name: string, tag: string, size: number }>>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    if (file) {
+      // בדיקה אם הקובץ כבר קיים
+      const isDuplicate = uploadedFiles.some(
+        existingFile => existingFile.name === file.name && existingFile.size === file.size
+      );
+
+      if (isDuplicate) {
+        setError('קובץ זה כבר הועלה');
+        setSelectedFile(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      } else {
+        setError(null);
+        setSelectedFile(file);
+      }
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile || (!tag || (tag === 'אחר' && !customTag))) return;
+
+    const finalTag = tag === 'אחר' ? customTag : tag;
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    formData.append('operatorId', tempOperatorId);
+    formData.append('tag', finalTag);
+
+    try {
+      const result = await uploadMutation.mutateAsync(formData);
+      console.log('Document uploaded successfully:', result);
+      
+      setUploadedFiles(prev => [...prev, { 
+        name: selectedFile.name, 
+        tag: finalTag,
+        size: selectedFile.size 
+      }]);
+      setSelectedFile(null);
+      setTag('');
+      setCustomTag('');
+      setError(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    } catch (error) {
+      console.error('Error uploading document:', error);
+      setError('שגיאה בהעלאת הקובץ');
+    }
+  };
+
+  return (
+    <Box>
+      <Paper 
+        elevation={0} 
+        sx={{ 
+          p: 3, 
+          borderRadius: 2,
+          background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
+          border: '1px solid rgba(0,0,0,0.05)'
+        }}
+      >
+        <Box display="flex" gap={2} alignItems="center" mb={3} flexWrap="wrap">
+          <TextField
+            select
+            label="סוג מסמך"
+            value={tag}
+            onChange={(e) => {
+              setTag(e.target.value);
+              if (e.target.value !== 'אחר') {
+                setCustomTag('');
+              }
+            }}
+            sx={{ 
+              minWidth: 200,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+              }
+            }}
+          >
+            <MenuItem value="צילום תעודת זהות">צילום תעודת זהות</MenuItem>
+            <MenuItem value="טופס 101">טופס 101</MenuItem>
+            <MenuItem value="אחר">אחר</MenuItem>
+          </TextField>
+
+          {tag === 'אחר' && (
+            <TextField
+              label="תגית חופשית"
+              value={customTag}
+              onChange={(e) => setCustomTag(e.target.value)}
+              sx={{ 
+                minWidth: 200,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                }
+              }}
+            />
+          )}
+
+          <input
+            type="file"
+            hidden
+            ref={fileInputRef}
+            accept="application/pdf,image/*"
+            onChange={handleFileChange}
+          />
+
+          <Button
+            variant="outlined"
+            onClick={() => fileInputRef.current?.click()}
+            startIcon={<CloudUploadIcon />}
+            sx={{ 
+              borderRadius: 2,
+              borderColor: 'rgba(0, 0, 0, 0.23)',
+              color: 'text.primary',
+              '&:hover': {
+                borderColor: 'primary.main',
+                backgroundColor: 'transparent'
+              }
+            }}
+          >
+            {selectedFile ? selectedFile.name : 'בחר קובץ'}
+          </Button>
+
+          <Button
+            variant="contained"
+            onClick={handleUpload}
+            disabled={!selectedFile || !tag || (tag === 'אחר' && !customTag) || uploadMutation.isPending}
+            sx={{ 
+              borderRadius: 2,
+              backgroundColor: 'primary.main',
+              color: 'white',
+              boxShadow: 'none',
+              '&:hover': {
+                backgroundColor: 'primary.dark',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              }
+            }}
+          >
+            {uploadMutation.isPending ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              'העלה'
+            )}
+          </Button>
+        </Box>
+
+        {error && (
+          <Alert 
+            severity="warning" 
+            sx={{ 
+              mb: 2,
+              borderRadius: 2,
+              '& .MuiAlert-icon': {
+                fontSize: '1.5rem'
+              }
+            }}
+          >
+            {error}
+          </Alert>
+        )}
+
+        {uploadedFiles.length > 0 && (
+          <Paper 
+            sx={{ 
+              p: 3, 
+              mt: 2,
+              borderRadius: 2,
+              background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
+              border: '1px solid rgba(0,0,0,0.05)'
+            }}
+          >
+            <Typography variant="h6" gutterBottom color="primary" fontWeight="600">
+              מסמכים שהועלו
+            </Typography>
+            <Box display="flex" gap={1} flexWrap="wrap">
+              {uploadedFiles.map((file, index) => (
+                <StyledChip
+                  key={index}
+                  label={`${file.tag} - ${file.name}`}
+                  onDelete={() => {
+                    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+                  }}
+                />
+              ))}
+            </Box>
+          </Paper>
+        )}
+      </Paper>
+    </Box>
+  );
+};
+
 const OperatorCreate: React.FC<Props> = ({ onSuccess }) => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
   const [tabValue, setTabValue] = useState(0);
   const addOperatorMutation = useAddOperator();
+  const updateDocumentsMutation = useUpdateDocuments();
   const navigate = useNavigate();
   const { data: classes = [] } = useFetchClasses();
+  const [tempOperatorId] = useState<string>('temp-' + Date.now());
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
-  const formik = useFormik({
+  const formik = useFormik<FormValues>({
     initialValues: {
       firstName: "",
       lastName: "",
@@ -112,40 +380,60 @@ const OperatorCreate: React.FC<Props> = ({ onSuccess }) => {
       regularClasses: [],
     },
     validationSchema: OperatorSchema,
-    onSubmit: (values) => {
-      addOperatorMutation.mutate(values, {
-        onError: (error) => {
-          setSnackbarMessage(error?.message || "שגיאה בהוספת מפעיל");
-          setSnackbarSeverity("error");
-          setSnackbarOpen(true);
-        },
-        onSuccess: () => {
-          setSnackbarMessage("המפעיל נוסף בהצלחה");
-          setSnackbarSeverity("success");
-          setSnackbarOpen(true);
-          formik.resetForm();
-          if (onSuccess) {
-            setTimeout(() => {
-              onSuccess();
-            }, 2000);
-          }
-        },
-      });
+    onSubmit: async (values) => {
+      try {
+        // 1. שמירת המפעיל
+        const result = await addOperatorMutation.mutateAsync(values);
+        
+        if (!result?._id) {
+          throw new Error('לא התקבל מזהה למפעיל החדש');
+        }
+
+        // 2. עדכון המסמכים עם האיידי החדש
+        try {
+          await updateDocumentsMutation.mutateAsync({
+            tempId: tempOperatorId,
+            newOperatorId: result._id
+          });
+        } catch (docError) {
+          console.error('שגיאה בעדכון המסמכים:', docError);
+          // נמשיך בכל מקרה כי המפעיל כבר נשמר
+        }
+
+        setSnackbarMessage("המפעיל נוסף בהצלחה");
+        setSnackbarSeverity("success");
+        setSnackbarOpen(true);
+        formik.resetForm();
+        
+        if (onSuccess) {
+          setTimeout(() => {
+            onSuccess();
+          }, 2000);
+        }
+      } catch (error: any) {
+        console.error('שגיאה בהוספת מפעיל:', error);
+        setSnackbarMessage(error?.message || "שגיאה בהוספת מפעיל");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
+      }
     },
   });
 
   const handleSnackbarClose = () => setSnackbarOpen(false);
 
-  const handleDeleteClass = (classIdToDelete: string) => {
-    formik.setFieldValue(
-      'regularClasses',
-      formik.values.regularClasses.filter((id: string) => id !== classIdToDelete)
-    );
+  const handleClassesChange = (event: any, newValue: Class[]) => {
+    const classIds = newValue.map(cls => cls._id);
+    formik.setFieldValue('regularClasses', classIds);
   };
+
+  // מציאת הקבוצות הנבחרות
+  const selectedClasses = classes.filter((cls: Class) => 
+    formik.values.regularClasses.includes(cls._id)
+  );
 
   return (
     <Box sx={{ 
-      maxWidth: 700, 
+      maxWidth: 800, 
       margin: "auto", 
       p: 3, 
       minHeight: 700, 
@@ -154,20 +442,30 @@ const OperatorCreate: React.FC<Props> = ({ onSuccess }) => {
       bgcolor: 'transparent'
     }}>
       <form id="operator-create-form" onSubmit={formik.handleSubmit}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+        <Box sx={{ 
+          borderBottom: 1, 
+          borderColor: 'divider', 
+          mb: 3,
+          '& .MuiTabs-indicator': {
+            height: 3,
+            borderRadius: '3px 3px 0 0'
+          }
+        }}>
           <Tabs 
             value={tabValue} 
             onChange={handleTabChange} 
             aria-label="operator creation tabs"
+            variant="fullWidth"
             sx={{
-              '& .MuiTabs-indicator': {
-                backgroundColor: theme => theme.palette.primary.main,
+              '& .MuiTabs-flexContainer': {
+                gap: 2
               }
             }}
           >
-            <Tab label="פרטים אישיים" />
-            <Tab label="פרטי תשלום" />
-            <Tab label="קבוצות משויכות" />
+            <StyledTab label="פרטים אישיים" />
+            <StyledTab label="פרטי תשלום" />
+            <StyledTab label="קבוצות משויכות" />
+            <StyledTab label="מסמכים" />
           </Tabs>
         </Box>
 
@@ -311,49 +609,53 @@ const OperatorCreate: React.FC<Props> = ({ onSuccess }) => {
               </Grid>
             </Grid>
 
-            <Divider sx={{ my: 3 }} />
-            <Typography variant="h6" gutterBottom>פרטי עסק</Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
-                <TextField
-                  label="ח.פ. עסק"
-                  name="businessDetails.businessId"
-                  value={formik.values.businessDetails.businessId}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  error={formik.touched.businessDetails?.businessId && Boolean(formik.errors.businessDetails?.businessId)}
-                  helperText={formik.touched.businessDetails?.businessId && formik.errors.businessDetails?.businessId}
-                  fullWidth
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <BusinessIcon />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
+            {formik.values.paymentMethod === PaymentMethodChoicesEnum.CHEABONIT && (
+              <>
+                <Divider sx={{ my: 3 }} />
+                <Typography variant="h6" gutterBottom>פרטי עסק</Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <TextField
+                      label="ח.פ. עסק"
+                      name="businessDetails.businessId"
+                      value={formik.values.businessDetails.businessId}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      error={formik.touched.businessDetails?.businessId && Boolean(formik.errors.businessDetails?.businessId)}
+                      helperText={formik.touched.businessDetails?.businessId && formik.errors.businessDetails?.businessId}
+                      fullWidth
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <BusinessIcon />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  </Grid>
 
-              <Grid item xs={6}>
-                <TextField
-                  label="שם העסק"
-                  name="businessDetails.businessName"
-                  value={formik.values.businessDetails.businessName}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  error={formik.touched.businessDetails?.businessName && Boolean(formik.errors.businessDetails?.businessName)}
-                  helperText={formik.touched.businessDetails?.businessName && formik.errors.businessDetails?.businessName}
-                  fullWidth
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <BusinessIcon />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-            </Grid>
+                  <Grid item xs={6}>
+                    <TextField
+                      label="שם העסק"
+                      name="businessDetails.businessName"
+                      value={formik.values.businessDetails.businessName}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      error={formik.touched.businessDetails?.businessName && Boolean(formik.errors.businessDetails?.businessName)}
+                      helperText={formik.touched.businessDetails?.businessName && formik.errors.businessDetails?.businessName}
+                      fullWidth
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <BusinessIcon />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  </Grid>
+                </Grid>
+              </>
+            )}
 
             <Divider sx={{ my: 3 }} />
             <Typography variant="h6" gutterBottom>פרטי בנק</Typography>
@@ -464,60 +766,95 @@ const OperatorCreate: React.FC<Props> = ({ onSuccess }) => {
             <Typography variant="h6" gutterBottom>קבוצות משויכות</Typography>
             <Grid container spacing={2}>
               <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel id="classes-label">בחר קבוצות</InputLabel>
-                  <Select
-                    labelId="classes-label"
-                    multiple
-                    value={formik.values.regularClasses}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    name="regularClasses"
-                    input={<OutlinedInput label="בחר קבוצות" />}
-                    renderValue={(selected) => (
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {selected.map((classId) => {
-                          const selectedClass = classes.find((c: Class) => c._id === classId);
-                          return (
-                            <Chip 
-                              key={classId} 
-                              label={selectedClass ? `${selectedClass.name} (${selectedClass.uniqueSymbol})` : classId}
-                              onDelete={() => handleDeleteClass(classId)}
-                              deleteIcon={<CancelIcon />}
-                            />
-                          );
-                        })}
+                <Autocomplete
+                  multiple
+                  id="classes-autocomplete"
+                  options={classes}
+                  value={selectedClasses}
+                  onChange={handleClassesChange}
+                  getOptionLabel={(option: Class) => `${option.name} (${option.uniqueSymbol})`}
+                  isOptionEqualToValue={(option, value) => option._id === value._id}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="בחר קבוצות"
+                      error={formik.touched.regularClasses && Boolean(formik.errors.regularClasses)}
+                      helperText={formik.touched.regularClasses && formik.errors.regularClasses}
+                    />
+                  )}
+                  renderOption={(props, option: Class) => (
+                    <Box component="li" {...props}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                        <Typography>{option.name}</Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
+                          {option.uniqueSymbol}
+                        </Typography>
                       </Box>
-                    )}
-                  >
-                    {classes.map((classItem: Class) => (
-                      <MenuItem key={classItem._id} value={classItem._id}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                          <span>{classItem.name}</span>
-                          <Typography variant="body2" color="text.secondary">
-                            {classItem.uniqueSymbol}
-                          </Typography>
-                        </Box>
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                    </Box>
+                  )}
+                  renderTags={(tagValue, getTagProps) =>
+                    tagValue.map((option, index) => {
+                      const props = getTagProps({ index });
+                      return (
+                        <Chip
+                          {...props}
+                          label={`${option.name} (${option.uniqueSymbol})`}
+                          sx={{
+                            borderRadius: '8px',
+                            '& .MuiChip-label': {
+                              fontWeight: 500,
+                            },
+                          }}
+                        />
+                      );
+                    })
+                  }
+                  PaperComponent={props => (
+                    <Paper 
+                      {...props} 
+                      elevation={3}
+                      sx={{ 
+                        borderRadius: 2,
+                        mt: 1,
+                        '& .MuiAutocomplete-option': {
+                          px: 2,
+                          py: 1,
+                        }
+                      }}
+                    />
+                  )}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                    }
+                  }}
+                />
               </Grid>
             </Grid>
+          </TabPanel>
+
+          <TabPanel value={tabValue} index={3}>
+            <Typography variant="h6" gutterBottom>העלאת מסמכים</Typography>
+            <Box sx={{ mt: 2 }}>
+              <NewOperatorDocuments tempOperatorId={tempOperatorId} />
+            </Box>
           </TabPanel>
         </Box>
       </form>
 
       <Box 
         sx={{ 
-          position: 'absolute', 
+          position: 'fixed', 
           bottom: 20, 
           left: 0, 
           right: 0, 
           display: 'flex', 
           justifyContent: 'center', 
           gap: 4,
-          alignItems: 'center'
+          alignItems: 'center',
+          zIndex: 1000,
+          padding: 2,
+          background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 20%, rgba(255,255,255,1) 100%)'
         }}
       >
         <IconButton
@@ -526,34 +863,40 @@ const OperatorCreate: React.FC<Props> = ({ onSuccess }) => {
           size="large"
           sx={{ 
             color: theme => tabValue === 0 ? theme.palette.action.disabled : theme.palette.primary.main,
+            transition: 'transform 0.2s',
             '&:hover': {
               backgroundColor: 'transparent',
               transform: 'scale(1.2)',
-              transition: 'transform 0.2s'
             }
           }}
         >
           <ArrowForwardIcon fontSize="large" />
         </IconButton>
 
-        {tabValue === 2 ? (
-          <Button
+        {tabValue === 3 ? (
+          <AnimatedButton
             variant="contained"
-            color="primary"
             onClick={() => formik.handleSubmit()}
+            sx={{ 
+              borderRadius: 2,
+              background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+              boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
+              padding: '12px 32px',
+              fontSize: '1.1rem'
+            }}
           >
             שמור
-          </Button>
+          </AnimatedButton>
         ) : (
           <IconButton
-            onClick={() => setTabValue(Math.min(2, tabValue + 1))}
+            onClick={() => setTabValue(Math.min(3, tabValue + 1))}
             size="large"
             sx={{ 
               color: theme => theme.palette.primary.main,
+              transition: 'transform 0.2s',
               '&:hover': {
                 backgroundColor: 'transparent',
                 transform: 'scale(1.2)',
-                transition: 'transform 0.2s'
               }
             }}
           >
@@ -568,7 +911,17 @@ const OperatorCreate: React.FC<Props> = ({ onSuccess }) => {
         onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: "100%" }}>
+        <Alert 
+          onClose={handleSnackbarClose} 
+          severity={snackbarSeverity} 
+          sx={{ 
+            width: "100%",
+            borderRadius: 2,
+            '& .MuiAlert-icon': {
+              fontSize: '1.5rem'
+            }
+          }}
+        >
           {snackbarMessage}
         </Alert>
       </Snackbar>
