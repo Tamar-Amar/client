@@ -68,7 +68,11 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-const OperatorCreate: React.FC = () => {
+interface Props {
+  onSuccess?: () => void;
+}
+
+const OperatorCreate: React.FC<Props> = ({ onSuccess }) => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
@@ -120,7 +124,11 @@ const OperatorCreate: React.FC = () => {
           setSnackbarSeverity("success");
           setSnackbarOpen(true);
           formik.resetForm();
-          setTimeout(() => navigate("/"), 2000);
+          if (onSuccess) {
+            setTimeout(() => {
+              onSuccess();
+            }, 2000);
+          }
         },
       });
     },
@@ -157,7 +165,7 @@ const OperatorCreate: React.FC = () => {
               }
             }}
           >
-            <Tab label="פרטים כלליים" />
+            <Tab label="פרטים אישיים" />
             <Tab label="פרטי תשלום" />
             <Tab label="קבוצות משויכות" />
           </Tabs>
@@ -277,46 +285,6 @@ const OperatorCreate: React.FC = () => {
                   multiline
                   rows={3}
                 />
-              </Grid>
-            </Grid>
-
-            <Divider sx={{ my: 3 }} />
-            <Typography variant="h6" gutterBottom>פרטים נוספים</Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
-                <TextField
-                  select
-                  label="מגדר"
-                  name="gender"
-                  value={formik.values.gender}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  error={formik.touched.gender && Boolean(formik.errors.gender)}
-                  helperText={formik.touched.gender && formik.errors.gender}
-                  fullWidth
-                >
-                  <MenuItem value={Gender.MALE}>{Gender.MALE}</MenuItem>
-                  <MenuItem value={Gender.FEMALE}>{Gender.FEMALE}</MenuItem>
-                  <MenuItem value={Gender.ALL}>{Gender.ALL}</MenuItem>
-                </TextField>
-              </Grid>
-
-              <Grid item xs={6}>
-                <TextField
-                  select
-                  label="סוג חינוך"
-                  name="educationType"
-                  value={formik.values.educationType}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  error={formik.touched.educationType && Boolean(formik.errors.educationType)}
-                  helperText={formik.touched.educationType && formik.errors.educationType}
-                  fullWidth
-                >
-                  <MenuItem value={EducationType.BASIC}>{EducationType.BASIC}</MenuItem>
-                  <MenuItem value={EducationType.SPECIAL}>{EducationType.SPECIAL}</MenuItem>
-                  <MenuItem value={EducationType.ALL}>{EducationType.ALL}</MenuItem>
-                </TextField>
               </Grid>
             </Grid>
           </TabPanel>
@@ -453,6 +421,46 @@ const OperatorCreate: React.FC = () => {
           </TabPanel>
 
           <TabPanel value={tabValue} index={2}>
+            <Typography variant="h6" gutterBottom>העדפות הפעלה</Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={6}>
+                <TextField
+                  select
+                  label="מגדר"
+                  name="gender"
+                  value={formik.values.gender}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={formik.touched.gender && Boolean(formik.errors.gender)}
+                  helperText={formik.touched.gender && formik.errors.gender}
+                  fullWidth
+                >
+                  <MenuItem value={Gender.MALE}>{Gender.MALE}</MenuItem>
+                  <MenuItem value={Gender.FEMALE}>{Gender.FEMALE}</MenuItem>
+                  <MenuItem value={Gender.ALL}>{Gender.ALL}</MenuItem>
+                </TextField>
+              </Grid>
+
+              <Grid item xs={6}>
+                <TextField
+                  select
+                  label="סוג חינוך"
+                  name="educationType"
+                  value={formik.values.educationType}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={formik.touched.educationType && Boolean(formik.errors.educationType)}
+                  helperText={formik.touched.educationType && formik.errors.educationType}
+                  fullWidth
+                >
+                  <MenuItem value={EducationType.BASIC}>{EducationType.BASIC}</MenuItem>
+                  <MenuItem value={EducationType.SPECIAL}>{EducationType.SPECIAL}</MenuItem>
+                  <MenuItem value={EducationType.ALL}>{EducationType.ALL}</MenuItem>
+                </TextField>
+              </Grid>
+            </Grid>
+
+            <Divider sx={{ my: 3 }} />
             <Typography variant="h6" gutterBottom>קבוצות משויכות</Typography>
             <Grid container spacing={2}>
               <Grid item xs={12}>
