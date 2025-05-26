@@ -178,7 +178,6 @@ const NewOperatorDocuments: React.FC<{ tempOperatorId: string }> = ({ tempOperat
 
     try {
       const result = await uploadMutation.mutateAsync(formData);
-      console.log('Document uploaded successfully:', result);
       
       setUploadedFiles(prev => [...prev, { 
         name: selectedFile.name, 
