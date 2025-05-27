@@ -38,11 +38,19 @@ const EXCEL_TEMPLATE = [
     'מספר דירה': '',
     'תאריך לידה': '',
     'אופן תשלום': 'תלוש',
+    'פעיל': 'כן',
+    'תאריך הרשמה': new Date().toISOString().split('T')[0],
+    'הערות': '',
+    // Bank Details
+    'שם בנק': '',
+    'מספר סניף': '',
+    'מספר חשבון': '',
+    'שם בעל החשבון': '',
   }
 ];
 
 // Column mapping from Excel to Worker type
-const COLUMN_MAPPING: { [key: string]: keyof Worker } = {
+const COLUMN_MAPPING: { [key: string]: keyof Worker | string } = {
   'תעודת זהות': 'id',
   'שם פרטי': 'firstName',
   'שם משפחה': 'lastName',
@@ -53,7 +61,85 @@ const COLUMN_MAPPING: { [key: string]: keyof Worker } = {
   'מספר בית': 'buildingNumber',
   'מספר דירה': 'apartmentNumber',
   'תאריך לידה': 'birthDate',
-  'אופן תשלום': 'paymentMethod'
+  'אופן תשלום': 'paymentMethod',
+  'פעיל': 'isActive',
+  'תאריך הרשמה': 'registrationDate',
+  'הערות': 'notes',
+  'שם בנק': 'bankDetails.bankName',
+  'מספר סניף': 'bankDetails.branchNumber',
+  'מספר חשבון': 'bankDetails.accountNumber',
+  'שם בעל החשבון': 'bankDetails.accountOwner'
+};
+
+const convertRowToWorker = (row: any): Worker => {
+  const worker: Partial<Worker> = {
+    isActive: true, // Default to true
+    paymentMethod: row['אופן תשלום'] || 'תלוש',
+    bankDetails: {
+      bankName: '',
+      branchNumber: '',
+      accountNumber: '',
+      accountOwner: ''
+    }
+  };
+
+  // Map Excel columns to Worker properties
+  Object.entries(COLUMN_MAPPING).forEach(([excelCol, workerProp]) => {
+    if (row[excelCol] === undefined) return;
+    
+    if (typeof workerProp === 'string') {
+      // Special handling for isActive field
+      if (workerProp === 'isActive') {
+        worker.isActive = row[excelCol]?.toString().trim().toLowerCase() === 'כן';
+        return;
+      }
+
+      // Special handling for birthDate field
+      if (workerProp === 'birthDate') {
+        const dateValue = row[excelCol];
+        if (dateValue) {
+          let date: Date | null = null;
+
+          // Try to parse as DD/MM/YYYY format
+          if (typeof dateValue === 'string') {
+            const [day, month, year] = dateValue.trim().split('/');
+            if (day && month && year) {
+              date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            }
+          }
+          // Try to parse Excel's internal date number
+          else if (typeof dateValue === 'number') {
+            // Excel's date system starts from December 30, 1899
+            const excelEpoch = new Date(1899, 11, 30);
+            date = new Date(excelEpoch.getTime() + (dateValue * 24 * 60 * 60 * 1000));
+          }
+
+          if (date && !isNaN(date.getTime())) {
+            worker.birthDate = date.toISOString().split('T')[0];
+            return;
+          }
+
+          // If date parsing failed, throw an error
+          throw new Error(`תאריך לידה לא תקין: ${dateValue}. יש להזין בפורמט DD/MM/YYYY (לדוגמה: 15/02/2004)`);
+        }
+        // If no date provided, throw an error
+        throw new Error(`תאריך לידה הוא שדה חובה`);
+      }
+
+      if (workerProp.includes('.')) {
+        // Handle nested properties (e.g. bankDetails.bankName)
+        const [parent, child] = workerProp.split('.');
+        if (!worker[parent as keyof Worker]) {
+          (worker[parent as keyof Worker] as any) = {};
+        }
+        ((worker[parent as keyof Worker] as any)[child]) = row[excelCol];
+      } else {
+        (worker[workerProp as keyof Worker] as any) = row[excelCol];
+      }
+    }
+  });
+
+  return worker as Worker;
 };
 
 const WorkerExcelImport: React.FC = () => {
@@ -65,6 +151,24 @@ const WorkerExcelImport: React.FC = () => {
     const ws = XLSX.utils.json_to_sheet(EXCEL_TEMPLATE);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'תבנית');
+
+    // Add data validation and comments
+    if (!ws['!cols']) ws['!cols'] = [];
+    if (!ws['!rows']) ws['!rows'] = [];
+
+    // Find birthDate column index
+    const birthDateColIndex = Object.keys(EXCEL_TEMPLATE[0]).indexOf('תאריך לידה');
+    
+    // Add column width and comments
+    if (birthDateColIndex !== -1) {
+      ws['!cols'][birthDateColIndex] = { width: 15 };
+    }
+    
+    // Add comment to birthDate column
+    ws['!comments'] = {
+      'B1': { t: 'שדה חובה! הכנס תאריך בפורמט: DD/MM/YYYY\nלדוגמה: 15/02/2004' }
+    };
+
     const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
     const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     saveAs(data, 'תבנית_עובדים.xlsx');
@@ -76,30 +180,28 @@ const WorkerExcelImport: React.FC = () => {
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      const data = new Uint8Array(e.target?.result as ArrayBuffer);
-      const workbook = XLSX.read(data, { type: 'array' });
-      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
 
-      // Convert Excel data to Worker objects
-      const workers: Worker[] = jsonData.map(row => {
-        const worker: Partial<Worker> = {
-          isActive: true,
-          paymentMethod: 'תלוש'
-        };
-
-        // Map Excel columns to Worker properties
-        Object.entries(COLUMN_MAPPING).forEach(([excelCol, workerProp]) => {
-          if (row[excelCol] !== undefined) {
-            worker[workerProp] = row[excelCol];
+        // Convert Excel data to Worker objects
+        const workers = jsonData.map((row, index) => {
+          try {
+            return convertRowToWorker(row);
+          } catch (err) {
+            const error = err as Error;
+            throw new Error(`שגיאה בשורה ${index + 1}: ${error.message}`);
           }
         });
 
-        return worker as Worker;
-      });
-
-      setPreviewData(workers);
-      setShowPreview(true);
+        setPreviewData(workers);
+        setShowPreview(true);
+      } catch (err) {
+        const error = err as Error;
+        alert(`שגיאה בקריאת הקובץ: ${error.message}`);
+      }
     };
     reader.readAsArrayBuffer(file);
   };

@@ -16,6 +16,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { useFetchWorkers, useDeleteWorker } from '../queries/workerQueries';
 import { Worker } from '../types';
 import WorkerEditDialog from './WorkerEditDialog';
+import WorkerExcelImport from './workers/WorkerExcelImport';
 
 const WorkersList: React.FC = () => {
   const { data: workers = [], isLoading, error } = useFetchWorkers();
@@ -54,6 +55,7 @@ const WorkersList: React.FC = () => {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <WorkerExcelImport />
       </Box>
       
       <TableContainer component={Paper}>
