@@ -18,6 +18,7 @@ import PublicReportPage from '../components/activities/addActivity/PublicReportP
 import OperatorDocuments from '../components/operators/OperatorDocuments';
 import { jwtDecode } from 'jwt-decode';
 import PersonalDocuments from '../components/operators/PersonalDocuments';
+import WorkersPage from '../pages/WorkersPage';
 
 const OperatorDocumentsWrapper = () => {
   const token = localStorage.getItem('token');
@@ -33,10 +34,11 @@ const AppRoutes: React.FC = () => {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage/>}/>
-<Route path="/public-report" element={<PublicReportPage />} />
+      <Route path="/public-report" element={<PublicReportPage />} />
       <Route path="*" element={<div>404</div>} />
       <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
         <Route path="/operators" element={<OperatorsPage />} />
+        <Route path="/workers" element={<WorkersPage />} />
         <Route path="/institutions" element={<InstitutionsPage />} />
         <Route path="/classes" element={<ClassesPage />} />
         <Route path="/activities" element={<ActivitiesPage />} />

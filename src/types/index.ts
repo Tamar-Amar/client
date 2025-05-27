@@ -1,4 +1,3 @@
-
 export interface Activity {
     _id?: string; 
     classId:
@@ -96,7 +95,7 @@ export interface Activity {
   
   export interface WeeklySchedule {
     day: 'ראשון' | 'שני' | 'שלישי' | 'רביעי' | 'חמישי';
-    classes: string[]; 
+    classes: string[];
   }
   export interface Operator {
     _id?: string;
@@ -165,6 +164,43 @@ export interface Activity {
     description: string;
     entityType: "Institution" | "Store" | "Class"; 
     entityId: string; 
+  }
+  
+  export interface WorkerBankDetails {
+    bankName?: string;
+    branchNumber?: string;
+    accountNumber?: string;
+    accountOwner?: string;
+  }
+
+  export interface WorkerTag {
+    _id: string;
+    name: string;
+    isActive: boolean;
+  }
+
+  export interface Worker {
+    _id: string;
+    id: string; // תעודת זהות
+    firstName: string;
+    lastName: string;
+    birthDate?: string;
+    city: string;
+    street: string;
+    buildingNumber: string;
+    apartmentNumber?: string;
+    workingSymbols?: string[];
+    accountantId?: string;
+    tags?: string[];
+    documents?: string[];
+    registrationDate?: string;
+    paymentMethod: 'חשבונית' | 'תלוש';
+    phone: string;
+    email?: string;
+    isActive: boolean;
+    bankDetails?: WorkerBankDetails;
+    notes?: string;
+    weeklySchedule?: WeeklySchedule[];
   }
   
   

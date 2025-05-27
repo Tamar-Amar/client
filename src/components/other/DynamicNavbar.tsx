@@ -44,6 +44,7 @@ useEffect(() => {
   const adminTabs = [
     { label: 'דוח הפעלות', path: '/activities', icon: <AssessmentIcon fontSize="small" /> },
     { label: 'ניהול מפעילים', path: '/operators', icon: <PeopleIcon fontSize="small" /> },
+    { label: 'ניהול עובדים', path: '/workers', icon: <PeopleIcon fontSize="small" /> },
     { label: 'ניהול קבוצות', path: '/classes', icon: <GroupWorkIcon fontSize="small" /> },
     { label: 'מיילים', path: '/emails', icon: <EmailIcon fontSize="small" /> },
         // { label: 'ניהול מוסדות', path: '/institutions' },
