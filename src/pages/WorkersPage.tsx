@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Container, Box, Typography, Divider, IconButton } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
-import WorkerList from '../components/workers/WorkerList';
 import WorkerCreate from '../components/workers/WorkerCreate';
 import WorkersList from '../components/WorkersList';
 
