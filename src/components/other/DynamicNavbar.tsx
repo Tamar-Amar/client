@@ -62,15 +62,7 @@ const operatorTabs = [
   const tabs = role === 'admin' ? adminTabs : role === 'operator' ? operatorTabs : loginTab;
 
   return (
-    <AppBar
-      position="sticky"
-      sx={{
-        bgcolor: 'linear-gradient(90deg, #1976d2 0%, #42a5f5 100%)',
-        background: 'linear-gradient(90deg, #1976d2 0%, #42a5f5 100%)',
-        boxShadow: '0px 2px 4px rgba(0,0,0,0.1)',
-        borderBottom: '2px solid #1565c0',
-      }}
-    >
+    <AppBar position="fixed">
       <Toolbar sx={{ justifyContent: 'space-between' }}>
         <Typography variant="h6" sx={{ flexGrow: 1, color: 'white', fontWeight: 'bold' }}>
 {role === 'operator'

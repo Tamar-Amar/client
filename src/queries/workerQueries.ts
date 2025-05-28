@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createWorker, deleteWorker, fetchWorkerById, fetchWorkers, updateWorker } from '../services/WorkerService';
 import { Worker } from '../types';
 
+const API_BASE_URL = 'http://localhost:5000/api';
+
 export const useFetchWorkers = () => {
   return useQuery({
     queryKey: ['workers'],
@@ -14,6 +16,20 @@ export const useFetchWorkerById = (workerId: string) => {
     queryKey: ['worker', workerId],
     queryFn: () => fetchWorkerById(workerId),
     enabled: !!workerId
+  });
+};
+
+export const useFetchWorker = (workerId: string) => {
+  return useQuery({
+    queryKey: ['worker', workerId],
+    queryFn: async () => {
+      const response = await fetch(`${API_BASE_URL}/workers/${workerId}`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    },
+    enabled: !!workerId,
   });
 };
 

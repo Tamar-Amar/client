@@ -1,86 +1,56 @@
 import { Worker } from '../types';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL+ '/api' || "https://server-manage.onrender.com" + '/api';
-
+const API_BASE_URL = 'http://localhost:5000/api';
 
 export const fetchWorkers = async (): Promise<Worker[]> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/workers`);
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching workers:', error);
-    throw error;
+  const response = await fetch(`${API_BASE_URL}/workers`);
+  if (!response.ok) {
+    throw new Error('Network response was not ok');
   }
+  return response.json();
 };
 
-export const fetchWorkerById = async (workerId: string): Promise<Worker> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/workers/${workerId}`);
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching worker:', error);
-    throw error;
+export const fetchWorkerById = async (id: string): Promise<Worker> => {
+  const response = await fetch(`${API_BASE_URL}/workers/${id}`);
+  if (!response.ok) {
+    throw new Error('Network response was not ok');
   }
+  return response.json();
 };
 
 export const createWorker = async (workerData: Omit<Worker, '_id'>): Promise<Worker> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/workers`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(workerData),
-    });
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error creating worker:', error);
-    throw error;
+  const response = await fetch(`${API_BASE_URL}/workers`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(workerData),
+  });
+  if (!response.ok) {
+    throw new Error('Network response was not ok');
   }
+  return response.json();
 };
 
-export const updateWorker = async (workerId: string, workerData: Partial<Worker>): Promise<Worker> => {
-  if (!workerId) {
-    return createWorker(workerData as Omit<Worker, '_id'>);
+export const updateWorker = async (id: string, data: Partial<Worker>): Promise<Worker> => {
+  const response = await fetch(`${API_BASE_URL}/workers/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    throw new Error('Network response was not ok');
   }
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/workers/${workerId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(workerData),
-    });
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error updating worker:', error);
-    throw error;
-  }
+  return response.json();
 };
 
-export const deleteWorker = async (workerId: string): Promise<void> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/workers/${workerId}`, {
-      method: 'DELETE',
-    });
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-  } catch (error) {
-    console.error('Error deleting worker:', error);
-    throw error;
+export const deleteWorker = async (id: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/workers/${id}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    throw new Error('Network response was not ok');
   }
 }; 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Table,
   TableBody,
@@ -10,22 +10,101 @@ import {
   IconButton,
   Typography,
   Box,
-  Button,
-  Dialog
+  TextField,
+  InputAdornment,
+  TablePagination,
+  Tooltip
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import SearchIcon from '@mui/icons-material/Search';
 import { useFetchWorkers, useDeleteWorker } from '../queries/workerQueries';
-import { Worker } from '../types';
-import WorkerEditDialog from './WorkerEditDialog';
-import ExcelImport from './workers/ExcelImport';
+import { useFetchClasses } from '../queries/classQueries';
+import { Worker, Class } from '../types';
+import { useNavigate } from 'react-router-dom';
+
+const ROWS_PER_PAGE = 15;
 
 const WorkersList: React.FC = () => {
   const { data: workers = [], isLoading, error } = useFetchWorkers();
+  const { data: classes = [] } = useFetchClasses();
   const deleteWorkerMutation = useDeleteWorker();
-  const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(0);
+  const navigate = useNavigate();
+
+  // Create a map of class IDs to symbols for quick lookup
+  const classSymbolMap = useMemo(() => {
+    const map = new Map<string, string>();
+    classes.forEach((cls: Class) => {
+      map.set(cls._id || '', cls.uniqueSymbol || '');
+    });
+    return map;
+  }, [classes]);
+
+  // Get symbols for a worker
+  const getWorkerSymbols = (worker: Worker): string => {
+    if (!worker.workingSymbols?.length) return 'אין סמלים';
+    
+    // Debug log to see the actual structure
+    console.log('Worker Symbols Structure:', JSON.stringify(worker.workingSymbols, null, 2));
+    
+    return worker.workingSymbols
+      .map(symbolId => {
+        // Handle case where symbolId might be an object
+        if (typeof symbolId === 'object' && symbolId !== null) {
+          // Log the object structure
+          console.log('Symbol Object:', symbolId);
+          
+          // Try different possible properties
+          const id = (symbolId as any)._id || (symbolId as any).id || (symbolId as any).symbol;
+          const symbol = classSymbolMap.get(id);
+          
+          if (symbol) {
+            return symbol;
+          }
+          
+          // If we couldn't find a matching symbol, try to get any meaningful string representation
+          return id || (symbolId as any).uniqueSymbol || (symbolId as any).name || 'סמל לא ידוע';
+        }
+        
+        // If it's a string, use it directly
+        const symbol = classSymbolMap.get(symbolId);
+        return symbol || symbolId || '';
+      })
+      .filter(Boolean)
+      .join(', ');
+  };
+
+  // Add this for debugging
+  console.log('Worker Symbols Example:', workers[0]?.workingSymbols);
+
+  // Filter workers based on search query
+  const filteredWorkers = useMemo(() => {
+    return workers.filter((worker) => {
+      const searchLower = searchQuery.toLowerCase();
+      return (
+        (worker.id ?? '').toLowerCase().includes(searchLower) ||
+        (worker.firstName ?? '').toLowerCase().includes(searchLower) ||
+        (worker.lastName ?? '').toLowerCase().includes(searchLower) ||
+        (worker.phone ?? '').toLowerCase().includes(searchLower) ||
+        (worker.email ?? '').toLowerCase().includes(searchLower) ||
+        (worker.city ?? '').toLowerCase().includes(searchLower) ||
+        (worker.jobTitle ?? '').toLowerCase().includes(searchLower) ||
+        (worker.status ?? '').toLowerCase().includes(searchLower)
+      );
+    });
+  }, [workers, searchQuery]);
+
+  // Calculate pagination
+  const paginatedWorkers = useMemo(() => {
+    const startIndex = page * ROWS_PER_PAGE;
+    return filteredWorkers.slice(startIndex, startIndex + ROWS_PER_PAGE);
+  }, [filteredWorkers, page]);
+
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
 
   const handleDelete = async (workerId: string) => {
     if (window.confirm('האם אתה בטוח שברצונך למחוק עובד זה?')) {
@@ -38,13 +117,7 @@ const WorkersList: React.FC = () => {
   };
 
   const handleEdit = (worker: Worker) => {
-    setSelectedWorker(worker);
-    setShowEditDialog(true);
-  };
-
-  const handleCloseDialog = () => {
-    setShowEditDialog(false);
-    setSelectedWorker(null);
+    navigate(`/workers/edit/${worker._id}`);
   };
 
   const formatDate = (dateString?: string) => {
@@ -57,93 +130,111 @@ const WorkersList: React.FC = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-        <Button
-          variant="outlined"
-          onClick={() => setIsImportDialogOpen(true)}
-          sx={{
-            color: '#2e7d32',
-            borderColor: '#2e7d32',
-            '&:hover': {
-              borderColor: '#1b5e20',
-              color: '#1b5e20',
-              backgroundColor: 'transparent'
-            },
+      <Box sx={{ mb: 2 }}>
+        <TextField
+          fullWidth
+          size="small"
+          placeholder="חיפוש חופשי..."
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setPage(0); // Reset to first page when searching
           }}
-        >
-          ייבא עובדים מאקסל
-        </Button>
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          }}
+        />
       </Box>
-      
-      <TableContainer component={Paper}>
-        <Table>
+
+      <TableContainer component={Paper} sx={{ mb: 2 }}>
+        <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>תעודת זהות</TableCell>
-              <TableCell>שם משפחה</TableCell>
-              <TableCell>שם פרטי</TableCell>
-              <TableCell>טלפון</TableCell>
-              <TableCell>אימייל</TableCell>
-              <TableCell>כתובת</TableCell>
-              <TableCell>תאריך לידה</TableCell>
-              <TableCell>אופן תשלום</TableCell>
-              <TableCell>פעולות</TableCell>
+              <TableCell padding="checkbox" sx={{ fontWeight: 'bold' }}>פעולות</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>ת.ז.</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>שם מלא</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>טלפון</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>אימייל</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>סמלי מוסד</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>תשלום</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {workers.map((worker) => (
-              <TableRow key={worker._id}>
-                <TableCell>{worker.id}</TableCell>
-                <TableCell>{worker.lastName}</TableCell>
-                <TableCell>{worker.firstName}</TableCell>
-                <TableCell>{worker.phone}</TableCell>
-                <TableCell>{worker.email}</TableCell>
-                <TableCell>
-                  {`${worker.city}`}
-                </TableCell>
-                <TableCell>{formatDate(worker.birthDate)}</TableCell>
-                <TableCell>{worker.paymentMethod}</TableCell>
-                <TableCell>
-                  <IconButton
-                    color="error"
-                    onClick={() => handleDelete(worker._id)}
-                    size="small"
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                  <IconButton
-                    color="primary"
-                    onClick={() => handleEdit(worker)}
-                    size="small"
-                  >
-                    <EditIcon />
-                  </IconButton>
+            {paginatedWorkers.length > 0 ? (
+              paginatedWorkers.map((worker) => (
+                <TableRow key={worker._id} hover>
+                  <TableCell padding="checkbox">
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      <IconButton
+                        color="error"
+                        onClick={() => handleDelete(worker._id)}
+                        size="small"
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        color="primary"
+                        onClick={() => handleEdit(worker)}
+                        size="small"
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </TableCell>
+                  <TableCell>{worker.id}</TableCell>
+                  <TableCell>{`${worker.firstName} ${worker.lastName}`}</TableCell>
+                  <TableCell>{worker.phone}</TableCell>
+                  <TableCell>{worker.email}</TableCell>
+                  <TableCell>
+                    <Tooltip title={getWorkerSymbols(worker)} arrow>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          maxWidth: 200,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {getWorkerSymbols(worker)}
+                      </Typography>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell>{worker.paymentMethod}</TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    {searchQuery ? 'לא נמצאו תוצאות לחיפוש' : 'לא קיימים עובדים במערכת'}
+                  </Typography>
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </TableContainer>
 
-      {selectedWorker && (
-        <WorkerEditDialog
-          worker={selectedWorker}
-          open={showEditDialog}
-          onClose={handleCloseDialog}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography variant="body2" color="text.secondary">
+          סה"כ: {filteredWorkers.length} עובדים
+          {searchQuery && ` (מתוך ${workers.length})`}
+        </Typography>
+        <TablePagination
+          component="div"
+          count={filteredWorkers.length}
+          page={page}
+          onPageChange={handleChangePage}
+          rowsPerPage={ROWS_PER_PAGE}
+          rowsPerPageOptions={[ROWS_PER_PAGE]}
+          labelDisplayedRows={({ from, to, count }) => `${from}-${to} מתוך ${count}`}
         />
-      )}
-
-      <Dialog
-        open={isImportDialogOpen}
-        onClose={() => setIsImportDialogOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <Box sx={{ p: 2 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>ייבוא עובדים מאקסל</Typography>
-          <ExcelImport />
-        </Box>
-      </Dialog>
+      </Box>
     </Box>
   );
 };
