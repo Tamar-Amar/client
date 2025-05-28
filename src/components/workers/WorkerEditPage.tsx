@@ -30,6 +30,8 @@ import {
   Schedule,
   Save,
   ArrowBack,
+  Label,
+  Description
 } from '@mui/icons-material';
 import { Worker } from '../../types';
 import WeeklyScheduleSelect from '../WeeklyScheduleSelect';
@@ -37,6 +39,10 @@ import { Class } from '../../types';
 import { useNavigate } from 'react-router-dom';
 import { useFetchClasses } from '../../queries/classQueries';
 import { useUpdateWorker } from '../../queries/workerQueries';
+import WorkerTags from './WorkerTags';
+import WorkerDocuments from './WorkerDocuments';
+import { Tabs } from '@mui/material';
+import Tab from '@mui/material/Tab';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(2),
@@ -98,6 +104,7 @@ const WorkerEditPage: React.FC<WorkerEditPageProps> = ({ worker }) => {
       jobTitle: 'לא נבחר',
     }
   );
+  const [activeTab, setActiveTab] = useState(0);
 
   useEffect(() => {
     if (worker) {
@@ -158,6 +165,10 @@ const WorkerEditPage: React.FC<WorkerEditPageProps> = ({ worker }) => {
         return days.indexOf(a.day) - days.indexOf(b.day);
       }),
     }));
+  };
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
   };
 
   return (
@@ -459,25 +470,50 @@ const WorkerEditPage: React.FC<WorkerEditPageProps> = ({ worker }) => {
                 </Grid>
               </StyledPaper>
             </Grid>
-          </Grid>
 
-          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-            <Button
-              variant="outlined"
-              onClick={() => navigate('/workers')}
-              startIcon={<ArrowBack />}
-            >
-              חזרה
-            </Button>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              startIcon={<Save />}
-            >
-              שמירת שינויים
-            </Button>
-          </Box>
+            {/* Row 4: Tags and Documents */}
+            <Grid item xs={12}>
+              <StyledPaper>
+                <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+                  <Tabs value={activeTab} onChange={handleTabChange} aria-label="worker management tabs">
+                    <Tab icon={<Label />} label="תגיות" />
+                    <Tab icon={<Description />} label="מסמכים" />
+                  </Tabs>
+                </Box>
+
+                {activeTab === 0 && (
+                  <Box sx={{ p: 2 }}>
+                    <WorkerTags
+                      workerId={worker?._id || ''}
+                      existingTags={formData.tags}
+                      onTagsChange={(tags) => setFormData(prev => ({ ...prev, tags }))}
+                    />
+                  </Box>
+                )}
+
+                {activeTab === 1 && (
+                  <Box sx={{ p: 2 }}>
+                    <WorkerDocuments workerId={worker?._id || ''} />
+                  </Box>
+                )}
+              </StyledPaper>
+            </Grid>
+
+            {/* Row 5: Submit Button */}
+            <Grid item xs={12}>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  startIcon={<Save />}
+                  disabled={updateWorkerMutation.isPending}
+                >
+                  {updateWorkerMutation.isPending ? 'שומר שינויים...' : 'שמור שינויים'}
+                </Button>
+              </Box>
+            </Grid>
+          </Grid>
         </form>
       </Container>
     </Box>

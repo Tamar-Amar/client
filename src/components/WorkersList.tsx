@@ -18,6 +18,7 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useFetchWorkers, useDeleteWorker } from '../queries/workerQueries';
 import { useFetchClasses } from '../queries/classQueries';
 import { Worker, Class } from '../types';
@@ -46,15 +47,11 @@ const WorkersList: React.FC = () => {
   const getWorkerSymbols = (worker: Worker): string => {
     if (!worker.workingSymbols?.length) return 'אין סמלים';
     
-    // Debug log to see the actual structure
-    console.log('Worker Symbols Structure:', JSON.stringify(worker.workingSymbols, null, 2));
     
     return worker.workingSymbols
       .map(symbolId => {
         // Handle case where symbolId might be an object
         if (typeof symbolId === 'object' && symbolId !== null) {
-          // Log the object structure
-          console.log('Symbol Object:', symbolId);
           
           // Try different possible properties
           const id = (symbolId as any)._id || (symbolId as any).id || (symbolId as any).symbol;
@@ -75,9 +72,6 @@ const WorkersList: React.FC = () => {
       .filter(Boolean)
       .join(', ');
   };
-
-  // Add this for debugging
-  console.log('Worker Symbols Example:', workers[0]?.workingSymbols);
 
   // Filter workers based on search query
   const filteredWorkers = useMemo(() => {
@@ -118,6 +112,10 @@ const WorkersList: React.FC = () => {
 
   const handleEdit = (worker: Worker) => {
     navigate(`/workers/edit/${worker._id}`);
+  };
+
+  const handleViewDetails = (worker: Worker) => {
+    navigate(`/workers/${worker._id}`);
   };
 
   const formatDate = (dateString?: string) => {
@@ -182,6 +180,13 @@ const WorkersList: React.FC = () => {
                         size="small"
                       >
                         <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        color="info"
+                        onClick={() => handleViewDetails(worker)}
+                        size="small"
+                      >
+                        <VisibilityIcon fontSize="small" />
                       </IconButton>
                     </Box>
                   </TableCell>

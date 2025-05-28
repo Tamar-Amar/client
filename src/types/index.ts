@@ -200,7 +200,7 @@ export interface Activity {
     apartmentNumber?: string;
     workingSymbols?: string[];
     accountantId?: string;
-    tags?: string[];
+    tags?: WorkerTag[];
     documents?: WorkerDocument[];
     registrationDate: string; // תאריך יצירה במערכת
     startDate?: string; // תאריך התחלת עבודה

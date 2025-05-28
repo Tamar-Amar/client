@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Dialog } from '@mui/material';
+import { Box, Dialog, Paper, Tabs, Tab } from '@mui/material';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useAddWorker, useUpdateWorker, useFetchWorker } from '../../queries/workerQueries';
@@ -9,6 +9,8 @@ import ContactDetails from './steps/ContactDetails';
 import EmploymentDetails from './steps/EmploymentDetails';
 import TagsAndFinish from './steps/TagsAndFinish';
 import WorkerTagManagement from './WorkerTagManagement';
+import WorkerTags from './WorkerTags';
+import WorkerDocuments from './WorkerDocuments';
 import { Worker, WeeklySchedule, WorkerDocument } from '../../types';
 import { DocumentStatus } from '../../types/Document';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -71,8 +73,35 @@ const WorkerSchema = Yup.object().shape({
   })).optional()
 });
 
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`worker-tabpanel-${index}`}
+      aria-labelledby={`worker-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ p: 3 }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+}
+
 const WorkerCreate: React.FC<Props> = ({ onSuccess, mode = 'create' }) => {
   const [activeStep, setActiveStep] = useState(0);
+  const [activeTab, setActiveTab] = useState(0);
   const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
   const addWorkerMutation = useAddWorker();
   const updateWorkerMutation = useUpdateWorker();
@@ -195,7 +224,7 @@ const WorkerCreate: React.FC<Props> = ({ onSuccess, mode = 'create' }) => {
   }, [existingWorkerData, mode]);
 
   const handleNext = async () => {
-    if (activeStep === 3) {
+    if (activeStep === 4) {
       try {
         await formik.submitForm();
         // Only proceed if there are no errors
@@ -218,7 +247,7 @@ const WorkerCreate: React.FC<Props> = ({ onSuccess, mode = 'create' }) => {
 
   const isStepValid = () => {
     // בשלב האחרון, נאפשר לחיצה על סיום גם אם יש שדות לא חובה שלא מולאו
-    if (activeStep === 3) {
+    if (activeStep === 4) {
       // נבדוק רק את השדות שהם חובה
       const requiredFields = [
         'firstName',
@@ -245,7 +274,8 @@ const WorkerCreate: React.FC<Props> = ({ onSuccess, mode = 'create' }) => {
       0: ['firstName', 'lastName', 'id', 'password', 'birthDate'],
       1: ['city', 'street', 'buildingNumber', 'phone'],
       2: ['paymentMethod'],
-      3: []
+      3: [],
+      4: []
     }[activeStep] as (keyof FormValues)[];
 
     return stepFields?.every(field => {
@@ -254,6 +284,10 @@ const WorkerCreate: React.FC<Props> = ({ onSuccess, mode = 'create' }) => {
       const value = formik.values[field];
       return !error && (touched || value);
     }) ?? true;
+  };
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
   };
 
   const getStepContent = () => {
@@ -266,6 +300,34 @@ const WorkerCreate: React.FC<Props> = ({ onSuccess, mode = 'create' }) => {
       setFieldValue: formik.setFieldValue
     };
 
+    if (activeStep === 3) {
+      return (
+        <Paper sx={{ width: '100%' }}>
+          <Tabs
+            value={activeTab}
+            onChange={handleTabChange}
+            aria-label="worker management tabs"
+            sx={{ borderBottom: 1, borderColor: 'divider' }}
+          >
+            <Tab label="תגיות" />
+            <Tab label="מסמכים" />
+          </Tabs>
+
+          <TabPanel value={activeTab} index={0}>
+            <WorkerTags
+              workerId={formik.values._id}
+              existingTags={formik.values.tags}
+              onTagsChange={(tags) => formik.setFieldValue('tags', tags)}
+            />
+          </TabPanel>
+
+          <TabPanel value={activeTab} index={1}>
+            <WorkerDocuments workerId={formik.values._id} />
+          </TabPanel>
+        </Paper>
+      );
+    }
+
     switch (activeStep) {
       case 0:
         return <PersonalDetails formik={commonFormikProps as any} />;
@@ -273,7 +335,7 @@ const WorkerCreate: React.FC<Props> = ({ onSuccess, mode = 'create' }) => {
         return <ContactDetails formik={commonFormikProps as any} />;
       case 2:
         return <EmploymentDetails formik={commonFormikProps as any} />;
-      case 3:
+      case 4:
         return (
           <TagsAndFinish
             formik={commonFormikProps as any}
@@ -291,9 +353,16 @@ const WorkerCreate: React.FC<Props> = ({ onSuccess, mode = 'create' }) => {
         activeStep={activeStep}
         handleBack={handleBack}
         handleNext={handleNext}
-        isLastStep={activeStep === 3}
+        isLastStep={activeStep === 4}
         isValid={isStepValid()}
         isSubmitting={formik.isSubmitting || addWorkerMutation.isPending}
+        steps={[
+          'פרטים אישיים',
+          'פרטי התקשרות',
+          'פרטי העסקה',
+          'תגיות ומסמכים',
+          'סיום'
+        ]}
       >
         {getStepContent()}
       </WorkerCreateStepper>

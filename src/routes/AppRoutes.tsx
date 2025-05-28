@@ -22,6 +22,7 @@ import WorkersPage from '../pages/WorkersPage';
 import WorkerCreate from '../components/workers/WorkerCreate';
 import WorkerEditPage from '../components/workers/WorkerEditPage';
 import { useFetchWorker } from '../queries/workerQueries';
+import WorkerDetails from '../components/workers/WorkerDetails';
 
 const OperatorDocumentsWrapper = () => {
   const token = localStorage.getItem('token');
@@ -46,6 +47,21 @@ const WorkerEditWrapper = () => {
   return <WorkerEditPage worker={worker} />;
 };
 
+const WorkerDetailsWrapper = () => {
+  const { id } = useParams();
+  const { data: worker, isLoading } = useFetchWorker(id || '');
+
+  if (isLoading) {
+    return <div>טוען...</div>;
+  }
+
+  if (!worker) {
+    return <div>לא נמצא עובד</div>;
+  }
+
+  return <WorkerDetails worker={worker} />;
+};
+
 const AppRoutes: React.FC = () => {
   return (
     <Routes>
@@ -57,6 +73,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/operators" element={<OperatorsPage />} />
         <Route path="/workers" element={<WorkersPage />} />
         <Route path="/workers/edit/:id" element={<WorkerEditWrapper />} />
+        <Route path="/workers/:id" element={<WorkerDetailsWrapper />} />
         <Route path="/institutions" element={<InstitutionsPage />} />
         <Route path="/classes" element={<ClassesPage />} />
         <Route path="/activities" element={<ActivitiesPage />} />

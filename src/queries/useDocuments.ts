@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchDocumentsByOperator, uploadDocument, updateOperatorDocuments } from '../services/documentService';
+import { fetchDocumentsByOperator, uploadDocument, updateOperatorDocuments, deleteDocument } from '../services/documentService';
 
 export const useUploadDocument = () => {
   const queryClient = useQueryClient();
@@ -33,4 +33,48 @@ export const useUpdateDocuments = () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
     }
   });
+};
+
+export const useWorkerDocuments = (workerId: string) => {
+  const queryClient = useQueryClient();
+
+  const documents = useQuery({
+    queryKey: ['worker-documents', workerId],
+    queryFn: () => fetchDocumentsByOperator(workerId)
+  });
+
+  const uploadDocumentMutation = useMutation({
+    mutationFn: uploadDocument,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['worker-documents', workerId] });
+    }
+  });
+
+  const deleteDocumentMutation = useMutation({
+    mutationFn: deleteDocument,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['worker-documents', workerId] });
+    }
+  });
+
+  const updateDocumentsMutation = useMutation({
+    mutationFn: (params: { tempId: string; newOperatorId: string }) => 
+      updateOperatorDocuments(params.tempId, params.newOperatorId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['worker-documents', workerId] });
+    }
+  });
+
+  return {
+    documents: documents.data || [],
+    isLoading: documents.isLoading,
+    isError: documents.isError,
+    error: documents.error,
+    uploadDocument: uploadDocumentMutation.mutate,
+    isUploading: uploadDocumentMutation.isPending,
+    deleteDocument: deleteDocumentMutation.mutate,
+    isDeleting: deleteDocumentMutation.isPending,
+    updateDocuments: updateDocumentsMutation.mutate,
+    isUpdating: updateDocumentsMutation.isPending
+  };
 };

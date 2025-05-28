@@ -296,8 +296,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
         // הצגת אזהרה על סמלים חסרים
         if (missingSymbols.size > 0) {
           const symbolsList = Array.from(missingSymbols).join('\n');
-          console.log('Available symbols in system:', classes.map((c: Class) => c.uniqueSymbol));
-          console.log('Missing symbols from Excel:', Array.from(missingSymbols));
           const shouldContinue = window.confirm(
             `שים לב: נמצאו סמלי מוסד שלא קיימים במערכת:\n${symbolsList}\n\nהאם ברצונך להמשיך בייבוא העובדים ללא הכיתות החסרות?`
           );

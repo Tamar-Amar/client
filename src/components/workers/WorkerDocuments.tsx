@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Box,
   Button,
@@ -11,161 +11,196 @@ import {
   TableRow,
   Paper,
   IconButton,
-  Chip
+  Chip,
+  TextField,
+  MenuItem,
+  Stack,
+  CircularProgress
 } from '@mui/material';
 import { Delete as DeleteIcon, CloudDownload as DownloadIcon } from '@mui/icons-material';
 import { DocumentStatus, DocumentType } from '../../types/Document';
-
-
-interface Document {
-  _id: string;
-  fileName: string;
-  documentType: DocumentType;
-  status: DocumentStatus;
-  uploadDate: string;
-  expiryDate?: string;
-  url?: string;
-}
+import { useWorkerDocuments } from '../../queries/useDocuments';
 
 interface Props {
   workerId: string;
 }
 
+const DOCUMENT_TYPES = [
+  { value: DocumentType.ID, label: 'תעודת זהות' },
+  { value: DocumentType.RESUME, label: 'קורות חיים' },
+  { value: DocumentType.EDUCATION, label: 'תעודות השכלה' },
+  { value: DocumentType.CRIMINAL_RECORD, label: 'תעודת יושר' },
+  { value: DocumentType.BANK_DETAILS, label: 'פרטי בנק' },
+  { value: DocumentType.OTHER, label: 'אחר' }
+];
+
 const WorkerDocuments: React.FC<Props> = ({ workerId }) => {
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [documentType, setDocumentType] = useState<DocumentType>(DocumentType.OTHER);
+  const [expiryDate, setExpiryDate] = useState('');
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
-    fetchDocuments();
-  }, [workerId]);
+  const {
+    documents,
+    isLoading,
+    uploadDocument,
+    isUploading,
+    deleteDocument,
+    isDeleting
+  } = useWorkerDocuments(workerId);
 
-  const fetchDocuments = async () => {
-    try {
-      const response = await fetch(`/api/documents/worker/${workerId}`);
-      const data = await response.json();
-      setDocuments(data);
-    } catch (error) {
-      console.error('Error fetching documents:', error);
-    } finally {
-      setLoading(false);
-    }
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    setSelectedFile(file || null);
   };
 
-  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleUpload = () => {
+    if (!selectedFile) return;
 
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', selectedFile);
     formData.append('workerId', workerId);
-    formData.append('documentType', DocumentType.OTHER);
+    formData.append('documentType', documentType);
+    if (expiryDate) {
+      formData.append('expiryDate', new Date(expiryDate).toISOString());
+    }
 
-    try {
-      const response = await fetch('/api/documents/upload', {
-        method: 'POST',
-        body: formData
-      });
-      
-      if (response.ok) {
-        fetchDocuments();
+    uploadDocument(formData, {
+      onSuccess: () => {
+        setSelectedFile(null);
+        setDocumentType(DocumentType.OTHER);
+        setExpiryDate('');
+        if (fileInputRef.current) fileInputRef.current.value = '';
       }
-    } catch (error) {
-      console.error('Error uploading document:', error);
+    });
+  };
+
+  const handleDelete = (documentId: string) => {
+    if (window.confirm('האם אתה בטוח שברצונך למחוק מסמך זה?')) {
+      deleteDocument(documentId);
     }
   };
 
-  const handleDelete = async (documentId: string) => {
-    if (!window.confirm('האם אתה בטוח שברצונך למחוק מסמך זה?')) return;
-
-    try {
-      const response = await fetch(`/api/documents/${documentId}`, {
-        method: 'DELETE'
-      });
-      
-      if (response.ok) {
-        setDocuments(docs => docs.filter(doc => doc._id !== documentId));
-      }
-    } catch (error) {
-      console.error('Error deleting document:', error);
-    }
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('he-IL');
   };
 
   const getStatusColor = (status: DocumentStatus) => {
     switch (status) {
       case DocumentStatus.APPROVED:
         return 'success';
-      case DocumentStatus.PENDING:
-        return 'warning';
       case DocumentStatus.REJECTED:
         return 'error';
-      case DocumentStatus.EXPIRED:
-        return 'error';
+      case DocumentStatus.PENDING:
+        return 'warning';
       default:
         return 'default';
     }
   };
 
-  if (loading) {
-    return <Typography>טוען...</Typography>;
+  if (isLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
   return (
-    <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h6">מסמכי העובד</Typography>
-        <Button
-          variant="contained"
-          component="label"
-        >
-          העלאת מסמך
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h6" gutterBottom color="primary">
+        ניהול מסמכים
+      </Typography>
+
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Stack direction="row" spacing={2} alignItems="center">
+          <TextField
+            select
+            label="סוג מסמך"
+            value={documentType}
+            onChange={(e) => setDocumentType(e.target.value as DocumentType)}
+            sx={{ minWidth: 200 }}
+          >
+            {DOCUMENT_TYPES.map((type) => (
+              <MenuItem key={type.value} value={type.value}>
+                {type.label}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          <TextField
+            type="date"
+            label="תאריך תפוגה"
+            value={expiryDate}
+            onChange={(e) => setExpiryDate(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+          />
+
           <input
             type="file"
             hidden
-            onChange={handleUpload}
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
           />
-        </Button>
-      </Box>
+
+          <Button
+            variant="outlined"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {selectedFile ? selectedFile.name : 'בחר קובץ'}
+          </Button>
+
+          <Button
+            variant="contained"
+            onClick={handleUpload}
+            disabled={!selectedFile || isUploading}
+          >
+            {isUploading ? <CircularProgress size={24} /> : 'העלה'}
+          </Button>
+        </Stack>
+      </Paper>
 
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>שם הקובץ</TableCell>
+              <TableCell>שם קובץ</TableCell>
               <TableCell>סוג מסמך</TableCell>
-              <TableCell>סטטוס</TableCell>
               <TableCell>תאריך העלאה</TableCell>
               <TableCell>תאריך תפוגה</TableCell>
+              <TableCell>סטטוס</TableCell>
               <TableCell>פעולות</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {documents.map((doc) => (
+            {documents.map((doc: any) => (
               <TableRow key={doc._id}>
                 <TableCell>{doc.fileName}</TableCell>
-                <TableCell>{doc.documentType}</TableCell>
+                <TableCell>
+                  {DOCUMENT_TYPES.find(type => type.value === doc.documentType)?.label || doc.documentType}
+                </TableCell>
+                <TableCell>{formatDate(doc.uploadDate)}</TableCell>
+                <TableCell>{doc.expiryDate ? formatDate(doc.expiryDate) : '-'}</TableCell>
                 <TableCell>
                   <Chip
                     label={doc.status}
-                    color={getStatusColor(doc.status) as any}
+                    color={getStatusColor(doc.status)}
                     size="small"
                   />
                 </TableCell>
                 <TableCell>
-                  {new Date(doc.uploadDate).toLocaleDateString('he-IL')}
-                </TableCell>
-                <TableCell>
-                  {doc.expiryDate && new Date(doc.expiryDate).toLocaleDateString('he-IL')}
-                </TableCell>
-                <TableCell>
                   <IconButton
+                    onClick={() => window.open(doc.url, '_blank')}
                     size="small"
-                    onClick={() => doc.url && window.open(doc.url)}
                   >
                     <DownloadIcon />
                   </IconButton>
                   <IconButton
-                    size="small"
                     onClick={() => handleDelete(doc._id)}
+                    size="small"
+                    color="error"
+                    disabled={isDeleting}
                   >
                     <DeleteIcon />
                   </IconButton>
