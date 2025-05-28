@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useParams } from 'react-router-dom';
 import HomePage from '../pages/HomePage';
 import OperatorsPage from '../pages/OperatorsPage';
 import InstitutionsPage from '../pages/InstitutionsPage';
@@ -19,6 +19,9 @@ import OperatorDocuments from '../components/operators/OperatorDocuments';
 import { jwtDecode } from 'jwt-decode';
 import PersonalDocuments from '../components/operators/PersonalDocuments';
 import WorkersPage from '../pages/WorkersPage';
+import WorkerCreate from '../components/workers/WorkerCreate';
+import WorkerEditPage from '../components/workers/WorkerEditPage';
+import { useFetchWorker } from '../queries/workerQueries';
 
 const OperatorDocumentsWrapper = () => {
   const token = localStorage.getItem('token');
@@ -28,6 +31,20 @@ const OperatorDocumentsWrapper = () => {
   return <PersonalDocuments operatorId={operatorId} />;
 };
 
+const WorkerEditWrapper = () => {
+  const { id } = useParams();
+  const { data: worker, isLoading } = useFetchWorker(id || '');
+
+  if (isLoading) {
+    return <div>טוען...</div>;
+  }
+
+  if (!worker) {
+    return <div>לא נמצא עובד</div>;
+  }
+
+  return <WorkerEditPage worker={worker} />;
+};
 
 const AppRoutes: React.FC = () => {
   return (
@@ -39,6 +56,7 @@ const AppRoutes: React.FC = () => {
       <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
         <Route path="/operators" element={<OperatorsPage />} />
         <Route path="/workers" element={<WorkersPage />} />
+        <Route path="/workers/edit/:id" element={<WorkerEditWrapper />} />
         <Route path="/institutions" element={<InstitutionsPage />} />
         <Route path="/classes" element={<ClassesPage />} />
         <Route path="/activities" element={<ActivitiesPage />} />

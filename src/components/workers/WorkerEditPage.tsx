@@ -32,11 +32,11 @@ import {
   ArrowBack,
 } from '@mui/icons-material';
 import { Worker } from '../../types';
-import { updateWorker } from '../../services/WorkerService';
 import WeeklyScheduleSelect from '../WeeklyScheduleSelect';
 import { Class } from '../../types';
 import { useNavigate } from 'react-router-dom';
 import { useFetchClasses } from '../../queries/classQueries';
+import { useUpdateWorker } from '../../queries/workerQueries';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(2),
@@ -74,12 +74,11 @@ interface WorkerEditPageProps {
   worker: Worker | null;
 }
 
-const API_BASE_URL = 'http://localhost:5000/api';
-
 const WorkerEditPage: React.FC<WorkerEditPageProps> = ({ worker }) => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { data: classes = [] } = useFetchClasses();
+  const updateWorkerMutation = useUpdateWorker();
   const [formData, setFormData] = useState<Worker>(
     worker || {
       _id: '',
@@ -119,7 +118,10 @@ const WorkerEditPage: React.FC<WorkerEditPageProps> = ({ worker }) => {
           accountOwner: '',
         },
       };
-      await updateWorker(worker?._id || '', updatedWorker);
+      await updateWorkerMutation.mutateAsync({ 
+        id: worker?._id || '', 
+        data: updatedWorker 
+      });
       navigate('/workers');
     } catch (error) {
       console.error('Error updating worker:', error);

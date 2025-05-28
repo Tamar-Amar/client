@@ -26,6 +26,10 @@ const WorkerEditRoute = () => {
     return <Typography>טוען...</Typography>;
   }
 
+  if (!worker) {
+    return <Typography>לא נמצא עובד</Typography>;
+  }
+
   return <WorkerEditPage worker={worker} />;
 };
 

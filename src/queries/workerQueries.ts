@@ -11,25 +11,11 @@ export const useFetchWorkers = () => {
   });
 };
 
-export const useFetchWorkerById = (workerId: string) => {
+export const useFetchWorker = (workerId: string) => {
   return useQuery({
     queryKey: ['worker', workerId],
     queryFn: () => fetchWorkerById(workerId),
     enabled: !!workerId
-  });
-};
-
-export const useFetchWorker = (workerId: string) => {
-  return useQuery({
-    queryKey: ['worker', workerId],
-    queryFn: async () => {
-      const response = await fetch(`${API_BASE_URL}/workers/${workerId}`);
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      return response.json();
-    },
-    enabled: !!workerId,
   });
 };
 

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Dialog } from '@mui/material';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { useAddWorker } from '../../queries/workerQueries';
+import { useAddWorker, useUpdateWorker, useFetchWorker } from '../../queries/workerQueries';
 import WorkerCreateStepper from './WorkerCreateStepper';
 import PersonalDetails from './steps/PersonalDetails';
 import ContactDetails from './steps/ContactDetails';
@@ -11,36 +11,22 @@ import TagsAndFinish from './steps/TagsAndFinish';
 import WorkerTagManagement from './WorkerTagManagement';
 import { Worker, WeeklySchedule, WorkerDocument } from '../../types';
 import { DocumentStatus } from '../../types/Document';
+import { useParams, useNavigate } from 'react-router-dom';
 
-interface Props {
-  onSuccess?: () => void;
-}
-
-interface FormValues {
-  firstName: string;
-  lastName: string;
-  id: string;
+interface FormValues extends Omit<Worker, 'bankDetails' | 'documents'> {
   password: string;
-  birthDate: string;
-  city: string;
-  street: string;
-  buildingNumber: string;
-  apartmentNumber: string;
-  workingSymbols: string[];
-  accountantId: string;
-  tags: string[];
-  documents: string[];
-  phone: string;
-  email: string;
-  paymentMethod: 'חשבונית' | 'תלוש';
   bankDetails: {
     bankName: string;
     branchNumber: string;
     accountNumber: string;
     accountOwner: string;
   };
-  notes: string;
-  weeklySchedule: WeeklySchedule[];
+  documents: string[];
+}
+
+interface Props {
+  onSuccess?: () => void;
+  mode?: 'create' | 'edit';
 }
 
 const WorkerSchema = Yup.object().shape({
@@ -85,17 +71,21 @@ const WorkerSchema = Yup.object().shape({
   })).optional()
 });
 
-const WorkerCreate: React.FC<Props> = ({ onSuccess }) => {
+const WorkerCreate: React.FC<Props> = ({ onSuccess, mode = 'create' }) => {
   const [activeStep, setActiveStep] = useState(0);
   const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
   const addWorkerMutation = useAddWorker();
+  const updateWorkerMutation = useUpdateWorker();
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { data: existingWorkerData, isLoading } = useFetchWorker(id || '');
 
   const formik = useFormik<FormValues>({
     initialValues: {
+      _id: '',
+      id: '',
       firstName: '',
       lastName: '',
-      id: '',
-      password: '',
       birthDate: '',
       city: '',
       street: '',
@@ -108,6 +98,7 @@ const WorkerCreate: React.FC<Props> = ({ onSuccess }) => {
       phone: '',
       email: '',
       paymentMethod: 'תלוש',
+      password: '',
       bankDetails: {
         bankName: '',
         branchNumber: '',
@@ -121,23 +112,29 @@ const WorkerCreate: React.FC<Props> = ({ onSuccess }) => {
         { day: 'שלישי', classes: [] },
         { day: 'רביעי', classes: [] },
         { day: 'חמישי', classes: [] }
-      ]
+      ],
+      isActive: true,
+      registrationDate: new Date().toISOString(),
+      lastUpdateDate: new Date().toISOString(),
+      status: 'לא נבחר',
+      jobType: 'לא נבחר',
+      jobTitle: 'לא נבחר'
     },
     validationSchema: WorkerSchema,
     onSubmit: async (values) => {
       try {
         const workerData: Omit<Worker, '_id'> = {
           ...values,
-          birthDate: new Date(values.birthDate).toISOString(),
-          registrationDate: new Date().toISOString(),
+          birthDate: values.birthDate ? new Date(values.birthDate).toISOString() : new Date().toISOString(),
+          registrationDate: mode === 'create' ? new Date().toISOString() : existingWorkerData?.registrationDate || new Date().toISOString(),
           lastUpdateDate: new Date().toISOString(),
           isActive: true,
           workingSymbols: values.workingSymbols || [],
           tags: values.tags || [],
           documents: (values.documents || []).map(docId => ({
             documentId: docId,
-            status: 'אושר'
-          })),
+            status: 'אושר' as const
+          })) as WorkerDocument[],
           weeklySchedule: values.weeklySchedule || [
             { day: 'ראשון', classes: [] },
             { day: 'שני', classes: [] },
@@ -145,19 +142,57 @@ const WorkerCreate: React.FC<Props> = ({ onSuccess }) => {
             { day: 'רביעי', classes: [] },
             { day: 'חמישי', classes: [] }
           ],
-          status: 'לא נבחר',
-          jobType: 'לא נבחר',
-          jobTitle: 'לא נבחר'
+          status: mode === 'create' ? 'לא נבחר' : existingWorkerData?.status || 'לא נבחר',
+          jobType: mode === 'create' ? 'לא נבחר' : existingWorkerData?.jobType || 'לא נבחר',
+          jobTitle: mode === 'create' ? 'לא נבחר' : existingWorkerData?.jobTitle || 'לא נבחר'
         };
-        await addWorkerMutation.mutateAsync(workerData);
+
+        if (mode === 'edit' && id) {
+          await updateWorkerMutation.mutateAsync({ id, data: workerData });
+        } else {
+          await addWorkerMutation.mutateAsync(workerData);
+        }
+
         if (onSuccess) {
           onSuccess();
+        } else {
+          navigate('/workers');
         }
       } catch (error) {
-        console.error('Error adding worker:', error);
+        console.error('Error saving worker:', error);
       }
     },
   });
+
+  useEffect(() => {
+    if (mode === 'edit' && existingWorkerData) {
+      formik.setValues({
+        ...existingWorkerData,
+        birthDate: existingWorkerData.birthDate ? new Date(existingWorkerData.birthDate).toISOString().split('T')[0] : '',
+        password: '',
+        workingSymbols: existingWorkerData.workingSymbols || [],
+        tags: existingWorkerData.tags || [],
+        documents: existingWorkerData.documents?.map(doc => doc.documentId) || [],
+        bankDetails: {
+          bankName: existingWorkerData.bankDetails?.bankName || '',
+          branchNumber: existingWorkerData.bankDetails?.branchNumber || '',
+          accountNumber: existingWorkerData.bankDetails?.accountNumber || '',
+          accountOwner: existingWorkerData.bankDetails?.accountOwner || ''
+        },
+        weeklySchedule: existingWorkerData.weeklySchedule || [
+          { day: 'ראשון', classes: [] },
+          { day: 'שני', classes: [] },
+          { day: 'שלישי', classes: [] },
+          { day: 'רביעי', classes: [] },
+          { day: 'חמישי', classes: [] }
+        ],
+        apartmentNumber: existingWorkerData.apartmentNumber || '',
+        accountantId: existingWorkerData.accountantId || '',
+        email: existingWorkerData.email || '',
+        notes: existingWorkerData.notes || ''
+      });
+    }
+  }, [existingWorkerData, mode]);
 
   const handleNext = async () => {
     if (activeStep === 3) {
