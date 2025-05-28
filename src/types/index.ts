@@ -1,3 +1,7 @@
+import { DocumentStatus, DocumentType } from "./Document";
+
+export { DocumentStatus, DocumentType };
+
 export interface Activity {
     _id?: string; 
     classId:
@@ -179,6 +183,11 @@ export interface Activity {
     isActive: boolean;
   }
 
+  export interface WorkerDocument {
+    documentId: string;
+    status: 'התקבל' | 'נדחה' | 'אושר' | 'אחר';
+  }
+
   export interface Worker {
     _id: string;
     id: string; // תעודת זהות
@@ -192,8 +201,11 @@ export interface Activity {
     workingSymbols?: string[];
     accountantId?: string;
     tags?: string[];
-    documents?: string[];
-    registrationDate?: string;
+    documents?: WorkerDocument[];
+    registrationDate: string; // תאריך יצירה במערכת
+    startDate?: string; // תאריך התחלת עבודה
+    endDate?: string; // תאריך סיום עבודה
+    lastUpdateDate: string; // תאריך עדכון אחרון
     paymentMethod: 'חשבונית' | 'תלוש';
     phone: string;
     email?: string;
@@ -201,6 +213,11 @@ export interface Activity {
     bankDetails?: WorkerBankDetails;
     notes?: string;
     weeklySchedule?: WeeklySchedule[];
+    status: string; // סטטוס העובד
+    accountant?: string; // חשב שכר
+    jobType: 'מוביל' | 'מוביל משלים' | 'סייע' | 'סייע משלים' | 'לא נבחר'; // סוג תפקיד
+    jobTitle: string; // שם תפקיד
   }
   
+
   

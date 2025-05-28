@@ -9,20 +9,23 @@ import {
   Paper,
   IconButton,
   Typography,
-  Box
+  Box,
+  Button,
+  Dialog
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useFetchWorkers, useDeleteWorker } from '../queries/workerQueries';
 import { Worker } from '../types';
 import WorkerEditDialog from './WorkerEditDialog';
-import WorkerExcelImport from './workers/WorkerExcelImport';
+import ExcelImport from './workers/ExcelImport';
 
 const WorkersList: React.FC = () => {
   const { data: workers = [], isLoading, error } = useFetchWorkers();
   const deleteWorkerMutation = useDeleteWorker();
   const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
 
   const handleDelete = async (workerId: string) => {
     if (window.confirm('האם אתה בטוח שברצונך למחוק עובד זה?')) {
@@ -54,8 +57,22 @@ const WorkersList: React.FC = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <WorkerExcelImport />
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+        <Button
+          variant="outlined"
+          onClick={() => setIsImportDialogOpen(true)}
+          sx={{
+            color: '#2e7d32',
+            borderColor: '#2e7d32',
+            '&:hover': {
+              borderColor: '#1b5e20',
+              color: '#1b5e20',
+              backgroundColor: 'transparent'
+            },
+          }}
+        >
+          ייבא עובדים מאקסל
+        </Button>
       </Box>
       
       <TableContainer component={Paper}>
@@ -115,6 +132,18 @@ const WorkersList: React.FC = () => {
           onClose={handleCloseDialog}
         />
       )}
+
+      <Dialog
+        open={isImportDialogOpen}
+        onClose={() => setIsImportDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <Box sx={{ p: 2 }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>ייבוא עובדים מאקסל</Typography>
+          <ExcelImport />
+        </Box>
+      </Dialog>
     </Box>
   );
 };

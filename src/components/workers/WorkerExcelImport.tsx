@@ -19,6 +19,7 @@ import {
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import TableViewIcon from '@mui/icons-material/TableView';
+import ArticleIcon from '@mui/icons-material/Article';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { Worker } from '../../types';
@@ -222,18 +223,34 @@ const WorkerExcelImport: React.FC = () => {
     <>
       <Box sx={{ display: 'flex', gap: 1 }}>
         <Button
-          startIcon={<FileDownloadIcon />}
+          startIcon={<ArticleIcon />}
           onClick={downloadTemplate}
           variant="outlined"
-          color="primary"
+          sx={{
+            color: '#2e7d32',
+            borderColor: '#2e7d32',
+            '&:hover': {
+              borderColor: '#1b5e20',
+              color: '#1b5e20',
+              backgroundColor: 'transparent'
+            },
+          }}
         >
           הורד תבנית אקסל
         </Button>
         <Button
           component="label"
-          startIcon={<FileUploadIcon />}
+          startIcon={<ArticleIcon />}
           variant="outlined"
-          color="primary"
+          sx={{
+            color: '#2e7d32',
+            borderColor: '#2e7d32',
+            '&:hover': {
+              borderColor: '#1b5e20',
+              color: '#1b5e20',
+              backgroundColor: 'transparent'
+            },
+          }}
         >
           העלה קובץ אקסל
           <input

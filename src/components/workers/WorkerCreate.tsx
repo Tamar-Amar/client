@@ -9,7 +9,8 @@ import ContactDetails from './steps/ContactDetails';
 import EmploymentDetails from './steps/EmploymentDetails';
 import TagsAndFinish from './steps/TagsAndFinish';
 import WorkerTagManagement from './WorkerTagManagement';
-import { Worker, WeeklySchedule } from '../../types';
+import { Worker, WeeklySchedule, WorkerDocument } from '../../types';
+import { DocumentStatus } from '../../types/Document';
 
 interface Props {
   onSuccess?: () => void;
@@ -129,17 +130,24 @@ const WorkerCreate: React.FC<Props> = ({ onSuccess }) => {
           ...values,
           birthDate: new Date(values.birthDate).toISOString(),
           registrationDate: new Date().toISOString(),
+          lastUpdateDate: new Date().toISOString(),
           isActive: true,
           workingSymbols: values.workingSymbols || [],
           tags: values.tags || [],
-          documents: values.documents || [],
+          documents: (values.documents || []).map(docId => ({
+            documentId: docId,
+            status: 'אושר'
+          })),
           weeklySchedule: values.weeklySchedule || [
             { day: 'ראשון', classes: [] },
             { day: 'שני', classes: [] },
             { day: 'שלישי', classes: [] },
             { day: 'רביעי', classes: [] },
             { day: 'חמישי', classes: [] }
-          ]
+          ],
+          status: 'לא נבחר',
+          jobType: 'לא נבחר',
+          jobTitle: 'לא נבחר'
         };
         await addWorkerMutation.mutateAsync(workerData);
         if (onSuccess) {
