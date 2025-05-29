@@ -66,12 +66,7 @@ const WorkerEditDialog: React.FC<WorkerEditDialogProps> = ({ worker, open, onClo
       buildingNumber: '',
       paymentMethod: 'תלוש',
       phone: '',
-      isActive: true,
-      registrationDate: new Date().toISOString(),
-      lastUpdateDate: new Date().toISOString(),
-      status: 'לא נבחר',
-      jobType: 'לא נבחר',
-      jobTitle: 'לא נבחר'
+      isActive: true
     }
   );
   const [tabValue, setTabValue] = useState(0);
