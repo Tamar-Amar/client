@@ -7,10 +7,6 @@ import { jwtDecode } from 'jwt-decode';
 import { useSetRecoilState } from 'recoil';
 import { userRoleState, userTokenState } from './recoil/storeAtom';
 import { Box } from '@mui/material';
-import { Routes, Route, useParams } from 'react-router-dom';
-import WorkerEditPage from './components/workers/WorkerEditPage';
-import { useFetchWorker } from './queries/workerQueries';
-import { Typography } from '@mui/material';
 
 interface DecodedToken {
   id: string;
@@ -18,20 +14,6 @@ interface DecodedToken {
   exp: number;
 }
 
-const WorkerEditRoute = () => {
-  const { workerId } = useParams();
-  const { data: worker, isLoading } = useFetchWorker(workerId || '');
-
-  if (isLoading) {
-    return <Typography>טוען...</Typography>;
-  }
-
-  if (!worker) {
-    return <Typography>לא נמצא עובד</Typography>;
-  }
-
-  return <WorkerEditPage worker={worker} />;
-};
 
 const AppContent = () => {
   const location = useLocation();

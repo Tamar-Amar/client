@@ -15,9 +15,10 @@ import {
   TextField,
   MenuItem,
   Stack,
-  CircularProgress
+  CircularProgress,
+  Grid
 } from '@mui/material';
-import { Delete as DeleteIcon, CloudDownload as DownloadIcon } from '@mui/icons-material';
+import { Delete as DeleteIcon, Visibility as VisibilityIcon, CloudUpload as CloudUploadIcon, PictureAsPdf as PictureAsPdfIcon, Image as ImageIcon, InsertDriveFile as InsertDriveFileIcon } from '@mui/icons-material';
 import { DocumentStatus, DocumentType } from '../../types/Document';
 import { useWorkerDocuments } from '../../queries/useDocuments';
 
@@ -25,20 +26,31 @@ interface Props {
   workerId: string;
 }
 
+interface Document {
+  _id: string;
+  fileName: string;
+  documentType: string;
+  uploadDate: string;
+  expiryDate?: string;
+  status: string;
+  url: string;
+  fileType: string;
+}
+
 const DOCUMENT_TYPES = [
-  { value: DocumentType.ID, label: 'תעודת זהות' },
-  { value: DocumentType.RESUME, label: 'קורות חיים' },
-  { value: DocumentType.EDUCATION, label: 'תעודות השכלה' },
-  { value: DocumentType.CRIMINAL_RECORD, label: 'תעודת יושר' },
-  { value: DocumentType.BANK_DETAILS, label: 'פרטי בנק' },
-  { value: DocumentType.OTHER, label: 'אחר' }
+  { value: 'תעודת זהות', label: 'תעודת זהות' },
+  { value: 'קורות חיים', label: 'קורות חיים' },
+  { value: 'תעודות השכלה', label: 'תעודות השכלה' },
+  { value: 'תעודת יושר', label: 'תעודת יושר' },
+  { value: 'פרטי בנק', label: 'פרטי בנק' },
+  { value: 'אחר', label: 'אחר' }
 ];
 
 const WorkerDocuments: React.FC<Props> = ({ workerId }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [documentType, setDocumentType] = useState<DocumentType>(DocumentType.OTHER);
-  const [expiryDate, setExpiryDate] = useState('');
+  const [documentType, setDocumentType] = useState<string>('אחר');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const {
     documents,
@@ -51,7 +63,12 @@ const WorkerDocuments: React.FC<Props> = ({ workerId }) => {
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    setSelectedFile(file || null);
+    if (file) {
+      setSelectedFile(file);
+
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    }
   };
 
   const handleUpload = () => {
@@ -61,15 +78,12 @@ const WorkerDocuments: React.FC<Props> = ({ workerId }) => {
     formData.append('file', selectedFile);
     formData.append('workerId', workerId);
     formData.append('documentType', documentType);
-    if (expiryDate) {
-      formData.append('expiryDate', new Date(expiryDate).toISOString());
-    }
 
     uploadDocument(formData, {
       onSuccess: () => {
         setSelectedFile(null);
-        setDocumentType(DocumentType.OTHER);
-        setExpiryDate('');
+        setDocumentType('אחר');
+        setPreviewUrl(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
       }
     });
@@ -85,17 +99,23 @@ const WorkerDocuments: React.FC<Props> = ({ workerId }) => {
     return new Date(date).toLocaleDateString('he-IL');
   };
 
-  const getStatusColor = (status: DocumentStatus) => {
+  const getStatusColor = (status: string): 'success' | 'error' | 'warning' | 'default' => {
     switch (status) {
-      case DocumentStatus.APPROVED:
+      case 'מאושר':
         return 'success';
-      case DocumentStatus.REJECTED:
+      case 'נדחה':
         return 'error';
-      case DocumentStatus.PENDING:
+      case 'ממתין':
         return 'warning';
       default:
         return 'default';
     }
+  };
+
+  const getFileIcon = (fileType: string) => {
+    if (fileType.includes('pdf')) return <PictureAsPdfIcon color="error" />;
+    if (fileType.includes('image')) return <ImageIcon color="primary" />;
+    return <InsertDriveFileIcon />;
   };
 
   if (isLoading) {
@@ -108,108 +128,137 @@ const WorkerDocuments: React.FC<Props> = ({ workerId }) => {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h6" gutterBottom color="primary">
-        ניהול מסמכים
+        <Stack spacing={2}>
+          <Typography variant="h6" color="primary">
+            העלאת מסמך חדש
+          </Typography>
+          
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} md={2}>
+              <TextField
+                select
+                fullWidth
+                label="סוג מסמך"
+                value={documentType}
+                onChange={(e) => setDocumentType(e.target.value as string)}
+              >
+                {DOCUMENT_TYPES.map((type) => (
+                  <MenuItem key={type.value} value={type.value}>
+                    {type.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+
+            <Grid item xs={12} md={3}>
+              <input
+                type="file"
+                hidden
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+              />
+              <Button
+                fullWidth
+                variant="outlined"
+                onClick={() => fileInputRef.current?.click()}
+                startIcon={<CloudUploadIcon />}
+              >
+                {selectedFile ? selectedFile.name : 'בחר קובץ'}
+              </Button>
+            </Grid>
+
+            <Grid item xs={12} md={2}>
+              <Button
+                fullWidth
+                variant="contained"
+                onClick={handleUpload}
+                disabled={!selectedFile || isUploading}
+                startIcon={isUploading ? <CircularProgress size={20} /> : undefined}
+              >
+                העלה
+              </Button>
+            </Grid>
+          </Grid>
+
+          {previewUrl && selectedFile?.type.includes('image') && (
+            <Box sx={{ mt: 2, textAlign: 'center' }}>
+              <img 
+                src={previewUrl} 
+                alt="תצוגה מקדימה" 
+                style={{ maxWidth: '200px', maxHeight: '200px', objectFit: 'contain' }} 
+              />
+            </Box>
+          )}
+        </Stack>
+
+      <Typography variant="h6" gutterBottom>
+        מסמכים קיימים
       </Typography>
 
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Stack direction="row" spacing={2} alignItems="center">
-          <TextField
-            select
-            label="סוג מסמך"
-            value={documentType}
-            onChange={(e) => setDocumentType(e.target.value as DocumentType)}
-            sx={{ minWidth: 200 }}
-          >
-            {DOCUMENT_TYPES.map((type) => (
-              <MenuItem key={type.value} value={type.value}>
-                {type.label}
-              </MenuItem>
-            ))}
-          </TextField>
+      <Grid container spacing={2}>
+        {documents.map((doc: Document) => (
+          <Grid item xs={12} sm={6} md={4} key={doc._id}>
+            <Paper 
+              sx={{ 
+                p: 2,
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {getFileIcon(doc.fileType)}
+                <Typography variant="subtitle1" noWrap>
+                  {doc.fileName}
+                </Typography>
+              </Box>
 
-          <TextField
-            type="date"
-            label="תאריך תפוגה"
-            value={expiryDate}
-            onChange={(e) => setExpiryDate(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-          />
+              <Typography variant="body2" color="text.secondary">
+                סוג: {doc.documentType}
+              </Typography>
 
-          <input
-            type="file"
-            hidden
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-          />
+              <Typography variant="body2" color="text.secondary">
+                הועלה: {formatDate(doc.uploadDate)}
+              </Typography>
 
-          <Button
-            variant="outlined"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {selectedFile ? selectedFile.name : 'בחר קובץ'}
-          </Button>
+              {doc.expiryDate && (
+                <Typography variant="body2" color="text.secondary">
+                  תוקף עד: {formatDate(doc.expiryDate)}
+                </Typography>
+              )}
 
-          <Button
-            variant="contained"
-            onClick={handleUpload}
-            disabled={!selectedFile || isUploading}
-          >
-            {isUploading ? <CircularProgress size={24} /> : 'העלה'}
-          </Button>
-        </Stack>
-      </Paper>
-
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>שם קובץ</TableCell>
-              <TableCell>סוג מסמך</TableCell>
-              <TableCell>תאריך העלאה</TableCell>
-              <TableCell>תאריך תפוגה</TableCell>
-              <TableCell>סטטוס</TableCell>
-              <TableCell>פעולות</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {documents.map((doc: any) => (
-              <TableRow key={doc._id}>
-                <TableCell>{doc.fileName}</TableCell>
-                <TableCell>
-                  {DOCUMENT_TYPES.find(type => type.value === doc.documentType)?.label || doc.documentType}
-                </TableCell>
-                <TableCell>{formatDate(doc.uploadDate)}</TableCell>
-                <TableCell>{doc.expiryDate ? formatDate(doc.expiryDate) : '-'}</TableCell>
-                <TableCell>
-                  <Chip
-                    label={doc.status}
-                    color={getStatusColor(doc.status)}
-                    size="small"
-                  />
-                </TableCell>
-                <TableCell>
+              <Box sx={{ mt: 'auto', pt: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Chip
+                  label={doc.status}
+                  color={getStatusColor(doc.status)}
+                  size="small"
+                />
+                
+                <Box>
                   <IconButton
                     onClick={() => window.open(doc.url, '_blank')}
                     size="small"
+                    title="צפה במסמך"
                   >
-                    <DownloadIcon />
+                    <VisibilityIcon />
                   </IconButton>
                   <IconButton
                     onClick={() => handleDelete(doc._id)}
                     size="small"
                     color="error"
                     disabled={isDeleting}
+                    title="מחק"
                   >
                     <DeleteIcon />
                   </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                </Box>
+              </Box>
+            </Paper>
+          </Grid>
+        ))}
+      </Grid>
     </Box>
   );
 };

@@ -15,6 +15,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import WorkerTags from './WorkerTags';
 import WorkerDocuments from './WorkerDocuments';
 import { Worker } from '../../types';
+import WorkerSchedule from './WorkerSchedule';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -149,6 +150,14 @@ const WorkerDetails: React.FC<Props> = ({ worker, onUpdate }) => {
             </Grid>
           </Box>
         </TabPanel>
+      </Paper>
+
+      <Paper sx={{ p: 2 }}>
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <WorkerSchedule workerId={worker._id} />
+          </Grid>
+        </Grid>
       </Paper>
     </Box>
   );

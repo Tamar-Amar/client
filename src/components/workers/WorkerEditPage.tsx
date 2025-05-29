@@ -31,9 +31,10 @@ import {
   Save,
   ArrowBack,
   Label,
-  Description
+  Description,
+  Edit
 } from '@mui/icons-material';
-import { Worker } from '../../types';
+import type { Worker } from '../../types';
 import WeeklyScheduleSelect from '../WeeklyScheduleSelect';
 import { Class } from '../../types';
 import { useNavigate } from 'react-router-dom';
@@ -43,6 +44,8 @@ import WorkerTags from './WorkerTags';
 import WorkerDocuments from './WorkerDocuments';
 import { Tabs } from '@mui/material';
 import Tab from '@mui/material/Tab';
+import { useWorkerTags } from '../../queries/useTags';
+import { SelectChangeEvent } from '@mui/material/Select';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(2),
@@ -81,19 +84,36 @@ interface WorkerEditPageProps {
 }
 
 const WorkerEditPage: React.FC<WorkerEditPageProps> = ({ worker }) => {
+  console.log("worker", worker);
   const theme = useTheme();
   const navigate = useNavigate();
   const { data: classes = [] } = useFetchClasses();
   const updateWorkerMutation = useUpdateWorker();
-  const [formData, setFormData] = useState<Worker>(
-    worker || {
+  const { availableTags, isLoading: isLoadingTags, updateTags, workerTags } = useWorkerTags(worker?._id || '');
+  console.log("workerTags", workerTags);
+  const [isEditingTags, setIsEditingTags] = useState(false);
+  
+  // המרת תגיות ממבנה מונגו למערך של מזהים פשוטים
+  const convertMongoTags = (tags: any[] = []): string[] => {
+    return tags.map(tag => typeof tag === 'string' ? tag : tag.$oid);
+  };
+
+  const [formData, setFormData] = useState<Worker>(() => {
+    if (worker) {
+      return {
+        ...worker,
+        tags: convertMongoTags(worker.tags),
+        workingSymbols: convertMongoTags(worker.workingSymbols)
+      } as Worker;
+    }
+    return {
       _id: '',
       id: '',
       firstName: '',
       lastName: '',
-      city: '',
-      street: '',
-      buildingNumber: '',
+      city: 'לא נבחר',
+      street: 'לא נבחר',
+      buildingNumber: 'לא נבחר',
       paymentMethod: 'תלוש',
       phone: '',
       isActive: true,
@@ -102,13 +122,20 @@ const WorkerEditPage: React.FC<WorkerEditPageProps> = ({ worker }) => {
       status: 'לא נבחר',
       jobType: 'לא נבחר',
       jobTitle: 'לא נבחר',
-    }
-  );
+    } as Worker;
+  });
+
   const [activeTab, setActiveTab] = useState(0);
 
+  console.log("formData", formData.tags);
+  console.log("workerTags", worker?.tags);
   useEffect(() => {
     if (worker) {
-      setFormData(worker);
+      setFormData(prev => ({
+        ...worker,
+        tags: convertMongoTags(worker.tags),
+        workingSymbols: convertMongoTags(worker.workingSymbols)
+      }));
     }
   }, [worker]);
 
@@ -169,6 +196,24 @@ const WorkerEditPage: React.FC<WorkerEditPageProps> = ({ worker }) => {
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
+  };
+
+  const handleTagChange = (event: SelectChangeEvent<string[]>) => {
+    const value = event.target.value;
+    const newTags = typeof value === 'string' ? [value] : value;
+    setFormData(prev => ({
+      ...prev,
+      tags: newTags
+    }));
+  };
+
+  const handleTagsSave = async () => {
+    try {
+      await updateTags(formData.tags || []);
+      setIsEditingTags(false);
+    } catch (error) {
+      console.error('Error saving tags:', error);
+    }
   };
 
   return (
@@ -472,30 +517,95 @@ const WorkerEditPage: React.FC<WorkerEditPageProps> = ({ worker }) => {
             </Grid>
 
             {/* Row 4: Tags and Documents */}
-            <Grid item xs={12}>
+            <Grid item xs={12} md={6}>
               <StyledPaper>
-                <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-                  <Tabs value={activeTab} onChange={handleTabChange} aria-label="worker management tabs">
-                    <Tab icon={<Label />} label="תגיות" />
-                    <Tab icon={<Description />} label="מסמכים" />
-                  </Tabs>
+                <SectionTitle>
+                  <Label />
+                  תגיות עובד
+                  <IconButton 
+                    onClick={() => isEditingTags ? handleTagsSave() : setIsEditingTags(true)}
+                    color="primary"
+                    size="small"
+                    sx={{ ml: 'auto' }}
+                  >
+                    {isEditingTags ? <Save /> : <Edit />}
+                  </IconButton>
+                </SectionTitle>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <Box sx={{ width: '60%' }}>
+                    <FormControl fullWidth size="small" disabled={!isEditingTags}>
+                      <InputLabel id="tags-select-label">בחר תגיות</InputLabel>
+                      <Select
+                        labelId="tags-select-label"
+                        multiple
+                        value={formData.tags || []}
+                        onChange={handleTagChange}
+                        renderValue={(selected) => (
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                            {selected.map((value) => {
+                              const tag = availableTags.find(t => t._id === value);
+                              return (
+                                <Chip 
+                                  key={value} 
+                                  label={tag ? tag.name : value} 
+                                  size="small"
+                                  sx={{
+                                    backgroundColor: theme.palette.primary.light,
+                                    color: theme.palette.primary.contrastText,
+                                  }}
+                                />
+                              );
+                            })}
+                          </Box>
+                        )}
+                      >
+                        {availableTags.map((tag) => (
+                          <MenuItem key={tag._id} value={tag._id}>
+                            {tag.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Box>
+                  
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                      תגיות נוכחיות:
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {(formData.tags || []).map((tagId) => {
+                        const tag = availableTags.find(t => t._id === tagId);
+                        return tag ? (
+                          <Chip
+                            key={tagId}
+                            label={tag.name}
+                            size="small"
+                            sx={{
+                              backgroundColor: theme.palette.grey[100],
+                              borderColor: theme.palette.primary.main,
+                              border: '1px solid'
+                            }}
+                          />
+                        ) : null;
+                      })}
+                      {(!formData.tags || formData.tags.length === 0) && (
+                        <Typography variant="body2" color="text.secondary">
+                          אין תגיות
+                        </Typography>
+                      )}
+                    </Box>
+                  </Box>
                 </Box>
+              </StyledPaper>
+            </Grid>
 
-                {activeTab === 0 && (
-                  <Box sx={{ p: 2 }}>
-                    <WorkerTags
-                      workerId={worker?._id || ''}
-                      existingTags={formData.tags}
-                      onTagsChange={(tags) => setFormData(prev => ({ ...prev, tags }))}
-                    />
-                  </Box>
-                )}
-
-                {activeTab === 1 && (
-                  <Box sx={{ p: 2 }}>
-                    <WorkerDocuments workerId={worker?._id || ''} />
-                  </Box>
-                )}
+            <Grid item xs={12} md={6}>
+              <StyledPaper>
+                <SectionTitle>
+                  <Description />
+                  מסמכים
+                </SectionTitle>
+                <WorkerDocuments workerId={worker?._id || ''} />
               </StyledPaper>
             </Grid>
 

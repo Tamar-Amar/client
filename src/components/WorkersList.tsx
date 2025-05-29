@@ -111,6 +111,7 @@ const WorkersList: React.FC = () => {
   };
 
   const handleEdit = (worker: Worker) => {
+    console.log("worker", worker.tags);
     navigate(`/workers/edit/${worker._id}`);
   };
 
@@ -118,10 +119,6 @@ const WorkersList: React.FC = () => {
     navigate(`/workers/${worker._id}`);
   };
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return '';
-    return new Date(dateString).toLocaleDateString('he-IL');
-  };
 
   if (isLoading) return <Typography>טוען...</Typography>;
   if (error) return <Typography>שגיאה בטעינת הנתונים</Typography>;
@@ -136,7 +133,7 @@ const WorkersList: React.FC = () => {
           value={searchQuery}
           onChange={(e) => {
             setSearchQuery(e.target.value);
-            setPage(0); // Reset to first page when searching
+            setPage(0); 
           }}
           InputProps={{
             startAdornment: (

@@ -7,7 +7,7 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import ImageIcon from '@mui/icons-material/Image';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
-import { useFetchDocumentsByOperator, useUploadDocument } from '../../queries/useDocuments';
+import { useFetchDocumentsByWorker, useUploadDocument } from '../../queries/useDocuments';
 
 interface Props {
   operatorId: string;
@@ -21,7 +21,7 @@ const PersonalDocuments: React.FC<Props> = ({ operatorId }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const { data: documents = [], isLoading } = useFetchDocumentsByOperator(operatorId);
+  const { data: documents = [], isLoading } = useFetchDocumentsByWorker(operatorId);
   const { mutate: uploadDocument, isPending } = useUploadDocument();
 
   const handleUpload = () => {

@@ -4,10 +4,10 @@ import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import WorkerCreate from '../components/workers/WorkerCreate';
 import WorkersList from '../components/WorkersList';
-import ExcelImport from '../components/workers/ExcelImport';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { useDeleteWorker, useFetchWorkers } from '../queries/workerQueries';
+import ExcelImport from '../components/workers/ExcelImport';
 
 const WorkersPage: React.FC = () => {
   const [isCreating, setIsCreating] = useState(false);

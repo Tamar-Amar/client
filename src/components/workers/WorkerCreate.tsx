@@ -11,11 +11,10 @@ import TagsAndFinish from './steps/TagsAndFinish';
 import WorkerTagManagement from './WorkerTagManagement';
 import WorkerTags from './WorkerTags';
 import WorkerDocuments from './WorkerDocuments';
-import { Worker, WeeklySchedule, WorkerDocument } from '../../types';
-import { DocumentStatus } from '../../types/Document';
+import { Worker, WeeklySchedule, WorkerDocument, WorkerTag } from '../../types';
 import { useParams, useNavigate } from 'react-router-dom';
 
-interface FormValues extends Omit<Worker, 'bankDetails' | 'documents'> {
+interface FormValues extends Omit<Worker, 'bankDetails' | 'documents' | 'tags'> {
   password: string;
   bankDetails: {
     bankName: string;
@@ -24,6 +23,7 @@ interface FormValues extends Omit<Worker, 'bankDetails' | 'documents'> {
     accountOwner: string;
   };
   documents: string[];
+  tags: string[];
 }
 
 interface Props {
@@ -136,11 +136,11 @@ const WorkerCreate: React.FC<Props> = ({ onSuccess, mode = 'create' }) => {
       },
       notes: '',
       weeklySchedule: [
-        { day: 'ראשון', classes: [] },
-        { day: 'שני', classes: [] },
-        { day: 'שלישי', classes: [] },
-        { day: 'רביעי', classes: [] },
-        { day: 'חמישי', classes: [] }
+        { day: 'ראשון' as const, classes: [] },
+        { day: 'שני' as const, classes: [] },
+        { day: 'שלישי' as const, classes: [] },
+        { day: 'רביעי' as const, classes: [] },
+        { day: 'חמישי' as const, classes: [] }
       ],
       isActive: true,
       registrationDate: new Date().toISOString(),
@@ -152,8 +152,9 @@ const WorkerCreate: React.FC<Props> = ({ onSuccess, mode = 'create' }) => {
     validationSchema: WorkerSchema,
     onSubmit: async (values) => {
       try {
-        const workerData: Omit<Worker, '_id'> = {
+        const workerData: Worker = {
           ...values,
+          _id: values._id,
           birthDate: values.birthDate ? new Date(values.birthDate).toISOString() : new Date().toISOString(),
           registrationDate: mode === 'create' ? new Date().toISOString() : existingWorkerData?.registrationDate || new Date().toISOString(),
           lastUpdateDate: new Date().toISOString(),
@@ -165,11 +166,11 @@ const WorkerCreate: React.FC<Props> = ({ onSuccess, mode = 'create' }) => {
             status: 'אושר' as const
           })) as WorkerDocument[],
           weeklySchedule: values.weeklySchedule || [
-            { day: 'ראשון', classes: [] },
-            { day: 'שני', classes: [] },
-            { day: 'שלישי', classes: [] },
-            { day: 'רביעי', classes: [] },
-            { day: 'חמישי', classes: [] }
+            { day: 'ראשון' as const, classes: [] },
+            { day: 'שני' as const, classes: [] },
+            { day: 'שלישי' as const, classes: [] },
+            { day: 'רביעי' as const, classes: [] },
+            { day: 'חמישי' as const, classes: [] }
           ],
           status: mode === 'create' ? 'לא נבחר' : existingWorkerData?.status || 'לא נבחר',
           jobType: mode === 'create' ? 'לא נבחר' : existingWorkerData?.jobType || 'לא נבחר',
@@ -209,11 +210,11 @@ const WorkerCreate: React.FC<Props> = ({ onSuccess, mode = 'create' }) => {
           accountOwner: existingWorkerData.bankDetails?.accountOwner || ''
         },
         weeklySchedule: existingWorkerData.weeklySchedule || [
-          { day: 'ראשון', classes: [] },
-          { day: 'שני', classes: [] },
-          { day: 'שלישי', classes: [] },
-          { day: 'רביעי', classes: [] },
-          { day: 'חמישי', classes: [] }
+          { day: 'ראשון' as const, classes: [] },
+          { day: 'שני' as const, classes: [] },
+          { day: 'שלישי' as const, classes: [] },
+          { day: 'רביעי' as const, classes: [] },
+          { day: 'חמישי' as const, classes: [] }
         ],
         apartmentNumber: existingWorkerData.apartmentNumber || '',
         accountantId: existingWorkerData.accountantId || '',

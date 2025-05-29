@@ -16,8 +16,8 @@ export const uploadDocument = async (formData: FormData) => {
   return response.data;
 };
 
-export const fetchDocumentsByOperator = async (operatorId: string) => {
-  const response = await axios.get(`${API_URL}/${operatorId}`);
+export const fetchDocumentsByWorker = async (workerId: string) => {
+  const response = await axios.get(`${API_URL}/${workerId}`);
   return response.data;
 };
 
@@ -28,8 +28,8 @@ export const updateOperatorDocuments = async (tempId: string, newOperatorId: str
   });
   return response.data;
 };
-
 export const deleteDocument = async (documentId: string) => {
   const response = await axios.delete(`${API_URL}/${documentId}`);
   return response.data;
 };
+

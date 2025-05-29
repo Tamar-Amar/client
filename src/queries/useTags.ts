@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchAllTags, updateWorkerTags } from '../services/tagService';
+import { fetchAllTags, updateWorkerTags, fetchWorkerTags } from '../services/tagService';
 import { WorkerTag } from '../types';
 
 export const useWorkerTags = (workerId: string) => {
@@ -17,7 +17,13 @@ export const useWorkerTags = (workerId: string) => {
     }
   });
 
+  const workerTags = useQuery<WorkerTag[]>({
+    queryKey: ['worker-tags', workerId],
+    queryFn: () => fetchWorkerTags(workerId)
+  });
+
   return {
+    workerTags: workerTags.data || [],
     availableTags: tags.data || [],
     isLoading: tags.isLoading,
     isError: tags.isError,

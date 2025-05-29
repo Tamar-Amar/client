@@ -177,10 +177,16 @@ export interface Activity {
     accountOwner?: string;
   }
 
+  export interface Tag {
+    _id: string;
+    name: string;
+    description?: string;
+  }
+
   export interface WorkerTag {
     _id: string;
     name: string;
-    isActive: boolean;
+    description?: string;
   }
 
   export interface WorkerDocument {
@@ -190,7 +196,7 @@ export interface Activity {
 
   export interface Worker {
     _id: string;
-    id: string; // תעודת זהות
+    id: string;
     firstName: string;
     lastName: string;
     birthDate?: string;
@@ -198,25 +204,29 @@ export interface Activity {
     street: string;
     buildingNumber: string;
     apartmentNumber?: string;
-    workingSymbols?: string[];
-    accountantId?: string;
-    tags?: WorkerTag[];
-    documents?: WorkerDocument[];
-    registrationDate: string; // תאריך יצירה במערכת
-    startDate?: string; // תאריך התחלת עבודה
-    endDate?: string; // תאריך סיום עבודה
-    lastUpdateDate: string; // תאריך עדכון אחרון
-    paymentMethod: 'חשבונית' | 'תלוש';
     phone: string;
     email?: string;
     isActive: boolean;
-    bankDetails?: WorkerBankDetails;
-    notes?: string;
+    registrationDate: string;
+    lastUpdateDate: string;
+    status: string;
+    jobType: 'מוביל' | 'מוביל משלים' | 'סייע' | 'סייע משלים' | 'לא נבחר';
+    jobTitle: string;
+    paymentMethod: 'חשבונית' | 'תלוש';
+    bankDetails?: {
+      bankName?: string;
+      branchNumber?: string;
+      accountNumber?: string;
+      accountOwner?: string;
+    };
+    workingSymbols?: string[];
+    tags?: string[];
     weeklySchedule?: WeeklySchedule[];
-    status: string; // סטטוס העובד
-    accountant?: string; // חשב שכר
-    jobType: 'מוביל' | 'מוביל משלים' | 'סייע' | 'סייע משלים' | 'לא נבחר'; // סוג תפקיד
-    jobTitle: string; // שם תפקיד
+    documents?: WorkerDocument[];
+    accountantId?: string;
+    notes?: string;
+    startDate?: string;
+    endDate?: string;
   }
   
 
