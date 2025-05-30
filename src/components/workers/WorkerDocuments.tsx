@@ -19,36 +19,25 @@ import {
   Grid
 } from '@mui/material';
 import { Delete as DeleteIcon, Visibility as VisibilityIcon, CloudUpload as CloudUploadIcon, PictureAsPdf as PictureAsPdfIcon, Image as ImageIcon, InsertDriveFile as InsertDriveFileIcon } from '@mui/icons-material';
-import { DocumentStatus, DocumentType } from '../../types/Document';
+import { Document, DocumentStatus, DocumentType } from '../../types/Document';
 import { useWorkerDocuments } from '../../queries/useDocuments';
 
 interface Props {
   workerId: string;
 }
 
-interface Document {
-  _id: string;
-  fileName: string;
-  documentType: string;
-  uploadDate: string;
-  expiryDate?: string;
-  status: string;
-  url: string;
-  fileType: string;
-}
-
 const DOCUMENT_TYPES = [
-  { value: 'תעודת זהות', label: 'תעודת זהות' },
-  { value: 'קורות חיים', label: 'קורות חיים' },
-  { value: 'תעודות השכלה', label: 'תעודות השכלה' },
-  { value: 'תעודת יושר', label: 'תעודת יושר' },
-  { value: 'פרטי בנק', label: 'פרטי בנק' },
-  { value: 'אחר', label: 'אחר' }
+  { value: DocumentType.ID, label: 'תעודת זהות' },
+  { value: DocumentType.RESUME, label: 'קורות חיים' },
+  { value: DocumentType.EDUCATION, label: 'תעודות השכלה' },
+  { value: DocumentType.CRIMINAL_RECORD, label: 'תעודת יושר' },
+  { value: DocumentType.BANK_DETAILS, label: 'פרטי בנק' },
+  { value: DocumentType.OTHER, label: 'אחר' }
 ];
 
 const WorkerDocuments: React.FC<Props> = ({ workerId }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [documentType, setDocumentType] = useState<string>('אחר');
+  const [documentType, setDocumentType] = useState<DocumentType>(DocumentType.OTHER);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -61,11 +50,12 @@ const WorkerDocuments: React.FC<Props> = ({ workerId }) => {
     isDeleting
   } = useWorkerDocuments(workerId);
 
+  console.log("documents",documents)
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       setSelectedFile(file);
-
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
     }
@@ -82,7 +72,7 @@ const WorkerDocuments: React.FC<Props> = ({ workerId }) => {
     uploadDocument(formData, {
       onSuccess: () => {
         setSelectedFile(null);
-        setDocumentType('אחר');
+        setDocumentType(DocumentType.OTHER);
         setPreviewUrl(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
       }
@@ -99,13 +89,13 @@ const WorkerDocuments: React.FC<Props> = ({ workerId }) => {
     return new Date(date).toLocaleDateString('he-IL');
   };
 
-  const getStatusColor = (status: string): 'success' | 'error' | 'warning' | 'default' => {
+  const getStatusColor = (status: DocumentStatus): 'success' | 'error' | 'warning' | 'default' => {
     switch (status) {
-      case 'מאושר':
+      case DocumentStatus.APPROVED:
         return 'success';
-      case 'נדחה':
+      case DocumentStatus.REJECTED:
         return 'error';
-      case 'ממתין':
+      case DocumentStatus.PENDING:
         return 'warning';
       default:
         return 'default';
@@ -128,69 +118,69 @@ const WorkerDocuments: React.FC<Props> = ({ workerId }) => {
 
   return (
     <Box sx={{ p: 3 }}>
-        <Stack spacing={2}>
-          <Typography variant="h6" color="primary">
-            העלאת מסמך חדש
-          </Typography>
-          
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={2}>
-              <TextField
-                select
-                fullWidth
-                label="סוג מסמך"
-                value={documentType}
-                onChange={(e) => setDocumentType(e.target.value as string)}
-              >
-                {DOCUMENT_TYPES.map((type) => (
-                  <MenuItem key={type.value} value={type.value}>
-                    {type.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-
-            <Grid item xs={12} md={3}>
-              <input
-                type="file"
-                hidden
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-              />
-              <Button
-                fullWidth
-                variant="outlined"
-                onClick={() => fileInputRef.current?.click()}
-                startIcon={<CloudUploadIcon />}
-              >
-                {selectedFile ? selectedFile.name : 'בחר קובץ'}
-              </Button>
-            </Grid>
-
-            <Grid item xs={12} md={2}>
-              <Button
-                fullWidth
-                variant="contained"
-                onClick={handleUpload}
-                disabled={!selectedFile || isUploading}
-                startIcon={isUploading ? <CircularProgress size={20} /> : undefined}
-              >
-                העלה
-              </Button>
-            </Grid>
+      <Stack spacing={2}>
+        <Typography variant="h6" color="primary">
+          העלאת מסמך חדש
+        </Typography>
+        
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} md={2}>
+            <TextField
+              select
+              fullWidth
+              label="סוג מסמך"
+              value={documentType}
+              onChange={(e) => setDocumentType(e.target.value as DocumentType)}
+            >
+              {DOCUMENT_TYPES.map((type) => (
+                <MenuItem key={type.value} value={type.value}>
+                  {type.label}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
 
-          {previewUrl && selectedFile?.type.includes('image') && (
-            <Box sx={{ mt: 2, textAlign: 'center' }}>
-              <img 
-                src={previewUrl} 
-                alt="תצוגה מקדימה" 
-                style={{ maxWidth: '200px', maxHeight: '200px', objectFit: 'contain' }} 
-              />
-            </Box>
-          )}
-        </Stack>
+          <Grid item xs={12} md={3}>
+            <input
+              type="file"
+              hidden
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+            />
+            <Button
+              fullWidth
+              variant="outlined"
+              onClick={() => fileInputRef.current?.click()}
+              startIcon={<CloudUploadIcon />}
+            >
+              {selectedFile ? selectedFile.name : 'בחר קובץ'}
+            </Button>
+          </Grid>
+
+          <Grid item xs={12} md={2}>
+            <Button
+              fullWidth
+              variant="contained"
+              onClick={handleUpload}
+              disabled={!selectedFile || isUploading}
+              startIcon={isUploading ? <CircularProgress size={20} /> : undefined}
+            >
+              העלה
+            </Button>
+          </Grid>
+        </Grid>
+
+        {previewUrl && selectedFile?.type.includes('image') && (
+          <Box sx={{ mt: 2, textAlign: 'center' }}>
+            <img 
+              src={previewUrl} 
+              alt="תצוגה מקדימה" 
+              style={{ maxWidth: '200px', maxHeight: '200px', objectFit: 'contain' }} 
+            />
+          </Box>
+        )}
+      </Stack>
 
       <Typography variant="h6" gutterBottom>
         מסמכים קיימים
@@ -216,18 +206,12 @@ const WorkerDocuments: React.FC<Props> = ({ workerId }) => {
               </Box>
 
               <Typography variant="body2" color="text.secondary">
-                סוג: {doc.documentType}
+                סוג: {doc.tag}
               </Typography>
 
               <Typography variant="body2" color="text.secondary">
-                הועלה: {formatDate(doc.uploadDate)}
+                הועלה: {formatDate(doc.uploadedAt)}
               </Typography>
-
-              {doc.expiryDate && (
-                <Typography variant="body2" color="text.secondary">
-                  תוקף עד: {formatDate(doc.expiryDate)}
-                </Typography>
-              )}
 
               <Box sx={{ mt: 'auto', pt: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Chip
@@ -245,7 +229,7 @@ const WorkerDocuments: React.FC<Props> = ({ workerId }) => {
                     <VisibilityIcon />
                   </IconButton>
                   <IconButton
-                    onClick={() => handleDelete(doc._id)}
+                    onClick={() => doc._id && handleDelete(doc._id)}
                     size="small"
                     color="error"
                     disabled={isDeleting}

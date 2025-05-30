@@ -10,7 +10,6 @@ export const fetchAllTags = async (): Promise<WorkerTag[]> => {
 
 export const fetchWorkerTags = async (workerId: string): Promise<WorkerTag[]> => {
   const response = await axios.get(`${API_URL}/${workerId}`);
-  console.log(response.data);
   return response.data;
 };
 

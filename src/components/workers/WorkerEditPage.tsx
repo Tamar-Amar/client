@@ -84,13 +84,11 @@ interface WorkerEditPageProps {
 }
 
 const WorkerEditPage: React.FC<WorkerEditPageProps> = ({ worker }) => {
-  console.log("worker", worker);
   const theme = useTheme();
   const navigate = useNavigate();
   const { data: classes = [] } = useFetchClasses();
   const updateWorkerMutation = useUpdateWorker();
   const { availableTags, isLoading: isLoadingTags, updateTags, workerTags } = useWorkerTags(worker?._id || '');
-  console.log("workerTags", workerTags);
   const [isEditingTags, setIsEditingTags] = useState(false);
   
   // המרת תגיות ממבנה מונגו למערך של מזהים פשוטים
@@ -127,8 +125,6 @@ const WorkerEditPage: React.FC<WorkerEditPageProps> = ({ worker }) => {
 
   const [activeTab, setActiveTab] = useState(0);
 
-  console.log("formData", formData.tags);
-  console.log("workerTags", worker?.tags);
   useEffect(() => {
     if (worker) {
       setFormData(prev => ({

@@ -21,6 +21,7 @@ import WorkersPage from '../pages/WorkersPage';
 import WorkerEditPage from '../components/workers/WorkerEditPage';
 import { useFetchWorker } from '../queries/workerQueries';
 import WorkerDetails from '../components/workers/WorkerDetails';
+import DocumentManagementPage from '../pages/DocumentManagementPage';
 
 const OperatorDocumentsWrapper = () => {
   const token = localStorage.getItem('token');
@@ -75,6 +76,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/institutions" element={<InstitutionsPage />} />
         <Route path="/classes" element={<ClassesPage />} />
         <Route path="/activities" element={<ActivitiesPage />} />
+        <Route path="/documents" element={<DocumentManagementPage />} />
         <Route path="/invoices" element={<InvoicesPage/>}/>
         <Route path="/purchases" element={<PurchasesPage/>}/>
         <Route path="/operators/:id" element={<OperatorDetails />} />
