@@ -122,11 +122,6 @@ const TagManagement = () => {
                 primary={
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Chip label={tag.name} />
-                    {tag.workersCount && (
-                      <Typography variant="body2" color="text.secondary">
-                        ({tag.workersCount} עובדים)
-                      </Typography>
-                    )}
                   </Box>
                 }
               />

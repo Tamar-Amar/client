@@ -49,6 +49,7 @@ useEffect(() => {
     { label: 'ניהול קבוצות', path: '/classes', icon: <GroupWorkIcon fontSize="small" /> },
     { label: 'ניהול מסמכים', path: '/documents', icon: <FolderIcon fontSize="small" /> },
     { label: 'מיילים', path: '/emails', icon: <EmailIcon fontSize="small" /> },
+    { label: 'ניהול תגיות', path: '/tags',  },
         // { label: 'ניהול מוסדות', path: '/institutions' },
         // { label: 'ניהול אנשי קשר', path: '/contacts' },
   ];
