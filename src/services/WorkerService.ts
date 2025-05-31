@@ -4,11 +4,16 @@ const API_BASE_URL = process.env.REACT_APP_API_URL+ '/api' || "https://server-ma
 
 
 export const fetchWorkers = async (): Promise<Worker[]> => {
-  const response = await fetch(`${API_BASE_URL}/workers`);
-  if (!response.ok) {
-    throw new Error('Network response was not ok');
+  try {
+    const response = await fetch(`${API_BASE_URL}/workers`);
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching workers:', error);
+    throw error;
   }
-  return response.json();
 };
 
 export const fetchWorkerById = async (id: string): Promise<Worker> => {

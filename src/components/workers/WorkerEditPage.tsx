@@ -39,7 +39,7 @@ import WeeklyScheduleSelect from '../WeeklyScheduleSelect';
 import { Class } from '../../types';
 import { useNavigate } from 'react-router-dom';
 import { useFetchClasses } from '../../queries/classQueries';
-import { useUpdateWorker } from '../../queries/workerQueries';
+import { useFetchWorker, useUpdateWorker } from '../../queries/workerQueries';
 import WorkerTags from './WorkerTags';
 import WorkerDocuments from './WorkerDocuments';
 import { Tabs } from '@mui/material';
@@ -80,10 +80,13 @@ const SectionTitle = styled(Typography)(({ theme }) => ({
 }));
 
 interface WorkerEditPageProps {
-  worker: Worker | null;
+  workerId: string;
 }
 
-const WorkerEditPage: React.FC<WorkerEditPageProps> = ({ worker }) => {
+const WorkerEditPage: React.FC<WorkerEditPageProps> = ({ workerId }) => {
+  console.log("Worker in edit page:", workerId);
+  const { data: worker, isLoading } = useFetchWorker(workerId);
+  console.log("Worker in edit page2:", worker);
   const theme = useTheme();
   const navigate = useNavigate();
   const { data: classes = [] } = useFetchClasses();
@@ -93,6 +96,7 @@ const WorkerEditPage: React.FC<WorkerEditPageProps> = ({ worker }) => {
   
   // המרת תגיות ממבנה מונגו למערך של מזהים פשוטים
   const convertMongoTags = (tags: any[] = []): string[] => {
+    console.log("Tags from worker:", tags);
     return tags.map(tag => typeof tag === 'string' ? tag : tag.$oid);
   };
 

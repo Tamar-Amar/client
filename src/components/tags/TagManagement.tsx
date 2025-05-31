@@ -16,7 +16,8 @@ import {
   DialogActions,
   Chip,
   Stack,
-  CircularProgress
+  CircularProgress,
+  Divider
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
@@ -24,6 +25,7 @@ import {
   Add as AddIcon
 } from '@mui/icons-material';
 import { useWorkerTags } from '../../queries/useTags';
+import BulkTagAssignment from './BulkTagAssignment';
 
 const TagManagement = () => {
   const [newTagName, setNewTagName] = useState('');
@@ -42,6 +44,7 @@ const TagManagement = () => {
     isDeleting,
     isUpdating
   } = useWorkerTags('all'); // Using 'all' to get all tags
+  console.log("Available tags:", availableTags);
 
   const handleCreateTag = () => {
     if (newTagName.trim()) {
@@ -55,12 +58,15 @@ const TagManagement = () => {
 
   const handleUpdateTag = () => {
     if (editingTag && editingTag.name.trim()) {
-      updateTag({ id: editingTag.id, name: editingTag.name.trim() }, {
-        onSuccess: () => {
-          setEditingTag(null);
-          setIsDialogOpen(false);
+      updateTag(
+        { id: editingTag.id, name: editingTag.name.trim() },
+        {
+          onSuccess: () => {
+            setEditingTag(null);
+            setIsDialogOpen(false);
+          }
         }
-      });
+      );
     }
   };
 
@@ -114,7 +120,15 @@ const TagManagement = () => {
         </Stack>
       </Paper>
 
-      <Paper>
+      <BulkTagAssignment />
+      
+      <Divider sx={{ my: 3 }} />
+
+      <Typography variant="h6" gutterBottom>
+        תגיות קיימות
+      </Typography>
+      
+      <Paper sx={{ mt: 2 }}>
         <List>
           {availableTags.map((tag) => (
             <ListItem key={tag._id} divider>
@@ -162,7 +176,10 @@ const TagManagement = () => {
         </List>
       </Paper>
 
-      <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
+      <Dialog
+        open={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+      >
         <DialogTitle>עריכת תגית</DialogTitle>
         <DialogContent>
           <TextField

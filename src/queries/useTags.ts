@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchAllTags, updateWorkerTags, fetchWorkerTags, createTag, updateTag, deleteTag } from '../services/tagService';
+import { fetchAllTags, updateWorkerTags, fetchWorkerTags, createTag, updateTag, deleteTag, bulkUpdateWorkerTags } from '../services/tagService';
 import { WorkerTag } from '../types';
 
 export const useWorkerTags = (workerId: string) => {
@@ -18,6 +18,15 @@ export const useWorkerTags = (workerId: string) => {
     }
   });
 
+  const bulkUpdateTagsMutation = useMutation({
+    mutationFn: ({ workerIds, tagId }: { workerIds: string[], tagId: string }) => 
+      bulkUpdateWorkerTags(workerIds, tagId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workers'] });
+      queryClient.invalidateQueries({ queryKey: ['tags'] });
+    }
+  });
+
   const createTagMutation = useMutation({
     mutationFn: createTag,
     onSuccess: () => {
@@ -25,8 +34,8 @@ export const useWorkerTags = (workerId: string) => {
     }
   });
 
-  const updateTagMutation = useMutation({
-    mutationFn: updateTag,
+  const updateTagMutation = useMutation<WorkerTag, Error, { id: string; name: string }>({
+    mutationFn: ({ id, name }) => updateTag(id, name),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tags'] });
     }
@@ -36,29 +45,30 @@ export const useWorkerTags = (workerId: string) => {
     mutationFn: deleteTag,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tags'] });
-      queryClient.invalidateQueries({ queryKey: ['workers'] }); // Invalidate workers as they might have this tag
+      queryClient.invalidateQueries({ queryKey: ['workers'] });
     }
   });
 
   const workerTags = useQuery<WorkerTag[]>({
     queryKey: ['worker-tags', workerId],
     queryFn: () => fetchWorkerTags(workerId),
-    enabled: workerId !== 'all' // Only fetch worker tags if we have a specific worker
+    enabled: workerId !== 'all'
   });
 
   return {
-    workerTags: workerTags.data || [],
     availableTags: tags.data || [],
     isLoading: tags.isLoading,
     isError: tags.isError,
     error: tags.error,
     updateTags: updateTagsMutation.mutate,
-    isUpdating: updateTagsMutation.isPending,
+    bulkUpdateTags: bulkUpdateTagsMutation.mutate,
     createTag: createTagMutation.mutate,
-    isCreating: createTagMutation.isPending,
     updateTag: updateTagMutation.mutate,
-    isUpdatingTag: updateTagMutation.isPending,
     deleteTag: deleteTagMutation.mutate,
-    isDeleting: deleteTagMutation.isPending
+    isUpdating: updateTagsMutation.isPending || bulkUpdateTagsMutation.isPending,
+    isCreating: createTagMutation.isPending,
+    isDeleting: deleteTagMutation.isPending,
+    workerTags: workerTags.data || [],
+    isLoadingWorkerTags: workerTags.isLoading
   };
 }; 
