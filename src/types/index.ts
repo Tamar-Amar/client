@@ -192,11 +192,6 @@ export interface Activity {
     description?: string;
   }
 
-  export interface WorkerDocument {
-    documentId: string;
-    status: 'התקבל' | 'נדחה' | 'אושר' | 'אחר';
-  }
-
   export interface Worker {
     _id: string;
     id: string;
@@ -225,7 +220,7 @@ export interface Activity {
     workingSymbols?: string[];
     tags?: string[];
     weeklySchedule?: WeeklySchedule[];
-    documents?: WorkerDocument[];
+    documents?: Document[];
     accountantId?: string;
     notes?: string;
     startDate?: string;

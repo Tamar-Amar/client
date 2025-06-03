@@ -119,16 +119,16 @@ const handleReject = (documentId: string) => {
 
       </Stack>
 
-      <TableContainer component={Paper} sx={{ maxHeight: 450, overflow: 'auto' }}>
+      <TableContainer component={Paper} sx={{ maxHeight: 450, overflow: 'auto', minHeight: 300 }}>
         <Table size="small" stickyHeader>
-          <TableHead sx={{ bgcolor: '#fff8e1'  }}>
+          <TableHead sx={{ backgroundColor: '#ffe082' }}>
             <TableRow>
-            <TableCell>צפייה</TableCell>
-              <TableCell>שם עובד</TableCell>
-              <TableCell>ת"ז</TableCell>
-              <TableCell>סוג מסמך</TableCell>
-              <TableCell>תאריך</TableCell>
-              <TableCell>סטטוס</TableCell>
+            <TableCell sx={{ fontWeight: 'bold', color: '#37474f' }}>צפייה</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: '#37474f' }}>שם עובד</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: '#37474f' }}>ת"ז</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: '#37474f' }}>סוג מסמך</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: '#37474f' }}>תאריך</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: '#37474f' }}>סטטוס</TableCell>
               <TableCell align="center">פעולות</TableCell>
             </TableRow>
           </TableHead>
@@ -137,19 +137,19 @@ const handleReject = (documentId: string) => {
               const worker = getWorkerInfo(doc.operatorId);
               return (
 <TableRow key={doc._id}>
-  <TableCell>
+  <TableCell sx={{ fontWeight: 'bold', color: '#37474f' }}>
     <Tooltip title="צפה במסמך">
       <IconButton size="small" onClick={() => window.open(doc.url, '_blank')}>
         <VisibilityIcon fontSize="small" color="info" />
       </IconButton>
     </Tooltip>
   </TableCell>
-  <TableCell>{worker.name}</TableCell>
-  <TableCell>{worker.id}</TableCell>
-  <TableCell>{doc.tag}</TableCell>
-  <TableCell>{new Date(doc.createdAt).toLocaleDateString('he-IL')}</TableCell>
+  <TableCell sx={{ color: '#37474f' }}>{worker.name}</TableCell>
+  <TableCell sx={{ color: '#37474f' }}>{worker.id}</TableCell>
+  <TableCell sx={{  color: '#37474f' }}>{doc.tag}</TableCell>
+  <TableCell sx={{ color: '#37474f' }}>{new Date(doc.createdAt).toLocaleDateString('he-IL')}</TableCell>
 
-  <TableCell>
+  <TableCell sx={{  color: '#37474f' }}>
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
 
       {doc.status === 'מאושר' && (
@@ -203,6 +203,16 @@ const handleReject = (documentId: string) => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Summary rows */}
+      <Box sx={{ mt: 2, p: 2, border: '1px solid #e0e0e0', borderRadius: 2, backgroundColor: '#fafafa' }}>
+        <Typography variant="subtitle1" gutterBottom>סיכום מסמכים:</Typography>
+        <Stack direction="row" spacing={4}>
+          <Typography>סה"כ מסמכים שהתקבלו: {filteredDocuments.length}</Typography>
+          <Typography>סה"כ אישורי משטרה: {filteredDocuments.filter(doc => doc.tag === 'אישור משטרה').length}</Typography>
+          <Typography>סה"כ תעודות הוראה: {filteredDocuments.filter(doc => doc.tag === 'תעודת הוראה').length}</Typography>
+        </Stack>
+      </Box>
     </Box>
   );
 };
