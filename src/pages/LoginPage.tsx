@@ -104,6 +104,7 @@ const LoginPage: React.FC = () => {
       justifyContent="center"
       height="100vh"
       bgcolor="background.default"
+      sx={{ transform: 'scale(0.9)', transformOrigin: 'top center' }}
       p={3}
     >
       <Paper
@@ -123,13 +124,13 @@ const LoginPage: React.FC = () => {
           variant="fullWidth"
           sx={{ borderBottom: 1, borderColor: 'divider' }}
         >
-          <Tab label="מפעיל/מנהל" />
+          <Tab label="מפעיל / מנהל" />
           <Tab label="עובד צעירון" />
         </Tabs>
 
         <TabPanel value={tabValue} index={0}>
-          <Typography variant="h5" align="center" gutterBottom>
-            התחברות מפעיל/מנהל
+          <Typography variant="h6" align="center" gutterBottom>
+            התחברות מפעיל / מנהל
           </Typography>
 
           {errorMessage && (
@@ -166,7 +167,7 @@ const LoginPage: React.FC = () => {
         </TabPanel>
 
         <TabPanel value={tabValue} index={1}>
-          <Typography variant="h5" align="center" gutterBottom>
+          <Typography variant="h6" align="center" gutterBottom>
             התחברות עובד צעירון
           </Typography>
 
