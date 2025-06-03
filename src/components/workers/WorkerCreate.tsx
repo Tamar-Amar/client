@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Box, Dialog, Paper, Tabs, Tab } from '@mui/material';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -11,7 +11,7 @@ import TagsAndFinish from './steps/TagsAndFinish';
 import WorkerTagManagement from './WorkerTagManagement';
 import WorkerTags from './WorkerTags';
 import WorkerDocuments from './WorkerDocuments';
-import { Worker, WeeklySchedule, WorkerDocument, WorkerTag } from '../../types';
+import { Worker } from '../../types';
 import { useParams, useNavigate } from 'react-router-dom';
 
 interface FormValues extends Omit<Worker, 'bankDetails' | 'documents' | 'tags'> {
@@ -22,7 +22,7 @@ interface FormValues extends Omit<Worker, 'bankDetails' | 'documents' | 'tags'> 
     accountNumber: string;
     accountOwner: string;
   };
-  documents: WorkerDocument[];
+  documents: Document[];
   tags: string[];
 }
 
@@ -107,7 +107,7 @@ const WorkerCreate: React.FC<Props> = ({ onSuccess, mode = 'create' }) => {
   const updateWorkerMutation = useUpdateWorker();
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data: existingWorkerData, isLoading } = useFetchWorker(id || '');
+  const { data: existingWorkerData } = useFetchWorker(id || '');
   console.log("Existing worker data:", existingWorkerData);
 
   const formik = useFormik<FormValues>({
@@ -124,7 +124,7 @@ const WorkerCreate: React.FC<Props> = ({ onSuccess, mode = 'create' }) => {
       workingSymbols: [],
       accountantId: '',
       tags: [],
-      documents: [] as WorkerDocument[],
+      documents: [] as Document[],
       phone: '',
       email: '',
       paymentMethod: 'תלוש',
