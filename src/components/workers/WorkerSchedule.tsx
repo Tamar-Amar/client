@@ -15,7 +15,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import { Edit as EditIcon, Save as SaveIcon } from '@mui/icons-material';
-import { useWorkerSymbols } from '../../queries/useSymbols';
+import { useWorkerClasses } from '../../queries/classQueries';
 import axios from 'axios';
 
 interface Props {
@@ -60,7 +60,7 @@ const WorkerSchedule: React.FC<Props> = ({ workerId }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  const { data: symbols = [], isLoading: isLoadingSymbols } = useWorkerSymbols(workerId);
+  const { data: classes = [], isLoading: isLoadingClasses } = useWorkerClasses(workerId);
 
   useEffect(() => {
     const fetchSchedule = async () => {
@@ -101,7 +101,7 @@ const WorkerSchedule: React.FC<Props> = ({ workerId }) => {
     }
   };
 
-  if (isLoading || isLoadingSymbols) {
+  if (isLoading || isLoadingClasses) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" height="200px">
         <CircularProgress />
@@ -147,7 +147,7 @@ const WorkerSchedule: React.FC<Props> = ({ workerId }) => {
                     renderValue={(selected) => (
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                         {selected.map((value) => {
-                          const symbol = symbols.find(s => s._id === value);
+                          const symbol = classes.find((s: any) => s._id === value);
                           return (
                             <Chip 
                               key={value} 
@@ -159,7 +159,7 @@ const WorkerSchedule: React.FC<Props> = ({ workerId }) => {
                       </Box>
                     )}
                   >
-                    {symbols.map((symbol) => (
+                    {classes.map((symbol: any) => (
                       <MenuItem key={symbol._id} value={symbol._id}>
                         {symbol.name}
                       </MenuItem>

@@ -4,7 +4,7 @@ import { useRecoilValue } from 'recoil';
 import { userRoleState } from '../../recoil/storeAtom';
 
 interface ProtectedRouteProps {
-  allowedRoles: string[]; 
+  allowedRoles: string[];
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
@@ -14,11 +14,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
     return <div>טוען...</div>;
   }
 
-  
   if (!userRole || !allowedRoles.includes(userRole)) {
     return <Navigate to="/" replace />; 
   }
-  return <Outlet />; 
+
+  return <Outlet />;
 };
 
 export default ProtectedRoute;

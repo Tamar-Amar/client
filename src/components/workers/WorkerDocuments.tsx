@@ -28,9 +28,6 @@ interface Props {
 
 const DOCUMENT_TYPES = [
   { value: DocumentType.ID, label: 'תעודת זהות' },
-  { value: DocumentType.RESUME, label: 'קורות חיים' },
-  { value: DocumentType.EDUCATION, label: 'תעודות השכלה' },
-  { value: DocumentType.CRIMINAL_RECORD, label: 'תעודת יושר' },
   { value: DocumentType.BANK_DETAILS, label: 'פרטי בנק' },
   { value: DocumentType.OTHER, label: 'אחר' }
 ];
@@ -206,17 +203,17 @@ const WorkerDocuments: React.FC<Props> = ({ workerId }) => {
               </Box>
 
               <Typography variant="body2" color="text.secondary">
-                סוג: {doc.tag}
+                סוג: {doc.documentType}
               </Typography>
 
               <Typography variant="body2" color="text.secondary">
-                הועלה: {formatDate(doc.uploadedAt)}
+                הועלה:  {new Date(doc.createdAt).toLocaleDateString('he-IL')}
               </Typography>
 
               <Box sx={{ mt: 'auto', pt: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Chip
                   label={doc.status}
-                  color={getStatusColor(doc.status)}
+                  color={getStatusColor(doc.status as DocumentStatus)}
                   size="small"
                 />
                 

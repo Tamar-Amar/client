@@ -23,6 +23,7 @@ import { useFetchWorker } from '../queries/workerQueries';
 import WorkerDetails from '../components/workers/WorkerDetails';
 import DocumentManagementPage from '../pages/DocumentManagementPage';
 import TagManagement from '../components/tags/TagManagement';
+import WorkerProfilePage from '../pages/WorkerProfilePage';
 
 const OperatorDocumentsWrapper = () => {
   const token = localStorage.getItem('token');
@@ -80,6 +81,10 @@ const AppRoutes: React.FC = () => {
         <Route path="/personal-details" element={<PersonalDetails/>} />
         <Route path="/activity-history" element={<ActivityHistory/>} />
         <Route path="/personal-documents" element={<OperatorDocumentsWrapper />} />
+      </Route>
+
+      <Route element={<ProtectedRoute allowedRoles={['worker']} />}>
+        <Route path="/worker/profile" element={<WorkerProfilePage />} />
       </Route>
 
     </Routes>

@@ -47,12 +47,12 @@ const ApprovedDocuments: React.FC = () => {
               secondary={
                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 0.5 }}>
                   <Chip
-                    label={doc.tag}
+                    label={doc.documentType}
                     size="small"
                     sx={{ fontSize: '0.75rem' }}
                   />
                   <Typography variant="body2" component="span" color="text.secondary">
-                    {new Date(doc.uploadedAt).toLocaleDateString('he-IL')}
+                    {new Date(doc.createdAt).toLocaleDateString('he-IL')}
                   </Typography>
                 </Box>
               }

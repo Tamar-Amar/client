@@ -21,30 +21,30 @@ const requiredDocuments = [
 ];
 
 const MissingDocuments: React.FC = () => {
-  const { data: workers = [], isLoading: isLoadingWorkers } = useFetchWorkers();
-  const { data: allDocuments = [], isLoading: isLoadingDocuments } = useFetchAllDocuments();
+  // const { data: workers = [], isLoading: isLoadingWorkers } = useFetchWorkers();
+  // const { data: allDocuments = [], isLoading: isLoadingDocuments } = useFetchAllDocuments();
 
-  if (isLoadingWorkers || isLoadingDocuments) {
-    return <Typography>טוען...</Typography>;
-  }
+  // if (isLoadingWorkers || isLoadingDocuments) {
+  //   return <Typography>טוען...</Typography>;
+  // }
 
-  const workersWithMissingDocs = workers.map((worker: Worker) => {
-    const workerDocuments = allDocuments.filter((doc: Document) => doc.operatorId === worker._id);
-    const existingDocTypes = new Set(workerDocuments.map((doc: Document) => doc.tag));
-    const missingDocs = requiredDocuments.filter(docType => !existingDocTypes.has(docType));
+  // const workersWithMissingDocs = workers.map((worker: Worker) => {
+  //   const workerDocuments = allDocuments.filter((doc: Document) => doc.operatorId === worker._id);
+  //   const existingDocTypes = new Set(workerDocuments.map((doc: Document) => doc.documentType));
+  //   const missingDocs = requiredDocuments.filter(docType => !existingDocTypes.has(docType));
 
-    return {
-      worker,
-      missingDocs,
-    };
-  }).filter(item => item.missingDocs.length > 0);
+  //   return {
+  //     worker,
+  //     missingDocs,
+  //   };
+  // }).filter(item => item.missingDocs.length > 0);
 
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
         עובדים עם מסמכים חסרים
       </Typography>
-      <List>
+      {/* <List>
         {workersWithMissingDocs.map(({ worker, missingDocs }) => (
           <ListItem key={worker._id} sx={{ px: 0 }}>
             <Card variant="outlined" sx={{ width: '100%' }}>
@@ -72,7 +72,7 @@ const MissingDocuments: React.FC = () => {
             אין עובדים עם מסמכים חסרים
           </Typography>
         )}
-      </List>
+      </List> */}
     </Box>
   );
 };

@@ -225,7 +225,7 @@ export interface Activity {
     workingSymbols?: string[];
     tags?: string[];
     weeklySchedule?: WeeklySchedule[];
-    documents?: Document[];
+    documents?: WorkerDocument[];
     accountantId?: string;
     notes?: string;
     startDate?: string;

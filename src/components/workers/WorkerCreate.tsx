@@ -22,7 +22,7 @@ interface FormValues extends Omit<Worker, 'bankDetails' | 'documents' | 'tags'> 
     accountNumber: string;
     accountOwner: string;
   };
-  documents: Document[];
+  documents: WorkerDocument[];
   tags: string[];
 }
 
@@ -124,7 +124,7 @@ const WorkerCreate: React.FC<Props> = ({ onSuccess, mode = 'create' }) => {
       workingSymbols: [],
       accountantId: '',
       tags: [],
-      documents: [],
+      documents: [] as WorkerDocument[],
       phone: '',
       email: '',
       paymentMethod: 'תלוש',
