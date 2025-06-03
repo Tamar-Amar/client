@@ -1,3 +1,6 @@
+import { DocumentStatus, DocumentType } from "./Document";
+
+export { DocumentStatus, DocumentType };
 
 export interface Activity {
     _id?: string; 
@@ -96,7 +99,7 @@ export interface Activity {
   
   export interface WeeklySchedule {
     day: 'ראשון' | 'שני' | 'שלישי' | 'רביעי' | 'חמישי';
-    classes: string[]; 
+    classes: string[];
   }
   export interface Operator {
     _id?: string;
@@ -167,4 +170,67 @@ export interface Activity {
     entityId: string; 
   }
   
+  export interface WorkerBankDetails {
+    bankName?: string;
+    branchNumber?: string;
+    accountNumber?: string;
+    accountOwner?: string;
+  }
+
+  export interface Tag {
+    _id: string;
+    name: string;
+    description?: string;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  }
+
+  export interface WorkerTag {
+    _id: string;
+    name: string;
+    description?: string;
+  }
+
+  export interface WorkerDocument {
+    documentId: string;
+    status: 'התקבל' | 'נדחה' | 'אושר' | 'אחר';
+  }
+
+  export interface Worker {
+    _id: string;
+    id: string;
+    firstName: string;
+    lastName: string;
+    birthDate?: string;
+    city: string;
+    street: string;
+    buildingNumber: string;
+    apartmentNumber?: string;
+    phone: string;
+    email?: string;
+    isActive: boolean;
+    registrationDate: string;
+    lastUpdateDate: string;
+    status: string;
+    jobType: 'מוביל' | 'מוביל משלים' | 'סייע' | 'סייע משלים' | 'לא נבחר';
+    jobTitle: string;
+    paymentMethod: 'חשבונית' | 'תלוש';
+    bankDetails?: {
+      bankName?: string;
+      branchNumber?: string;
+      accountNumber?: string;
+      accountOwner?: string;
+    };
+    workingSymbols?: string[];
+    tags?: string[];
+    weeklySchedule?: WeeklySchedule[];
+    documents?: WorkerDocument[];
+    accountantId?: string;
+    notes?: string;
+    startDate?: string;
+    endDate?: string;
+  }
+  
+
   

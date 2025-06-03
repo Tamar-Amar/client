@@ -7,7 +7,7 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import ImageIcon from '@mui/icons-material/Image';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
-import { useFetchDocumentsByOperator, useUploadDocument } from '../../queries/useDocuments';
+import {  useUploadDocument, useWorkerDocuments } from '../../queries/useDocuments';
 
 interface Props {
   operatorId: string;
@@ -21,8 +21,7 @@ const OperatorDocuments: React.FC<Props> = ({ operatorId }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const { data: documents = [], isLoading } = useFetchDocumentsByOperator(operatorId);
-  const { mutate: uploadDocument, isPending } = useUploadDocument();
+  const { documents, isLoading, uploadDocument, isUploading } = useWorkerDocuments(operatorId);
 
   const handleUpload = () => {
     const file = selectedFile;
@@ -109,9 +108,9 @@ const OperatorDocuments: React.FC<Props> = ({ operatorId }) => {
           variant="contained"
           color="primary"
           onClick={handleUpload}
-          disabled={!selectedFile || !tag || (tag === 'אחר' && !customTag) || isPending}
+          disabled={!selectedFile || !tag || (tag === 'אחר' && !customTag) || isUploading}
         >
-          {isPending ? <CircularProgress size={20} color="inherit" /> : 'העלה'}
+          {isUploading ? <CircularProgress size={20} color="inherit" /> : 'העלה'}
         </Button>
       </Box>
 

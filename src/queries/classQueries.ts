@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchClasses, createClass, deleteClass, updateClass } from '../services/ClassService';
+import { fetchClasses, createClass, deleteClass, updateClass, fetchWorkerClasses } from '../services/ClassService';
 import { Class } from '../types/index';
 
 export const useFetchClasses = () => {
@@ -37,5 +37,12 @@ export const useUpdateClass = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['classes'] });
     },
+  });
+};
+
+export const useWorkerClasses = (workerId: string) => {
+  return useQuery({
+    queryKey: ['workerClasses', workerId],
+    queryFn: () => fetchWorkerClasses(workerId),
   });
 };

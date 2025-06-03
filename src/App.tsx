@@ -3,7 +3,7 @@ import React from 'react';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import theme from './theme/theme';
 import { BrowserRouter } from 'react-router-dom';
-import AppContent from './AppContent'; // תכף נעשה אותו קובץ נפרד
+import AppContent from './AppContent';
 import { CacheProvider } from '@emotion/react';
 import rtlCache from './theme/mui-rtl';
 import { QueryClientProvider } from '@tanstack/react-query';

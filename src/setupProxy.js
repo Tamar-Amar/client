@@ -7,8 +7,9 @@ module.exports = function(app) {
       target: 'http://localhost:5000',
       changeOrigin: true,
       secure: false,
-      pathRewrite: {
-        '^/api': '/api'
+      logLevel: 'debug',
+      onError: (err, req, res) => {
+        console.error('Proxy Error:', err);
       }
     })
   );

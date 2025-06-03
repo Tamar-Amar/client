@@ -1,12 +1,35 @@
+export enum DocumentType {
+  ID = 'תעודת זהות',
+  BANK_DETAILS = 'פרטי בנק',
+  POLICE_APPROVAL = 'אישור משטרה',
+  TEACHING_CERTIFICATE = 'תעודת הוראה',
+  OTHER = 'אחר'
+}
+
+export const REQUIRED_DOCUMENTS: DocumentType[] = [
+  DocumentType.POLICE_APPROVAL,
+  DocumentType.TEACHING_CERTIFICATE
+];
 
 export interface Document {
-  _id?: string;
+  _id: string;
   operatorId: string;
-  tag: string;
-  name: string;
-  originalName: string;
+  fileName: string;
   fileType: string;
   size: number;
+  tag: DocumentType;
+  s3Key: string;
   url: string;
-  uploadedAt: string;
+  expiryDate?: Date;
+  uploadedBy: string;
+  status: 'ממתין' | 'מאושר' | 'נדחה';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export enum DocumentStatus {
+  PENDING = 'ממתין',
+  APPROVED = 'מאושר',
+  REJECTED = 'נדחה',
+  EXPIRED = 'פג תוקף'
 }

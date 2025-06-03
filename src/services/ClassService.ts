@@ -21,3 +21,9 @@ export const updateClass = async (id: string, updatedClass: Partial<Class>) => {
   const response = await axios.put(`${API_URL}/${id}`, updatedClass);
   return response.data;
 };
+
+export const fetchWorkerClasses = async (workerId: string) => {
+  const response = await axios.get(`${API_URL}/worker/${workerId}`);
+  return response.data;
+};
+  
