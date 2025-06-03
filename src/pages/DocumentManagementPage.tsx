@@ -8,9 +8,9 @@ import AllDocumentsTable from '../components/documents/AllDocumentsTable';
 
 const DocumentManagementPage: React.FC = () => {
   return (
-    <Box sx={{ p: 5, height: '100%' }}>
+    <Box sx={{ p: 8, height: '100%' }}>
       <Grid container spacing={2}>
-      <Grid item xs={12}>
+      <Grid item xs={12} >
         <AllDocumentsTable />
       </Grid>
         {/* <Grid item xs={12} md={6}>
