@@ -72,13 +72,11 @@ const LoginPage: React.FC = () => {
   const handleWorkerLogin = async () => {
     try {
       if (!isCodeSent) {
-        // שלב ראשון - שליחת קוד אימות
         const response = await axios.post(`${API_URL}/worker/login`, { idNumber: id });
         setMaskedEmail(response.data.email);
         setIsCodeSent(true);
         setErrorMessage('');
       } else {
-        // שלב שני - אימות הקוד
         const response = await axios.post(`${API_URL}/worker/verify`, { 
           idNumber: id,
           code: verificationCode 

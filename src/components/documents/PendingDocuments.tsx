@@ -57,12 +57,14 @@ const PendingDocuments: React.FC = () => {
           return (
             <ListItem key={doc._id} divider>
               <ListItemText
-                primary={doc.fileName}
+                primary={ <Typography variant="body2" color="text.secondary">
+                  מפעיל: {operatorDetails.name} (ת.ז: {operatorDetails.id})
+                </Typography>}
                 secondary={
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mt: 0.5 }}>
                     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                       <Chip
-                        label={doc.documentType}
+                        label={doc.tag}
                         size="small"
                         sx={{ fontSize: '0.75rem' }}
                       />
@@ -70,9 +72,6 @@ const PendingDocuments: React.FC = () => {
                         {new Date(doc.createdAt).toLocaleDateString('he-IL')}
                       </Typography>
                     </Box>
-                    <Typography variant="body2" color="text.secondary">
-                      מפעיל: {operatorDetails.name} (ת.ז: {operatorDetails.id})
-                    </Typography>
                   </Box>
                 }
               />

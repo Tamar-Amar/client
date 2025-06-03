@@ -82,7 +82,7 @@ const WorkerProfilePage = () => {
     if (!documents) return REQUIRED_DOCUMENTS;
     
     return REQUIRED_DOCUMENTS.filter(requiredType => 
-      !documents.some(doc => doc.documentType === requiredType && doc.status === 'מאושר')
+      !documents.some(doc => doc.tag === requiredType && doc.status === 'מאושר')
     );
   };
 
@@ -99,7 +99,7 @@ const WorkerProfilePage = () => {
   }
 
   return (
-    <Box p={3}>
+    <Box p={6}>
       <Paper sx={{ borderRadius: 2, overflow: 'hidden' }}>
         <Tabs
           value={activeTab}
@@ -142,102 +142,117 @@ const WorkerProfilePage = () => {
           </Box>
         )}
 
-        {activeTab === 1 && (
-          <Box p={3}>
-            {getMissingRequiredDocuments().length > 0 && (
-              <Alert severity="warning" sx={{ mb: 2 }}>
-                <Typography variant="subtitle2" gutterBottom>חסרים המסמכים הבאים:</Typography>
-                <Box component="ul" sx={{ m: 0, pl: 2 }}>
-                  {getMissingRequiredDocuments().map(docType => (
-                    <li key={docType}>{DOCUMENT_TYPES.find(t => t.value === docType)?.label}</li>
-                  ))}
-                </Box>
-              </Alert>
-            )}
+{activeTab === 1 && (
+  <Box p={3}>
+    {getMissingRequiredDocuments().length > 0 && (
+      <Alert severity="warning" sx={{ mb: 2 }}>
+        <Typography variant="subtitle2" gutterBottom>חסרים המסמכים הבאים:</Typography>
+        <Box component="ul" sx={{ m: 0, pl: 2 }}>
+          {getMissingRequiredDocuments().map(docType => (
+            <li key={docType}>{DOCUMENT_TYPES.find(t => t.value === docType)?.label}</li>
+          ))}
+        </Box>
+      </Alert>
+    )}
 
-            <Stack direction="row" spacing={2} mb={2} alignItems="center">
-              <TextField
-                select
-                size="small"
-                label="סוג מסמך"
-                value={documentType}
-                onChange={(e) => setDocumentType(e.target.value as DocumentType)}
-                sx={{ minWidth: 150 }}
-              >
-                {DOCUMENT_TYPES.map((type) => (
-                  <MenuItem key={type.value} value={type.value}>
-                    {type.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <input
-                type="file"
-                hidden
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-              />
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={() => fileInputRef.current?.click()}
-                startIcon={<CloudUploadIcon />}
-              >
-                {selectedFile ? selectedFile.name : 'בחר קובץ'}
-              </Button>
-              <Button
-                size="small"
-                variant="contained"
-                onClick={handleUpload}
-                disabled={!selectedFile || isUploading}
-              >
-                העלה
-              </Button>
-            </Stack>
+    {documents?.some(doc => doc.tag === documentType && (doc.status === 'מאושר' || doc.status === 'ממתין')) && (
+      <Alert severity="warning" sx={{ mb: 2 }}>
+        קיים כבר מסמך מהסוג הזה שאושר או בהמתנה. לא ניתן להעלות חדש עד למחיקת הקיים.
+      </Alert>
+    )}
 
-            <Box sx={{ display: 'grid', gap: 1 }}>
-              {documents?.map((doc) => (
-                <Paper 
-                  key={doc._id} 
-                  sx={{ 
-                    p: 1, 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    bgcolor: REQUIRED_DOCUMENTS.includes(doc.documentType as DocumentType) ? 'rgba(255, 244, 229, 0.4)' : 'inherit'
-                  }}
-                >
-                  <Box>
-                    <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                      {DOCUMENT_TYPES.find(t => t.value === doc.documentType)?.label || doc.fileName}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {doc.status}
-                    </Typography>
-                  </Box>
-                  <Stack direction="row" spacing={1}>
-                    <IconButton
-                      size="small"
-                      onClick={() => window.open(doc.url, '_blank')}
-                    >
-                      <VisibilityIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => doc._id && handleDelete(doc._id)}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Stack>
-                </Paper>
-              ))}
-              {(!documents || documents.length === 0) && (
-                <Alert severity="info">אין מסמכים להצגה</Alert>
-              )}
-            </Box>
+    <Stack direction="row" spacing={2} mb={2} alignItems="center">
+      <TextField
+        select
+        size="small"
+        label="סוג מסמך"
+        value={documentType}
+        onChange={(e) => setDocumentType(e.target.value as DocumentType)}
+        sx={{ minWidth: 150 }}
+      >
+        {DOCUMENT_TYPES.map((type) => (
+          <MenuItem key={type.value} value={type.value}>
+            {type.label}
+          </MenuItem>
+        ))}
+      </TextField>
+
+      <input
+        type="file"
+        hidden
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+      />
+
+      <Button
+        size="small"
+        variant="outlined"
+        onClick={() => fileInputRef.current?.click()}
+        startIcon={<CloudUploadIcon />}
+      >
+        {selectedFile ? selectedFile.name : 'בחר קובץ'}
+      </Button>
+
+      <Button
+        size="small"
+        variant="contained"
+        onClick={handleUpload}
+        disabled={
+          !selectedFile ||
+          isUploading ||
+          documents?.some(doc => doc.tag === documentType && (doc.status === 'מאושר' || doc.status === 'ממתין'))
+        }
+      >
+        העלה
+      </Button>
+    </Stack>
+
+    <Box sx={{ display: 'grid', gap: 1 }}>
+      {documents?.map((doc) => (
+        <Paper
+          key={doc._id}
+          sx={{
+            p: 1,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            bgcolor: (() => {
+              if (doc.status === 'מאושר') return '#e8f5e9'; 
+              if (doc.status === 'ממתין') return '#fff8e1';    
+              if (doc.status === 'נדחה') return '#ffebee';  
+              return 'inherit';
+            })()
+          }}
+        >
+          <Box>
+            <Typography variant="body2" noWrap>
+              {DOCUMENT_TYPES.find(t => t.value === doc.tag)?.label || doc.fileName}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {doc.status}
+            </Typography>
           </Box>
-        )}
+          <Stack direction="row" spacing={1}>
+            <IconButton size="small" onClick={() => window.open(doc.url, '_blank')}>
+              <VisibilityIcon fontSize="small" />
+            </IconButton>
+            <IconButton
+              size="small"
+              color="error"
+              onClick={() => doc._id && handleDelete(doc._id)}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Stack>
+        </Paper>
+      ))}
+      {(!documents || documents.length === 0) && (
+        <Alert severity="info">אין מסמכים להצגה</Alert>
+      )}
+    </Box>
+  </Box>
+)}
 
         {activeTab === 2 && (
           <Box p={3}>

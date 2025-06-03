@@ -1,39 +1,137 @@
 import React from 'react';
-import { Button, Typography, Container, Box } from '@mui/material';
+import { Button, Typography, Container, Box, Paper, Grid } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import SchoolIcon from '@mui/icons-material/School';
+import GroupsIcon from '@mui/icons-material/Groups';
+import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
+import EventNoteIcon from '@mui/icons-material/EventNote';
+import SecurityIcon from '@mui/icons-material/Security';
+import { useRecoilValue } from 'recoil';
+import { userRoleState } from '../recoil/storeAtom';
 
 const HomePage = () => {
   const navigate = useNavigate();
+  const role = useRecoilValue(userRoleState);
+
+  const features = [
+    // {
+    //   icon: <SchoolIcon sx={{ fontSize: 40 }} />,
+    //   title: 'מערכת צעירון',
+    //   description: 'ניהול מתקדם של פעילויות חינוכיות'
+    // },
+    {
+      icon: <GroupsIcon sx={{ fontSize: 40 }} />,
+      title: 'ניהול עובדים',
+      description: 'מעקב אחר מסמכים ופעילויות'
+    },
+    {
+      icon: <AssignmentIndIcon sx={{ fontSize: 40 }} />,
+      title: 'טפסים דיגיטליים',
+      description: 'העלאה וניהול מסמכים באופן מקוון'
+    },
+    {
+      icon: <EventNoteIcon sx={{ fontSize: 40 }} />,
+      title: 'דוחות ומעקב',
+      description: 'מעקב אחר פעילויות והפקת דוחות'
+    },
+    // {
+    //   icon: <SecurityIcon sx={{ fontSize: 40 }} />,
+    //   title: 'אבטחה מתקדמת',
+    //   description: 'מערכת מאובטחת לשמירת מידע'
+    // }
+  ];
 
   return (
-    <Container maxWidth="sm">
-      <Box
-        display="flex"
-        flexDirection="column"
-        alignItems="center"
-        justifyContent="center"
-        height="100vh"
-        bgcolor="background.default"
-        color="text.primary"
-        textAlign="center"
-      >
-        <Typography variant="h3" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
-          ברוך הבא!
-        </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb:5 }}>
-          האתר שלך לניהול מוסדות, כיתות ופעילויות. התחבר כדי להמשיך.
-        </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          size="large"
-          sx={{ px: 4, py: 1.5, fontSize: '1.1rem', borderRadius: 2 , mb: 30  }}
-          onClick={() => navigate('/login')}
-        >
-          עבור לעמוד התחברות
-        </Button>
-      </Box>
-    </Container>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: '#f5f5f5',
+        pt: 8,
+        pb: 6
+      }}
+    >
+      <Container maxWidth="lg">
+        <Box textAlign="center" mb={8}>
+          <Typography
+            component="h1"
+            variant="h3"
+            color="primary"
+            gutterBottom
+            sx={{
+              fontWeight: 'bold',
+              mb: 2
+            }}
+          >
+            מערכת צעירון
+          </Typography>
+          
+          {!role && (
+            <Button
+              variant="contained"
+              size="large"
+              onClick={() => navigate('/login')}
+              sx={{
+                mt: 4,
+                mb: 6,
+                px: 4,
+                py: 1.5,
+                fontSize: '1.1rem',
+                borderRadius: 2,
+                boxShadow: 3
+              }}
+            >
+              התחברות למערכת
+            </Button>
+          )}
+        </Box>
+
+        <Grid container spacing={4} justifyContent="center">
+          {features.map((feature, index) => (
+            <Grid item xs={12} sm={6} md={4} key={index}>
+              <Paper
+                sx={{
+                  p: 4,
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  textAlign: 'center',
+                  borderRadius: 4,
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: 4
+                  }
+                }}
+              >
+                <Box
+                  sx={{
+                    mb: 2,
+                    color: 'primary.main',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 80,
+                    height: 80,
+                    borderRadius: '50%',
+                    bgcolor: 'primary.light',
+                    opacity: 0.8
+                  }}
+                >
+                  {feature.icon}
+                </Box>
+                <Typography variant="h5" component="h2" gutterBottom sx={{ fontWeight: 'bold' }}>
+                  {feature.title}
+                </Typography>
+                <Typography color="text.secondary">
+                  {feature.description}
+                </Typography>
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
+      </Container>
+    </Box>
   );
 };
 

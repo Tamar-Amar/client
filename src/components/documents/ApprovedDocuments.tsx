@@ -47,7 +47,7 @@ const ApprovedDocuments: React.FC = () => {
               secondary={
                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 0.5 }}>
                   <Chip
-                    label={doc.documentType}
+                    label={doc.tag}
                     size="small"
                     sx={{ fontSize: '0.75rem' }}
                   />

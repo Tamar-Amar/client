@@ -11,26 +11,25 @@ import {
   Stack,
   CircularProgress,
   Alert,
+  Paper,
+  Divider,
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { useFetchWorkers } from '../../queries/workerQueries';
-import { Worker } from '../../types';
 import { useWorkerDocuments } from '../../queries/useDocuments';
-
-const documentTypes = [
-  'תעודת זהות',
-  'אישור העסקה',
-  'הסכם עבודה',
-  'אישור בריאות',
-  'תעודות הסמכה',
-  'אחר'
-];
 
 const DocumentUpload: React.FC = () => {
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [documentType, setDocumentType] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const documentTypes = [
+    'תעודת זהות',
+    'אישור משטרה',
+    'תעודת הוראה',
+    'אחר'
+  ];
 
   const { data: workers, isLoading } = useFetchWorkers();
   const { uploadDocument, isUploading } = useWorkerDocuments(selectedEmployee);
@@ -70,52 +69,55 @@ const DocumentUpload: React.FC = () => {
   }
 
   return (
-    <Box>
+    <Paper elevation={3} sx={{ p: 3, mt: 4 }}>
       <Typography variant="h6" gutterBottom>
-        העלאת מסמכים
+        העלאת מסמך חדש
       </Typography>
-      <Stack spacing={2}>
-        <FormControl fullWidth size="small">
-          <InputLabel>בחר עובד</InputLabel>
-          <Select
-            value={selectedEmployee}
-            onChange={(e) => {
-              setSelectedEmployee(e.target.value);
-              setError(null);
-            }}
-            label="בחר עובד"
-          >
-            {workers?.map((employee) => (
-              <MenuItem key={employee._id} value={employee._id}>
-                {`${employee.firstName} ${employee.lastName}`}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
 
-        <FormControl fullWidth size="small">
-          <InputLabel>סוג מסמך</InputLabel>
-          <Select
-            value={documentType}
-            onChange={(e) => {
-              setDocumentType(e.target.value);
-              setError(null);
-            }}
-            label="סוג מסמך"
-          >
-            {documentTypes.map((type) => (
-              <MenuItem key={type} value={type}>
-                {type}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+      <Divider sx={{ mb: 2 }} />
+      <Stack direction="row" spacing={2}>
+  <FormControl fullWidth size="small" sx={{ flex: 1 }}>
+    <InputLabel>בחר עובד</InputLabel>
+    <Select
+      value={selectedEmployee}
+      onChange={(e) => {
+        setSelectedEmployee(e.target.value);
+        setError(null);
+      }}
+      label="בחר עובד"
+    >
+      {workers?.map((employee) => (
+        <MenuItem key={employee._id} value={employee._id}>
+          {`${employee.firstName} ${employee.lastName}`}
+        </MenuItem>
+      ))}
+    </Select>
+  </FormControl>
+
+  <FormControl fullWidth size="small" sx={{ flex: 1 }}>
+    <InputLabel>סוג מסמך</InputLabel>
+    <Select
+      value={documentType}
+      onChange={(e) => {
+        setDocumentType(e.target.value);
+        setError(null);
+      }}
+      label="סוג מסמך"
+    >
+      {documentTypes.map((type) => (
+        <MenuItem key={type} value={type}>
+          {type}
+        </MenuItem>
+      ))}
+    </Select>
+  </FormControl>
+
 
         <Button
           component="label"
           variant="outlined"
           startIcon={<CloudUploadIcon />}
-          sx={{ mt: 2 }}
+          sx={{ borderStyle: 'dashed', color: 'primary.main' }}
         >
           בחר קובץ
           <input
@@ -128,7 +130,7 @@ const DocumentUpload: React.FC = () => {
 
         {file && (
           <Typography variant="body2" color="text.secondary">
-            נבחר: {file.name}
+            📄 קובץ שנבחר: <strong>{file.name}</strong>
           </Typography>
         )}
 
@@ -142,13 +144,13 @@ const DocumentUpload: React.FC = () => {
           variant="contained"
           onClick={handleUpload}
           disabled={!file || !selectedEmployee || !documentType || isUploading}
-          sx={{ mt: 2 }}
+          sx={{ bgcolor: 'success.main', color: 'white', mt: 2 }}
         >
           {isUploading ? <CircularProgress size={24} /> : 'העלה מסמך'}
         </Button>
       </Stack>
-    </Box>
+    </Paper>
   );
 };
 
-export default DocumentUpload; 
+export default DocumentUpload;

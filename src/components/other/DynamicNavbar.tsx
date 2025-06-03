@@ -65,6 +65,11 @@ const DynamicNavbar: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         // { label: 'ניהול אנשי קשר', path: '/contacts' },
   ];
 
+  const managerTabs = [
+    { label: 'ניהול עובדים', path: '/workers', icon: <PeopleIcon fontSize="small" /> },
+    { label: 'ניהול מסמכים', path: '/documents', icon: <FolderIcon fontSize="small" /> },
+  ];
+
 const operatorTabs = [
   { label: 'פרטים אישיים', path: '/personal-details', icon: <AccountCircleIcon fontSize="small" /> },
   { label: 'היסטוריית הפעלות', path: '/activity-history', icon: <HistoryIcon fontSize="small" /> },
@@ -83,6 +88,8 @@ const tabs = role === 'admin'
   ? operatorTabs 
   : role === 'worker'
   ? workerTabs
+  : role === 'manager'
+  ? managerTabs
   : loginTab;
 
   return (
@@ -105,6 +112,8 @@ const tabs = role === 'admin'
                 ? `שלום ${operatorName}`
                 : 'טוען מפעיל...'
               : role === 'admin'
+              ? 'מערכת ניהול ראשי'
+              : role === 'manager'
               ? 'מערכת מנהל'
               : 'DISCONNECTED'}
           </Typography>
@@ -150,7 +159,7 @@ const tabs = role === 'admin'
             ))}
           </Tabs>
 
-          {role && (role === 'admin' || role === 'operator' || role === 'worker') && (
+          {role && (role === 'admin' || role === 'operator' || role === 'worker' || role === 'manager') && (
             <Button
               color="inherit"
               variant="outlined"

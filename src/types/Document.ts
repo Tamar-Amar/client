@@ -17,7 +17,7 @@ export interface Document {
   fileName: string;
   fileType: string;
   size: number;
-  documentType: DocumentType;
+  tag: DocumentType;
   s3Key: string;
   url: string;
   expiryDate?: Date;

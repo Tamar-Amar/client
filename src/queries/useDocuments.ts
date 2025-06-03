@@ -8,6 +8,7 @@ export const useUploadDocument = () => {
     mutationFn: uploadDocument,
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['documents', variables.get('operatorId')] });
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
     },
   });
 };

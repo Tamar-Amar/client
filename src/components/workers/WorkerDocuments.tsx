@@ -203,7 +203,7 @@ const WorkerDocuments: React.FC<Props> = ({ workerId }) => {
               </Box>
 
               <Typography variant="body2" color="text.secondary">
-                סוג: {doc.documentType}
+                סוג: {doc.tag}
               </Typography>
 
               <Typography variant="body2" color="text.secondary">
