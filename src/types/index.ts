@@ -181,6 +181,9 @@ export interface Activity {
     _id: string;
     name: string;
     description?: string;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
   }
 
   export interface WorkerTag {
@@ -222,7 +225,7 @@ export interface Activity {
     workingSymbols?: string[];
     tags?: string[];
     weeklySchedule?: WeeklySchedule[];
-    documents?: WorkerDocument[];
+    documents?: Document[];
     accountantId?: string;
     notes?: string;
     startDate?: string;

@@ -22,7 +22,7 @@ interface FormValues extends Omit<Worker, 'bankDetails' | 'documents' | 'tags'> 
     accountNumber: string;
     accountOwner: string;
   };
-  documents: string[];
+  documents: Document[];
   tags: string[];
 }
 
@@ -108,6 +108,7 @@ const WorkerCreate: React.FC<Props> = ({ onSuccess, mode = 'create' }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: existingWorkerData, isLoading } = useFetchWorker(id || '');
+  console.log("Existing worker data:", existingWorkerData);
 
   const formik = useFormik<FormValues>({
     initialValues: {
@@ -161,10 +162,7 @@ const WorkerCreate: React.FC<Props> = ({ onSuccess, mode = 'create' }) => {
           isActive: true,
           workingSymbols: values.workingSymbols || [],
           tags: values.tags || [],
-          documents: (values.documents || []).map(docId => ({
-            documentId: docId,
-            status: 'אושר' as const
-          })) as WorkerDocument[],
+          documents: values.documents || [],
           weeklySchedule: values.weeklySchedule || [
             { day: 'ראשון' as const, classes: [] },
             { day: 'שני' as const, classes: [] },
@@ -194,35 +192,7 @@ const WorkerCreate: React.FC<Props> = ({ onSuccess, mode = 'create' }) => {
     },
   });
 
-  useEffect(() => {
-    if (mode === 'edit' && existingWorkerData) {
-      formik.setValues({
-        ...existingWorkerData,
-        birthDate: existingWorkerData.birthDate ? new Date(existingWorkerData.birthDate).toISOString().split('T')[0] : '',
-        password: '',
-        workingSymbols: existingWorkerData.workingSymbols || [],
-        tags: existingWorkerData.tags || [],
-        documents: existingWorkerData.documents?.map(doc => doc.documentId) || [],
-        bankDetails: {
-          bankName: existingWorkerData.bankDetails?.bankName || '',
-          branchNumber: existingWorkerData.bankDetails?.branchNumber || '',
-          accountNumber: existingWorkerData.bankDetails?.accountNumber || '',
-          accountOwner: existingWorkerData.bankDetails?.accountOwner || ''
-        },
-        weeklySchedule: existingWorkerData.weeklySchedule || [
-          { day: 'ראשון' as const, classes: [] },
-          { day: 'שני' as const, classes: [] },
-          { day: 'שלישי' as const, classes: [] },
-          { day: 'רביעי' as const, classes: [] },
-          { day: 'חמישי' as const, classes: [] }
-        ],
-        apartmentNumber: existingWorkerData.apartmentNumber || '',
-        accountantId: existingWorkerData.accountantId || '',
-        email: existingWorkerData.email || '',
-        notes: existingWorkerData.notes || ''
-      });
-    }
-  }, [existingWorkerData, mode]);
+
 
   const handleNext = async () => {
     if (activeStep === 4) {

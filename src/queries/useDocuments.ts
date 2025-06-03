@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchDocumentsByWorker, uploadDocument, updateOperatorDocuments, deleteDocument } from '../services/documentService';
+import { fetchDocumentsByWorker, uploadDocument, updateOperatorDocuments, deleteDocument, fetchAllDocuments, updateDocumentStatus } from '../services/documentService';
+import { DocumentStatus } from '../types/Document';
 
 export const useUploadDocument = () => {
   const queryClient = useQueryClient();
@@ -11,17 +12,21 @@ export const useUploadDocument = () => {
   });
 };
 
-export const useFetchDocumentsByWorker = (workerId: string) => {
+export const useFetchAllDocuments = () => {
   return useQuery({
-    queryKey: ['documents', workerId],
-    queryFn: () => fetchDocumentsByWorker(workerId),
-    enabled: !!workerId,
+    queryKey: ['documents'],
+    queryFn: () => fetchAllDocuments(),
   });
 };
 
 interface UpdateDocumentsParams {
   tempId: string;
   newOperatorId: string;
+}
+
+interface UpdateStatusParams {
+  documentId: string;
+  status: DocumentStatus;
 }
 
 export const useUpdateDocuments = () => {
@@ -65,6 +70,15 @@ export const useWorkerDocuments = (workerId: string) => {
     }
   });
 
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ documentId, status }: UpdateStatusParams) => 
+      updateDocumentStatus(documentId, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      queryClient.invalidateQueries({ queryKey: ['worker-documents', workerId] });
+    }
+  });
+
   return {
     documents: documents.data || [],
     isLoading: documents.isLoading,
@@ -75,6 +89,8 @@ export const useWorkerDocuments = (workerId: string) => {
     deleteDocument: deleteDocumentMutation.mutate,
     isDeleting: deleteDocumentMutation.isPending,
     updateDocuments: updateDocumentsMutation.mutate,
-    isUpdating: updateDocumentsMutation.isPending
+    isUpdating: updateDocumentsMutation.isPending,
+    updateStatus: updateStatusMutation.mutate,
+    isUpdatingStatus: updateStatusMutation.isPending
   };
 };

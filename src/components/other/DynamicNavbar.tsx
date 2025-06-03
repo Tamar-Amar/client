@@ -11,6 +11,7 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import HistoryIcon from '@mui/icons-material/History';
 import LoginIcon from '@mui/icons-material/Login';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
+import FolderIcon from '@mui/icons-material/Folder';
 import { jwtDecode } from 'jwt-decode';
 import { fetchOperatorById } from '../../services/OperatorService';
 import { Operator } from '../../types';
@@ -46,7 +47,9 @@ useEffect(() => {
     { label: 'ניהול מפעילים', path: '/operators', icon: <PeopleIcon fontSize="small" /> },
     { label: 'ניהול עובדים', path: '/workers', icon: <PeopleIcon fontSize="small" /> },
     { label: 'ניהול קבוצות', path: '/classes', icon: <GroupWorkIcon fontSize="small" /> },
+    { label: 'ניהול מסמכים', path: '/documents', icon: <FolderIcon fontSize="small" /> },
     { label: 'מיילים', path: '/emails', icon: <EmailIcon fontSize="small" /> },
+    { label: 'ניהול תגיות', path: '/tags',  },
         // { label: 'ניהול מוסדות', path: '/institutions' },
         // { label: 'ניהול אנשי קשר', path: '/contacts' },
   ];

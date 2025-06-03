@@ -111,7 +111,6 @@ const WorkersList: React.FC = () => {
   };
 
   const handleEdit = (worker: Worker) => {
-    console.log("worker", worker.tags);
     navigate(`/workers/edit/${worker._id}`);
   };
 
