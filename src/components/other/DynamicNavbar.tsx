@@ -68,6 +68,7 @@ const DynamicNavbar: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   const managerTabs = [
     { label: 'ניהול עובדים', path: '/workers', icon: <PeopleIcon fontSize="small" /> },
     { label: 'ניהול מסמכים', path: '/documents', icon: <FolderIcon fontSize="small" /> },
+    { label: 'מסמכים לעובד', path: '/workers-documents', icon: <FolderIcon fontSize="small" /> },
   ];
 
 const operatorTabs = [
