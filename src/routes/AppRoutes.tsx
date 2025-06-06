@@ -23,7 +23,9 @@ import WorkerEditPage from '../components/workers/WorkerEditPage';
 import DocumentManagementPage from '../pages/DocumentManagementPage';
 import TagManagement from '../components/tags/TagManagement';
 import WorkerProfilePage from '../pages/WorkerProfilePage';
-
+import WorkersDocumentsPage from '../pages/WorkersDocumentsPage';
+import WorkerDocumentsApprovalPage from '../pages/WorkerDocumentsApprovalPage';
+import WorkersDocumentsEmailPage from '../pages/WorkersDocumentsEmailPage';
 const OperatorDocumentsWrapper = () => {
   const token = localStorage.getItem('token');
   const decodedToken: any = token ? jwtDecode(token) : null;
@@ -51,6 +53,9 @@ const AppRoutes: React.FC = () => {
       <Route element={<ProtectedRoute allowedRoles={['manager', 'admin']} />}>
         <Route path="/documents" element={<DocumentManagementPage />} />
         <Route path="/workers" element={<WorkersPage />} />
+        <Route path="/workers-documents" element={<WorkersDocumentsPage />} />
+        <Route path="/workers-documents/:id" element={<WorkerDocumentsApprovalPage />} />
+        <Route path="/workers-documents-email" element={<WorkersDocumentsEmailPage />} />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
