@@ -19,13 +19,14 @@ import { jwtDecode } from 'jwt-decode';
 import PersonalDocuments from '../components/operators/PersonalDocuments';
 import WorkersPage from '../pages/WorkersPage';
 import WorkerEditPage from '../components/workers/WorkerEditPage';
-
 import DocumentManagementPage from '../pages/DocumentManagementPage';
 import TagManagement from '../components/tags/TagManagement';
 import WorkerProfilePage from '../pages/WorkerProfilePage';
 import WorkersDocumentsPage from '../pages/WorkersDocumentsPage';
 import WorkerDocumentsApprovalPage from '../pages/WorkerDocumentsApprovalPage';
 import WorkersDocumentsEmailPage from '../pages/WorkersDocumentsEmailPage';
+import WorkerAttendancePage from '../pages/WorkerAttendancePage';
+
 const OperatorDocumentsWrapper = () => {
   const token = localStorage.getItem('token');
   const decodedToken: any = token ? jwtDecode(token) : null;
@@ -56,6 +57,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/workers-documents" element={<WorkersDocumentsPage />} />
         <Route path="/workers-documents/:id" element={<WorkerDocumentsApprovalPage />} />
         <Route path="/workers-documents-email" element={<WorkersDocumentsEmailPage />} />
+        <Route path="/worker-attendance" element={<WorkerAttendancePage />} />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
@@ -81,8 +83,6 @@ const AppRoutes: React.FC = () => {
       <Route element={<ProtectedRoute allowedRoles={['worker']} />}>
         <Route path="/worker/profile" element={<WorkerProfilePage />} />
       </Route>
-
-
 
     </Routes>
   );

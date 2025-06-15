@@ -4,6 +4,7 @@ import { Document, DocumentStatus } from '../types/Document';
 const API_URL = process.env.REACT_APP_API_URL + '/api/documents' || "https://server-manage.onrender.com/api/documents";
 
 export const uploadDocument = async (formData: FormData): Promise<Document> => {
+  console.log('formData', formData);
   const response = await axios.post(`${API_URL}/upload`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data'

@@ -53,6 +53,7 @@ export const useWorkerDocuments = (workerId: string) => {
     mutationFn: uploadDocument,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['worker-documents', workerId] });
+      queryClient.invalidateQueries({ queryKey: ['worker-attendance', workerId] });
     }
   });
 
@@ -60,6 +61,7 @@ export const useWorkerDocuments = (workerId: string) => {
     mutationFn: deleteDocument,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['worker-documents', workerId] });
+      queryClient.invalidateQueries({ queryKey: ['worker-attendance', workerId] });
     }
   });
 
