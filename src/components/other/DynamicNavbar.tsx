@@ -61,14 +61,12 @@ const DynamicNavbar: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     { label: 'ניהול מסמכים', path: '/documents', icon: <FolderIcon fontSize="small" /> },
     { label: 'מיילים', path: '/emails', icon: <EmailIcon fontSize="small" /> },
     { label: 'ניהול תגיות', path: '/tags',  },
-        // { label: 'ניהול מוסדות', path: '/institutions' },
-        // { label: 'ניהול אנשי קשר', path: '/contacts' },
   ];
 
   const managerTabs = [
-    { label: 'ניהול עובדים', path: '/workers', icon: <PeopleIcon fontSize="small" /> },
     { label: 'ניהול מסמכים', path: '/documents', icon: <FolderIcon fontSize="small" /> },
     { label: 'מסמכים לעובד', path: '/workers-documents', icon: <FolderIcon fontSize="small" /> },
+    { label: 'דיווחי נוכחות', path: '/worker-attendance', icon: <FolderIcon fontSize="small" /> },
   ];
 
 const operatorTabs = [

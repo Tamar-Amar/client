@@ -13,7 +13,7 @@ interface DecodedToken {
   role: string;
 }
 
-const DOCUMENT_TYPES = [
+export const DOCUMENT_TYPES = [
   { value: "NULL", label: 'לא נבחר' },
   { value: DocumentType.ID, label: 'תעודת זהות' },
   { value: DocumentType.BANK_DETAILS, label: 'פרטי בנק' },
