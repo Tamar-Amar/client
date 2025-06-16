@@ -21,6 +21,7 @@ import {
 import { Delete as DeleteIcon, Visibility as VisibilityIcon, CloudUpload as CloudUploadIcon, PictureAsPdf as PictureAsPdfIcon, Image as ImageIcon, InsertDriveFile as InsertDriveFileIcon } from '@mui/icons-material';
 import { Document, DocumentStatus, DocumentType } from '../../types/Document';
 import { useWorkerDocuments } from '../../queries/useDocuments';
+import { useFetchWorker, useFetchWorkers } from '../../queries/workerQueries';
 
 interface Props {
   workerId: string;
@@ -46,6 +47,7 @@ const WorkerDocuments: React.FC<Props> = ({ workerId }) => {
     deleteDocument,
     isDeleting
   } = useWorkerDocuments(workerId);
+  const { data: workerData } = useFetchWorker(workerId);
 
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -63,7 +65,9 @@ const WorkerDocuments: React.FC<Props> = ({ workerId }) => {
     const formData = new FormData();
     formData.append('file', selectedFile);
     formData.append('workerId', workerId);
+    formData.append('tz', workerData?.id as string);
     formData.append('documentType', documentType);
+
 
     uploadDocument(formData, {
       onSuccess: () => {

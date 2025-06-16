@@ -101,7 +101,6 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
     isLoading: isAttendanceLoading,
     submitAttendance,
   } = useAttendance(workerId || '');
-  console.log("attendanceData", attendanceData);
 
   const { data: workerClasses } = useFetchClasses();
   const [isAttendanceDialogOpen, setIsAttendanceDialogOpen] = useState(false);
@@ -162,6 +161,7 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
           studentFormData.append('workerId', workerId || '');
           studentFormData.append('tag', 'נוכחות תלמידים');
           studentFormData.append('documentType', 'נוכחות תלמידים');
+          studentFormData.append('tz', workerData?.id as string);
           
           await new Promise<void>((resolve, reject) => {
             uploadDocument(studentFormData, {

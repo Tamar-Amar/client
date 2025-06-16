@@ -8,6 +8,7 @@ import { useWorkerDocuments } from '../../../queries/useDocuments';
 import { useAttendance } from '../../../queries/useAttendance';
 import UploadIcon from '@mui/icons-material/Upload';
 import { attendanceService } from '../../../services/attendanceService';
+import { useFetchWorker, useFetchWorkers } from '../../../queries/workerQueries';
 
 interface AttendanceRecord {
   _id: string;
@@ -32,8 +33,10 @@ const WorkerAttendanceDocuments: React.FC<WorkerAttendanceDocumentsProps> = ({
 }) => {
   const [deletingDocIds, setDeletingDocIds] = useState<Set<string>>(new Set());
   const [deletingMonths, setDeletingMonths] = useState<Set<string>>(new Set());
+  const [uploadingDocs, setUploadingDocs] = useState<Set<string>>(new Set());
   const workerId = attendanceData?.[0]?.workerId || '';
-  const { deleteDocument, uploadDocument } = useWorkerDocuments(workerId);
+  const { deleteDocument, uploadDocument, isUploading } = useWorkerDocuments(workerId);
+  const { data: workerData } = useFetchWorker(workerId);
   const { deleteAttendance, isDeleting } = useAttendance(workerId);
 
   const handleDelete = (docId: string, month: string, classId: string) => {
@@ -106,31 +109,48 @@ const WorkerAttendanceDocuments: React.FC<WorkerAttendanceDocumentsProps> = ({
   };
 
   const handleUploadDocument = async (file: File, attendanceId: string, docType: string) => {
+    setUploadingDocs(prev => new Set([...prev, `${attendanceId}-${docType}`]));
+    
     const formData = new FormData();
     formData.append('file', file);
     formData.append('workerId', workerId);
     formData.append('tag', docType);
     formData.append('documentType', docType);
 
+    formData.append('tz', workerData?.id as string);
+
     uploadDocument(formData, {
       onSuccess: async (response) => {
         const documentId = response._id;
-        await attendanceService.updateAttendanceAttendanceDoc(attendanceId,docType, documentId);
+        await attendanceService.updateAttendanceAttendanceDoc(attendanceId, docType, documentId);
       },
       onError: (error) => {
         console.error('Error uploading document:', error);
+      },
+      onSettled: () => {
+        setUploadingDocs(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(`${attendanceId}-${docType}`);
+          return newSet;
+        });
       }
     });
   };
+
+  if (isAttendanceLoading) {
+    return (
+      <Paper sx={{ p: 2, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+        <CircularProgress />
+      </Paper>
+    );
+  }
 
   return (
     <Paper sx={{ p: 2 }}>
       <Typography variant="h6" gutterBottom>
         מסמכי נוכחות
       </Typography>
-      {isAttendanceLoading ? (
-        <CircularProgress />
-      ) : attendanceData && attendanceData.length > 0 ? (
+      {attendanceData && attendanceData.length > 0 ? (
         Object.entries(
           (attendanceData as AttendanceRecord[]).reduce((acc: { [key: string]: AttendanceRecord[] }, record: AttendanceRecord) => {
             const month = new Date(record.month).toLocaleString('he-IL', { year: 'numeric', month: 'long' });
@@ -143,20 +163,19 @@ const WorkerAttendanceDocuments: React.FC<WorkerAttendanceDocumentsProps> = ({
             <Stack spacing={1}>
               {Object.entries(
                 monthRecords.reduce((acc: { [key: string]: AttendanceRecord[] }, record: AttendanceRecord) => {
-                  console.log("record", record);
                   const classIdKey = typeof record.classId === 'string' ? record.classId : record.classId._id;
                   if (!acc[classIdKey]) acc[classIdKey] = [];
                   acc[classIdKey].push(record);
                   return acc;
                 }, {})
               ).map(([classId, classRecords]: [string, AttendanceRecord[]]) => {
-                console.log("classRecords", classRecords);
                 const className = typeof classRecords[0]?.classId === 'object'
                   ? (classRecords[0]?.classId as { name?: string }).name
                   : workerClasses?.find((c: Class) => c._id === classId)?.name || 'כיתה לא ידועה';
                 const classSymbol = typeof classRecords[0]?.classId === 'object'
                   ? (classRecords[0]?.classId as { uniqueSymbol?: string }).uniqueSymbol
                   : '';
+
                 return (
                   <Box key={classId} sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 2 }}>
                     <Tooltip title="מחק נוכחות לחודש זה">
@@ -329,7 +348,7 @@ const WorkerAttendanceDocuments: React.FC<WorkerAttendanceDocumentsProps> = ({
           </Box>
         ))
       ) : (
-        <Typography color="text.secondary">לא נמצאו מסמכי נוכחות</Typography>
+        <Typography>אין מסמכי נוכחות</Typography>
       )}
     </Paper>
   );

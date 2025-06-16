@@ -14,7 +14,6 @@ const API_URL = process.env.REACT_APP_API_URL+ "/api/attendance";
 export const attendanceService = {
   geAllAttendance: async () => {
     const response = await axios.get(`${API_URL}/`);
-    console.log("response", response.data);
     return response.data;
   },
   submitAttendance: async (data: AttendanceSubmission) => {
@@ -24,7 +23,6 @@ export const attendanceService = {
 
   getWorkerAttendance: async (workerId: string) => {
     const response = await axios.get(`${API_URL}/${workerId}`);
-    console.log("response", response.data);
     return response.data;
   },
 

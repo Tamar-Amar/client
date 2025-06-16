@@ -15,7 +15,7 @@ import {
   Divider,
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import { useFetchWorkers } from '../../queries/workerQueries';
+import { useFetchWorker, useFetchWorkers } from '../../queries/workerQueries';
 import { useWorkerDocuments } from '../../queries/useDocuments';
 
 const DocumentUpload: React.FC = () => {
@@ -32,6 +32,7 @@ const DocumentUpload: React.FC = () => {
   ];
 
   const { data: workers, isLoading } = useFetchWorkers();
+  const { data: workerData } = useFetchWorker(selectedEmployee);
   const { uploadDocument, isUploading } = useWorkerDocuments(selectedEmployee);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,10 +44,10 @@ const DocumentUpload: React.FC = () => {
 
   const handleUpload = () => {
     if (!file || !selectedEmployee || !documentType) return;
-
     const formData = new FormData();
     formData.append('file', file);
     formData.append('workerId', selectedEmployee);
+    formData.append('tz', workerData?.id as string);
     formData.append('tag', documentType);
     formData.append('documentType', documentType);
 
@@ -71,7 +72,7 @@ const DocumentUpload: React.FC = () => {
   return (
     <Paper elevation={3} sx={{ p: 3, mt: 4 }}>
       <Typography variant="h6" gutterBottom>
-        העלאת מסמך חדש
+        העלאת מסמך אישי חדש לעובד
       </Typography>
 
       <Divider sx={{ mb: 2 }} />

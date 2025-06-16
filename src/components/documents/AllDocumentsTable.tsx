@@ -133,73 +133,77 @@ const handleReject = (documentId: string) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredDocuments.map((doc) => {
-              const worker = getWorkerInfo(doc.operatorId);
-              return (
-<TableRow key={doc._id}>
-  <TableCell sx={{ fontWeight: 'bold', color: '#37474f' }}>
-    <Tooltip title="צפה במסמך">
-      <IconButton size="small" onClick={() => window.open(doc.url, '_blank')}>
-        <VisibilityIcon fontSize="small" color="info" />
-      </IconButton>
-    </Tooltip>
-  </TableCell>
-  <TableCell sx={{ color: '#37474f' }}>{worker.name}</TableCell>
-  <TableCell sx={{ color: '#37474f' }}>{worker.id}</TableCell>
-  <TableCell sx={{  color: '#37474f' }}>{doc.tag}</TableCell>
-  <TableCell sx={{ color: '#37474f' }}>{new Date(doc.createdAt).toLocaleDateString('he-IL')}</TableCell>
+            {filteredDocuments.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} align="center">
+                  לא קיימים מסמכים במערכת
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredDocuments.map((doc) => {
+                const worker = getWorkerInfo(doc.operatorId);
+                return (
+                  <TableRow key={doc._id}>
+                    <TableCell sx={{ fontWeight: 'bold', color: '#37474f' }}>
+                      <Tooltip title="צפה במסמך">
+                        <IconButton size="small" onClick={() => window.open(doc.url, '_blank')}>
+                          <VisibilityIcon fontSize="small" color="info" />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+                    <TableCell sx={{ color: '#37474f' }}>{worker.name}</TableCell>
+                    <TableCell sx={{ color: '#37474f' }}>{worker.id}</TableCell>
+                    <TableCell sx={{  color: '#37474f' }}>{doc.tag}</TableCell>
+                    <TableCell sx={{ color: '#37474f' }}>{new Date(doc.createdAt).toLocaleDateString('he-IL')}</TableCell>
 
-  <TableCell sx={{  color: '#37474f' }}>
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <TableCell sx={{  color: '#37474f' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {doc.status === 'מאושר' && (
+                          <Tooltip title="מאושר">
+                            <CheckCircleIcon sx={{ color: 'success.main' }} fontSize="small" />
+                          </Tooltip>
+                        )}
+                        {doc.status === 'נדחה' && (
+                          <Tooltip title="נדחה">
+                            <CancelIcon sx={{ color: 'error.main' }} fontSize="small" />
+                          </Tooltip>
+                        )}
+                        {doc.status === 'ממתין' && (
+                          <Tooltip title="ממתין">
+                            <HourglassEmptyIcon sx={{ color: 'warning.main' }} fontSize="small" />
+                          </Tooltip>
+                        )}
+                      </Box>
+                    </TableCell>
 
-      {doc.status === 'מאושר' && (
-        <Tooltip title="מאושר">
-          <CheckCircleIcon sx={{ color: 'success.main' }} fontSize="small" />
-        </Tooltip>
-      )}
-
-      {doc.status === 'נדחה' && (
-        <Tooltip title="נדחה">
-          <CancelIcon sx={{ color: 'error.main' }} fontSize="small" />
-        </Tooltip>
-      )}
-
-      {doc.status === 'ממתין' && (
-        <Tooltip title="ממתין">
-          <HourglassEmptyIcon sx={{ color: 'warning.main' }} fontSize="small" />
-        </Tooltip>
-      )}
-    </Box>
-  </TableCell>
-
-  <TableCell align="center">
-    {doc.status === 'ממתין' && (
-      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
-        <Tooltip title="אשר">
-          <IconButton
-            size="small"
-            onClick={() => handleApprove(doc._id!)}
-            disabled={isUpdatingStatus}
-          >
-            <CheckIcon fontSize="small" sx={{ color: 'success.main' }} />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="דחה">
-          <IconButton
-            size="small"
-            onClick={() => handleReject(doc._id!)}
-            disabled={isUpdatingStatus}
-          >
-            <CloseIcon fontSize="small" sx={{ color: 'error.main' }} />
-          </IconButton>
-        </Tooltip>
-      </Box>
-    )}
-  </TableCell>
-</TableRow>
-
-              );
-            })}
+                    <TableCell align="center">
+                      {doc.status === 'ממתין' && (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+                          <Tooltip title="אשר">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleApprove(doc._id!)}
+                              disabled={isUpdatingStatus}
+                            >
+                              <CheckIcon fontSize="small" sx={{ color: 'success.main' }} />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="דחה">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleReject(doc._id!)}
+                              disabled={isUpdatingStatus}
+                            >
+                              <CloseIcon fontSize="small" sx={{ color: 'error.main' }} />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
           </TableBody>
         </Table>
       </TableContainer>
