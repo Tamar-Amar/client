@@ -114,8 +114,9 @@ const WorkerAttendanceDocuments: React.FC<WorkerAttendanceDocumentsProps> = ({
     const formData = new FormData();
     formData.append('file', file);
     formData.append('workerId', workerId);
-    formData.append('tag', docType);
-    formData.append('documentType', docType);
+    const formattedDocType = docType === 'studentAttendanceDoc' ? 'נוכחות תלמידים' : docType === 'workerAttendanceDoc' ? 'נוכחות עובדים' : 'מסמך בקרה';
+    formData.append('tag', formattedDocType);
+    formData.append('documentType', formattedDocType);
 
     formData.append('tz', workerData?.id as string);
 
@@ -188,15 +189,15 @@ const WorkerAttendanceDocuments: React.FC<WorkerAttendanceDocumentsProps> = ({
                         <HighlightOffIcon />
                       </IconButton>
                     </Tooltip>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold', minWidth: 90 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold', minWidth: 100 }}>
                       {month}
                     </Typography>
-                    <Typography sx={{ minWidth: 120 }}>
+                    <Typography sx={{ minWidth: 180 }}>
                       {className} ({classSymbol})
                     </Typography>
                     <Divider orientation="vertical" flexItem sx={{ mx: 1, borderRightWidth: 1, borderColor: '#424242', opacity: 1 }} />
                     {/* Student Attendance */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 , minWidth: 120}}>
                       <Typography variant="body2" sx={{ minWidth: 80 }}>נוכחות תלמידים</Typography>
                       {classRecords[0]?.studentAttendanceDoc ? (
                         <>
@@ -245,7 +246,7 @@ const WorkerAttendanceDocuments: React.FC<WorkerAttendanceDocumentsProps> = ({
                     </Box>
                     <Divider orientation="vertical" flexItem sx={{ mx: 1, borderRightWidth: 1, borderColor: '#424242', opacity: 1 }} />
                     {/* Worker Attendance */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 , minWidth: 120}}>
                       <Typography variant="body2" sx={{ minWidth: 80 }}>נוכחות עובד</Typography>
                       {classRecords[0]?.workerAttendanceDoc ? (
                         <>
@@ -294,7 +295,7 @@ const WorkerAttendanceDocuments: React.FC<WorkerAttendanceDocumentsProps> = ({
                     </Box>
                     <Divider orientation="vertical" flexItem sx={{ mx: 1, borderRightWidth: 1, borderColor: '#424242', opacity: 1 }} />
                     {/* Control Document */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 120 }}>
                       <Typography variant="body2" sx={{ minWidth: 80 }}>מסמך בקרה</Typography>
                       {classRecords[0]?.controlDoc ? (
                         <>

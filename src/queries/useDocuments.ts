@@ -54,6 +54,7 @@ export const useWorkerDocuments = (workerId: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['worker-documents', workerId] });
       queryClient.invalidateQueries({ queryKey: ['worker-attendance', workerId] });
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
     }
   });
 
@@ -62,6 +63,7 @@ export const useWorkerDocuments = (workerId: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['worker-documents', workerId] });
       queryClient.invalidateQueries({ queryKey: ['worker-attendance', workerId] });
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
     }
   });
 
@@ -71,6 +73,7 @@ export const useWorkerDocuments = (workerId: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['worker-documents', workerId] });
       queryClient.invalidateQueries({ queryKey: ['worker-attendance', workerId] });
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
     }
   });
 
@@ -81,6 +84,7 @@ export const useWorkerDocuments = (workerId: string) => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       queryClient.invalidateQueries({ queryKey: ['worker-documents', workerId] });
       queryClient.invalidateQueries({ queryKey: ['worker-attendance', workerId] });
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
     }
   });
 

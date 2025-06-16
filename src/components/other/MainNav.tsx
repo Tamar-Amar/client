@@ -58,38 +58,37 @@ const MainNav: React.FC = () => {
 
   return (
     <>
-      <AppBar position="fixed" sx={{ top: 0, bgcolor: '#1976d2' }}>
+      <AppBar position="fixed" sx={{ top: 0, bgcolor: 'rgb(37, 104, 197)' }}>
         <Toolbar sx={{ justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Button
-              color="inherit"
               startIcon={<SchoolIcon />}
               onClick={(e) => setSelectedSection('afternoon')}
               sx={{
+                color: 'white',
                 fontSize: '1.1rem',
-                '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' }
               }}
             >
               צהרון
             </Button>
             <Button
-              color="inherit"
               startIcon={<EventIcon />}
               onClick={(e) => setSelectedSection('camps')}
               sx={{
+                color: 'white',
                 fontSize: '1.1rem',
-                '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' }
+                '&:hover': { bgcolor:'rgb(182, 207, 241)'}
               }}
             >
               קייטנות
             </Button>
             <Button
-              color="inherit"
               startIcon={<GroupsIcon />}
               onClick={(e) => setSelectedSection('courses')}
               sx={{
+                color: 'white',
                 fontSize: '1.1rem',
-                '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' }
+                '&:hover': { bgcolor:'rgb(182, 207, 241)' }
               }}
             >
               חוגים

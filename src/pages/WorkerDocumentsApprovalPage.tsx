@@ -3,8 +3,6 @@ import { useParams } from 'react-router-dom';
 import {
   Box,
   Typography,
-  Paper,
-  IconButton,
   Stack,
   CircularProgress,
   Alert,
@@ -15,9 +13,6 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  FormControl,
-  InputLabel,
-  Select,
   MenuItem,
   Grid,
   Autocomplete
@@ -35,10 +30,10 @@ import { Class } from '../types';
 import WorkerPersonalDocuments from '../components/workers/documents/WorkerPersonalDocuments';
 import WorkerAttendanceDocuments from '../components/workers/documents/WorkerAttendanceDocuments';
 import { he } from 'date-fns/locale';
-import DeleteIcon from '@mui/icons-material/Delete';
 import { CloudUpload as CloudUploadIcon } from '@mui/icons-material';
 import { DOCUMENT_TYPES } from './WorkerProfilePage';
-import { deleteDocument } from '../services/documentService';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+
 
 interface AttendanceRecord {
   _id: string;
@@ -278,21 +273,24 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
         </Box>
       )}
 
-      {documents && (
-        <>
-          {[
-            { tag: 'אישור משטרה', label: 'אישור משטרה' },
-            { tag: 'תעודת הוראה', label: 'תעודת הוראה' },
-          ].map(({ tag, label }) => {
-            const hasDoc = documents.some(doc => doc.tag === tag && doc.status === 'מאושר');
-            return !hasDoc ? (
-              <Alert key={tag} severity="warning" sx={{ mb: 1 }}>
-                חסר לעובד {label} מאושר/ת
-              </Alert>
-            ) : null;
-          })}
-        </>
-      )}
+{documents && (
+  <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
+    {[{ tag: 'אישור משטרה', label: 'אישור משטרה' },
+      { tag: 'תעודת הוראה', label: 'תעודת הוראה' },
+    ].map(({ tag, label }) => {
+      const hasDoc = documents.some(doc => doc.tag === tag && doc.status === 'מאושר');
+      return !hasDoc ? (
+        <Tooltip title={`חסר ${label}`}>
+          <Typography key={tag} variant="body2" color="warning.main" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <WarningAmberIcon fontSize="small" />
+            {label}
+          </Typography>
+        </Tooltip>
+      ) : null;
+    })}
+  </Stack>
+)}
+
 
       {isLoading && <CircularProgress />}
       {error && <Alert severity="error">שגיאה בטעינת המסמכים</Alert>}

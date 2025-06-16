@@ -69,9 +69,9 @@ const DynamicNavbar: React.FC<DynamicNavbarProps> = ({ onLogout, selectedSection
   ];
 
   const managerTabs = [
-    { label: 'ניהול מסמכים', path: '/documents', icon: <FolderIcon fontSize="small" /> },
-    { label: 'מסמכים לעובד', path: '/workers-documents', icon: <FolderIcon fontSize="small" /> },
-    { label: 'דיווחי נוכחות', path: '/worker-attendance', icon: <FolderIcon fontSize="small" /> },
+    { label: 'ניהול מסמכים', path: '/documents' },
+    { label: 'מסמכים לעובד', path: '/workers-documents' },
+    { label: 'דיווחי נוכחות', path: '/worker-attendance' },
   ];
 
   const operatorTabs = [
@@ -124,16 +124,12 @@ const DynamicNavbar: React.FC<DynamicNavbarProps> = ({ onLogout, selectedSection
             '& .MuiTab-root': {
               minHeight: 35,
               minWidth: 120,
-              borderRadius: 1,
-              backgroundColor: 'white',
               color: 'rgb(2, 10, 126)',
               transition: 'all 0.3s',
               '&:hover': {
-                backgroundColor: 'rgb(0, 11, 109)',
-                color: 'white',
+                backgroundColor:'rgb(203, 225, 255)' 
               },
               '&.Mui-selected': {
-                backgroundColor: 'white',
                 color: '#1976d2',
               },
             },
@@ -144,7 +140,6 @@ const DynamicNavbar: React.FC<DynamicNavbarProps> = ({ onLogout, selectedSection
               key={tab.path}
               label={
                 <Stack direction="row" alignItems="center" spacing={1}>
-                  {tab.icon}
                   <span>{tab.label}</span>
                 </Stack>
               }

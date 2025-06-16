@@ -92,63 +92,67 @@ const WorkerAttendancePage: React.FC = () => {
         />
       </Stack>
 
-      <TableContainer component={Paper}>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>חודש</TableCell>
-              <TableCell>סמל קבוצה</TableCell>
-              <TableCell>מסמכים</TableCell>
-              <TableCell>סטטוס</TableCell>
-              <TableCell>מזהה עובד</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredData.map(({ month, symbol, records }) => {
-              const docs = [
-                records[0]?.studentAttendanceDoc,
-                records[0]?.workerAttendanceDoc,
-                records[0]?.controlDoc
-              ];
-              const isOk = docs.filter(Boolean).length >= 2;
-              const workerId = records[0]?.workerId || '';
+      <TableContainer component={Paper} sx={{ maxHeight: 600, overflowY: 'auto' }}>
+  <Table stickyHeader size="small">
+    <TableHead>
+      <TableRow>
+        <TableCell sx={{ fontWeight: 'bold' }}>חודש</TableCell>
+        <TableCell sx={{ fontWeight: 'bold' }}>סמל קבוצה</TableCell>
+        <TableCell sx={{ fontWeight: 'bold' }}>מסמכים</TableCell>
+        <TableCell sx={{ fontWeight: 'bold' }}>סטטוס</TableCell>
+        <TableCell sx={{ fontWeight: 'bold' }}>שם עובד</TableCell>
+      </TableRow>
+    </TableHead>
+    <TableBody>
+      {filteredData.map(({ month, symbol, records }) => {
+        const docs = [
+          records[0]?.studentAttendanceDoc,
+          records[0]?.workerAttendanceDoc,
+          records[0]?.controlDoc
+        ];
+        const isOk = docs.filter(Boolean).length >= 2;
+        const workerId = records[0]?.workerId || '';
+        const fullName = typeof workerId === 'object'
+          ? `${workerId.firstName || ''} ${workerId.lastName || ''} (${workerId.id || ''})`
+          : workerId;
 
-              return (
-                <TableRow key={month + symbol}>
-                  <TableCell>{month}</TableCell>
-                  <TableCell>{symbol} </TableCell>
-                  <TableCell>
-                    <Stack direction="row" spacing={1}>
-                      {docs.map((doc, idx) =>
-                        doc ? (
-                          <Tooltip key={doc._id || idx} title={`צפייה במסמך (${getDocLabel(idx)})`}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                              <IconButton onClick={() => window.open(doc.url, '_blank')}>
-                                <VisibilityIcon fontSize="small" />
-                              </IconButton>
-                              <Typography variant="caption">{getDocLabel(idx)}</Typography>
-                            </Box>
-                          </Tooltip>
-                        ) : null
-                      )}
-                    </Stack>
-                  </TableCell>
-                  <TableCell>
-                    {isOk ? (
-                      <Typography color="success.main">תקין</Typography>
-                    ) : (
-                      <Tooltip title="חסרים מסמכי נוכחות">
-                        <WarningAmberIcon color="warning" />
-                      </Tooltip>
-                    )}
-                  </TableCell>
-                  <TableCell>{typeof workerId === 'object' ? workerId.id+' '+ workerId.firstName + ' ' + workerId.lastName : workerId}</TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </TableContainer>
+        return (
+          <TableRow key={month + symbol}>
+            <TableCell>{month}</TableCell>
+            <TableCell>{symbol}</TableCell>
+            <TableCell>
+              <Stack direction="row" spacing={1}>
+                {docs.map((doc, idx) =>
+                  doc ? (
+                    <Tooltip key={doc._id || idx} title={`צפייה במסמך (${getDocLabel(idx)})`}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <IconButton onClick={() => window.open(doc.url, '_blank')}>
+                          <VisibilityIcon fontSize="small" />
+                        </IconButton>
+                        <Typography variant="caption">{getDocLabel(idx)}</Typography>
+                      </Box>
+                    </Tooltip>
+                  ) : null
+                )}
+              </Stack>
+            </TableCell>
+            <TableCell>
+              {isOk ? (
+                <Typography color="success.main">תקין</Typography>
+              ) : (
+                <Tooltip title="חסרים מסמכי נוכחות">
+                  <WarningAmberIcon color="warning" />
+                </Tooltip>
+              )}
+            </TableCell>
+            <TableCell>{fullName}</TableCell>
+          </TableRow>
+        );
+      })}
+    </TableBody>
+  </Table>
+</TableContainer>
+
     </Box>
   );
 };

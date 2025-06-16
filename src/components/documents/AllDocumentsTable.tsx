@@ -113,6 +113,9 @@ const handleReject = (documentId: string) => {
             <MenuItem value="תעודת זהות">תעודת זהות</MenuItem>
             <MenuItem value="אישור משטרה">אישור משטרה</MenuItem>
             <MenuItem value="תעודת הוראה">תעודת הוראה</MenuItem>
+            <MenuItem value="נוכחות תלמידים">נוכחות תלמידים</MenuItem>
+            <MenuItem value="נוכחות עובדים">נוכחות עובדים</MenuItem>
+            <MenuItem value="מסמך בקרה">מסמך בקרה</MenuItem>
             <MenuItem value="אחר">אחר</MenuItem>
           </Select>
         </FormControl>

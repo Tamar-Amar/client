@@ -27,6 +27,7 @@ export const useAttendance = (workerId: string) => {
     mutationFn: (data: AttendanceSubmission) => attendanceService.submitAttendance(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['worker-attendance', workerId] });
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
     }
   });
 
@@ -34,6 +35,7 @@ export const useAttendance = (workerId: string) => {
     mutationFn: (id: string) => attendanceService.deleteAttendanceRecord(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['worker-attendance', workerId] });
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
     }
   });
 
