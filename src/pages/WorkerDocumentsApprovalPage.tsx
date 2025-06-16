@@ -97,9 +97,9 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
   } = useWorkerDocuments(workerId || '');
   const { data: workerData } = useFetchWorker(workerId || '');
   const { 
-    attendance: attendanceData, 
+    workerAttendance: attendanceData, 
     isLoading: isAttendanceLoading,
-    submitAttendance 
+    submitAttendance,
   } = useAttendance(workerId || '');
   console.log("attendanceData", attendanceData);
 

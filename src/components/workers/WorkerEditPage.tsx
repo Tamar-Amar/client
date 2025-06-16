@@ -84,9 +84,7 @@ interface WorkerEditPageProps {
 }
 
 const WorkerEditPage: React.FC<WorkerEditPageProps> = ({ workerId }) => {
-  console.log("Worker in edit page:", workerId);
   const { data: worker, isLoading } = useFetchWorker(workerId);
-  console.log("Worker in edit page2:", worker);
   const theme = useTheme();
   const navigate = useNavigate();
   const { data: classes = [] } = useFetchClasses();
@@ -94,9 +92,7 @@ const WorkerEditPage: React.FC<WorkerEditPageProps> = ({ workerId }) => {
   const { availableTags, isLoading: isLoadingTags, updateTags, workerTags } = useWorkerTags(worker?._id || '');
   const [isEditingTags, setIsEditingTags] = useState(false);
   
-  // המרת תגיות ממבנה מונגו למערך של מזהים פשוטים
   const convertMongoTags = (tags: any[] = []): string[] => {
-    console.log("Tags from worker:", tags);
     return tags.map(tag => typeof tag === 'string' ? tag : tag.$oid);
   };
 

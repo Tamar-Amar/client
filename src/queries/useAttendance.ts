@@ -18,6 +18,11 @@ export const useAttendance = (workerId: string) => {
     queryFn: () => attendanceService.geAllAttendance()
   });
 
+  const workerAttendance = useQuery({
+    queryKey: ['worker-attendance', workerId],
+    queryFn: () => attendanceService.getWorkerAttendance(workerId)
+  });
+
   const submitAttendanceMutation = useMutation({
     mutationFn: (data: AttendanceSubmission) => attendanceService.submitAttendance(data),
     onSuccess: () => {
@@ -34,6 +39,7 @@ export const useAttendance = (workerId: string) => {
 
   return {
     attendance: attendance.data || [],
+    workerAttendance: workerAttendance.data || [],
     isLoading: attendance.isLoading,
     isError: attendance.isError,
     error: attendance.error,

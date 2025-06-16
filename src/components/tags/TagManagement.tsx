@@ -44,7 +44,6 @@ const TagManagement = () => {
     isDeleting,
     isUpdating
   } = useWorkerTags('all'); // Using 'all' to get all tags
-  console.log("Available tags:", availableTags);
 
   const handleCreateTag = () => {
     if (newTagName.trim()) {

@@ -24,7 +24,6 @@ const PendingDocuments: React.FC = () => {
   const { updateStatus, isUpdatingStatus } = useWorkerDocuments('all');
 
   const pendingDocuments = documents.filter((doc: Document) => doc.status === DocumentStatus.PENDING);
-  console.log("pendingDocuments", pendingDocuments);
 
   const getOperatorDetails = (operatorId: string): { name: string; id: string } => {
     const worker = workers?.find((w: Worker) => w._id === operatorId);

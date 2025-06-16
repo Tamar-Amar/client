@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import AppRoutes from './routes/AppRoutes';
-import DynamicNavbar from './components/other/DynamicNavbar';
+import MainNav from './components/other/MainNav';
 import { jwtDecode } from 'jwt-decode';
 import { useSetRecoilState } from 'recoil';
 import { userRoleState, userTokenState } from './recoil/storeAtom';
@@ -13,7 +13,6 @@ interface DecodedToken {
   role: "admin" | "operator";
   exp: number;
 }
-
 
 const AppContent = () => {
   const location = useLocation();
@@ -31,18 +30,14 @@ const AppContent = () => {
     }
   }, [setUserRole, setUserToken]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    window.location.href = '/login';
-  };
-
   const isPublic = location.pathname === '/public-report';
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' , mt: '64px' }}>
-      {!isPublic && <DynamicNavbar onLogout={handleLogout} />}
-      <AppRoutes />
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      {!isPublic && <MainNav />}
+      <Box sx={{ mt: '128px' }}>
+        <AppRoutes />
+      </Box>
     </Box>
   );
 };

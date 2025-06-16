@@ -70,6 +70,7 @@ export const useWorkerDocuments = (workerId: string) => {
       updateOperatorDocuments(params.tempId, params.newOperatorId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['worker-documents', workerId] });
+      queryClient.invalidateQueries({ queryKey: ['worker-attendance', workerId] });
     }
   });
 
@@ -79,6 +80,7 @@ export const useWorkerDocuments = (workerId: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       queryClient.invalidateQueries({ queryKey: ['worker-documents', workerId] });
+      queryClient.invalidateQueries({ queryKey: ['worker-attendance', workerId] });
     }
   });
 

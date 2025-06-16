@@ -47,7 +47,6 @@ const WorkerDocuments: React.FC<Props> = ({ workerId }) => {
     isDeleting
   } = useWorkerDocuments(workerId);
 
-  console.log("documents",documents)
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

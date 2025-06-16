@@ -4,7 +4,6 @@ import { WorkerTag } from '../types';
 const API_URL = process.env.REACT_APP_API_URL + '/api/tags' || "https://server-manage.onrender.com/api/tags";
 
 export const fetchAllTags = async (): Promise<WorkerTag[]> => {
-  console.log("Fetching all tags");
   const response = await axios.get(API_URL);
   return response.data;
 };

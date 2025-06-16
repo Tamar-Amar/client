@@ -108,7 +108,6 @@ const WorkerCreate: React.FC<Props> = ({ onSuccess, mode = 'create' }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: existingWorkerData } = useFetchWorker(id || '');
-  console.log("Existing worker data:", existingWorkerData);
 
   const formik = useFormik<FormValues>({
     initialValues: {

@@ -41,8 +41,8 @@ const WorkerAttendanceDocuments: React.FC<WorkerAttendanceDocumentsProps> = ({
       setDeletingDocIds(prev => new Set([...prev, docId]));
       
       deleteDocument(docId, {
-        onSuccess: () => {
-          // Check if all documents for this month and class are deleted
+        onSuccess: async () => {
+          // Find the attendance record
           const record = attendanceData.find(r => {
             const recordMonth = new Date(r.month).toLocaleString('he-IL', { year: 'numeric', month: 'long' });
             const recordClassId = typeof r.classId === 'string' ? r.classId : r.classId._id;
@@ -50,6 +50,22 @@ const WorkerAttendanceDocuments: React.FC<WorkerAttendanceDocumentsProps> = ({
           });
 
           if (record) {
+            // Determine which document type was deleted
+            let docType = '';
+            if (record.studentAttendanceDoc?._id === docId) {
+              docType = 'studentAttendanceDoc';
+            } else if (record.workerAttendanceDoc?._id === docId) {
+              docType = 'workerAttendanceDoc';
+            } else if (record.controlDoc?._id === docId) {
+              docType = 'controlDoc';
+            }
+
+            if (docType) {
+              // Update the attendance record to remove the document reference
+              await attendanceService.updateAttendanceAfterDocDelete(record._id, docType);
+            }
+
+            // Check if all documents for this month and class are deleted
             const hasRemainingDocs = record.studentAttendanceDoc || record.workerAttendanceDoc || record.controlDoc;
             if (!hasRemainingDocs) {
               handleDeleteMonth(month, classId);
@@ -96,14 +112,10 @@ const WorkerAttendanceDocuments: React.FC<WorkerAttendanceDocumentsProps> = ({
     formData.append('tag', docType);
     formData.append('documentType', docType);
 
-    // שלב 1: העלאת המסמך
     uploadDocument(formData, {
       onSuccess: async (response) => {
         const documentId = response._id;
-        console.log("documentId", documentId);
-        // שלב 2: עדכון רשומת הנוכחות
         await attendanceService.updateAttendanceAttendanceDoc(attendanceId,docType, documentId);
-        // רענון נתונים (אם יש לך refetch או invalidateQueries)
       },
       onError: (error) => {
         console.error('Error uploading document:', error);
@@ -131,12 +143,14 @@ const WorkerAttendanceDocuments: React.FC<WorkerAttendanceDocumentsProps> = ({
             <Stack spacing={1}>
               {Object.entries(
                 monthRecords.reduce((acc: { [key: string]: AttendanceRecord[] }, record: AttendanceRecord) => {
+                  console.log("record", record);
                   const classIdKey = typeof record.classId === 'string' ? record.classId : record.classId._id;
                   if (!acc[classIdKey]) acc[classIdKey] = [];
                   acc[classIdKey].push(record);
                   return acc;
                 }, {})
               ).map(([classId, classRecords]: [string, AttendanceRecord[]]) => {
+                console.log("classRecords", classRecords);
                 const className = typeof classRecords[0]?.classId === 'object'
                   ? (classRecords[0]?.classId as { name?: string }).name
                   : workerClasses?.find((c: Class) => c._id === classId)?.name || 'כיתה לא ידועה';
@@ -145,7 +159,7 @@ const WorkerAttendanceDocuments: React.FC<WorkerAttendanceDocumentsProps> = ({
                   : '';
                 return (
                   <Box key={classId} sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 2 }}>
-                    <Tooltip title="מחק את כל רשום הנוכחות לחודש זה">
+                    <Tooltip title="מחק נוכחות לחודש זה">
                       <IconButton
                         color="error"
                         onClick={() => handleDeleteMonth(month, classId)}

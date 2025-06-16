@@ -29,10 +29,8 @@ const ROWS_PER_PAGE = 15;
 
 const WorkersDocumentsList: React.FC = () => {
   const { data: workers = [], isLoading, error } = useFetchWorkers();
-  console.log(workers);
   const { data: classes = [] } = useFetchClasses();
   const { data: documents = [] } = useFetchAllDocuments();
-  console.log(documents);
 
   const deleteWorkerMutation = useDeleteWorker();
   const [searchQuery, setSearchQuery] = useState('');
