@@ -15,7 +15,7 @@ import EmailPage from '../pages/EmailPage';
 import PublicReportPage from '../components/activities/addActivity/PublicReportPage';
 import { jwtDecode } from 'jwt-decode';
 import PersonalDocuments from '../components/operators/PersonalDocuments';
-import WorkersPage from '../pages/WorkersPage';
+import WorkersAfterNoonPage from '../pages/WorkersAfterNoonPage';
 import DocumentManagementPage from '../pages/DocumentManagementPage';
 import WorkerProfilePage from '../pages/WorkerProfilePage';
 import WorkersDocumentsPage from '../pages/WorkersDocumentsPage';
@@ -43,7 +43,7 @@ const AppRoutes: React.FC = () => {
 
       <Route element={<ProtectedRoute allowedRoles={['manager', 'admin']} />}>
         <Route path="/documents" element={<DocumentManagementPage />} />
-        <Route path="/workers" element={<WorkersPage />} />
+        <Route path="/workers" element={<WorkersAfterNoonPage />} />
         <Route path="/workers-documents" element={<WorkersDocumentsPage />} />
         <Route path="/workers-documents/:id" element={<WorkerDocumentsApprovalPage />} />
         <Route path="/workers-documents-email" element={<WorkersDocumentsEmailPage />} />

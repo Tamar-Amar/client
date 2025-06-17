@@ -8,6 +8,7 @@ import { useDeleteAllWorkersAfterNoon, useFetchAllWorkersAfterNoon } from '../qu
 import ExcelImport from '../components/workers/ExcelImport';
 import WorkersDocumentsList from '../components/workers/WorkersDocumentsList';
 import { useNavigate } from 'react-router-dom';
+import { useFetchClasses } from '../queries/classQueries';
 const WorkersDocumentsPage: React.FC = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -17,6 +18,9 @@ const WorkersDocumentsPage: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteProgress, setDeleteProgress] = useState(0);
   const navigate = useNavigate();
+
+  const { data: classes = [] } = useFetchClasses();
+  console.log(classes);
 
 
   const handleDeleteAll = async () => {
@@ -42,7 +46,7 @@ const WorkersDocumentsPage: React.FC = () => {
       <Box sx={{ p: 2 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
           <Typography variant="h4" fontWeight="bold">
-            {isCreating ? 'הוספת עובד חדש' : 'ניהול עובדי צהרון'}
+            {isCreating ? 'הוספת עובד חדש' : 'ניהול עובדים '}
           </Typography>
           <Box display="flex" gap={1}>
 

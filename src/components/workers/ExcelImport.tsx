@@ -3,7 +3,7 @@ import { Button, Box, Typography, Table, TableBody, TableCell, TableContainer, T
 import DeleteIcon from '@mui/icons-material/Delete';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import * as XLSX from 'xlsx';
-import { useFetchClasses } from '../../queries/classQueries';
+import { useFetchClasses, updateClassWithWorker } from '../../queries/classQueries';
 import { useAddWorkerAfterNoon, useFetchAllWorkersAfterNoon } from '../../queries/workerAfterNoonQueries';
 import { WorkerAfterNoon, Class } from '../../types';
 import { normalizePhone, isValidPhone, formatDate, validateIsraeliID, parseDate } from './excelImportUtils';
@@ -30,6 +30,7 @@ interface ExcelRow {
 interface PreviewWorker extends Omit<WorkerAfterNoon, '_id'> {
   _id?: string;
   isDuplicate?: boolean;
+  workingSymbol?: string;
 }
 
 interface ExcelImportProps {
@@ -87,14 +88,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
     const endDate = new Date(parseDate(row.__EMPTY_19));
     
     const symbol = row.__EMPTY?.toString().trim();
-    let workingSymbols: string[] = [];
-    
-    if (symbol) {
-      const classId = findClassIdBySymbol(symbol);
-      if (classId) {
-        workingSymbols = [classId];
-      }
-    }
+
 
     
     return {
@@ -114,7 +108,8 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       roleName: row.__EMPTY_12 || 'לא נבחר',
       accountantCode: row.__EMPTY_9 || 'לא נבחר',
       project: 'צהרון',
-      notes:'לא נבחר',
+      notes:'לא נבחר',     
+      workingSymbol: symbol || ''  
     };
   };
 
@@ -227,10 +222,18 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
         seen.add(w.id);
         return true;
       });
-
       for (const worker of toImport) {
         const normalizedWorker = { ...worker, phone: normalizePhone(worker.phone) };
-        await addWorkerMutation.mutateAsync(normalizedWorker);
+        const savedWorker = await addWorkerMutation.mutateAsync(normalizedWorker);
+        const classSymbol = worker.workingSymbol;
+        const classObj = classes.find((c: Class) => c.uniqueSymbol === classSymbol);
+        if (classObj) {
+          if (!classObj.workerAfterNoonId1) {
+            await updateClassWithWorker(classObj._id, { workerAfterNoonId1: savedWorker._id });
+          } else if (!classObj.workerAfterNoonId2) {
+            await updateClassWithWorker(classObj._id, { workerAfterNoonId2: savedWorker._id });
+          }
+        }
       }
       alert('הייבוא הושלם בהצלחה!');
       setPreviewData([]);
@@ -301,7 +304,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       </Backdrop>
 
       <Box sx={{ mb: 2 }}>
-        <Tooltip title="העלה קובץ אקסל עם רשימת העובדים. הקובץ צריך להכיל את הפרטים הבאים: תעודת זהות, שם פרטי, שם משפחה, טלפון, אימייל, סמל מוסד">
           <Button
             variant="contained"
             component="label"
@@ -333,7 +335,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
               disabled={isUploading || isImporting}
             />
           </Button>
-        </Tooltip>
       </Box>
 
       {previewData.length > 0 ? (

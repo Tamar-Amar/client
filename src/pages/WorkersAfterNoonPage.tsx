@@ -5,17 +5,21 @@ import CloseIcon from '@mui/icons-material/Close';
 import WorkersList from '../components/workers/WorkersList';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
-import { useDeleteWorkerAfterNoon, useFetchAllWorkersAfterNoon } from '../queries/workerAfterNoonQueries';
+import { useDeleteAllWorkersAfterNoon, useFetchAllWorkersAfterNoon } from '../queries/workerAfterNoonQueries';
 import ExcelImport from '../components/workers/ExcelImport';
+import { useFetchClasses } from '../queries/classQueries';
+import WorkerAfterNoonForm from '../components/workers/WorkerAfterNoonForm';
 
 const WorkersPage: React.FC = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const deleteWorkerMutation = useDeleteWorkerAfterNoon();
+  const deleteAllWorkersMutation = useDeleteAllWorkersAfterNoon();
   const { data: workers = [] } = useFetchAllWorkersAfterNoon();
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteProgress, setDeleteProgress] = useState(0);
+  const { data: classes = [] } = useFetchClasses();
+  console.log(classes);
 
   const handleDeleteAll = async () => {
     try {
@@ -23,11 +27,8 @@ const WorkersPage: React.FC = () => {
       setShowDeleteConfirm(false);
       setDeleteProgress(0);
 
-      const totalWorkers = workers.length;
-      for (let i = 0; i < workers.length; i++) {
-        await deleteWorkerMutation.mutateAsync(workers[i]._id);
-        setDeleteProgress(((i + 1) / totalWorkers) * 100);
-      }
+      await deleteAllWorkersMutation.mutateAsync();
+      setDeleteProgress(100);
 
       alert(`נמחקו ${workers.length} עובדים בהצלחה`);
     } catch (error) {
@@ -44,7 +45,7 @@ const WorkersPage: React.FC = () => {
       <Box sx={{ p: 2 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
           <Typography variant="h4" fontWeight="bold">
-            {isCreating ? 'הוספת עובד חדש' : 'ניהול עובדים'}
+            {isCreating ? 'הוספת עובד חדש' : 'ניהול עובדי צהרון'}
           </Typography>
           <Box display="flex" gap={1}>
             {!isCreating && (
@@ -97,33 +98,39 @@ const WorkersPage: React.FC = () => {
           </Box>
         </Box>
 
-        {isDeleting && (
-          <Box sx={{ width: '100%', mb: 2 }}>
-            <LinearProgress 
-              variant="determinate" 
-              value={deleteProgress} 
-              color="error"
-              sx={{
-                height: 8,
-                borderRadius: 4,
-                '& .MuiLinearProgress-bar': {
-                  borderRadius: 4,
-                }
-              }}
-            />
-            <Typography 
-              variant="body2" 
-              color="text.secondary" 
-              align="center" 
-              sx={{ mt: 0.5 }}
-            >
-              {`מוחק ${Math.round(deleteProgress)}% מהעובדים...`}
-            </Typography>
-          </Box>
-        )}
+        {isCreating ? (
+          <WorkerAfterNoonForm onSuccess={() => setIsCreating(false)} />
+        ) : (
+          <>
+            {isDeleting && (
+              <Box sx={{ width: '100%', mb: 2 }}>
+                <LinearProgress 
+                  variant="determinate" 
+                  value={deleteProgress} 
+                  color="error"
+                  sx={{
+                    height: 8,
+                    borderRadius: 4,
+                    '& .MuiLinearProgress-bar': {
+                      borderRadius: 4,
+                    }
+                  }}
+                />
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary" 
+                  align="center" 
+                  sx={{ mt: 0.5 }}
+                >
+                  {`מוחק ${Math.round(deleteProgress)}% מהעובדים...`}
+                </Typography>
+              </Box>
+            )}
 
-        <Divider sx={{ mb: 3 }} />
-        <WorkersList />
+            <Divider sx={{ mb: 3 }} />
+            <WorkersList />
+          </>
+        )}
       </Box>
 
       {/* Delete confirmation dialog */}
