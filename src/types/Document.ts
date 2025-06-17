@@ -11,6 +11,13 @@ export const REQUIRED_DOCUMENTS: DocumentType[] = [
   DocumentType.TEACHING_CERTIFICATE
 ];
 
+export enum DocumentStatus {
+  PENDING = 'ממתין',
+  APPROVED = 'מאושר',
+  REJECTED = 'נדחה',
+  EXPIRED = 'פג תוקף'
+}
+
 export interface Document {
   _id: string;
   operatorId: string;
@@ -20,16 +27,10 @@ export interface Document {
   tag: DocumentType;
   s3Key: string;
   url: string;
-  expiryDate?: Date;
+  expiryDate: Date;
   uploadedBy: string;
-  status: 'ממתין' | 'מאושר' | 'נדחה';
+  status: DocumentStatus;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export enum DocumentStatus {
-  PENDING = 'ממתין',
-  APPROVED = 'מאושר',
-  REJECTED = 'נדחה',
-  EXPIRED = 'פג תוקף'
-}

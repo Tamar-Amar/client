@@ -15,7 +15,13 @@ import {
   TextField,
   MenuItem,
   Grid,
-  Autocomplete
+  Autocomplete,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  Divider
 } from '@mui/material';
 import { useWorkerDocuments } from '../queries/useDocuments';
 import { DocumentStatus } from '../types/Document';
@@ -108,6 +114,10 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [documentType, setDocumentType] = useState<DocumentType | "NULL">("NULL");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [expirationDate, setExpirationDate] = useState<Date | null>(null);
+  const [selectedTab, setSelectedTab] = useState<'documents' | 'personal'>('documents');
+  const [drawerOpen, setDrawerOpen] = useState(true);
+
 
   const handleStatusUpdate = (docId: string, newStatus: DocumentStatus) => {
     updateStatus({ documentId: docId, status: newStatus });
@@ -242,10 +252,14 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
     formData.append('file', selectedFile);
     formData.append('workerId', workerId);
     formData.append('documentType', documentType as string);
+    if (expirationDate) {
+      formData.append('expiryDate', expirationDate.toISOString());
+    }
     uploadDocument(formData, {
       onSuccess: () => {
         setSelectedFile(null);
         setDocumentType("NULL");
+        setExpirationDate(null);
         setIsPersonalDocDialogOpen(false);
         if (fileInputRef.current) fileInputRef.current.value = '';
       }
@@ -257,74 +271,7 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
   };
 
   return (
-    <Box p={4}>
-      <Typography variant="h5" gutterBottom>
-        ניהול מסמכים לעובד
-      </Typography>
-
-      {workerData && (
-        <Box mb={3}>
-          <Typography variant="subtitle1">
-            <strong>שם מלא:</strong> {workerData.lastName} {workerData.firstName}
-          </Typography>
-          <Typography variant="subtitle1">
-            <strong>תעודת זהות:</strong> {workerData.id}
-          </Typography>
-        </Box>
-      )}
-
-{documents && (
-  <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
-    {[{ tag: 'אישור משטרה', label: 'אישור משטרה' },
-      { tag: 'תעודת הוראה', label: 'תעודת הוראה' },
-    ].map(({ tag, label }) => {
-      const hasDoc = documents.some(doc => doc.tag === tag && doc.status === 'מאושר');
-      return !hasDoc ? (
-        <Tooltip title={`חסר ${label}`}>
-          <Typography key={tag} variant="body2" color="warning.main" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <WarningAmberIcon fontSize="small" />
-            {label}
-          </Typography>
-        </Tooltip>
-      ) : null;
-    })}
-  </Stack>
-)}
-
-
-      {isLoading && <CircularProgress />}
-      {error && <Alert severity="error">שגיאה בטעינת המסמכים</Alert>}
-
-      <Stack spacing={2} mt={3}>
-      <Box m={4}>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => setIsPersonalDocDialogOpen(true)}
-        >
-          העלאת מסמכים אישיים
-        </Button>
-      </Box>
-        <WorkerPersonalDocuments
-          documents={documents}
-          handleStatusUpdate={handleStatusUpdate}
-          handleDelete={handleDelete}
-        />
-      <Box m={4}>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleOpenAttendanceDialog}
-        >
-          דיווח נוכחות חודשית
-        </Button>
-      </Box>
-        <WorkerAttendanceDocuments
-          attendanceData={attendanceData}
-          isAttendanceLoading={isAttendanceLoading}
-          workerClasses={workerClasses}
-        />
-      </Stack>
+    <Box p={4} >
 
       {/* Monthly Attendance Dialog */}
       <Dialog 
@@ -452,6 +399,15 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
             >
               {selectedFile ? selectedFile.name : 'בחר קובץ'}
             </Button>
+            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={he}>
+              <DatePicker
+                label="  תוקף (אופציונלי)"
+                value={expirationDate}
+                onChange={(newValue) => setExpirationDate(newValue)}
+                slotProps={{ textField: { fullWidth: true, size: 'small' } }}
+              />
+            </LocalizationProvider>
+
           </Stack>
         </DialogContent>
         <DialogActions>
@@ -465,6 +421,125 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Box sx={{ marginLeft: drawerOpen ? '180px' : 0,  transition: 'margin 0.3s' }}>
+
+        {selectedTab === 'documents' ? (
+          <Box>
+            <Typography variant="h5" gutterBottom>
+              ניהול מסמכים לעובד
+            </Typography>
+
+            {workerData && (
+              <Box mb={3}>
+                <Typography variant="subtitle1">
+                  <strong>שם מלא:</strong> {workerData.lastName} {workerData.firstName}
+                </Typography>
+                <Typography variant="subtitle1">
+                  <strong>תעודת זהות:</strong> {workerData.id}
+                </Typography>
+              </Box>
+            )}
+            {isLoading && <CircularProgress />}
+            {error && <Alert severity="error">שגיאה בטעינת המסמכים</Alert>}
+
+            {documents && (
+              <>
+              <Box>
+                <Typography variant="h6" gutterBottom>
+                  מסמכים חסרים:
+                </Typography>
+              </Box>
+              <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
+                {[{ tag: 'אישור משטרה', label: 'אישור משטרה' },
+                  { tag: 'תעודת הוראה', label: 'תעודת הוראה' },
+                ].map(({ tag, label }) => {
+                  const hasDoc = documents.some(doc => doc.tag === tag && doc.status === 'מאושר');
+                  return !hasDoc ? (
+                    <Tooltip title={`חסר ${label}`}>
+                      <Typography key={tag} variant="body2" color="warning.main" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <WarningAmberIcon fontSize="small" />
+                        {label}
+                      </Typography>
+                    </Tooltip>
+                  ) : null;
+                })}
+              </Stack>
+              </>
+            )}
+            <Stack spacing={2} mt={3}>
+              <Box m={4}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => setIsPersonalDocDialogOpen(true)}
+                >
+                  העלאת מסמכים אישיים
+                </Button>
+              </Box>
+              <WorkerPersonalDocuments
+                documents={documents}
+                handleStatusUpdate={handleStatusUpdate}
+                handleDelete={handleDelete}
+              />
+              <Box m={4}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleOpenAttendanceDialog}
+                >
+                  דיווח נוכחות חודשית
+                </Button>
+              </Box>
+              <WorkerAttendanceDocuments
+                attendanceData={attendanceData}
+                isAttendanceLoading={isAttendanceLoading}
+                workerClasses={workerClasses}
+              />
+            </Stack>
+          </Box>
+        ) : (
+          <Box p={4}>
+            <Typography variant="h5" gutterBottom>פרטים אישיים</Typography>
+            {workerData && (
+              <Stack spacing={2}>
+                <Typography><strong>שם מלא:</strong> {workerData.lastName} {workerData.firstName}</Typography>
+                <Typography><strong>תעודת זהות:</strong> {workerData.id}</Typography>
+                <Typography><strong>טלפון:</strong> {workerData.phone}</Typography>
+                <Typography><strong>אימייל:</strong> {workerData.email}</Typography>
+              </Stack>
+            )}
+          </Box>
+        )}
+      </Box>
+
+      <Drawer
+        anchor="left"
+        open={drawerOpen}
+        variant="persistent"
+        sx={{
+          width: 150,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': {
+            width: 150,
+            top: '115px',
+          },
+        }}
+      >
+        <Divider />
+        <List>
+          <ListItem disablePadding>
+            <ListItemButton selected={selectedTab === 'documents'} onClick={() => setSelectedTab('documents')}>
+              <ListItemText primary="מסמכים" />
+            </ListItemButton>
+          </ListItem>
+          <ListItem disablePadding>
+            <ListItemButton selected={selectedTab === 'personal'} onClick={() => setSelectedTab('personal')}>
+              <ListItemText primary="פרטים אישיים" />
+            </ListItemButton>
+          </ListItem>
+        </List>
+      </Drawer>
     </Box>
   );
 };

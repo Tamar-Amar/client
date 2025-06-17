@@ -42,7 +42,7 @@ const DynamicNavbar: React.FC<DynamicNavbarProps> = ({selectedSection, role }) =
 
   const managerTabs = [
     //{ label: 'ניהול מסמכים', path: '/documents' },
-    { label: 'ניהול עובדים', path: '/workers' },
+    { label: 'ניהול עובדים', path: '/workers-documents' },
     { label: 'דיווחי נוכחות', path: '/worker-attendance' },
   ];
 

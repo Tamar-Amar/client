@@ -114,10 +114,6 @@ const WorkersDocumentsList: React.FC = () => {
     }
   };
 
-  const handleEdit = (worker: WorkerAfterNoon) => {
-    navigate(`/workers/edit/${worker._id}`);
-  };
-
   const handleViewDocuments = (worker: WorkerAfterNoon) => {
     navigate(`/workers-documents/${worker._id}`);
   };
@@ -175,13 +171,6 @@ const WorkersDocumentsList: React.FC = () => {
                         size="small"
                       >
                         <DeleteIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        color="primary"
-                        onClick={() => handleEdit(worker)}
-                        size="small"
-                      >
-                        <EditIcon fontSize="small" />
                       </IconButton>
                       <IconButton
                         color="info"

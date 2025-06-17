@@ -13,6 +13,7 @@ interface WorkerPersonalDocumentsProps {
 }
 
 const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ documents, handleStatusUpdate, handleDelete }) => (
+  console.log(documents),
   <Paper sx={{ p: 2 }}>
     <Typography variant="h6" gutterBottom>
       מסמכים אישיים
@@ -23,6 +24,7 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
           <TableRow>
             <TableCell>סוג מסמך</TableCell>
             <TableCell>סטטוס</TableCell>
+            <TableCell>  תוקף</TableCell>
             <TableCell align="center">פעולות</TableCell>
           </TableRow>
         </TableHead>
@@ -47,6 +49,7 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
                     {doc.status}
                   </Typography>
                 </TableCell>
+                <TableCell>{doc.expiryDate ? new Date(doc.expiryDate).toLocaleDateString('he-IL') : ''}</TableCell>
                 <TableCell align="center">
                   <Tooltip title="צפייה במסמך">
                     <IconButton onClick={() => window.open(doc.url, '_blank')}>

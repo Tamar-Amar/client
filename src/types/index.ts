@@ -1,6 +1,3 @@
-import { DocumentStatus, DocumentType } from "./Document";
-
-export { DocumentStatus, DocumentType };
 
 export interface Activity {
     _id?: string; 
