@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import { useWorkerDocuments } from '../queries/useDocuments';
 import { DocumentStatus } from '../types/Document';
-import { useFetchWorker } from '../queries/workerQueries';
+import { useFetchWorkerAfterNoon } from '../queries/workerAfterNoonQueries';
 import { useAttendance } from '../queries/useAttendance';
 import { useFetchClasses } from '../queries/classQueries';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -90,7 +90,7 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
     isUploading,
     deleteDocument
   } = useWorkerDocuments(workerId || '');
-  const { data: workerData } = useFetchWorker(workerId || '');
+  const { data: workerData } = useFetchWorkerAfterNoon(workerId as string);
   const { 
     workerAttendance: attendanceData, 
     isLoading: isAttendanceLoading,

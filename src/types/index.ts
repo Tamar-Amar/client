@@ -26,30 +26,25 @@ export interface Activity {
   export interface Class {
     _id?: string;
     name: string;
-    isSpecialEducation: boolean;
+    education: string;
     gender: 'בנים' | 'בנות';
     address?: string;
     uniqueSymbol: string;
     chosenStore: string;
-    institutionId: string;
+    institutionName: string;
+    institutionCode: string;
     type: 'כיתה' | 'גן';
     hasAfternoonCare: boolean;
+    AfternoonOpenDate?: Date;
     monthlyBudget?: number;
     childresAmount?: number;
     regularOperatorId?: string;
     isActive: boolean;
-    contactsId?: string[];
     description?: string;
+    workerAfterNoonId1: string;
+    workerAfterNoonId2: string;
   }
 
-  export interface Institution {
-    _id?: string;
-    institutionCode: string;
-    institutionSymbol?: string;
-    name: string;
-    contacts: string[];
-    isActive: boolean;
-  }
 
   export enum InvoiceType {
     CHARGE = 'חיוב',
@@ -114,11 +109,6 @@ export interface Activity {
     address: string;
     description: string;
     paymentMethod: PaymentMethodChoicesEnum;
-    businessDetails?: {
-      businessId: string;
-      businessName: string;
-    };
-    bankDetailsId: string;
     regularClasses?: string[];
     gender: Gender;
     educationType: EducationType;
@@ -149,82 +139,27 @@ export interface Activity {
     contactPhone: string;
     regularClasses?: string[];
   }
-  
-  // BankDetails.ts 
-  export interface BankDetails {
-    _id?: string;
-    operator_id: string;
-    bankName: string;
-    accountNumber: string;
-    branchNumber: string;
-  }
-  
 
-  export interface Contact {
-    _id?: string;
-    name: string;
-    phone: string;
-    email: string;
-    description: string;
-    entityType: "Institution" | "Store" | "Class"; 
-    entityId: string; 
-  }
-  
-  export interface WorkerBankDetails {
-    bankName?: string;
-    branchNumber?: string;
-    accountNumber?: string;
-    accountOwner?: string;
-  }
 
-  export interface Tag {
-    _id: string;
-    name: string;
-    description?: string;
-    isActive: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-  }
-
-  export interface WorkerTag {
-    _id: string;
-    name: string;
-    description?: string;
-  }
-
-  export interface Worker {
+  export interface WorkerAfterNoon {
     _id: string;
     id: string;
     firstName: string;
     lastName: string;
-    birthDate?: string;
-    city: string;
-    street: string;
-    buildingNumber: string;
-    apartmentNumber?: string;
+    accountantCode: string;
+    project: string;
+    createDate: Date; 
+    updateDate: Date;
+    updateBy: string;
+    startDate: Date;
+    endDate: Date;
+    status: string;
     phone: string;
     email?: string;
     isActive: boolean;
-    registrationDate: string;
-    lastUpdateDate: string;
-    status: string;
-    jobType: 'מוביל' | 'מוביל משלים' | 'סייע' | 'סייע משלים' | 'לא נבחר';
-    jobTitle: string;
-    paymentMethod: 'חשבונית' | 'תלוש';
-    bankDetails?: {
-      bankName?: string;
-      branchNumber?: string;
-      accountNumber?: string;
-      accountOwner?: string;
-    };
-    workingSymbols?: string[];
-    tags?: string[];
-    weeklySchedule?: WeeklySchedule[];
-    documents?: Document[];
-    accountantId?: string;
     notes?: string;
-    startDate?: string;
-    endDate?: string;
+    roleType: string;
+    roleName: string;
   }
   
 

@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, MenuItem, Grid, Autocomplete } from '@mui/material';
 import { useAddClass } from '../../queries/classQueries';
-import { useFetchContacts } from '../../queries/contactQueries';
 import { useFetchStores } from '../../queries/storeQueries';
 import { useFetchOperators } from '../../queries/operatorQueries';
 import { Class } from '../../types';
 
 const AddClassDialog = ({ onClose }: any) => {
   const addClassMutation = useAddClass();
-  const { data: contacts } = useFetchContacts();
   const { data: stores } = useFetchStores();
   const { data: operators } = useFetchOperators();
 
@@ -19,15 +17,17 @@ const [formData, setFormData] = useState<Partial<Class>>({
     uniqueSymbol: '',
     monthlyBudget: 0,
     gender: 'בנים',
-    contactsId: [],
     description: '',
     chosenStore: 'לא נבחר',
     regularOperatorId: '',
     type: 'גן',
-    institutionId: '',
-    isSpecialEducation: false,
+    institutionCode: '',
+    institutionName: '',
+    workerAfterNoonId1: '',
+    workerAfterNoonId2: '',
+    education: 'רגיל',
     hasAfternoonCare: false,
-    isActive: true
+    isActive: true,
 });
 
 
@@ -72,12 +72,15 @@ const [formData, setFormData] = useState<Partial<Class>>({
   select
   fullWidth
   label="חינוך"
-  name="isSpecialEducation"
-  value={formData.isSpecialEducation ? 'מיוחד' : 'רגיל'}
-  onChange={(e) => setFormData({
-    ...formData,
-    isSpecialEducation: e.target.value === 'מיוחד'
-  })}
+  name="education"
+  value={formData.education ? 'מיוחד' : 'רגיל'}
+  onChange={(e) => {
+    const newEducation = e.target.value as 'רגיל' | 'מיוחד';
+    setFormData({
+      ...formData,
+      education: newEducation
+    });
+  }}
 >
   <MenuItem value="רגיל">רגיל</MenuItem>
   <MenuItem value="מיוחד">מיוחד</MenuItem>
@@ -90,29 +93,14 @@ const [formData, setFormData] = useState<Partial<Class>>({
               <MenuItem value="בנות">בנות</MenuItem>
             </TextField>
           </Grid>
-          <Grid item xs={12}><TextField fullWidth label="תיאור" name="description" value={formData.description} onChange={handleChange} /></Grid>
-            <Grid item xs={12}>
-            <Autocomplete
-                options={contacts || []}
-                getOptionLabel={(option) => option.name || ''}
-                value={contacts?.find((c: any) => c._id === formData.contactsId?.[0]) || null}
-                onChange={(event, newValue) => {
-                setFormData({
-                    ...formData,
-                    contactsId: newValue ? [newValue._id] : []
-                });
-                }}
-                renderInput={(params) => (
-                <TextField {...params} label="איש קשר" fullWidth />
-                )}
-                isOptionEqualToValue={(option, value) => option._id === value._id}
-            />
-            </Grid>
+          <Grid item xs={12}><TextField fullWidth label="תיאור" name="description" value={formData.description} onChange={handleChange} />
+          </Grid>
           <Grid item xs={12}>
             <TextField select fullWidth label="חנות רכש" name="chosenStore" value={formData.chosenStore} onChange={handleChange}>
               {stores?.map((s: any) => (<MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>))}
             </TextField>
           </Grid>
+          
 <Grid item xs={12}>
   <Autocomplete
     options={operators || []}

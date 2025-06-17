@@ -3,11 +3,10 @@ import {
   FormControl,
   Autocomplete,
   TextField,
-  Chip,
-  Box
+  Chip
 } from '@mui/material';
 import CancelIcon from '@mui/icons-material/Cancel';
-import { Class } from '../types';
+import { Class } from '../../types';
 
 interface WeeklyScheduleSelectProps {
   day: string;

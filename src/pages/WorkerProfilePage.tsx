@@ -3,7 +3,7 @@ import { Box, Paper, Typography, CircularProgress, Alert, Button, Stack, TextFie
 import { CloudUpload as CloudUploadIcon, Delete as DeleteIcon, Visibility as VisibilityIcon, PictureAsPdf as PictureAsPdfIcon, InsertPhoto as InsertPhotoIcon } from '@mui/icons-material';
 import { useRecoilValue } from 'recoil';
 import { userTokenState } from '../recoil/storeAtom';
-import { useFetchWorker } from '../queries/workerQueries';
+import { useFetchWorkerAfterNoon } from '../queries/workerAfterNoonQueries';
 import { jwtDecode } from 'jwt-decode';
 import { DocumentType, REQUIRED_DOCUMENTS } from '../types/Document';
 import { useWorkerDocuments } from '../queries/useDocuments';
@@ -16,7 +16,7 @@ interface DecodedToken {
 export const DOCUMENT_TYPES = [
   { value: "NULL", label: 'לא נבחר' },
   { value: DocumentType.ID, label: 'תעודת זהות' },
-  { value: DocumentType.BANK_DETAILS, label: 'פרטי בנק' },
+  { value: DocumentType.BANK_DETAILS, label: 'פרטי בנק' },  
   { value: DocumentType.POLICE_APPROVAL, label: 'אישור משטרה' },
   { value: DocumentType.TEACHING_CERTIFICATE, label: 'תעודת הוראה' },
   { value: DocumentType.OTHER, label: 'אחר' }
@@ -46,8 +46,8 @@ const WorkerProfilePage = () => {
   const decodedToken = token ? jwtDecode<DecodedToken>(token) : null;
   const workerId = decodedToken?.id;
 
-  const { data: workerData, isLoading, error } = useFetchWorker(workerId || '');
-  const { documents, uploadDocument, deleteDocument, isUploading } = useWorkerDocuments(workerId || '');
+  const { data: workerData, isLoading, error } = useFetchWorkerAfterNoon(workerId as string);
+  const { documents, uploadDocument, deleteDocument, isUploading } = useWorkerDocuments(workerId as string);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -97,9 +97,8 @@ const WorkerProfilePage = () => {
             <Typography><strong>תעודת זהות:</strong> {workerData.id}</Typography>
             <Typography><strong>טלפון:</strong> {workerData.phone}</Typography>
             <Typography><strong>דוא"ל:</strong> {workerData.email}</Typography>
-            <Typography><strong>כתובת:</strong> {workerData.street} {workerData.buildingNumber}, {workerData.city}{workerData.apartmentNumber && ` דירה ${workerData.apartmentNumber}`}</Typography>
-            <Typography><strong>תחום פעילות:</strong> {workerData.jobType}</Typography>
-            <Typography><strong>כישורים:</strong> {workerData.jobTitle}</Typography>
+            <Typography><strong>תחום פעילות:</strong> {workerData.roleType}</Typography>
+            <Typography><strong>כישורים:</strong> {workerData.roleName}</Typography>
           </Box>
         </Paper>
 

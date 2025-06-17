@@ -9,9 +9,9 @@ import { useRecoilValue } from 'recoil';
 import { userRoleState } from '../../recoil/storeAtom';
 import { jwtDecode } from 'jwt-decode';
 import { fetchOperatorById } from '../../services/OperatorService';
-import { fetchWorkerById } from '../../services/WorkerService';
-import { Operator, Worker } from '../../types';
+import { Operator } from '../../types';
 import DynamicNavbar from './DynamicNavbar';
+import { useFetchWorkerAfterNoon } from '../../queries/workerAfterNoonQueries';
 
 const MainNav: React.FC = () => {
   const navigate = useNavigate();
@@ -35,16 +35,13 @@ const MainNav: React.FC = () => {
             console.error('Failed to fetch operator name:', err);
           });
       } else if (role === 'worker') {
-        fetchWorkerById(userId)
-          .then((data: Worker) => {
-            setWorkerDetails({
-              name: `${data.firstName} ${data.lastName}`,
-              idNumber: data.id
-            });
-          })
-          .catch((err) => {
-            console.error('Failed to fetch worker details:', err);
+        const { data } = useFetchWorkerAfterNoon(userId)
+        if (data) {
+          setWorkerDetails({
+            name: `${data?.firstName} ${data?.lastName}`,
+            idNumber: data?.id || ''
           });
+        }
       }
     }
   }, [role]);

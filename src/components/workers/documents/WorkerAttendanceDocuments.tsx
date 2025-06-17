@@ -8,7 +8,7 @@ import { useWorkerDocuments } from '../../../queries/useDocuments';
 import { useAttendance } from '../../../queries/useAttendance';
 import UploadIcon from '@mui/icons-material/Upload';
 import { attendanceService } from '../../../services/attendanceService';
-import { useFetchWorker, useFetchWorkers } from '../../../queries/workerQueries';
+import { useFetchWorkerAfterNoon } from '../../../queries/workerAfterNoonQueries';
 
 interface AttendanceRecord {
   _id: string;
@@ -36,7 +36,7 @@ const WorkerAttendanceDocuments: React.FC<WorkerAttendanceDocumentsProps> = ({
   const [uploadingDocs, setUploadingDocs] = useState<Set<string>>(new Set());
   const workerId = attendanceData?.[0]?.workerId || '';
   const { deleteDocument, uploadDocument, isUploading } = useWorkerDocuments(workerId);
-  const { data: workerData } = useFetchWorker(workerId);
+  const { data: workerData } = useFetchWorkerAfterNoon(workerId);
   const { deleteAttendance, isDeleting } = useAttendance(workerId);
 
   const handleDelete = (docId: string, month: string, classId: string) => {

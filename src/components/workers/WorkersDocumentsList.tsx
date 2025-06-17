@@ -15,24 +15,24 @@ import {
   TablePagination,
   Tooltip
 } from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';
+import EditIcon from '@mui/icons-material/Edit';    
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { useFetchWorkers, useDeleteWorker } from '../queries/workerQueries';
-import { useFetchClasses } from '../queries/classQueries';
-import { Worker, Class } from '../types';
+import { useFetchAllWorkersAfterNoon, useDeleteWorkerAfterNoon } from '../../queries/workerAfterNoonQueries';
+import { useFetchClasses } from '../../queries/classQueries';
+import { WorkerAfterNoon, Class } from '../../types';
 import { useNavigate } from 'react-router-dom';
-import { useFetchAllDocuments } from '../queries/useDocuments';
+import { useFetchAllDocuments } from '../../queries/useDocuments';
 
 const ROWS_PER_PAGE = 15;
 
 const WorkersDocumentsList: React.FC = () => {
-  const { data: workers = [], isLoading, error } = useFetchWorkers();
+  const { data: workers = [], isLoading, error } = useFetchAllWorkersAfterNoon();
   const { data: classes = [] } = useFetchClasses();
   const { data: documents = [] } = useFetchAllDocuments();
 
-  const deleteWorkerMutation = useDeleteWorker();
+  const deleteWorkerMutation = useDeleteWorkerAfterNoon();
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const navigate = useNavigate();
@@ -75,35 +75,7 @@ const WorkersDocumentsList: React.FC = () => {
     return map;
   }, [classes]);
 
-  // Get symbols for a worker
-  const getWorkerSymbols = (worker: Worker): string => {
-    if (!worker.workingSymbols?.length) return 'אין סמלים';
-    
-    
-    return worker.workingSymbols
-      .map(symbolId => {
-        // Handle case where symbolId might be an object
-        if (typeof symbolId === 'object' && symbolId !== null) {
-          
-          // Try different possible properties
-          const id = (symbolId as any)._id || (symbolId as any).id || (symbolId as any).symbol;
-          const symbol = classSymbolMap.get(id);
-          
-          if (symbol) {
-            return symbol;
-          }
-          
-          // If we couldn't find a matching symbol, try to get any meaningful string representation
-          return id || (symbolId as any).uniqueSymbol || (symbolId as any).name || 'סמל לא ידוע';
-        }
-        
-        // If it's a string, use it directly
-        const symbol = classSymbolMap.get(symbolId);
-        return symbol || symbolId || '';
-      })
-      .filter(Boolean)
-      .join(', ');
-  };
+
 
   // Filter workers based on search query
   const filteredWorkers = useMemo(() => {
@@ -115,8 +87,8 @@ const WorkersDocumentsList: React.FC = () => {
         (worker.lastName ?? '').toLowerCase().includes(searchLower) ||
         (worker.phone ?? '').toLowerCase().includes(searchLower) ||
         (worker.email ?? '').toLowerCase().includes(searchLower) ||
-        (worker.city ?? '').toLowerCase().includes(searchLower) ||
-        (worker.jobTitle ?? '').toLowerCase().includes(searchLower) ||
+        (worker.roleType ?? '').toLowerCase().includes(searchLower) ||
+        (worker.roleName ?? '').toLowerCase().includes(searchLower) ||
         (worker.status ?? '').toLowerCase().includes(searchLower)
       );
     });
@@ -142,11 +114,11 @@ const WorkersDocumentsList: React.FC = () => {
     }
   };
 
-  const handleEdit = (worker: Worker) => {
+  const handleEdit = (worker: WorkerAfterNoon) => {
     navigate(`/workers/edit/${worker._id}`);
   };
 
-  const handleViewDocuments = (worker: Worker) => {
+  const handleViewDocuments = (worker: WorkerAfterNoon) => {
     navigate(`/workers-documents/${worker._id}`);
   };
   
@@ -186,9 +158,8 @@ const WorkersDocumentsList: React.FC = () => {
               <TableCell sx={{ fontWeight: 'bold' }}>שם מלא</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>טלפון</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>אימייל</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>סמלי מוסד</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>אישור משטרה</TableCell>
-<TableCell sx={{ fontWeight: 'bold' }}>תעודת הוראה</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>תעודת הוראה</TableCell>
 
             </TableRow>
           </TableHead>
@@ -226,21 +197,6 @@ const WorkersDocumentsList: React.FC = () => {
                   <TableCell>{` ${worker.lastName} ${worker.firstName}`}</TableCell>
                   <TableCell>{worker.phone}</TableCell>
                   <TableCell>{worker.email}</TableCell>
-                  <TableCell>
-                    <Tooltip title={getWorkerSymbols(worker)} arrow>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          maxWidth: 200,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        {getWorkerSymbols(worker)}
-                      </Typography>
-                    </Tooltip>
-                  </TableCell>
                   <TableCell>{getDocStatus(worker._id, 'אישור משטרה')}</TableCell>
                   <TableCell>{getDocStatus(worker._id, 'תעודת הוראה')}</TableCell>
 

@@ -3,12 +3,6 @@ import {
   Box,
   Button,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Paper,
   IconButton,
   Chip,
@@ -21,7 +15,7 @@ import {
 import { Delete as DeleteIcon, Visibility as VisibilityIcon, CloudUpload as CloudUploadIcon, PictureAsPdf as PictureAsPdfIcon, Image as ImageIcon, InsertDriveFile as InsertDriveFileIcon } from '@mui/icons-material';
 import { Document, DocumentStatus, DocumentType } from '../../types/Document';
 import { useWorkerDocuments } from '../../queries/useDocuments';
-import { useFetchWorker, useFetchWorkers } from '../../queries/workerQueries';
+import { useFetchWorkerAfterNoon } from '../../queries/workerAfterNoonQueries';
 
 interface Props {
   workerId: string;
@@ -47,7 +41,7 @@ const WorkerDocuments: React.FC<Props> = ({ workerId }) => {
     deleteDocument,
     isDeleting
   } = useWorkerDocuments(workerId);
-  const { data: workerData } = useFetchWorker(workerId);
+  const { data: workerData } = useFetchWorkerAfterNoon(workerId);
 
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,9 +79,7 @@ const WorkerDocuments: React.FC<Props> = ({ workerId }) => {
     }
   };
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('he-IL');
-  };
+
 
   const getStatusColor = (status: DocumentStatus): 'success' | 'error' | 'warning' | 'default' => {
     switch (status) {

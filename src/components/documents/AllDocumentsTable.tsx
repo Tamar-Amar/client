@@ -10,7 +10,7 @@ import {
 import VisibilityIcon from '@mui/icons-material/Visibility';
 
 import { useFetchAllDocuments } from '../../queries/useDocuments';
-import { useFetchWorkers } from '../../queries/workerQueries';
+import { useFetchAllWorkersAfterNoon } from '../../queries/workerAfterNoonQueries';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import { useWorkerDocuments } from '../../queries/useDocuments';
@@ -24,7 +24,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 
 const AllDocumentsTable: React.FC = () => {
   const { data: documents = [], isLoading: isLoadingDocs } = useFetchAllDocuments();
-  const { data: workers = [], isLoading: isLoadingWorkers } = useFetchWorkers();
+  const { data: workers = [], isLoading: isLoadingWorkers } = useFetchAllWorkersAfterNoon();
   const { updateStatus, isUpdatingStatus } = useWorkerDocuments('all');
 
   const [searchName, setSearchName] = useState('');

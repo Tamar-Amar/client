@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { AppBar, Toolbar, Typography, Button, Tabs, Tab, Box, Stack, Divider } from '@mui/material';
-import { useRecoilValue } from 'recoil';
-import { userRoleState } from '../../recoil/storeAtom';
+import { AppBar, Toolbar, Tabs, Tab, Stack } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import PeopleIcon from '@mui/icons-material/People';
@@ -14,8 +12,9 @@ import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import FolderIcon from '@mui/icons-material/Folder';
 import { jwtDecode } from 'jwt-decode';
 import { fetchOperatorById } from '../../services/OperatorService';
-import { fetchWorkerById } from '../../services/WorkerService';
-import { Operator, Worker } from '../../types';
+import { Operator, WorkerAfterNoon } from '../../types';
+import { useFetchWorkerAfterNoon } from '../../queries/workerAfterNoonQueries';
+
 
 interface DynamicNavbarProps {
   onLogout: () => void;
@@ -44,16 +43,13 @@ const DynamicNavbar: React.FC<DynamicNavbarProps> = ({ onLogout, selectedSection
             console.error('Failed to fetch operator name:', err);
           });
       } else if (role === 'worker') {
-        fetchWorkerById(userId)
-          .then((data: Worker) => {
-            setWorkerDetails({
-              name: `${data.firstName} ${data.lastName}`,
-              idNumber: data.id
-            });
-          })
-          .catch((err) => {
-            console.error('Failed to fetch worker details:', err);
+        const { data } = useFetchWorkerAfterNoon(userId)
+        if (data) {
+          setWorkerDetails({
+            name: `${data?.firstName} ${data?.lastName}`,
+            idNumber: data?.id || ''
           });
+        }
       }
     }
   }, [role]);

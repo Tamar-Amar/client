@@ -15,7 +15,7 @@ import {
   Divider,
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import { useFetchWorker, useFetchWorkers } from '../../queries/workerQueries';
+import { useFetchWorkerAfterNoon, useFetchAllWorkersAfterNoon } from '../../queries/workerAfterNoonQueries';
 import { useWorkerDocuments } from '../../queries/useDocuments';
 
 const DocumentUpload: React.FC = () => {
@@ -31,8 +31,8 @@ const DocumentUpload: React.FC = () => {
     'אחר'
   ];
 
-  const { data: workers, isLoading } = useFetchWorkers();
-  const { data: workerData } = useFetchWorker(selectedEmployee);
+  const { data: workers, isLoading } = useFetchAllWorkersAfterNoon();
+  const { data: workerData } = useFetchWorkerAfterNoon(selectedEmployee);
   const { uploadDocument, isUploading } = useWorkerDocuments(selectedEmployee);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {

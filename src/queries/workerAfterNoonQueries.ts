@@ -1,17 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createWorker, deleteWorker, fetchWorkerById, fetchWorkers, updateWorker } from '../services/WorkerService';
-import { Worker } from '../types';
+import { createWorker, deleteWorker, fetchWorkerById, fetchWorkers, updateWorker } from '../services/WorkerAfterNoonService';
+import { WorkerAfterNoon } from '../types';
 
-const API_BASE_URL = 'http://localhost:5000/api';
-
-export const useFetchWorkers = () => {
+export const useFetchAllWorkersAfterNoon = () => {
   return useQuery({
     queryKey: ['workers'],
     queryFn: fetchWorkers
   });
 };
 
-export const useFetchWorker = (workerId: string) => {
+export const useFetchWorkerAfterNoon = (workerId: string) => {
   return useQuery({
     queryKey: ['worker', workerId],
     queryFn: () => fetchWorkerById(workerId),
@@ -19,22 +17,22 @@ export const useFetchWorker = (workerId: string) => {
   });
 };
 
-export const useAddWorker = () => {
+export const useAddWorkerAfterNoon = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (workerData: Omit<Worker, '_id'>) => createWorker(workerData),
+    mutationFn: (workerData: Omit<WorkerAfterNoon, '_id'>) => createWorker(workerData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workers'] });
     }
   });
 };
 
-export const useUpdateWorker = () => {
+export const useUpdateWorkerAfterNoon = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Worker> }) => 
+    mutationFn: ({ id, data }: { id: string; data: Partial<WorkerAfterNoon> }) => 
       updateWorker(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['workers'] });
@@ -43,7 +41,7 @@ export const useUpdateWorker = () => {
   });
 };
 
-export const useDeleteWorker = () => {
+export const useDeleteWorkerAfterNoon = () => {
   const queryClient = useQueryClient();
   
   return useMutation({

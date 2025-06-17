@@ -5,19 +5,14 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { useFetchClasses, useDeleteClass, useUpdateClass } from "../../queries/classQueries";
-import { useFetchInstitutions } from "../../queries/institutionQueries";
-import { useFetchContacts } from "../../queries/contactQueries";
 import { useFetchOperators, useUpdateOperator } from "../../queries/operatorQueries";
 import { useFetchStores, useUpdateStore } from "../../queries/storeQueries";
-import { Contact, Institution, Operator } from "../../types";
-import AssignDialog from "../other/AssignDialog";
+import {  Operator } from "../../types";
 import EditClassDialog from "./EditClassDialog";
 import AddClassDialog from "./AddClassDialog";
 
 const ClassList: React.FC = () => {
   const { data: classes, isLoading, isError } = useFetchClasses();
-  const { data: institutions } = useFetchInstitutions();
-  const { data: contacts } = useFetchContacts();
   const { data: operators } = useFetchOperators();
   const { data: stores } = useFetchStores();
   const deleteMutation = useDeleteClass();
@@ -85,14 +80,15 @@ const ClassList: React.FC = () => {
 
   const columns: GridColDef[] = useMemo(() => [
     {
-      field: "institutionId",
+      field: "institutionCode",
       headerName: "קוד מוסד",
       width: 100,
-      renderCell: (params: GridRenderCellParams) => {
-        const institution = institutions?.find((inst: Institution) => inst._id === params.value);
-        return institution ? institution.institutionCode : "N/A";
-      },
+    },{
+      field: "institutionName",
+      headerName: "שם מוסד",
+      width: 100,
     },
+    
     { field: "uniqueSymbol", headerName: "סמל קבוצה", width: 120 },
     { field: "name", headerName: "שם", flex: 1, minWidth: 150 },
     { field: "address", headerName: "כתובת", flex: 1, minWidth: 150 },
@@ -107,26 +103,12 @@ const ClassList: React.FC = () => {
         return store ? store.name : "N/A";
       },
     },
-    {
-      field: "contactsId",
-      headerName: "איש קשר",
-      width: 150,
-      renderCell: (params: GridRenderCellParams) => {
-        const contactNames = Array.isArray(params.value)
-          ? params.value.map((contactId: string) => {
-            const contact = contacts?.find((c: Contact) => c._id === contactId);
-            return contact ? contact.name : null;
-          }).filter(Boolean).join(", ")
-          : "N/A";
-        return contactNames;
-      },
-    },
     { field: "gender", headerName: "בנים או בנות", width: 120 },
     {
-      field: "isSpecialEducation",
-      headerName: "חינוך מיוחד",
+      field: "education",
+      headerName: "חינוך",
       width: 120,
-      renderCell: (params: GridRenderCellParams) => (params.value ? "כן" : "לא"),
+      renderCell: (params: GridRenderCellParams) => (params.value ? "מיוחד" : "רגיל"),
     },
     {
       field: "actions",
@@ -143,7 +125,7 @@ const ClassList: React.FC = () => {
         </Box>
       ),
     },
-  ], [institutions, contacts, stores]);
+  ], [stores]);
 
   if (isLoading) return <Typography>Loading...</Typography>;
   if (isError) return <Typography color="error">Error loading classes.</Typography>;
@@ -182,29 +164,6 @@ const ClassList: React.FC = () => {
         autoHeight
       />
 
-      <AssignDialog
-        open={assignDialogOpen}
-        onClose={() => setAssignDialogOpen(false)}
-        title={
-          assignDialogType === "assignContact" ? "איש קשר" :
-          assignDialogType === "assignInstitution" ? "מוסד" :
-          assignDialogType === "assignOperator" ? "מפעיל קבוע" :
-          assignDialogType === "assignStore" ? "חנות רכש" : ""
-        }
-        items={
-          assignDialogType === "assignContact" ? contacts?.map((c: Contact) => ({ _id: c._id, label: c.name })) || [] :
-          assignDialogType === "assignInstitution" ? institutions?.map((i: Institution) => ({ _id: i._id, label: `${i.institutionCode} ${i.name}` })) || [] :
-          assignDialogType === "assignOperator" ? operators?.map((o: Operator) => ({ _id: o._id, label: `${o.firstName} ${o.lastName}` })) || [] :
-          assignDialogType === "assignStore" ? stores?.map(s => ({ _id: s._id, label: s.name })) || [] :
-          []
-        }
-        selectedItem={selectedItem}
-        onSelect={(id) => setSelectedItem(id)}
-        onSave={handleSubmitDialog}
-        isContactAssignment={assignDialogType === "assignContact"}
-        institutions={institutions}
-        classes={classes}
-      />
 
       {editClassData && <EditClassDialog classData={editClassData} onClose={() => setEditClassData(null)} />}
       {addDialogOpen && <AddClassDialog onClose={() => setAddDialogOpen(false)} />}

@@ -5,16 +5,13 @@ import {
   Paper,
   Tabs,
   Tab,
-  Divider,
   Grid,
-  Chip,
   Button
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import EditIcon from '@mui/icons-material/Edit';
-import WorkerTags from './WorkerTags';
 import WorkerDocuments from './WorkerDocuments';
-import { Worker } from '../../types';
+import { WorkerAfterNoon } from '../../types';
 import WorkerSchedule from './WorkerSchedule';
 
 interface TabPanelProps {
@@ -44,7 +41,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 interface Props {
-  worker: Worker;
+  worker: WorkerAfterNoon;
   onUpdate?: () => void;
 }
 
@@ -89,13 +86,6 @@ const WorkerDetails: React.FC<Props> = ({ worker, onUpdate }) => {
             <Typography variant="subtitle2" color="text.secondary">אימייל</Typography>
             <Typography variant="body1">{worker.email || '-'}</Typography>
           </Grid>
-          <Grid item xs={12} sm={6}>
-            <Typography variant="subtitle2" color="text.secondary">כתובת</Typography>
-            <Typography variant="body1">
-              {worker.street} {worker.buildingNumber}, {worker.city}
-              {worker.apartmentNumber && ` דירה ${worker.apartmentNumber}`}
-            </Typography>
-          </Grid>
         </Grid>
       </Paper>
 
@@ -108,48 +98,13 @@ const WorkerDetails: React.FC<Props> = ({ worker, onUpdate }) => {
         >
           <Tab label="תגיות" />
           <Tab label="מסמכים" />
-          <Tab label="פרטי העסקה" />
         </Tabs>
 
-        <TabPanel value={tabValue} index={0}>
-          <WorkerTags
-            workerId={worker._id}
-            existingTags={worker.tags || []}
-            onTagsChange={onUpdate}
-          />
-        </TabPanel>
 
         <TabPanel value={tabValue} index={1}>
           <WorkerDocuments workerId={worker._id} />
         </TabPanel>
 
-        <TabPanel value={tabValue} index={2}>
-          <Box>
-            <Typography variant="h6" gutterBottom>פרטי העסקה</Typography>
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary">שיטת תשלום</Typography>
-                <Typography variant="body1">{worker.paymentMethod}</Typography>
-              </Grid>
-              {worker.bankDetails && (
-                <>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="subtitle2" color="text.secondary">בנק</Typography>
-                    <Typography variant="body1">{worker.bankDetails.bankName || '-'}</Typography>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="subtitle2" color="text.secondary">מספר סניף</Typography>
-                    <Typography variant="body1">{worker.bankDetails.branchNumber || '-'}</Typography>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="subtitle2" color="text.secondary">מספר חשבון</Typography>
-                    <Typography variant="body1">{worker.bankDetails.accountNumber || '-'}</Typography>
-                  </Grid>
-                </>
-              )}
-            </Grid>
-          </Box>
-        </TabPanel>
       </Paper>
 
       <Paper sx={{ p: 2 }}>

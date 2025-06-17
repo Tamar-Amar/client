@@ -7,7 +7,6 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import WarningAmberIcon from '@mui/icons-material/Warning';
 import { useFetchClasses } from '../queries/classQueries';
 import { useAttendance } from '../queries/useAttendance';
-import { useFetchWorkers } from '../queries/workerQueries';
 
 interface AttendanceRecord {
   _id: string;
@@ -37,8 +36,6 @@ const getDocLabel = (index: number) => {
 const WorkerAttendancePage: React.FC = () => {
   const { attendance: attendanceData, isLoading } = useAttendance('');
   const { data: workerClasses = [] } = useFetchClasses();
-  const { data: workers = [] } = useFetchWorkers();
-
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMonth, setFilterMonth] = useState('');
   const [filterWorkerId, setFilterWorkerId] = useState('');

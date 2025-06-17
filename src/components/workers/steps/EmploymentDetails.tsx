@@ -1,24 +1,14 @@
 import React from 'react';
-import { Grid, TextField, MenuItem, Paper, Typography, Box, Autocomplete } from '@mui/material';
+import { Grid, TextField, MenuItem, Paper, Typography, Box } from '@mui/material';
 import { FormikProps } from 'formik';
 import WorkIcon from '@mui/icons-material/Work';
-import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import DescriptionIcon from '@mui/icons-material/Description';
-import ClassIcon from '@mui/icons-material/Class';
 import { useFetchClasses } from '../../../queries/classQueries';
-import { Class } from '../../../types';
 
 interface FormValues {
-  paymentMethod: 'חשבונית' | 'תלוש';
-  accountantId: string;
+  accountantCode: string;
   notes: string;
-  workingSymbols: string[];
-  bankDetails: {
-    bankName: string;
-    branchNumber: string;
-    accountNumber: string;
-    accountOwner: string;
-  };
+  project: string;    
 }
 
 // Mock accountants data
@@ -48,24 +38,9 @@ const EmploymentDetails: React.FC<Props> = ({ formik }) => {
               <TextField
                 select
                 fullWidth
-                label="אופן תשלום"
-                name="paymentMethod"
-                value={formik.values.paymentMethod}
-                onChange={formik.handleChange}
-                error={formik.touched.paymentMethod && Boolean(formik.errors.paymentMethod)}
-                helperText={formik.touched.paymentMethod && formik.errors.paymentMethod}
-              >
-                <MenuItem value="חשבונית">חשבונית</MenuItem>
-                <MenuItem value="תלוש">תלוש</MenuItem>
-              </TextField>
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                select
-                fullWidth
                 label="חשב שכר"
-                name="accountantId"
-                value={formik.values.accountantId || ''}
+                name="accountantCode"
+                value={formik.values.accountantCode || ''}
                 onChange={formik.handleChange}
               >
                 {mockAccountants.map((accountant) => (
@@ -74,82 +49,6 @@ const EmploymentDetails: React.FC<Props> = ({ formik }) => {
                   </MenuItem>
                 ))}
               </TextField>
-            </Grid>
-          </Grid>
-        </Paper>
-      </Grid>
-
-      <Grid item xs={12}>
-        <Box display="flex" alignItems="center" mb={2}>
-          <ClassIcon sx={{ mr: 1, color: 'primary.main' }} />
-          <Typography variant="h6">סמלי כיתות</Typography>
-        </Box>
-        <Paper variant="outlined" sx={{ p: 2 }}>
-          <Autocomplete
-            multiple
-            options={classes}
-            getOptionLabel={(option: Class) => `${option.uniqueSymbol} - ${option.name}`}
-            value={classes.filter((cls: Class) => cls._id && formik.values.workingSymbols.includes(cls._id))}
-            onChange={(_, newValue) => {
-              formik.setFieldValue(
-                'workingSymbols',
-                newValue.map((cls: Class) => cls._id || '')
-              );
-            }}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="בחר סמלי כיתות"
-                error={formik.touched.workingSymbols && Boolean(formik.errors.workingSymbols)}
-                helperText={formik.touched.workingSymbols && formik.errors.workingSymbols}
-              />
-            )}
-          />
-        </Paper>
-      </Grid>
-
-      <Grid item xs={12}>
-        <Box display="flex" alignItems="center" mb={2}>
-          <AccountBalanceIcon sx={{ mr: 1, color: 'primary.main' }} />
-          <Typography variant="h6">פרטי בנק</Typography>
-        </Box>
-        <Paper variant="outlined" sx={{ p: 2 }}>
-          <Grid container spacing={2}>
-            <Grid item xs={3}>
-              <TextField
-                fullWidth
-                label="שם בנק"
-                name="bankDetails.bankName"
-                value={formik.values.bankDetails?.bankName}
-                onChange={formik.handleChange}
-              />
-            </Grid>
-            <Grid item xs={3}>
-              <TextField
-                fullWidth
-                label="מספר סניף"
-                name="bankDetails.branchNumber"
-                value={formik.values.bankDetails?.branchNumber}
-                onChange={formik.handleChange}
-              />
-            </Grid>
-            <Grid item xs={3}>
-              <TextField
-                fullWidth
-                label="מספר חשבון"
-                name="bankDetails.accountNumber"
-                value={formik.values.bankDetails?.accountNumber}
-                onChange={formik.handleChange}
-              />
-            </Grid>
-            <Grid item xs={3}>
-              <TextField
-                fullWidth
-                label="שם בעל החשבון"
-                name="bankDetails.accountOwner"
-                value={formik.values.bankDetails?.accountOwner}
-                onChange={formik.handleChange}
-              />
             </Grid>
           </Grid>
         </Paper>

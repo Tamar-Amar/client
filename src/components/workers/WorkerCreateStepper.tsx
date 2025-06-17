@@ -5,15 +5,9 @@ import {
   Step,
   StepLabel,
   Button,
-  Typography,
-  Paper,
   useTheme,
   CircularProgress
 } from '@mui/material';
-import PersonIcon from '@mui/icons-material/Person';
-import ContactMailIcon from '@mui/icons-material/ContactMail';
-import WorkIcon from '@mui/icons-material/Work';
-import LabelIcon from '@mui/icons-material/Label';
 
 interface Props {
   activeStep: number;
@@ -36,7 +30,6 @@ const WorkerCreateStepper: React.FC<Props> = ({
   children,
   steps
 }) => {
-  const theme = useTheme();
 
   return (
     <Box sx={{ width: '100%' }}>

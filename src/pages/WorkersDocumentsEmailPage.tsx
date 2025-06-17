@@ -1,12 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Box,
   Typography,
-  TextField,
   Button,
   Paper,
   Alert,
-  CircularProgress,
   Table,
   TableBody,
   TableCell,
@@ -15,16 +13,17 @@ import {
   TableRow,
   Chip,
 } from "@mui/material";
-import { useFetchWorkers } from "../queries/workerQueries";
+
 import { useFetchAllDocuments } from "../queries/useDocuments";
-import { Worker } from "../types";
+import { WorkerAfterNoon } from "../types";
+import { useFetchAllWorkersAfterNoon } from '../queries/workerAfterNoonQueries';
 
 const REQUIRED_TAGS = ["אישור משטרה", "תעודת הוראה"];
 const API_URL = process.env.REACT_APP_API_URL;
 
 const WorkersDocumentsEmailPage: React.FC = () => {
   const [selectedWorkerIds, setSelectedWorkerIds] = useState<string[]>([]);
-  const { data: workers = [], isLoading } = useFetchWorkers();
+  const { data: workers = [], isLoading } = useFetchAllWorkersAfterNoon();
   const { data: documents = [] } = useFetchAllDocuments();
   const [status, setStatus] = useState<string | null>(null);
   const [results, setResults] = useState<any[]>([]);
@@ -39,7 +38,7 @@ const WorkersDocumentsEmailPage: React.FC = () => {
   }, [documents]);
 
   const workersMissingDocs = useMemo(() => {
-    return workers.map((worker) => {
+    return workers.map((worker:WorkerAfterNoon) => {
       const workerDocs = documentsByWorkerId.get(worker._id) || [];
       const approvedTags = workerDocs.filter(d => d.status === "מאושר").map(d => d.tag);
       const missing = REQUIRED_TAGS.filter((tag) => !approvedTags.includes(tag));
@@ -171,11 +170,6 @@ const WorkersDocumentsEmailPage: React.FC = () => {
                     </TableCell>
                     <TableCell>{w.firstName} {w.lastName}</TableCell>
                     <TableCell>{w.id}</TableCell>
-                    <TableCell>
-                      {w.missing.map((tag) => (
-                        <Chip key={tag} label={tag} color="error" size="small" sx={{ mr: 1 }} />
-                      ))}
-                    </TableCell>
                     <TableCell>
                       <Button variant="outlined" size="small" onClick={() => handleSendToSingleWorker(w._id)}>
                         שלח מייל לעובד

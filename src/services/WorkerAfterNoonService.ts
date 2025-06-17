@@ -1,11 +1,11 @@
-import { Worker } from '../types';
+import { WorkerAfterNoon } from '../types';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL+ '/api' || "https://server-manage.onrender.com" + '/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL+ '/api/worker-after-noon' || "https://server-manage.onrender.com" + '/api/worker-after-noon';
 
 
-export const fetchWorkers = async (): Promise<Worker[]> => {
+export const fetchWorkers = async (): Promise<WorkerAfterNoon[]> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/workers`);
+    const response = await fetch(`${API_BASE_URL}`);
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }
@@ -16,16 +16,17 @@ export const fetchWorkers = async (): Promise<Worker[]> => {
   }
 };
 
-export const fetchWorkerById = async (id: string): Promise<Worker> => {
-  const response = await fetch(`${API_BASE_URL}/workers/${id}`);
+export const fetchWorkerById = async (id: string): Promise<WorkerAfterNoon> => {
+  const response = await fetch(`${API_BASE_URL}/${id}`);
   if (!response.ok) {
     throw new Error('Network response was not ok');
   }
   return response.json();
 };
 
-export const createWorker = async (workerData: Omit<Worker, '_id'>): Promise<Worker> => {
-  const response = await fetch(`${API_BASE_URL}/workers`, {
+export const createWorker = async (workerData: Omit<WorkerAfterNoon, '_id'>): Promise<WorkerAfterNoon> => {
+  console.log(workerData);
+  const response = await fetch(`${API_BASE_URL}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -38,8 +39,8 @@ export const createWorker = async (workerData: Omit<Worker, '_id'>): Promise<Wor
   return response.json();
 };
 
-export const updateWorker = async (id: string, data: Partial<Worker>): Promise<Worker> => {
-  const response = await fetch(`${API_BASE_URL}/workers/${id}`, {
+export const updateWorker = async (id: string, data: Partial<WorkerAfterNoon>): Promise<WorkerAfterNoon > => {
+  const response = await fetch(`${API_BASE_URL}/${id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -53,7 +54,7 @@ export const updateWorker = async (id: string, data: Partial<Worker>): Promise<W
 };
 
 export const deleteWorker = async (id: string): Promise<void> => {
-  const response = await fetch(`${API_BASE_URL}/workers/${id}`, {
+  const response = await fetch(`${API_BASE_URL}/${id}`, {
     method: 'DELETE',
   });
   if (!response.ok) {

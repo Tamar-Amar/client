@@ -22,59 +22,6 @@ const ContactDetails: React.FC<Props> = ({ formik }) => {
     <Grid container spacing={3}>
       <Grid item xs={12}>
         <Box display="flex" alignItems="center" mb={2}>
-          <LocationOnIcon sx={{ mr: 1, color: 'primary.main' }} />
-          <Typography variant="h6">כתובת מגורים</Typography>
-        </Box>
-        <Paper variant="outlined" sx={{ p: 2 }}>
-          <Grid container spacing={2}>
-            <Grid item xs={4}>
-              <TextField
-                fullWidth
-                label="עיר"
-                name="city"
-                value={formik.values.city}
-                onChange={formik.handleChange}
-                error={formik.touched.city && Boolean(formik.errors.city)}
-                helperText={formik.touched.city && formik.errors.city}
-              />
-            </Grid>
-            <Grid item xs={4}>
-              <TextField
-                fullWidth
-                label="רחוב"
-                name="street"
-                value={formik.values.street}
-                onChange={formik.handleChange}
-                error={formik.touched.street && Boolean(formik.errors.street)}
-                helperText={formik.touched.street && formik.errors.street}
-              />
-            </Grid>
-            <Grid item xs={2}>
-              <TextField
-                fullWidth
-                label="מספר בית"
-                name="buildingNumber"
-                value={formik.values.buildingNumber}
-                onChange={formik.handleChange}
-                error={formik.touched.buildingNumber && Boolean(formik.errors.buildingNumber)}
-                helperText={formik.touched.buildingNumber && formik.errors.buildingNumber}
-              />
-            </Grid>
-            <Grid item xs={2}>
-              <TextField
-                fullWidth
-                label="דירה"
-                name="apartmentNumber"
-                value={formik.values.apartmentNumber}
-                onChange={formik.handleChange}
-              />
-            </Grid>
-          </Grid>
-        </Paper>
-      </Grid>
-
-      <Grid item xs={12}>
-        <Box display="flex" alignItems="center" mb={2}>
           <ContactPhoneIcon sx={{ mr: 1, color: 'primary.main' }} />
           <Typography variant="h6">פרטי התקשרות</Typography>
         </Box>

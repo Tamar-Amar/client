@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, CircularProgress, Backdrop, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Button, Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, CircularProgress, Backdrop, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, FormGroup, FormControlLabel, Checkbox } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
-import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import * as XLSX from 'xlsx';
-import { useAddWorker, useDeleteWorker } from '../../queries/workerQueries';
 import { useFetchClasses } from '../../queries/classQueries';
-import { useFetchWorkers } from '../../queries/workerQueries';
-import { Worker, Class, WeeklySchedule } from '../../types';
+import { useAddWorkerAfterNoon, useDeleteWorkerAfterNoon, useFetchAllWorkersAfterNoon } from '../../queries/workerAfterNoonQueries';
+import { WorkerAfterNoon, Class, WeeklySchedule } from '../../types';
+
 
 interface ExcelRow {
   __EMPTY: string; // סמל מוסד
   __EMPTY_1: string; // קוד מוסד
   __EMPTY_5: string; // סוג חינוך
+  __EMPTY_9: string; // חשב שכר
   __EMPTY_11: string; // סוג תפקיד
   __EMPTY_12: string; // שם תפקיד
   __EMPTY_13: string; // תעודת זהות
@@ -22,11 +22,11 @@ interface ExcelRow {
   __EMPTY_17: string; // אימייל
   __EMPTY_18: string; // תאריך התחלה
   __EMPTY_19: string; // תאריך סיום
-  __EMPTY_8: string; // סטטוס
-  __EMPTY_9: string; // חשב שכר
+  __EMPTY_20: string; // סטטוס
+ 
 }
 
-interface PreviewWorker extends Omit<Worker, '_id'> {
+interface PreviewWorker extends Omit<WorkerAfterNoon, '_id'> {
   _id?: string;
   isDuplicate?: boolean;
 }
@@ -39,13 +39,25 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
   const [previewData, setPreviewData] = useState<PreviewWorker[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [symbolErrors, setSymbolErrors] = useState<{ [key: string]: string }>({});
-  const addWorkerMutation = useAddWorker();
-  const deleteWorkerMutation = useDeleteWorker();
+  const addWorkerMutation = useAddWorkerAfterNoon();
+  const deleteWorkerMutation = useDeleteWorkerAfterNoon();
   const { data: classes = [], isLoading: isLoadingClasses } = useFetchClasses();
-  const { data: existingWorkers = [] } = useFetchWorkers();
+  const { data: existingWorkers = [] } = useFetchAllWorkersAfterNoon();
+
+  // סטייטים חדשים
+  const [invalidWorkers, setInvalidWorkers] = useState<PreviewWorker[]>([]);
+  const [duplicateWorkers, setDuplicateWorkers] = useState<PreviewWorker[]>([]);
+  const [alreadyInSystemWorkers, setAlreadyInSystemWorkers] = useState<PreviewWorker[]>([]);
+  const [validForImportWorkers, setValidForImportWorkers] = useState<PreviewWorker[]>([]);
+  const [showSummaryDialog, setShowSummaryDialog] = useState(false);
+  const [importInvalidId, setImportInvalidId] = useState(false);
+  const [importInvalidPhone, setImportInvalidPhone] = useState(false);
+  const [importMissingPhone, setImportMissingPhone] = useState(false);
+  const [invalidByReason, setInvalidByReason] = useState<{
+    invalidId: PreviewWorker[];
+    invalidPhone: PreviewWorker[];
+    missingPhone: PreviewWorker[];
+  }>({ invalidId: [], invalidPhone: [], missingPhone: [] });
 
   const findClassIdBySymbol = (symbol: string): string | null => {
     if (isLoadingClasses) return null;
@@ -92,43 +104,44 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
   };
 
   const parseDate = (dateStr: string): string => {
-    if (!dateStr || typeof dateStr !== 'string' || dateStr === '??' || dateStr === '45565') return '';
-    try {
-      // מנקה רווחים ותווים מיוחדים
-      const cleanDateStr = dateStr.trim().replace(/[^0-9./]/g, '');
-      if (!cleanDateStr) return '';
-      
-      // מנסה לפרסר תאריך בפורמט DD.MM.YY או DD/MM/YY
-      const parts = cleanDateStr.split(/[./]/).map(num => num.trim());
-      if (parts.length !== 3) {
-        throw new Error('Invalid date format');
-      }
-      const [day, month, year] = parts;
-      // מוסיף 20 לשנה אם היא דו ספרתית
-      const fullYear = year.length === 2 ? `20${year}` : year;
-      const date = new Date(parseInt(fullYear), parseInt(month) - 1, parseInt(day));
-      
-      if (isNaN(date.getTime())) {
-        throw new Error('Invalid date');
-      }
-      
-      return date.toISOString();
-    } catch (error) {
-      console.error('Error parsing date:', dateStr, error);
-      return '';
+    if (!dateStr || typeof dateStr !== 'string') return '';
+    // מסיר רווחים ותווים לא רלוונטיים
+    const cleanDateStr = dateStr.trim().replace(/[^0-9./-]/g, '');
+    if (!cleanDateStr) return '';
+
+    // תאריכים בפורמט אקסל (מספר סידורי)
+    if (!isNaN(Number(cleanDateStr)) && cleanDateStr.length <= 5) {
+      // המרה ממספר אקסל לתאריך
+      const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+      excelEpoch.setDate(excelEpoch.getDate() + Number(cleanDateStr));
+      return excelEpoch.toISOString();
     }
+
+    // DD/MM/YYYY או DD.MM.YYYY או DD-MM-YYYY
+    const parts = cleanDateStr.split(/[./-]/).map(num => num.trim());
+    if (parts.length === 3) {
+      let [day, month, year] = parts;
+      // אם השנה דו-ספרתית, הוסף 20
+      if (year.length === 2) year = `20${year}`;
+      // אם היום והחודש בסדר הפוך (YYYY-MM-DD)
+      if (year.length === 4 && day.length === 4) {
+        [year, month, day] = parts;
+      }
+      const date = new Date(Number(year), Number(month) - 1, Number(day));
+      if (!isNaN(date.getTime())) {
+        return date.toISOString();
+      }
+    }
+
+    // נסה לפרסר תאריך רגיל
+    const date = new Date(cleanDateStr);
+    if (!isNaN(date.getTime())) {
+      return date.toISOString();
+    }
+
+    return '';
   };
 
-  const getJobType = (jobTypeStr: string): Worker['jobType'] => {
-    const jobTypes = {
-      'מוביל': 'מוביל',
-      'מוביל משלים': 'מוביל משלים',
-      'סייע': 'סייע',
-      'סייע משלים': 'סייע משלים'
-    } as const;
-
-    return jobTypes[jobTypeStr as keyof typeof jobTypes] || 'לא נבחר';
-  };
 
   const convertExcelRowToWorker = (row: any): PreviewWorker => {
     const id = row.__EMPTY_13?.toString() || '';
@@ -137,8 +150,8 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
     }
     
     const now = new Date().toISOString();
-    const startDate = parseDate(row.__EMPTY_18);
-    const endDate = parseDate(row.__EMPTY_19);
+    const startDate = new Date(parseDate(row.__EMPTY_18));
+    const endDate = new Date(parseDate(row.__EMPTY_19));
     
     // בדיקת סמל מוסד - משתמש בסמל המלא מ-__EMPTY
     const symbol = row.__EMPTY?.toString().trim();
@@ -152,13 +165,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       // אם לא נמצא סמל, נמשיך בלעדיו
     }
 
-    const defaultWeeklySchedule: WeeklySchedule[] = [
-      { day: 'ראשון', classes: [] },
-      { day: 'שני', classes: [] },
-      { day: 'שלישי', classes: [] },
-      { day: 'רביעי', classes: [] },
-      { day: 'חמישי', classes: [] }
-    ];
     
     return {
       firstName: row.__EMPTY_15 || '',
@@ -166,31 +172,18 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       id: id,
       phone: row.__EMPTY_16?.toString() || '',
       email: row.__EMPTY_17?.toString() || '',
-      city: 'לא נבחר',
-      street: 'לא נבחר',
-      buildingNumber: 'לא נבחר',
-      apartmentNumber: 'לא נבחר',
-      paymentMethod: 'תלוש',
       isActive: true,
-      registrationDate: now,
-      startDate: startDate || now,
-      endDate: endDate || '',
-      lastUpdateDate: now,
-      workingSymbols,
-      documents: [],
-      tags: [],
-      status: row.__EMPTY_8 || 'לא נבחר',
-      accountantId: row.__EMPTY_9 || 'לא נבחר',
-      jobType: getJobType(row.__EMPTY_11),
-      jobTitle: row.__EMPTY_12 || 'לא נבחר',
-      birthDate: new Date('2000-01-01').toISOString(),
-      bankDetails: {
-        bankName: 'לא נבחר',
-        branchNumber: 'לא נבחר',
-        accountNumber: 'לא נבחר',
-        accountOwner: 'לא נבחר'
-      },
-      weeklySchedule: defaultWeeklySchedule
+      createDate: new Date(now),
+      startDate: startDate || new Date(now),
+      endDate: endDate || new Date(now),
+      updateDate: new Date(now),
+      updateBy: 'מערכת',
+      status: row.__EMPTY_20 || 'לא נבחר',
+      roleType: row.__EMPTY_11 || 'לא נבחר',
+      roleName: row.__EMPTY_12 || 'לא נבחר',
+      accountantCode: row.__EMPTY_9 || 'לא נבחר',
+      project: 'צהרון',
+      notes:'לא נבחר',
     };
   };
 
@@ -202,8 +195,8 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
 
   // פונקציה לבדיקת תקינות מספר טלפון
   const isValidPhone = (phone: string): boolean => {
-    const phoneRegex = /^0\d{8,9}$/;
-    return phoneRegex.test(phone.replace(/[-\s]/g, ''));
+    const phoneRegex = /^0\\d{8,9}$/;
+    return phoneRegex.test((phone || '').replace(/[-\\s]/g, ''));
   };
 
   // פונקציה לחישוב ציון איכות לשורת נתונים
@@ -226,15 +219,15 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
     if (worker.endDate) score += 1;
 
     // בדיקת פרטי תפקיד
-    if (worker.jobType && worker.jobType !== 'לא נבחר') score += 1;
-    if (worker.jobTitle && worker.jobTitle !== 'לא נבחר') score += 1;
+    if (worker.roleType && worker.roleType !== 'לא נבחר') score += 1;
+    if (worker.roleName && worker.roleName !== 'לא נבחר') score += 1;
 
     // בדיקת סמלי מוסד
-    if (worker.workingSymbols && worker.workingSymbols.length > 0) score += 2;
+    if (worker.project && worker.project !== 'לא נבחר') score += 2;
 
     // בדיקת סטטוס וחשב שכר
     if (worker.status && worker.status !== 'לא נבחר') score += 1;
-    if (worker.accountantId && worker.accountantId !== 'לא נבחר') score += 1;
+    if (worker.accountantCode && worker.accountantCode !== 'לא נבחר') score += 1;
 
     return score;
   };
@@ -281,50 +274,60 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
         const workbook = XLSX.read(data, { type: 'array' });
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false }) as any[];
-        
+
         // מיפוי סמלי מוסד חסרים
         const missingSymbols = new Set<string>();
-        
-        // בדיקת סמלים חסרים
         jsonData.forEach(row => {
           const symbol = row.__EMPTY?.toString().trim();
           if (symbol && !findClassIdBySymbol(symbol)) {
             missingSymbols.add(symbol);
           }
         });
-
-        // הצגת אזהרה על סמלים חסרים
         if (missingSymbols.size > 0) {
           const symbolsList = Array.from(missingSymbols).join('\n');
           const shouldContinue = window.confirm(
             `שים לב: נמצאו סמלי מוסד שלא קיימים במערכת:\n${symbolsList}\n\nהאם ברצונך להמשיך בייבוא העובדים ללא הכיתות החסרות?`
           );
           if (!shouldContinue) {
+            setIsUploading(false);
             return;
           }
         }
-        
+
         // המרת הנתונים לעובדים
-        const workers = jsonData
-          .map(row => {
-            try {
-              return convertExcelRowToWorker(row);
-            } catch (error) {
-              console.error('Error converting row:', row, error);
-              return null;
-            }
-          })
-          .filter((worker): worker is PreviewWorker => worker !== null);
+        const allWorkers: PreviewWorker[] = jsonData.map(row => {
+          try {
+            return convertExcelRowToWorker(row);
+          } catch (error) {
+            return { id: row.__EMPTY_13?.toString() || '', firstName: row.__EMPTY_15 || '', lastName: row.__EMPTY_14 || '', isActive: false } as PreviewWorker;
+          }
+        });
 
-        // טיפול בכפילויות וקבלת רשימה נקייה
-        const uniqueWorkers = handleDuplicates(workers);
-        
-        setPreviewData(uniqueWorkers);
+        // קיימים במערכת
+        const existingIds = new Set(existingWorkers.map((w: WorkerAfterNoon) => w.id));
+        const alreadyInSystem = allWorkers.filter(w => existingIds.has(w.id));
 
-        // הצגת סיכום למשתמש
-        if (workers.length > uniqueWorkers.length) {
-          alert(`נמצאו ${workers.length - uniqueWorkers.length} כפילויות של עובדים.\nהמערכת בחרה אוטומטית את השורות עם הנתונים המלאים ביותר.`);
-        }
+        // לא קיימים במערכת
+        const notInSystem = allWorkers.filter(w => !existingIds.has(w.id));
+
+        // כפולים בקובץ (רק מתוך notInSystem)
+        const idCount: Record<string, number> = {};
+        notInSystem.forEach(w => { idCount[w.id] = (idCount[w.id] || 0) + 1; });
+        const dups = notInSystem.filter(w => idCount[w.id] > 1);
+
+        // לא כפולים (רק מתוך notInSystem)
+        const notDuplicate = notInSystem.filter(w => idCount[w.id] === 1);
+
+        // לא תקינים (רק מתוך notDuplicate)
+        const invalidId = notDuplicate.filter(w => !validateIsraeliID(w.id));
+        const invalidPhone = notDuplicate.filter(w => w.phone && !isValidPhone(w.phone));
+        const missingPhone = notDuplicate.filter(w => !w.phone);
+        const invalids = Array.from(new Set([...invalidId, ...invalidPhone, ...missingPhone]));
+        setInvalidWorkers(invalids);
+        setInvalidByReason({ invalidId, invalidPhone, missingPhone });
+
+        setShowSummaryDialog(true);
+        setPreviewData(validForImportWorkers); 
       } catch (err) {
         console.error('Error reading Excel file:', err);
         alert(err instanceof Error ? err.message : 'שגיאה בקריאת הקובץ');
@@ -350,58 +353,37 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
     });
   };
 
-  const formatDate = (dateString?: string): string => {
-    if (!dateString) return '';
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('he-IL');
-    } catch (error) {
-      return '';
+  const formatDate = (dateInput?: string | Date): string => {
+    if (!dateInput) return '';
+    let date: Date;
+    if (typeof dateInput === 'string') {
+      date = new Date(dateInput);
+    } else {
+      date = dateInput;
     }
+    if (isNaN(date.getTime())) return '';
+    return date.toLocaleDateString('he-IL');
   };
 
   const handleImport = async () => {
     try {
       setIsImporting(true);
-      // בדיקת עובדים קיימים
-      const existingIds = new Set(existingWorkers.map(w => w.id));
-      const duplicateWorkers = previewData.filter(worker => existingIds.has(worker.id));
-
-      if (duplicateWorkers.length > 0) {
-        const duplicatesList = duplicateWorkers
-          .map(w => `${w.firstName} ${w.lastName} (${w.id})`)
-          .join('\n');
-
-        const shouldContinue = window.confirm(
-          `שים לב: נמצאו ${duplicateWorkers.length} עובדים שכבר קיימים במערכת:\n` +
-          `${duplicatesList}\n\n` +
-          `האם ברצונך להמשיך בייבוא שאר העובדים?`
-        );
-
-        if (!shouldContinue) {
-          setIsImporting(false);
-          return;
-        }
-
-        // ייבוא רק של עובדים שלא קיימים במערכת
-        const uniqueWorkers = previewData.filter(worker => !existingIds.has(worker.id));
-        for (const worker of uniqueWorkers) {
-          await addWorkerMutation.mutateAsync(worker);
-        }
-
-        alert(
-          `הייבוא הושלם בהצלחה!\n` +
-          `יובאו ${uniqueWorkers.length} עובדים חדשים.\n` +
-          `${duplicateWorkers.length} עובדים לא יובאו כי הם כבר קיימים במערכת.`
-        );
-      } else {
-        // אם אין כפילויות, מייבא את כל העובדים
-        for (const worker of previewData) {
-          await addWorkerMutation.mutateAsync(worker);
-        }
-        alert('הייבוא הושלם בהצלחה!');
+      // ייבוא עובדים תקינים + לא תקינים לפי בחירת המשתמש
+      let toImport = [...validForImportWorkers];
+      if (importInvalidId) toImport = toImport.concat(invalidByReason.invalidId);
+      if (importInvalidPhone) toImport = toImport.concat(invalidByReason.invalidPhone);
+      if (importMissingPhone) toImport = toImport.concat(invalidByReason.missingPhone);
+      // הסר כפילויות
+      const seen = new Set();
+      toImport = toImport.filter(w => {
+        if (seen.has(w.id)) return false;
+        seen.add(w.id);
+        return true;
+      });
+      for (const worker of toImport) {
+        await addWorkerMutation.mutateAsync(worker);
       }
-
+      alert('הייבוא הושלם בהצלחה!');
       setPreviewData([]);
       onSuccess?.();
     } catch (error) {
@@ -410,6 +392,15 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
     } finally {
       setIsImporting(false);
     }
+  };
+
+  // פונקציה חדשה לחישוב סך העובדים לייבוא
+  const calculateTotalWorkersToImport = () => {
+    let total = validForImportWorkers.length;
+    if (importInvalidId) total += invalidByReason.invalidId.length;
+    if (importInvalidPhone) total += invalidByReason.invalidPhone.length;
+    if (importMissingPhone) total += invalidByReason.missingPhone.length;
+    return total;
   };
 
   return (
@@ -486,6 +477,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
                   <TableCell>שם תפקיד</TableCell>
                   <TableCell>סטטוס</TableCell>
                   <TableCell>חשב שכר</TableCell>
+                  <TableCell>פרויקט</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -517,10 +509,11 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
                     <TableCell>{worker.email}</TableCell>
                     <TableCell>{formatDate(worker.startDate)}</TableCell>
                     <TableCell>{formatDate(worker.endDate)}</TableCell>
-                    <TableCell>{worker.jobType}</TableCell>
-                    <TableCell>{worker.jobTitle}</TableCell>
+                    <TableCell>{worker.roleType}</TableCell>
+                    <TableCell>{worker.roleName}</TableCell>
                     <TableCell>{worker.status}</TableCell>
-                    <TableCell>{worker.accountantId}</TableCell>
+                    <TableCell>{worker.accountantCode}</TableCell>
+                    <TableCell>{worker.project}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -544,6 +537,45 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
           </Button>
         </>
       ) : null}
+
+      {/* דיאלוג סיכום */}
+      <Dialog open={showSummaryDialog} onClose={() => setShowSummaryDialog(false)}>
+        <DialogTitle>סיכום נתוני קובץ</DialogTitle>
+        <DialogContent>
+          <Typography>סה"כ עובדים בקובץ: {invalidWorkers.length + duplicateWorkers.length + alreadyInSystemWorkers.length + validForImportWorkers.length}</Typography>
+          <Typography color="error">סה"כ עובדים לא תקינים: {invalidWorkers.length}</Typography>
+          <FormGroup>
+            <FormControlLabel
+              control={<Checkbox checked={importInvalidId} onChange={e => setImportInvalidId(e.target.checked)} />}
+              label={`ת"ז לא תקינה: ${invalidByReason.invalidId.length}`}
+            />
+            <FormControlLabel
+              control={<Checkbox checked={importInvalidPhone} onChange={e => setImportInvalidPhone(e.target.checked)} />}
+              label={`טלפון לא תקין: ${invalidByReason.invalidPhone.length}`}
+            />
+            <FormControlLabel
+              control={<Checkbox checked={importMissingPhone} onChange={e => setImportMissingPhone(e.target.checked)} />}
+              label={`טלפון חסר: ${invalidByReason.missingPhone.length}`}
+            />
+          </FormGroup>
+          <Typography color="warning.main">סה"כ עובדים כפולים בקובץ: {duplicateWorkers.length}</Typography>
+          <Typography color="info.main">סה"כ עובדים שכבר קיימים במערכת: {alreadyInSystemWorkers.length}</Typography>
+          <Typography color="success.main">סה"כ עובדים לייבוא: {calculateTotalWorkersToImport()}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowSummaryDialog(false)} color="secondary">ביטול</Button>
+          <Button 
+            onClick={() => {
+              setShowSummaryDialog(false);
+              handleImport();
+            }} 
+            color="primary" 
+            autoFocus
+          >
+            אישור וייבוא
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

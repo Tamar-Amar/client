@@ -2,7 +2,6 @@ import React from 'react';
 import { Routes, Route, useParams } from 'react-router-dom';
 import HomePage from '../pages/HomePage';
 import OperatorsPage from '../pages/OperatorsPage';
-import InstitutionsPage from '../pages/InstitutionsPage';
 import ClassesPage from '../pages/ClassesPage';
 import ActivitiesPage from '../pages/ActivitiesPage';
 import InvoicesPage from '../pages/InvoicesPage';
@@ -12,15 +11,12 @@ import PersonalDetails from '../components/other/PersonalDetails';
 import ActivityHistory from '../components/activities/ActivityHistory';
 import ProtectedRoute from '../components/other/ProtectedRoute';
 import OperatorDetails from '../components/operators/OperatorDetails';
-import ContactList from '../components/other/ContactList';
 import EmailPage from '../pages/EmailPage';
 import PublicReportPage from '../components/activities/addActivity/PublicReportPage';
 import { jwtDecode } from 'jwt-decode';
 import PersonalDocuments from '../components/operators/PersonalDocuments';
 import WorkersPage from '../pages/WorkersPage';
-import WorkerEditPage from '../components/workers/WorkerEditPage';
 import DocumentManagementPage from '../pages/DocumentManagementPage';
-import TagManagement from '../components/tags/TagManagement';
 import WorkerProfilePage from '../pages/WorkerProfilePage';
 import WorkersDocumentsPage from '../pages/WorkersDocumentsPage';
 import WorkerDocumentsApprovalPage from '../pages/WorkerDocumentsApprovalPage';
@@ -33,12 +29,6 @@ const OperatorDocumentsWrapper = () => {
   const operatorId = decodedToken?.id;
 
   return <PersonalDocuments operatorId={operatorId} />;
-};
-
-const WorkerEditWrapper = () => {
-  const { id } = useParams();
-
-  return <WorkerEditPage workerId={id || ''} />;
 };
 
 
@@ -62,15 +52,11 @@ const AppRoutes: React.FC = () => {
 
       <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
         <Route path="/operators" element={<OperatorsPage />} />
-        <Route path="/workers/edit/:id" element={<WorkerEditWrapper />} />
-        <Route path="/institutions" element={<InstitutionsPage />} />
         <Route path="/classes" element={<ClassesPage />} />
         <Route path="/activities" element={<ActivitiesPage />} />
-        <Route path="/tags" element={<TagManagement />} />
         <Route path="/invoices" element={<InvoicesPage/>}/>
         <Route path="/purchases" element={<PurchasesPage/>}/>
         <Route path="/operators/:id" element={<OperatorDetails />} />
-        <Route path="/contacts" element={<ContactList />} />
         <Route path="/emails" element={<EmailPage />} />
       </Route>
 

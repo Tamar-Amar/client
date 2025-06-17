@@ -22,8 +22,8 @@ import TableViewIcon from '@mui/icons-material/TableView';
 import ArticleIcon from '@mui/icons-material/Article';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import { Worker } from '../../types';
-import { useAddWorker } from '../../queries/workerQueries';
+import { WorkerAfterNoon } from '../../types';
+import { useAddWorkerAfterNoon } from '../../queries/workerAfterNoonQueries';
 
 // Template for Excel file
 const EXCEL_TEMPLATE = [
@@ -33,55 +33,38 @@ const EXCEL_TEMPLATE = [
     'שם משפחה': '',
     'טלפון': '',
     'אימייל': '',
-    'עיר': '',
-    'רחוב': '',
-    'מספר בית': '',
-    'מספר דירה': '',
-    'תאריך לידה': '',
-    'אופן תשלום': 'תלוש',
     'פעיל': 'כן',
     'תאריך הרשמה': new Date().toISOString().split('T')[0],
     'הערות': '',
-    // Bank Details
-    'שם בנק': '',
-    'מספר סניף': '',
-    'מספר חשבון': '',
-    'שם בעל החשבון': '',
+    'סוג תפקיד': '',
+    'שם תפקיד': '',
+    'תאריך התחלה': '',
+    'תאריך סיום': '',
+    'סטטוס': '',
+
   }
 ];
 
 // Column mapping from Excel to Worker type
-const COLUMN_MAPPING: { [key: string]: keyof Worker | string } = {
+const COLUMN_MAPPING: { [key: string]: keyof WorkerAfterNoon | string } = {
   'תעודת זהות': 'id',
   'שם פרטי': 'firstName',
   'שם משפחה': 'lastName',
   'טלפון': 'phone',
   'אימייל': 'email',
-  'עיר': 'city',
-  'רחוב': 'street',
-  'מספר בית': 'buildingNumber',
-  'מספר דירה': 'apartmentNumber',
-  'תאריך לידה': 'birthDate',
-  'אופן תשלום': 'paymentMethod',
   'פעיל': 'isActive',
-  'תאריך הרשמה': 'registrationDate',
+  'תאריך הרשמה': 'createDate',
   'הערות': 'notes',
-  'שם בנק': 'bankDetails.bankName',
-  'מספר סניף': 'bankDetails.branchNumber',
-  'מספר חשבון': 'bankDetails.accountNumber',
-  'שם בעל החשבון': 'bankDetails.accountOwner'
+  'סוג תפקיד': 'roleType',
+  'שם תפקיד': 'roleName',
+  'תאריך התחלה': 'startDate',
+  'תאריך סיום': 'endDate',
+  'סטטוס': 'status',
 };
 
-const convertRowToWorker = (row: any): Worker => {
-  const worker: Partial<Worker> = {
+const convertRowToWorker = (row: any): WorkerAfterNoon => {
+  const worker: Partial<WorkerAfterNoon> = {
     isActive: true, // Default to true
-    paymentMethod: row['אופן תשלום'] || 'תלוש',
-    bankDetails: {
-      bankName: '',
-      branchNumber: '',
-      accountNumber: '',
-      accountOwner: ''
-    }
   };
 
   // Map Excel columns to Worker properties
@@ -90,13 +73,9 @@ const convertRowToWorker = (row: any): Worker => {
     
     if (typeof workerProp === 'string') {
       // Special handling for isActive field
-      if (workerProp === 'isActive') {
-        worker.isActive = row[excelCol]?.toString().trim().toLowerCase() === 'כן';
-        return;
-      }
 
       // Special handling for birthDate field
-      if (workerProp === 'birthDate') {
+      if (workerProp === 'startDate') {
         const dateValue = row[excelCol];
         if (dateValue) {
           let date: Date | null = null;
@@ -114,39 +93,30 @@ const convertRowToWorker = (row: any): Worker => {
             const excelEpoch = new Date(1899, 11, 30);
             date = new Date(excelEpoch.getTime() + (dateValue * 24 * 60 * 60 * 1000));
           }
-
-          if (date && !isNaN(date.getTime())) {
-            worker.birthDate = date.toISOString().split('T')[0];
-            return;
-          }
-
-          // If date parsing failed, throw an error
-          throw new Error(`תאריך לידה לא תקין: ${dateValue}. יש להזין בפורמט DD/MM/YYYY (לדוגמה: 15/02/2004)`);
         }
-        // If no date provided, throw an error
-        throw new Error(`תאריך לידה הוא שדה חובה`);
+
       }
 
       if (workerProp.includes('.')) {
         // Handle nested properties (e.g. bankDetails.bankName)
         const [parent, child] = workerProp.split('.');
-        if (!worker[parent as keyof Worker]) {
-          (worker[parent as keyof Worker] as any) = {};
+        if (!worker[parent as keyof WorkerAfterNoon]) {
+          (worker[parent as keyof WorkerAfterNoon] as any) = {};
         }
-        ((worker[parent as keyof Worker] as any)[child]) = row[excelCol];
+        ((worker[parent as keyof WorkerAfterNoon] as any)[child]) = row[excelCol];
       } else {
-        (worker[workerProp as keyof Worker] as any) = row[excelCol];
+        (worker[workerProp as keyof WorkerAfterNoon] as any) = row[excelCol];
       }
     }
-  });
+  }); 
 
-  return worker as Worker;
+  return worker as WorkerAfterNoon;
 };
 
 const WorkerExcelImport: React.FC = () => {
-  const [previewData, setPreviewData] = useState<Worker[]>([]);
+  const [previewData, setPreviewData] = useState<WorkerAfterNoon[]>([]);
   const [showPreview, setShowPreview] = useState(false);
-  const addWorkerMutation = useAddWorker();
+  const addWorkerMutation = useAddWorkerAfterNoon();
 
   const downloadTemplate = () => {
     const ws = XLSX.utils.json_to_sheet(EXCEL_TEMPLATE);
@@ -282,9 +252,11 @@ const WorkerExcelImport: React.FC = () => {
                   <TableCell>שם פרטי</TableCell>
                   <TableCell>טלפון</TableCell>
                   <TableCell>אימייל</TableCell>
-                  <TableCell>עיר</TableCell>
-                  <TableCell>רחוב</TableCell>
-                  <TableCell>אופן תשלום</TableCell>
+                  <TableCell>סוג תפקיד</TableCell>
+                  <TableCell>שם תפקיד</TableCell>
+                  <TableCell>תאריך התחלה</TableCell>
+                  <TableCell>תאריך סיום</TableCell>
+                  <TableCell>סטטוס</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -295,9 +267,11 @@ const WorkerExcelImport: React.FC = () => {
                     <TableCell>{worker.firstName}</TableCell>
                     <TableCell>{worker.phone}</TableCell>
                     <TableCell>{worker.email}</TableCell>
-                    <TableCell>{worker.city}</TableCell>
-                    <TableCell>{worker.street}</TableCell>
-                    <TableCell>{worker.paymentMethod}</TableCell>
+                    <TableCell>{worker.roleType}</TableCell>
+                    <TableCell>{worker.roleName}</TableCell>
+                    <TableCell>{worker.startDate.toISOString().split('T')[0]}</TableCell>
+                    <TableCell>{worker.endDate.toISOString().split('T')[0]}</TableCell>
+                    <TableCell>{worker.status}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

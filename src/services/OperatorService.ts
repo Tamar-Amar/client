@@ -19,15 +19,6 @@ export const createOperator = async (newOperator: {
   address: string;
   description: string;
   paymentMethod: "חשבונית" | "תלוש" | "לא נבחר";
-  businessDetails?: {
-    businessId: string;
-    businessName: string;
-  };
-  bankDetails: { 
-    bankName: string;
-    accountNumber: string;
-    branchNumber: string;
-  };
   gender: "בנים" | "בנות" | "גם וגם";
   educationType: "רגיל" | "מיוחד" | "גם וגם";
   regularClasses?: string[];

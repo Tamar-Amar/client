@@ -9,14 +9,10 @@ import {
   Snackbar,
   Alert,
   InputAdornment,
-  Divider,
+  Divider,  
   Tabs,
   Tab,
-  FormControl,
-  InputLabel,
-  Select,
   Chip,
-  OutlinedInput,
   IconButton,
   Paper,
   CircularProgress,
@@ -26,21 +22,16 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import PhoneIcon from "@mui/icons-material/Phone";
 import EmailIcon from "@mui/icons-material/Email";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
-import BusinessIcon from "@mui/icons-material/Business";
-import CreditCardIcon from "@mui/icons-material/CreditCard";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import CancelIcon from '@mui/icons-material/Cancel';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { useFormik } from "formik";
 import { OperatorSchema } from "../../types/validations/OperatorValidation";
 import PasswordField from "../other/PasswordField";
 import { useAddOperator } from "../../queries/operatorQueries";
 import { useUpdateDocuments } from "../../queries/useDocuments";
-import { useNavigate } from "react-router-dom";
 import { EducationType, Gender, PaymentMethodChoicesEnum } from "../../types";
 import { useFetchClasses } from "../../queries/classQueries";
-import OperatorDocuments from "./OperatorDocuments";
 import { useUploadDocument } from "../../queries/useDocuments";
 import { styled } from '@mui/material/styles';
 
@@ -124,20 +115,12 @@ interface FormValues {
   address: string;
   description: string;
   paymentMethod: PaymentMethodChoicesEnum;
-  businessDetails: {
-    businessId: string;
-    businessName: string;
-  };
-  bankDetails: {
-    bankName: string;
-    accountNumber: string;
-    branchNumber: string;
-  };
   gender: Gender;
   educationType: EducationType;
   isActive: boolean;
   regularClasses: string[];
 }
+
 
 const NewOperatorDocuments: React.FC<{ tempOperatorId: string }> = ({ tempOperatorId }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -151,7 +134,6 @@ const NewOperatorDocuments: React.FC<{ tempOperatorId: string }> = ({ tempOperat
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     if (file) {
-      // בדיקה אם הקובץ כבר קיים
       const isDuplicate = uploadedFiles.some(
         existingFile => existingFile.name === file.name && existingFile.size === file.size
       );
@@ -344,7 +326,6 @@ const OperatorCreate: React.FC<Props> = ({ onSuccess }) => {
   const [tabValue, setTabValue] = useState(0);
   const addOperatorMutation = useAddOperator();
   const updateDocumentsMutation = useUpdateDocuments();
-  const navigate = useNavigate();
   const { data: classes = [] } = useFetchClasses();
   const [tempOperatorId] = useState<string>('temp-' + Date.now());
 
@@ -364,15 +345,6 @@ const OperatorCreate: React.FC<Props> = ({ onSuccess }) => {
       address: "",
       description: "כללי",
       paymentMethod: PaymentMethodChoicesEnum.NONE,
-      businessDetails: {
-        businessId: "לא נבחר",
-        businessName: "לא נבחר",
-      },
-      bankDetails: {
-        bankName: "לא נבחר",
-        accountNumber: "00",
-        branchNumber: "00",
-      },
       gender: Gender.ALL,
       educationType: EducationType.ALL,
       isActive: true,
@@ -381,14 +353,12 @@ const OperatorCreate: React.FC<Props> = ({ onSuccess }) => {
     validationSchema: OperatorSchema,
     onSubmit: async (values) => {
       try {
-        // 1. שמירת המפעיל
         const result = await addOperatorMutation.mutateAsync(values);
         
         if (!result?._id) {
           throw new Error('לא התקבל מזהה למפעיל החדש');
         }
 
-        // 2. עדכון המסמכים עם האיידי החדש
         try {
           await updateDocumentsMutation.mutateAsync({
             tempId: tempOperatorId,
@@ -396,7 +366,6 @@ const OperatorCreate: React.FC<Props> = ({ onSuccess }) => {
           });
         } catch (docError) {
           console.error('שגיאה בעדכון המסמכים:', docError);
-          // נמשיך בכל מקרה כי המפעיל כבר נשמר
         }
 
         setSnackbarMessage("המפעיל נוסף בהצלחה");
@@ -607,119 +576,8 @@ const OperatorCreate: React.FC<Props> = ({ onSuccess }) => {
                 </TextField>
               </Grid>
             </Grid>
-
-            {formik.values.paymentMethod === PaymentMethodChoicesEnum.CHEABONIT && (
-              <>
-                <Divider sx={{ my: 3 }} />
-                <Typography variant="h6" gutterBottom>פרטי עסק</Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={6}>
-                    <TextField
-                      label="ח.פ. עסק"
-                      name="businessDetails.businessId"
-                      value={formik.values.businessDetails.businessId}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      error={formik.touched.businessDetails?.businessId && Boolean(formik.errors.businessDetails?.businessId)}
-                      helperText={formik.touched.businessDetails?.businessId && formik.errors.businessDetails?.businessId}
-                      fullWidth
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <BusinessIcon />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  </Grid>
-
-                  <Grid item xs={6}>
-                    <TextField
-                      label="שם העסק"
-                      name="businessDetails.businessName"
-                      value={formik.values.businessDetails.businessName}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      error={formik.touched.businessDetails?.businessName && Boolean(formik.errors.businessDetails?.businessName)}
-                      helperText={formik.touched.businessDetails?.businessName && formik.errors.businessDetails?.businessName}
-                      fullWidth
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <BusinessIcon />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  </Grid>
-                </Grid>
-              </>
-            )}
-
-            <Divider sx={{ my: 3 }} />
-            <Typography variant="h6" gutterBottom>פרטי בנק</Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={4}>
-                <TextField
-                  label="שם הבנק"
-                  name="bankDetails.bankName"
-                  value={formik.values.bankDetails.bankName}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  error={formik.touched.bankDetails?.bankName && Boolean(formik.errors.bankDetails?.bankName)}
-                  helperText={formik.touched.bankDetails?.bankName && formik.errors.bankDetails?.bankName}
-                  fullWidth
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <CreditCardIcon />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-
-              <Grid item xs={4}>
-                <TextField
-                  label="מספר חשבון"
-                  name="bankDetails.accountNumber"
-                  value={formik.values.bankDetails.accountNumber}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  error={formik.touched.bankDetails?.accountNumber && Boolean(formik.errors.bankDetails?.accountNumber)}
-                  helperText={formik.touched.bankDetails?.accountNumber && formik.errors.bankDetails?.accountNumber}
-                  fullWidth
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <CreditCardIcon />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-
-              <Grid item xs={4}>
-                <TextField
-                  label="מספר סניף"
-                  name="bankDetails.branchNumber"
-                  value={formik.values.bankDetails.branchNumber}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  error={formik.touched.bankDetails?.branchNumber && Boolean(formik.errors.bankDetails?.branchNumber)}
-                  helperText={formik.touched.bankDetails?.branchNumber && formik.errors.bankDetails?.branchNumber}
-                  fullWidth
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <CreditCardIcon />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-            </Grid>
           </TabPanel>
+
 
           <TabPanel value={tabValue} index={2}>
             <Typography variant="h6" gutterBottom>העדפות הפעלה</Typography>

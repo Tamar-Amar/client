@@ -14,11 +14,6 @@ const HomePage = () => {
   const role = useRecoilValue(userRoleState);
 
   const features = [
-    // {
-    //   icon: <SchoolIcon sx={{ fontSize: 40 }} />,
-    //   title: 'מערכת צעירון',
-    //   description: 'ניהול מתקדם של פעילויות חינוכיות'
-    // },
     {
       icon: <GroupsIcon sx={{ fontSize: 40 }} />,
       title: 'ניהול עובדים',
@@ -33,12 +28,7 @@ const HomePage = () => {
       icon: <EventNoteIcon sx={{ fontSize: 40 }} />,
       title: 'דוחות ומעקב',
       description: 'מעקב אחר פעילויות והפקת דוחות'
-    },
-    // {
-    //   icon: <SecurityIcon sx={{ fontSize: 40 }} />,
-    //   title: 'אבטחה מתקדמת',
-    //   description: 'מערכת מאובטחת לשמירת מידע'
-    // }
+    }
   ];
 
   return (

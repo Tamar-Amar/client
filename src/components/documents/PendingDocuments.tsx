@@ -15,18 +15,18 @@ import CloseIcon from '@mui/icons-material/Close';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useFetchAllDocuments, useWorkerDocuments } from '../../queries/useDocuments';
 import { Document, DocumentStatus } from '../../types/Document';
-import { useFetchWorkers } from '../../queries/workerQueries';
-import { Worker } from '../../types';
+import { useFetchAllWorkersAfterNoon } from '../../queries/workerAfterNoonQueries';
+import { WorkerAfterNoon } from '../../types';
 
 const PendingDocuments: React.FC = () => {
   const { data: documents = [], isLoading: isLoadingDocs } = useFetchAllDocuments();
-  const { data: workers = [], isLoading: isLoadingWorkers } = useFetchWorkers();
+  const { data: workers = [], isLoading: isLoadingWorkers } = useFetchAllWorkersAfterNoon();
   const { updateStatus, isUpdatingStatus } = useWorkerDocuments('all');
 
   const pendingDocuments = documents.filter((doc: Document) => doc.status === DocumentStatus.PENDING);
 
   const getOperatorDetails = (operatorId: string): { name: string; id: string } => {
-    const worker = workers?.find((w: Worker) => w._id === operatorId);
+    const worker = workers?.find((w: WorkerAfterNoon) => w._id === operatorId);
     return worker ? {
       name: `${worker.firstName} ${worker.lastName}`,
       id: worker.id || ''

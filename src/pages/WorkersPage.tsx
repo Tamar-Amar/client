@@ -2,19 +2,18 @@ import React, { useState } from 'react';
 import { Container, Box, Typography, Divider, IconButton, Button, Dialog, DialogTitle, DialogContent, DialogActions, Tooltip, CircularProgress, LinearProgress } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
-import WorkerCreate from '../components/workers/WorkerCreate';
-import WorkersList from '../components/WorkersList';
+import WorkersList from '../components/workers/WorkersList';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
-import { useDeleteWorker, useFetchWorkers } from '../queries/workerQueries';
+import { useDeleteWorkerAfterNoon, useFetchAllWorkersAfterNoon } from '../queries/workerAfterNoonQueries';
 import ExcelImport from '../components/workers/ExcelImport';
 
 const WorkersPage: React.FC = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const deleteWorkerMutation = useDeleteWorker();
-  const { data: workers = [] } = useFetchWorkers();
+  const deleteWorkerMutation = useDeleteWorkerAfterNoon();
+  const { data: workers = [] } = useFetchAllWorkersAfterNoon();
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteProgress, setDeleteProgress] = useState(0);
 
@@ -124,12 +123,7 @@ const WorkersPage: React.FC = () => {
         )}
 
         <Divider sx={{ mb: 3 }} />
-
-        {isCreating ? (
-          <WorkerCreate onSuccess={() => setIsCreating(false)} />
-        ) : (
-          <WorkersList />
-        )}
+        <WorkersList />
       </Box>
 
       {/* Delete confirmation dialog */}

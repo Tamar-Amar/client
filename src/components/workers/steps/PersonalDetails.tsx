@@ -6,8 +6,7 @@ interface FormValues {
   firstName: string;
   lastName: string;
   id: string;
-  password: string;
-  birthDate: string;
+  status: string;
 }
 
 interface Props {
@@ -53,26 +52,12 @@ const PersonalDetails: React.FC<Props> = ({ formik }) => {
       <Grid item xs={6}>
         <TextField
           fullWidth
-          label="סיסמא"
-          name="password"
-          type="password"
-          value={formik.values.password}
+          label="סטטוס"
+          name="status"
+          value={formik.values.status}
           onChange={formik.handleChange}
-          error={formik.touched.password && Boolean(formik.errors.password)}
-          helperText={formik.touched.password && formik.errors.password}
-        />
-      </Grid>
-      <Grid item xs={6}>
-        <TextField
-          fullWidth
-          type="date"
-          label="תאריך לידה"
-          name="birthDate"
-          value={formik.values.birthDate}
-          onChange={formik.handleChange}
-          error={formik.touched.birthDate && Boolean(formik.errors.birthDate)}
-          helperText={formik.touched.birthDate && formik.errors.birthDate}
-          InputLabelProps={{ shrink: true }}
+          error={formik.touched.status && Boolean(formik.errors.status)}
+          helperText={formik.touched.status && formik.errors.status}
         />
       </Grid>
     </Grid>
