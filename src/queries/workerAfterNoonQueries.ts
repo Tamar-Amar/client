@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createWorker, deleteWorker, fetchWorkerById, fetchWorkers, updateWorker } from '../services/WorkerAfterNoonService';
+import { createWorker, deleteAllWorkers, deleteWorker, fetchWorkerById, fetchWorkers, updateWorker } from '../services/WorkerAfterNoonService';
 import { WorkerAfterNoon } from '../types';
 
 export const useFetchAllWorkersAfterNoon = () => {
@@ -51,3 +51,14 @@ export const useDeleteWorkerAfterNoon = () => {
     }
   });
 }; 
+
+export const useDeleteAllWorkersAfterNoon = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: deleteAllWorkers,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workers'] });
+    }
+  });
+};

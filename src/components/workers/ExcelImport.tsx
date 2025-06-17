@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button, Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, CircularProgress, Backdrop, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, FormGroup, FormControlLabel, Checkbox, List, ListItem, ListItemText, ListItemIcon } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import * as XLSX from 'xlsx';
 import { useFetchClasses } from '../../queries/classQueries';
-import { useAddWorkerAfterNoon, useDeleteWorkerAfterNoon, useFetchAllWorkersAfterNoon } from '../../queries/workerAfterNoonQueries';
-import { WorkerAfterNoon, Class, WeeklySchedule } from '../../types';
+import { useAddWorkerAfterNoon, useFetchAllWorkersAfterNoon } from '../../queries/workerAfterNoonQueries';
+import { WorkerAfterNoon, Class } from '../../types';
+import { normalizePhone, isValidPhone, formatDate, validateIsraeliID, parseDate } from './excelImportUtils';
 
 
 interface ExcelRow {
@@ -40,14 +41,10 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const addWorkerMutation = useAddWorkerAfterNoon();
-  const deleteWorkerMutation = useDeleteWorkerAfterNoon();
   const { data: classes = [], isLoading: isLoadingClasses } = useFetchClasses();
   const { data: existingWorkers = [] } = useFetchAllWorkersAfterNoon();
 
-  // סטייטים חדשים
   const [invalidWorkers, setInvalidWorkers] = useState<PreviewWorker[]>([]);
-  const [duplicateWorkers, setDuplicateWorkers] = useState<PreviewWorker[]>([]);
-  const [alreadyInSystemWorkers, setAlreadyInSystemWorkers] = useState<PreviewWorker[]>([]);
   const [validForImportWorkers, setValidForImportWorkers] = useState<PreviewWorker[]>([]);
   const [showSummaryDialog, setShowSummaryDialog] = useState(false);
   const [importInvalidId, setImportInvalidId] = useState(false);
@@ -63,14 +60,12 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
   const findClassIdBySymbol = (symbol: string): string | null => {
     if (isLoadingClasses) return null;
     
-    // נקה רווחים מהסמל
     const trimmedSymbol = symbol.trim();
     
-    // נסה למצוא התאמה מדויקת
     const exactMatch = classes.find((c: Class) => c.uniqueSymbol === trimmedSymbol);
     if (exactMatch) return exactMatch._id;
     
-    // אם יש מקף, נסה למצוא התאמה לפי החלק הראשון של הסמל
+
     if (trimmedSymbol.includes('-')) {
       const baseSymbol = trimmedSymbol.split('-')[0].trim();
       const baseMatch = classes.find((c: Class) => c.uniqueSymbol === baseSymbol);
@@ -78,59 +73,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
     }
     
     return null;
-  };
-
-  const validateIsraeliID = (id: string): boolean => {
-    id = id.trim();
-    if (id.length > 9) return false;
-    id = id.padStart(9, '0');
-    
-    let sum = 0;
-    for (let i = 0; i < 9; i++) {
-      let digit = Number(id.charAt(i));
-      if (i % 2 === 0) {
-        digit *= 1;
-      } else {
-        digit *= 2;
-        if (digit > 9) {
-          digit = (digit % 10) + Math.floor(digit / 10);
-        }
-      }
-      sum += digit;
-    }
-    return sum % 10 === 0;
-  };
-
-  const parseDate = (dateStr: string): string => {
-    if (!dateStr || typeof dateStr !== 'string') return '';
-
-    const cleanDateStr = dateStr.trim().replace(/[^0-9./-]/g, '');
-    if (!cleanDateStr) return '';
-    if (!isNaN(Number(cleanDateStr)) && cleanDateStr.length <= 5) {
-      const excelEpoch = new Date(Date.UTC(1899, 11, 30));
-      excelEpoch.setDate(excelEpoch.getDate() + Number(cleanDateStr));
-      return excelEpoch.toISOString();
-    }
-
-    const parts = cleanDateStr.split(/[./-]/).map(num => num.trim());
-    if (parts.length === 3) {
-      let [day, month, year] = parts;
-      if (year.length === 2) year = `20${year}`;
-      if (year.length === 4 && day.length === 4) {
-        [year, month, day] = parts;
-      }
-      const date = new Date(Number(year), Number(month) - 1, Number(day));
-      if (!isNaN(date.getTime())) {
-        return date.toISOString();
-      }
-    }
-
-    const date = new Date(cleanDateStr);
-    if (!isNaN(date.getTime())) {
-      return date.toISOString();
-    }
-
-    return '';
   };
 
 
@@ -176,48 +118,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
     };
   };
 
-  const isValidEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const isValidPhone = (phone: string): boolean => {
-    let cleanPhone = (phone || '').replace(/[-\s()]/g, '');
-    if (cleanPhone.length === 9 && !cleanPhone.startsWith('0')) {
-      cleanPhone = `0${cleanPhone}`;
-    }
-    const phoneRegex = /^0\d{8,9}$/;
-    return phoneRegex.test(cleanPhone);
-  };
-  // פונקציה לחישוב ציון איכות לשורת נתונים
-  const calculateRowQualityScore = (worker: PreviewWorker): number => {
-    let score = 0;
-
-
-    if (worker.firstName?.trim()) score += 1;
-    if (worker.lastName?.trim()) score += 1;
-    if (worker.id?.trim()) score += 1;
-
-    if (worker.email && isValidEmail(worker.email)) score += 2;
-
-    if (worker.phone && isValidPhone(worker.phone)) score += 2;
-
-    if (worker.startDate) score += 2;
-    if (worker.endDate) score += 1;
-
-    if (worker.roleType && worker.roleType !== 'לא נבחר') score += 1;
-    if (worker.roleName && worker.roleName !== 'לא נבחר') score += 1;
-
-    if (worker.project && worker.project !== 'לא נבחר') score += 2;
-
-    if (worker.status && worker.status !== 'לא נבחר') score += 1;
-    if (worker.accountantCode && worker.accountantCode !== 'לא נבחר') score += 1;
-
-    return score;
-  };
-
-
-
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -231,7 +131,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false }) as any[];
 
-        // המרת הנתונים לעובדים
         const workers: PreviewWorker[] = jsonData.map(row => {
           try {
             return convertExcelRowToWorker(row);
@@ -242,7 +141,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
 
         setAllWorkers(workers);
 
-        // מיפוי סמלי מוסד חסרים
         const missingSymbols = new Set<string>();
         jsonData.forEach(row => {
           const symbol = row.__EMPTY?.toString().trim();
@@ -304,18 +202,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
     });
   };
 
-  const formatDate = (dateInput?: string | Date): string => {
-    if (!dateInput) return '';
-    let date: Date;
-    if (typeof dateInput === 'string') {
-      date = new Date(dateInput);
-    } else {
-      date = dateInput;
-    }
-    if (isNaN(date.getTime())) return '';
-    return date.toLocaleDateString('he-IL');
-  };
-
   const handleImport = async () => {
     try {
       setIsImporting(true);
@@ -343,7 +229,8 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       });
 
       for (const worker of toImport) {
-        await addWorkerMutation.mutateAsync(worker);
+        const normalizedWorker = { ...worker, phone: normalizePhone(worker.phone) };
+        await addWorkerMutation.mutateAsync(normalizedWorker);
       }
       alert('הייבוא הושלם בהצלחה!');
       setPreviewData([]);

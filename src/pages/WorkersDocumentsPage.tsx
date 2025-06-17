@@ -4,7 +4,7 @@ import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
-import { useDeleteWorkerAfterNoon, useFetchAllWorkersAfterNoon } from '../queries/workerAfterNoonQueries';
+import { useDeleteAllWorkersAfterNoon, useFetchAllWorkersAfterNoon } from '../queries/workerAfterNoonQueries';
 import ExcelImport from '../components/workers/ExcelImport';
 import WorkersDocumentsList from '../components/workers/WorkersDocumentsList';
 import { useNavigate } from 'react-router-dom';
@@ -12,7 +12,7 @@ const WorkersDocumentsPage: React.FC = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const deleteWorkerMutation = useDeleteWorkerAfterNoon();
+  const deleteAllWorkersMutation = useDeleteAllWorkersAfterNoon();
   const { data: workers = [] } = useFetchAllWorkersAfterNoon();
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteProgress, setDeleteProgress] = useState(0);
@@ -25,12 +25,8 @@ const WorkersDocumentsPage: React.FC = () => {
       setShowDeleteConfirm(false);
       setDeleteProgress(0);
 
-      const totalWorkers = workers.length;
-      for (let i = 0; i < workers.length; i++) {
-        await deleteWorkerMutation.mutateAsync(workers[i]._id);
-        setDeleteProgress(((i + 1) / totalWorkers) * 100);
-      }
-
+      await deleteAllWorkersMutation.mutateAsync();
+      setDeleteProgress(100);
       alert(`נמחקו ${workers.length} עובדים בהצלחה`);
     } catch (error) {
       console.error('Error deleting workers:', error);
@@ -46,20 +42,20 @@ const WorkersDocumentsPage: React.FC = () => {
       <Box sx={{ p: 2 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
           <Typography variant="h4" fontWeight="bold">
-            {isCreating ? 'הוספת עובד חדש' : 'ניהול עובדים'}
+            {isCreating ? 'הוספת עובד חדש' : 'ניהול עובדי צהרון'}
           </Typography>
           <Box display="flex" gap={1}>
 
             {!isCreating && (
               <>
-                        <Button
-    variant="outlined"
-    color="secondary"
-    onClick={() => navigate('/workers-documents-email')}
-    sx={{ whiteSpace: 'nowrap' }}
-  >
-    שליחת מיילים
-  </Button>
+                <Button
+                  variant="outlined"
+                  color="secondary"
+                  onClick={() => navigate('/workers-documents-email')}
+                  sx={{ whiteSpace: 'nowrap' }}
+                >
+                  שליחת מיילים
+                </Button>
                 <Button
                   variant="outlined"
                   size="small"

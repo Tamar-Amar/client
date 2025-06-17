@@ -43,6 +43,7 @@ export interface Activity {
     description?: string;
     workerAfterNoonId1: string;
     workerAfterNoonId2: string;
+    
   }
 
 
