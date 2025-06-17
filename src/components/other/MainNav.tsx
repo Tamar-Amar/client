@@ -9,16 +9,17 @@ import { useRecoilValue } from 'recoil';
 import { userRoleState } from '../../recoil/storeAtom';
 import { jwtDecode } from 'jwt-decode';
 import { fetchOperatorById } from '../../services/OperatorService';
-import { Operator } from '../../types';
+import { Operator, WorkerAfterNoon } from '../../types';
 import DynamicNavbar from './DynamicNavbar';
 import { useFetchWorkerAfterNoon } from '../../queries/workerAfterNoonQueries';
+import { fetchWorkerById } from '../../services/WorkerAfterNoonService';
 
 const MainNav: React.FC = () => {
   const navigate = useNavigate();
   const role = useRecoilValue(userRoleState);
   const [operatorName, setOperatorName] = useState<string | null>(null);
   const [workerDetails, setWorkerDetails] = useState<{ name: string; idNumber: string } | null>(null);
-  const [selectedSection, setSelectedSection] = useState<string | undefined>(undefined);
+  const [selectedSection, setSelectedSection] = useState<string | undefined>('afternoon');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -35,13 +36,16 @@ const MainNav: React.FC = () => {
             console.error('Failed to fetch operator name:', err);
           });
       } else if (role === 'worker') {
-        const { data } = useFetchWorkerAfterNoon(userId)
-        if (data) {
-          setWorkerDetails({
-            name: `${data?.firstName} ${data?.lastName}`,
-            idNumber: data?.id || ''
+        fetchWorkerById(userId)
+          .then((data: WorkerAfterNoon) => {
+            setWorkerDetails({
+              name: `${data.firstName} ${data.lastName}`,
+              idNumber: data.id || ''
+            });
+          })
+          .catch((err) => {
+            console.error('Failed to fetch worker details:', err);
           });
-        }
       }
     }
   }, [role]);
@@ -70,7 +74,7 @@ const MainNav: React.FC = () => {
             </Button>
             <Button
               startIcon={<EventIcon />}
-              onClick={(e) => setSelectedSection('camps')}
+              onClick={(e) => setSelectedSection('camp')}
               sx={{
                 color: 'white',
                 fontSize: '1.1rem',
@@ -150,7 +154,7 @@ const MainNav: React.FC = () => {
           </Box>
         </Toolbar>
       </AppBar>
-      <DynamicNavbar onLogout={handleLogout} role={role || undefined} selectedSection={selectedSection} />
+      <DynamicNavbar role={role || undefined} selectedSection={selectedSection} />
     </>
   );
 };

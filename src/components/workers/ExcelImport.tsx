@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, CircularProgress, Backdrop, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, FormGroup, FormControlLabel, Checkbox } from '@mui/material';
+import { Button, Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, CircularProgress, Backdrop, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, FormGroup, FormControlLabel, Checkbox, List, ListItem, ListItemText, ListItemIcon } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import * as XLSX from 'xlsx';
@@ -58,6 +58,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
     invalidPhone: PreviewWorker[];
     missingPhone: PreviewWorker[];
   }>({ invalidId: [], invalidPhone: [], missingPhone: [] });
+  const [allWorkers, setAllWorkers] = useState<PreviewWorker[]>([]);
 
   const findClassIdBySymbol = (symbol: string): string | null => {
     if (isLoadingClasses) return null;
@@ -80,13 +81,10 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
   };
 
   const validateIsraeliID = (id: string): boolean => {
-    // מסיר תווים לא חוקיים
     id = id.trim();
     if (id.length > 9) return false;
-    // משלים ל-9 ספרות עם אפסים מובילים
     id = id.padStart(9, '0');
     
-    // בדיקת ספרת ביקורת
     let sum = 0;
     for (let i = 0; i < 9; i++) {
       let digit = Number(id.charAt(i));
@@ -105,25 +103,19 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
 
   const parseDate = (dateStr: string): string => {
     if (!dateStr || typeof dateStr !== 'string') return '';
-    // מסיר רווחים ותווים לא רלוונטיים
+
     const cleanDateStr = dateStr.trim().replace(/[^0-9./-]/g, '');
     if (!cleanDateStr) return '';
-
-    // תאריכים בפורמט אקסל (מספר סידורי)
     if (!isNaN(Number(cleanDateStr)) && cleanDateStr.length <= 5) {
-      // המרה ממספר אקסל לתאריך
       const excelEpoch = new Date(Date.UTC(1899, 11, 30));
       excelEpoch.setDate(excelEpoch.getDate() + Number(cleanDateStr));
       return excelEpoch.toISOString();
     }
 
-    // DD/MM/YYYY או DD.MM.YYYY או DD-MM-YYYY
     const parts = cleanDateStr.split(/[./-]/).map(num => num.trim());
     if (parts.length === 3) {
       let [day, month, year] = parts;
-      // אם השנה דו-ספרתית, הוסף 20
       if (year.length === 2) year = `20${year}`;
-      // אם היום והחודש בסדר הפוך (YYYY-MM-DD)
       if (year.length === 4 && day.length === 4) {
         [year, month, day] = parts;
       }
@@ -133,7 +125,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       }
     }
 
-    // נסה לפרסר תאריך רגיל
     const date = new Date(cleanDateStr);
     if (!isNaN(date.getTime())) {
       return date.toISOString();
@@ -153,7 +144,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
     const startDate = new Date(parseDate(row.__EMPTY_18));
     const endDate = new Date(parseDate(row.__EMPTY_19));
     
-    // בדיקת סמל מוסד - משתמש בסמל המלא מ-__EMPTY
     const symbol = row.__EMPTY?.toString().trim();
     let workingSymbols: string[] = [];
     
@@ -162,7 +152,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       if (classId) {
         workingSymbols = [classId];
       }
-      // אם לא נמצא סמל, נמשיך בלעדיו
     }
 
     
@@ -187,80 +176,47 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
     };
   };
 
-  // פונקציה לבדיקת תקינות אימייל
   const isValidEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
-  // פונקציה לבדיקת תקינות מספר טלפון
   const isValidPhone = (phone: string): boolean => {
-    const phoneRegex = /^0\\d{8,9}$/;
-    return phoneRegex.test((phone || '').replace(/[-\\s]/g, ''));
+    let cleanPhone = (phone || '').replace(/[-\s()]/g, '');
+    if (cleanPhone.length === 9 && !cleanPhone.startsWith('0')) {
+      cleanPhone = `0${cleanPhone}`;
+    }
+    const phoneRegex = /^0\d{8,9}$/;
+    return phoneRegex.test(cleanPhone);
   };
-
   // פונקציה לחישוב ציון איכות לשורת נתונים
   const calculateRowQualityScore = (worker: PreviewWorker): number => {
     let score = 0;
 
-    // בדיקת שדות בסיסיים
+
     if (worker.firstName?.trim()) score += 1;
     if (worker.lastName?.trim()) score += 1;
     if (worker.id?.trim()) score += 1;
 
-    // בדיקת אימייל תקין
     if (worker.email && isValidEmail(worker.email)) score += 2;
-    
-    // בדיקת טלפון תקין
+
     if (worker.phone && isValidPhone(worker.phone)) score += 2;
 
-    // בדיקת תאריכים
     if (worker.startDate) score += 2;
     if (worker.endDate) score += 1;
 
-    // בדיקת פרטי תפקיד
     if (worker.roleType && worker.roleType !== 'לא נבחר') score += 1;
     if (worker.roleName && worker.roleName !== 'לא נבחר') score += 1;
 
-    // בדיקת סמלי מוסד
     if (worker.project && worker.project !== 'לא נבחר') score += 2;
 
-    // בדיקת סטטוס וחשב שכר
     if (worker.status && worker.status !== 'לא נבחר') score += 1;
     if (worker.accountantCode && worker.accountantCode !== 'לא נבחר') score += 1;
 
     return score;
   };
 
-  // פונקציה לטיפול בכפילויות
-  const handleDuplicates = (workers: PreviewWorker[]): PreviewWorker[] => {
-    const workersByID = new Map<string, PreviewWorker[]>();
-    
-    // קיבוץ עובדים לפי תעודת זהות
-    workers.forEach(worker => {
-      if (!workersByID.has(worker.id)) {
-        workersByID.set(worker.id, []);
-      }
-      workersByID.get(worker.id)?.push(worker);
-    });
 
-    // בחירת השורה הטובה ביותר עבור כל תעודת זהות
-    const uniqueWorkers: PreviewWorker[] = [];
-    workersByID.forEach((duplicates, id) => {
-      if (duplicates.length === 1) {
-        uniqueWorkers.push(duplicates[0]);
-      } else {
-        // מיון הכפילויות לפי ציון האיכות
-        const sortedDuplicates = duplicates.sort(
-          (a, b) => calculateRowQualityScore(b) - calculateRowQualityScore(a)
-        );
-        // בחירת השורה עם הציון הגבוה ביותר
-        uniqueWorkers.push(sortedDuplicates[0]);
-      }
-    });
-
-    return uniqueWorkers;
-  };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -274,6 +230,17 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
         const workbook = XLSX.read(data, { type: 'array' });
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false }) as any[];
+
+        // המרת הנתונים לעובדים
+        const workers: PreviewWorker[] = jsonData.map(row => {
+          try {
+            return convertExcelRowToWorker(row);
+          } catch (error) {
+            return { id: row.__EMPTY_13?.toString() || '', firstName: row.__EMPTY_15 || '', lastName: row.__EMPTY_14 || '', isActive: false } as PreviewWorker;
+          }
+        });
+
+        setAllWorkers(workers);
 
         // מיפוי סמלי מוסד חסרים
         const missingSymbols = new Set<string>();
@@ -294,31 +261,16 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
           }
         }
 
-        // המרת הנתונים לעובדים
-        const allWorkers: PreviewWorker[] = jsonData.map(row => {
-          try {
-            return convertExcelRowToWorker(row);
-          } catch (error) {
-            return { id: row.__EMPTY_13?.toString() || '', firstName: row.__EMPTY_15 || '', lastName: row.__EMPTY_14 || '', isActive: false } as PreviewWorker;
-          }
-        });
-
-        // קיימים במערכת
         const existingIds = new Set(existingWorkers.map((w: WorkerAfterNoon) => w.id));
-        const alreadyInSystem = allWorkers.filter(w => existingIds.has(w.id));
 
-        // לא קיימים במערכת
-        const notInSystem = allWorkers.filter(w => !existingIds.has(w.id));
+        const notInSystem = workers.filter(w => !existingIds.has(w.id));
 
-        // כפולים בקובץ (רק מתוך notInSystem)
         const idCount: Record<string, number> = {};
         notInSystem.forEach(w => { idCount[w.id] = (idCount[w.id] || 0) + 1; });
         const dups = notInSystem.filter(w => idCount[w.id] > 1);
 
-        // לא כפולים (רק מתוך notInSystem)
         const notDuplicate = notInSystem.filter(w => idCount[w.id] === 1);
 
-        // לא תקינים (רק מתוך notDuplicate)
         const invalidId = notDuplicate.filter(w => !validateIsraeliID(w.id));
         const invalidPhone = notDuplicate.filter(w => w.phone && !isValidPhone(w.phone));
         const missingPhone = notDuplicate.filter(w => !w.phone);
@@ -341,7 +293,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
   const handleRemoveWorker = (index: number) => {
     setPreviewData(prev => {
       const newData = prev.filter((_, i) => i !== index);
-      // עדכון סטטוס הכפילות לאחר הסרת שורה
       const idCounts = new Map<string, number>();
       newData.forEach(worker => {
         idCounts.set(worker.id, (idCounts.get(worker.id) || 0) + 1);
@@ -368,18 +319,29 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
   const handleImport = async () => {
     try {
       setIsImporting(true);
-      // ייבוא עובדים תקינים + לא תקינים לפי בחירת המשתמש
-      let toImport = [...validForImportWorkers];
+
+      const existingIds = new Set(existingWorkers.map((w: WorkerAfterNoon) => w.id));
+      const idCount: Record<string, number> = {};
+      allWorkers.forEach((w: PreviewWorker) => { idCount[w.id] = (idCount[w.id] || 0) + 1; });
+      const validNewWorkers = allWorkers.filter((w: PreviewWorker) =>
+        !existingIds.has(w.id) &&
+        idCount[w.id] === 1 &&
+        validateIsraeliID(w.id) &&
+        (!w.phone || isValidPhone(w.phone))
+      );
+
+      let toImport = [...validNewWorkers];
       if (importInvalidId) toImport = toImport.concat(invalidByReason.invalidId);
       if (importInvalidPhone) toImport = toImport.concat(invalidByReason.invalidPhone);
       if (importMissingPhone) toImport = toImport.concat(invalidByReason.missingPhone);
-      // הסר כפילויות
+
       const seen = new Set();
       toImport = toImport.filter(w => {
         if (seen.has(w.id)) return false;
         seen.add(w.id);
         return true;
       });
+
       for (const worker of toImport) {
         await addWorkerMutation.mutateAsync(worker);
       }
@@ -394,13 +356,45 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
     }
   };
 
-  // פונקציה חדשה לחישוב סך העובדים לייבוא
   const calculateTotalWorkersToImport = () => {
-    let total = validForImportWorkers.length;
-    if (importInvalidId) total += invalidByReason.invalidId.length;
-    if (importInvalidPhone) total += invalidByReason.invalidPhone.length;
-    if (importMissingPhone) total += invalidByReason.missingPhone.length;
-    return total;
+    const existingIds = new Set(existingWorkers.map((w: WorkerAfterNoon) => w.id));
+    const notInSystem = allWorkers.filter((w: PreviewWorker) => !existingIds.has(w.id));
+    const idCount: Record<string, number> = {};
+    notInSystem.forEach((w: PreviewWorker) => { idCount[w.id] = (idCount[w.id] || 0) + 1; });
+    const validNewWorkers = notInSystem.filter((w: PreviewWorker) => 
+      idCount[w.id] === 1 && 
+      validateIsraeliID(w.id) && 
+      (!w.phone || isValidPhone(w.phone))
+    ).length;
+
+    let invalidToImport = 0;
+    if (importInvalidId) invalidToImport += invalidByReason.invalidId.length;
+    if (importInvalidPhone) invalidToImport += invalidByReason.invalidPhone.length;
+    if (importMissingPhone) invalidToImport += invalidByReason.missingPhone.length;
+
+    return validNewWorkers + invalidToImport;
+  };
+
+  const calculateTotalInvalidWorkers = () => {
+    return invalidByReason.invalidId.length + 
+           invalidByReason.invalidPhone.length + 
+           invalidByReason.missingPhone.length;
+  };
+
+
+  const calculateTotalDuplicateWorkers = () => {
+    const idCount: Record<string, number> = {};
+    allWorkers.forEach((w: PreviewWorker) => { idCount[w.id] = (idCount[w.id] || 0) + 1; });
+    return Object.values(idCount).reduce((sum, count) => sum + (count > 1 ? count - 1 : 0), 0);
+  };
+
+
+  const calculateTotalNewWorkers = () => {
+    const existingIds = new Set(existingWorkers.map((w: WorkerAfterNoon) => w.id));
+    const notInSystem = allWorkers.filter((w: PreviewWorker) => !existingIds.has(w.id));
+    const idCount: Record<string, number> = {};
+    notInSystem.forEach((w: PreviewWorker) => { idCount[w.id] = (idCount[w.id] || 0) + 1; });
+    return notInSystem.filter((w: PreviewWorker) => idCount[w.id] === 1).length;
   };
 
   return (
@@ -538,29 +532,98 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
         </>
       ) : null}
 
-      {/* דיאלוג סיכום */}
+
       <Dialog open={showSummaryDialog} onClose={() => setShowSummaryDialog(false)}>
         <DialogTitle>סיכום נתוני קובץ</DialogTitle>
         <DialogContent>
-          <Typography>סה"כ עובדים בקובץ: {invalidWorkers.length + duplicateWorkers.length + alreadyInSystemWorkers.length + validForImportWorkers.length}</Typography>
-          <Typography color="error">סה"כ עובדים לא תקינים: {invalidWorkers.length}</Typography>
-          <FormGroup>
-            <FormControlLabel
-              control={<Checkbox checked={importInvalidId} onChange={e => setImportInvalidId(e.target.checked)} />}
-              label={`ת"ז לא תקינה: ${invalidByReason.invalidId.length}`}
-            />
-            <FormControlLabel
-              control={<Checkbox checked={importInvalidPhone} onChange={e => setImportInvalidPhone(e.target.checked)} />}
-              label={`טלפון לא תקין: ${invalidByReason.invalidPhone.length}`}
-            />
-            <FormControlLabel
-              control={<Checkbox checked={importMissingPhone} onChange={e => setImportMissingPhone(e.target.checked)} />}
-              label={`טלפון חסר: ${invalidByReason.missingPhone.length}`}
-            />
-          </FormGroup>
-          <Typography color="warning.main">סה"כ עובדים כפולים בקובץ: {duplicateWorkers.length}</Typography>
-          <Typography color="info.main">סה"כ עובדים שכבר קיימים במערכת: {alreadyInSystemWorkers.length}</Typography>
-          <Typography color="success.main">סה"כ עובדים לייבוא: {calculateTotalWorkersToImport()}</Typography>
+          <Box sx={{ p: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              סטטיסטיקות ייבוא
+            </Typography>
+            <List>
+              <ListItem>
+                <ListItemText 
+                  primary="סך הכל עובדים בקובץ" 
+                  secondary={allWorkers.length}
+                />
+              </ListItem>
+              <ListItem>
+                <ListItemText 
+                  primary="סך הכל כפולים בקובץ" 
+                  secondary={calculateTotalDuplicateWorkers()}
+                />
+              </ListItem>
+              <ListItem>
+                <ListItemText 
+                  primary="סך הכל עובדים קיימים במערכת" 
+                  secondary={existingWorkers.length}
+                />
+              </ListItem>
+              <ListItem>
+                <ListItemText 
+                  primary="סך הכל עובדים חדשים בקובץ" 
+                  secondary={calculateTotalNewWorkers()}
+                />
+              </ListItem>
+              <ListItem>
+                <ListItemText 
+                  primary="סך הכל לא תקינים" 
+                  secondary={calculateTotalInvalidWorkers()}
+                />
+              </ListItem>
+              <ListItem>
+                <ListItemText 
+                  primary="סך הכל עובדים תקינים לייבוא" 
+                  secondary={calculateTotalWorkersToImport()}
+                />
+              </ListItem>
+            </List>
+
+            <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+              עובדים לא תקינים
+            </Typography>
+            <List>
+              <ListItem>
+                <ListItemIcon>
+                  <Checkbox
+                    edge="start"
+                    checked={importInvalidId}
+                    onChange={(e) => setImportInvalidId(e.target.checked)}
+                  />
+                </ListItemIcon>
+                <ListItemText 
+                  primary="תעודת זהות לא תקינה" 
+                  secondary={`${invalidByReason.invalidId.length} עובדים`}
+                />
+              </ListItem>
+              <ListItem>
+                <ListItemIcon>
+                  <Checkbox
+                    edge="start"
+                    checked={importInvalidPhone}
+                    onChange={(e) => setImportInvalidPhone(e.target.checked)}
+                  />
+                </ListItemIcon>
+                <ListItemText 
+                  primary="טלפון לא תקין" 
+                  secondary={`${invalidByReason.invalidPhone.length} עובדים`}
+                />
+              </ListItem>
+              <ListItem>
+                <ListItemIcon>
+                  <Checkbox
+                    edge="start"
+                    checked={importMissingPhone}
+                    onChange={(e) => setImportMissingPhone(e.target.checked)}
+                  />
+                </ListItemIcon>
+                <ListItemText 
+                  primary="טלפון חסר" 
+                  secondary={`${invalidByReason.missingPhone.length} עובדים`}
+                />
+              </ListItem>
+            </List>
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowSummaryDialog(false)} color="secondary">ביטול</Button>

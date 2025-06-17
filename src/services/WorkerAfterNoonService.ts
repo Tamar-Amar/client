@@ -25,7 +25,7 @@ export const fetchWorkerById = async (id: string): Promise<WorkerAfterNoon> => {
 };
 
 export const createWorker = async (workerData: Omit<WorkerAfterNoon, '_id'>): Promise<WorkerAfterNoon> => {
-  console.log(workerData);
+  console.log("workerData", workerData);
   const response = await fetch(`${API_BASE_URL}`, {
     method: 'POST',
     headers: {

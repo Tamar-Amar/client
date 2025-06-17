@@ -17,56 +17,32 @@ import { useFetchWorkerAfterNoon } from '../../queries/workerAfterNoonQueries';
 
 
 interface DynamicNavbarProps {
-  onLogout: () => void;
   selectedSection?: string;
   role: string | undefined;
 }
 
-const DynamicNavbar: React.FC<DynamicNavbarProps> = ({ onLogout, selectedSection, role }) => {
+const DynamicNavbar: React.FC<DynamicNavbarProps> = ({selectedSection, role }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [operatorName, setOperatorName] = useState<string | null>(null);
-  const [workerDetails, setWorkerDetails] = useState<{ name: string; idNumber: string } | null>(null);
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const decodedToken: any = token ? jwtDecode(token) : null;
-    const userId = decodedToken?.id;
 
-    if (userId) {
-      if (role === 'operator') {
-        fetchOperatorById(userId)
-          .then((data: Operator) => {
-            setOperatorName(`${data.firstName} ${data.lastName}`);
-          })
-          .catch((err) => {
-            console.error('Failed to fetch operator name:', err);
-          });
-      } else if (role === 'worker') {
-        const { data } = useFetchWorkerAfterNoon(userId)
-        if (data) {
-          setWorkerDetails({
-            name: `${data?.firstName} ${data?.lastName}`,
-            idNumber: data?.id || ''
-          });
-        }
-      }
-    }
-  }, [role]);
-
-  const adminTabs = [
-    { label: 'דוח הפעלות', path: '/activities', icon: <AssessmentIcon fontSize="small" /> },
-    { label: 'ניהול מפעילים', path: '/operators', icon: <PeopleIcon fontSize="small" /> },
+  const adminAfternoonTabs = [
     { label: 'ניהול עובדים', path: '/workers', icon: <PeopleIcon fontSize="small" /> },
     { label: 'ניהול קבוצות', path: '/classes', icon: <GroupWorkIcon fontSize="small" /> },
     { label: 'ניהול מסמכים', path: '/documents', icon: <FolderIcon fontSize="small" /> },
+  ];
+
+  const adminCampTabs = [
+    { label: 'דוח הפעלות', path: '/activities', icon: <AssessmentIcon fontSize="small" /> },
+    { label: 'ניהול מפעילים', path: '/operators', icon: <PeopleIcon fontSize="small" /> },
+    { label: 'ניהול קבוצות', path: '/classes', icon: <GroupWorkIcon fontSize="small" /> },
+    { label: 'ניהול מסמכים', path: '/documents', icon: <FolderIcon fontSize="small" /> },
     { label: 'מיילים', path: '/emails', icon: <EmailIcon fontSize="small" /> },
-    { label: 'ניהול תגיות', path: '/tags' },
   ];
 
   const managerTabs = [
-    { label: 'ניהול מסמכים', path: '/documents' },
-    { label: 'מסמכים לעובד', path: '/workers-documents' },
+    //{ label: 'ניהול מסמכים', path: '/documents' },
+    { label: 'ניהול עובדים', path: '/workers' },
     { label: 'דיווחי נוכחות', path: '/worker-attendance' },
   ];
 
@@ -90,7 +66,11 @@ const DynamicNavbar: React.FC<DynamicNavbarProps> = ({ onLogout, selectedSection
     }
 
     if (role === 'admin' && selectedSection === 'afternoon') {
-      return adminTabs;
+      return adminAfternoonTabs;
+    }
+
+    if (role === 'admin' && selectedSection === 'camp') {
+      return adminCampTabs;
     }
 
     if (role === 'operator' && selectedSection === 'afternoon') {
