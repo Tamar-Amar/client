@@ -43,7 +43,7 @@ export interface Activity {
     description?: string;
     workerAfterNoonId1: string;
     workerAfterNoonId2: string;
-    
+
   }
 
 
@@ -164,4 +164,11 @@ export interface Activity {
   }
   
 
-  
+  export interface Coordinator {
+    _id?: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    email: string;
+    password: string;
+  }
