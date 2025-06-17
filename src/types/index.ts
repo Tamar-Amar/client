@@ -1,4 +1,3 @@
-
 export interface Activity {
     _id?: string; 
     classId:
@@ -38,10 +37,9 @@ export interface Activity {
     regularOperatorId?: string;
     isActive: boolean;
     description?: string;
-    workerAfterNoonId1: string;
-    workerAfterNoonId2: string;
+    workerAfterNoonId1?: string;
+    workerAfterNoonId2?: string;
     coordinatorId: string;
-
   }
 
 

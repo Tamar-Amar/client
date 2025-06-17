@@ -39,6 +39,7 @@ import { he } from 'date-fns/locale';
 import { CloudUpload as CloudUploadIcon } from '@mui/icons-material';
 import { DOCUMENT_TYPES } from './WorkerProfilePage';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import WorkerPersonalDetails from '../components/workers/WorkerPersonalDetails';
 
 
 interface AttendanceRecord {
@@ -103,7 +104,7 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
     submitAttendance,
   } = useAttendance(workerId || '');
 
-  const { data: workerClasses } = useFetchClasses();
+  const { data: allClasses } = useFetchClasses();
   const [isAttendanceDialogOpen, setIsAttendanceDialogOpen] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<Date | null>(null);
   const [selectedClass, setSelectedClass] = useState('');
@@ -297,9 +298,9 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
             
             <Grid item xs={12}>
               <Autocomplete<Class>
-                options={workerClasses || []}
+                options={allClasses || []}
                 getOptionLabel={(option) => `${option.name} (${option.uniqueSymbol})`}
-                value={workerClasses?.find((cls: Class) => cls._id === selectedClass) || null}
+                value={allClasses?.find((cls: Class) => cls._id === selectedClass) || null}
                 onChange={(_, newValue) => setSelectedClass(newValue?._id || '')}
                 renderInput={(params) => (
                   <TextField
@@ -494,21 +495,13 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
               <WorkerAttendanceDocuments
                 attendanceData={attendanceData}
                 isAttendanceLoading={isAttendanceLoading}
-                workerClasses={workerClasses}
+                workerClasses={allClasses}
               />
             </Stack>
           </Box>
         ) : (
-          <Box p={4}>
-            <Typography variant="h5" gutterBottom>פרטים אישיים</Typography>
-            {workerData && (
-              <Stack spacing={2}>
-                <Typography><strong>שם מלא:</strong> {workerData.lastName} {workerData.firstName}</Typography>
-                <Typography><strong>תעודת זהות:</strong> {workerData.id}</Typography>
-                <Typography><strong>טלפון:</strong> {workerData.phone}</Typography>
-                <Typography><strong>אימייל:</strong> {workerData.email}</Typography>
-              </Stack>
-            )}
+          <Box>
+            <WorkerPersonalDetails workerData={workerData} classes={allClasses} />
           </Box>
         )}
       </Box>
