@@ -15,13 +15,14 @@ import EmailPage from '../pages/EmailPage';
 import PublicReportPage from '../components/activities/addActivity/PublicReportPage';
 import { jwtDecode } from 'jwt-decode';
 import PersonalDocuments from '../components/operators/PersonalDocuments';
-import WorkersAfterNoonPage from '../pages/WorkersAfterNoonPage';
 import DocumentManagementPage from '../pages/DocumentManagementPage';
 import WorkerProfilePage from '../pages/WorkerProfilePage';
-import WorkersDocumentsPage from '../pages/WorkersDocumentsPage';
-import WorkerDocumentsApprovalPage from '../pages/WorkerDocumentsApprovalPage';
+import WorkersDocumentsPage from '../pages/manager/WorkersDocumentsPage';
+import WorkerDocumentsApprovalPage from '../pages/manager/ManagerOneWorkerAfterNoonPage';
 import WorkersDocumentsEmailPage from '../pages/WorkersDocumentsEmailPage';
-import WorkerAttendancePage from '../pages/WorkerAttendancePage';
+import WorkerAttendancePage from '../pages/manager/WorkerAttendancePage';
+import WorkersAfterNoonEmailPage from '../pages/WorkersDocumentsEmailPage';
+import WorkersAfterNoonNotificationsPage from '../pages/manager/WorkersAfterNoonNotificationsPage';
 
 const OperatorDocumentsWrapper = () => {
   const token = localStorage.getItem('token');
@@ -43,16 +44,18 @@ const AppRoutes: React.FC = () => {
 
       <Route element={<ProtectedRoute allowedRoles={['manager', 'admin']} />}>
         <Route path="/documents" element={<DocumentManagementPage />} />
-        <Route path="/workers" element={<WorkersAfterNoonPage />} />
         <Route path="/workers-documents" element={<WorkersDocumentsPage />} />
         <Route path="/workers-documents/:id" element={<WorkerDocumentsApprovalPage />} />
         <Route path="/workers-documents-email" element={<WorkersDocumentsEmailPage />} />
         <Route path="/worker-attendance" element={<WorkerAttendancePage />} />
+        <Route path="/workers-after-noon-email" element={<WorkersAfterNoonEmailPage />} />
+        <Route path="/workers-after-noon-notifications" element={<WorkersAfterNoonNotificationsPage />} />
+        <Route path="/classes" element={<ClassesPage />} />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
         <Route path="/operators" element={<OperatorsPage />} />
-        <Route path="/classes" element={<ClassesPage />} />
+        
         <Route path="/activities" element={<ActivitiesPage />} />
         <Route path="/invoices" element={<InvoicesPage/>}/>
         <Route path="/purchases" element={<PurchasesPage/>}/>

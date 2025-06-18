@@ -39,11 +39,12 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
 
   if (!workerData) return null;
 
-  console.log('classes', classes);
+  const isSameId = (a?: any, b?: any) => a?.toString() === b?.toString();
 
   const registeredClasses = classes.filter(
-    c => c.workerAfterNoonId1 === workerData._id || c.workerAfterNoonId2 === workerData._id
+    c => isSameId(c.workerAfterNoonId1, workerData._id) || isSameId(c.workerAfterNoonId2, workerData._id)
   );
+  
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });

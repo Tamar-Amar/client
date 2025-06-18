@@ -5,8 +5,8 @@ import {
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import WarningAmberIcon from '@mui/icons-material/Warning';
-import { useFetchClasses } from '../queries/classQueries';
-import { useAttendance } from '../queries/useAttendance';
+import { useFetchClasses } from '../../queries/classQueries';
+import { useAttendance } from '../../queries/useAttendance';
 
 interface AttendanceRecord {
   _id: string;

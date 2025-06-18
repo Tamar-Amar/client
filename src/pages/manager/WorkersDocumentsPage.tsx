@@ -4,11 +4,12 @@ import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
-import { useDeleteAllWorkersAfterNoon, useFetchAllWorkersAfterNoon } from '../queries/workerAfterNoonQueries';
-import ExcelImport from '../components/workers/ExcelImport';
-import WorkersDocumentsList from '../components/workers/WorkersDocumentsList';
+import { useDeleteAllWorkersAfterNoon, useFetchAllWorkersAfterNoon } from '../../queries/workerAfterNoonQueries';
+import ExcelImport from '../../components/workers/ExcelImport';
+import WorkersDocumentsList from '../../components/workers/WorkersDocumentsList';
+import WorkerAfterNoonForm from '../../components/workers/CreateWorkerAfterNoonForm';
 import { useNavigate } from 'react-router-dom';
-import { useFetchClasses } from '../queries/classQueries';
+import { useFetchClasses } from '../../queries/classQueries';
 const WorkersDocumentsPage: React.FC = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -104,6 +105,7 @@ const WorkersDocumentsPage: React.FC = () => {
               size="large"
             >
               {isCreating ? <CloseIcon /> : <AddIcon />}
+              
             </IconButton>
           </Box>
         </Box>
@@ -135,7 +137,11 @@ const WorkersDocumentsPage: React.FC = () => {
 
         <Divider sx={{ mb: 3 }} />
 
-        <WorkersDocumentsList />
+        {isCreating ? (
+          <WorkerAfterNoonForm onSuccess={() => setIsCreating(false)} />
+        ) : (
+          <WorkersDocumentsList />
+        )}
 
       </Box>
 

@@ -23,23 +23,23 @@ import {
   ListItemText,
   Divider
 } from '@mui/material';
-import { useWorkerDocuments } from '../queries/useDocuments';
-import { DocumentStatus } from '../types/Document';
-import { useFetchWorkerAfterNoon } from '../queries/workerAfterNoonQueries';
-import { useAttendance } from '../queries/useAttendance';
-import { useFetchClasses } from '../queries/classQueries';
+import { useWorkerDocuments } from '../../queries/useDocuments';
+import { DocumentStatus } from '../../types/Document';
+import { useFetchWorkerAfterNoon } from '../../queries/workerAfterNoonQueries';
+import { useAttendance } from '../../queries/useAttendance';
+import { useFetchClasses } from '../../queries/classQueries';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { format } from 'date-fns';
-import { Class } from '../types';
-import WorkerPersonalDocuments from '../components/workers/documents/WorkerPersonalDocuments';
-import WorkerAttendanceDocuments from '../components/workers/documents/WorkerAttendanceDocuments';
+import { Class } from '../../types';
+import WorkerPersonalDocuments from '../../components/workers/documents/WorkerPersonalDocuments';
+import WorkerAttendanceDocuments from '../../components/workers/documents/WorkerAttendanceDocuments';
 import { he } from 'date-fns/locale';
 import { CloudUpload as CloudUploadIcon } from '@mui/icons-material';
-import { DOCUMENT_TYPES } from './WorkerProfilePage';
+import { DOCUMENT_TYPES } from '../WorkerProfilePage';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import WorkerPersonalDetails from '../components/workers/WorkerPersonalDetails';
+import WorkerPersonalDetails from '../../components/workers/WorkerPersonalDetails';
 
 
 interface AttendanceRecord {
@@ -370,6 +370,7 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
+      {/* Personal Document Dialog */}
       <Dialog open={isPersonalDocDialogOpen} onClose={() => setIsPersonalDocDialogOpen(false)}>
         <DialogTitle>העלאת מסמך אישי לעובד</DialogTitle>
         <DialogContent>
@@ -426,6 +427,7 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
       <Box sx={{ marginLeft: drawerOpen ? '180px' : 0,  transition: 'margin 0.3s' }}>
 
         {selectedTab === 'documents' ? (
+          // Documents Tab
           <Box>
             <Typography variant="h5" gutterBottom>
               ניהול מסמכים לעובד
@@ -500,12 +502,14 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
             </Stack>
           </Box>
         ) : (
+          // Personal Tab
           <Box>
             <WorkerPersonalDetails workerData={workerData} classes={allClasses} />
-          </Box>
+          </Box>          
         )}
       </Box>
 
+      {/* Drawer for switching between tabs */}
       <Drawer
         anchor="left"
         open={drawerOpen}
@@ -520,17 +524,18 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
         }}
       >
         <Divider />
-        <List>
-          <ListItem disablePadding>
-            <ListItemButton selected={selectedTab === 'documents'} onClick={() => setSelectedTab('documents')}>
-              <ListItemText primary="מסמכים" />
-            </ListItemButton>
-          </ListItem>
+        <List>          
           <ListItem disablePadding>
             <ListItemButton selected={selectedTab === 'personal'} onClick={() => setSelectedTab('personal')}>
               <ListItemText primary="פרטים אישיים" />
             </ListItemButton>
           </ListItem>
+          <ListItem disablePadding>
+            <ListItemButton selected={selectedTab === 'documents'} onClick={() => setSelectedTab('documents')}>
+              <ListItemText primary="מסמכים" />
+            </ListItemButton>
+          </ListItem>
+
         </List>
       </Drawer>
     </Box>

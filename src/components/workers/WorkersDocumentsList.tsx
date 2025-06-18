@@ -13,9 +13,11 @@ import {
   TextField,
   InputAdornment,
   TablePagination,
-  Tooltip
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel
 } from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';    
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -34,6 +36,7 @@ const WorkersDocumentsList: React.FC = () => {
 
   const deleteWorkerMutation = useDeleteWorkerAfterNoon();
   const [searchQuery, setSearchQuery] = useState('');
+  const [salaryAccountFilter, setSalaryAccountFilter] = useState<string>('');
   const [page, setPage] = useState(0);
   const navigate = useNavigate();
 
@@ -77,11 +80,11 @@ const WorkersDocumentsList: React.FC = () => {
 
 
 
-  // Filter workers based on search query
+  // Filter workers based on search query and salary account
   const filteredWorkers = useMemo(() => {
     return workers.filter((worker) => {
       const searchLower = searchQuery.toLowerCase();
-      return (
+      const matchesSearch = (
         (worker.id ?? '').toLowerCase().includes(searchLower) ||
         (worker.firstName ?? '').toLowerCase().includes(searchLower) ||
         (worker.lastName ?? '').toLowerCase().includes(searchLower) ||
@@ -91,8 +94,12 @@ const WorkersDocumentsList: React.FC = () => {
         (worker.roleName ?? '').toLowerCase().includes(searchLower) ||
         (worker.status ?? '').toLowerCase().includes(searchLower)
       );
+
+      const matchesSalaryAccount = !salaryAccountFilter || worker.accountantCode === salaryAccountFilter;
+
+      return matchesSearch && matchesSalaryAccount;
     });
-  }, [workers, searchQuery]);
+  }, [workers, searchQuery, salaryAccountFilter]);
 
   // Calculate pagination
   const paginatedWorkers = useMemo(() => {
@@ -125,7 +132,7 @@ const WorkersDocumentsList: React.FC = () => {
 
   return (
     <Box>
-      <Box sx={{ mb: 2 }}>
+      <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
         <TextField
           fullWidth
           size="small"
@@ -143,6 +150,22 @@ const WorkersDocumentsList: React.FC = () => {
             ),
           }}
         />
+        <FormControl size="small" sx={{ minWidth: 200 }}>
+          <InputLabel>חשב שכר</InputLabel>
+          <Select
+            value={salaryAccountFilter}
+            label="חשב שכר"
+            onChange={(e) => {
+              setSalaryAccountFilter(e.target.value);
+              setPage(0);
+            }}
+          >
+            <MenuItem value="">הכל</MenuItem>
+            <MenuItem value="מירי">מירי</MenuItem>
+            <MenuItem value="אסתי">אסתי</MenuItem>
+            <MenuItem value="מרים">מרים</MenuItem>
+          </Select>
+        </FormControl>
       </Box>
 
       <TableContainer component={Paper} sx={{ mb: 2 }}>
@@ -154,6 +177,8 @@ const WorkersDocumentsList: React.FC = () => {
               <TableCell sx={{ fontWeight: 'bold' }}>שם מלא</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>טלפון</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>אימייל</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>סטטוס</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>חשב שכר</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>אישור משטרה</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>תעודת הוראה</TableCell>
 
@@ -186,6 +211,8 @@ const WorkersDocumentsList: React.FC = () => {
                   <TableCell>{` ${worker.lastName} ${worker.firstName}`}</TableCell>
                   <TableCell>{worker.phone}</TableCell>
                   <TableCell>{worker.email}</TableCell>
+                  <TableCell>{!worker.status || worker.status === "לא נבחר" ? "פעיל" : worker.status}</TableCell>
+                  <TableCell>{worker.accountantCode}</TableCell>
                   <TableCell>{getDocStatus(worker._id, 'אישור משטרה')}</TableCell>
                   <TableCell>{getDocStatus(worker._id, 'תעודת הוראה')}</TableCell>
 

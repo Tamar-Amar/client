@@ -44,6 +44,9 @@ const DynamicNavbar: React.FC<DynamicNavbarProps> = ({selectedSection, role }) =
     //{ label: 'ניהול מסמכים', path: '/documents' },
     { label: 'ניהול עובדים', path: '/workers-documents' },
     { label: 'דיווחי נוכחות', path: '/worker-attendance' },
+    { label: 'מיילים', path: '/workers-after-noon-email' },
+    { label: 'התראות', path: '/workers-after-noon-notifications' },
+    { label: 'קבוצות', path: '/classes' },
   ];
 
   const operatorTabs = [
@@ -55,8 +58,6 @@ const DynamicNavbar: React.FC<DynamicNavbarProps> = ({selectedSection, role }) =
   const workerTabs = [
     { label: 'פרטים אישיים', path: '/worker/profile', icon: <AccountCircleIcon fontSize="small" /> },
   ];
-
-  const loginTab = [{ label: 'התחבר', path: '/login', icon: <LoginIcon fontSize="small" /> }];
 
   const getTabsBySection = () => {
     if (!selectedSection) return [];
