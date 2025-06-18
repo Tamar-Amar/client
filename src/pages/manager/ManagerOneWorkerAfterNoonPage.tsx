@@ -116,7 +116,7 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
   const [documentType, setDocumentType] = useState<DocumentType | "NULL">("NULL");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [expirationDate, setExpirationDate] = useState<Date | null>(null);
-  const [selectedTab, setSelectedTab] = useState<'documents' | 'personal'>('documents');
+  const [selectedTab, setSelectedTab] = useState<'documents' | 'personal'>('personal');
   const [drawerOpen, setDrawerOpen] = useState(true);
 
 
@@ -432,17 +432,6 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
             <Typography variant="h5" gutterBottom>
               ניהול מסמכים לעובד
             </Typography>
-
-            {workerData && (
-              <Box mb={3}>
-                <Typography variant="subtitle1">
-                  <strong>שם מלא:</strong> {workerData.lastName} {workerData.firstName}
-                </Typography>
-                <Typography variant="subtitle1">
-                  <strong>תעודת זהות:</strong> {workerData.id}
-                </Typography>
-              </Box>
-            )}
             {isLoading && <CircularProgress />}
             {error && <Alert severity="error">שגיאה בטעינת המסמכים</Alert>}
 
@@ -470,7 +459,7 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
               </Stack>
               </>
             )}
-            <Stack spacing={2} mt={3}>
+            <Stack spacing={2} mt={3} paddingRight={80}>
               <Box m={4}>
                 <Button
                   variant="contained"
@@ -515,16 +504,22 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
         open={drawerOpen}
         variant="persistent"
         sx={{
-          width: 150,
+          width: '10%',
           flexShrink: 0,
           '& .MuiDrawer-paper': {
-            width: 150,
+            width: '10%',
             top: '115px',
           },
         }}
       >
-        <Divider />
-        <List>          
+        <List> 
+          <ListItem>
+            <ListItemText 
+              primary={`${workerData?.firstName} ${workerData?.lastName}`}
+              secondary={`תעודת זהות: ${workerData?.id}`}
+            />
+          </ListItem>
+          <Divider />
           <ListItem disablePadding>
             <ListItemButton selected={selectedTab === 'personal'} onClick={() => setSelectedTab('personal')}>
               <ListItemText primary="פרטים אישיים" />
@@ -535,7 +530,6 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
               <ListItemText primary="מסמכים" />
             </ListItemButton>
           </ListItem>
-
         </List>
       </Drawer>
     </Box>

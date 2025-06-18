@@ -30,6 +30,10 @@ const DynamicNavbar: React.FC<DynamicNavbarProps> = ({selectedSection, role }) =
     { label: 'ניהול עובדים', path: '/workers', icon: <PeopleIcon fontSize="small" /> },
     { label: 'ניהול קבוצות', path: '/classes', icon: <GroupWorkIcon fontSize="small" /> },
     { label: 'ניהול מסמכים', path: '/documents', icon: <FolderIcon fontSize="small" /> },
+    { label: 'דיווחי נוכחות', path: '/worker-attendance' },
+    { label: 'מיילים', path: '/workers-after-noon-email' },
+    { label: 'התראות', path: '/workers-after-noon-notifications' },
+
   ];
 
   const adminCampTabs = [
@@ -46,7 +50,6 @@ const DynamicNavbar: React.FC<DynamicNavbarProps> = ({selectedSection, role }) =
     { label: 'דיווחי נוכחות', path: '/worker-attendance' },
     { label: 'מיילים', path: '/workers-after-noon-email' },
     { label: 'התראות', path: '/workers-after-noon-notifications' },
-    { label: 'קבוצות', path: '/classes' },
   ];
 
   const operatorTabs = [

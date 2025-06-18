@@ -64,7 +64,7 @@ const WorkerAttendancePage: React.FC = () => {
   }, [grouped, searchTerm, filterMonth, filterWorkerId]);
 
   return (
-    <Box sx={{ m: 5 }}>
+    <Box sx={{ p: 10}}>
       <Stack spacing={2} direction="row" sx={{ mb: 2 }}>
         <TextField
           label="חיפוש לפי סמל"
@@ -90,65 +90,75 @@ const WorkerAttendancePage: React.FC = () => {
       </Stack>
 
       <TableContainer component={Paper} sx={{ maxHeight: 600, overflowY: 'auto' }}>
-  <Table stickyHeader size="small">
-    <TableHead>
-      <TableRow>
-        <TableCell sx={{ fontWeight: 'bold' }}>חודש</TableCell>
-        <TableCell sx={{ fontWeight: 'bold' }}>סמל קבוצה</TableCell>
-        <TableCell sx={{ fontWeight: 'bold' }}>מסמכים</TableCell>
-        <TableCell sx={{ fontWeight: 'bold' }}>סטטוס</TableCell>
-        <TableCell sx={{ fontWeight: 'bold' }}>שם עובד</TableCell>
-      </TableRow>
-    </TableHead>
-    <TableBody>
-      {filteredData.map(({ month, symbol, records }) => {
-        const docs = [
-          records[0]?.studentAttendanceDoc,
-          records[0]?.workerAttendanceDoc,
-          records[0]?.controlDoc
-        ];
-        const isOk = docs.filter(Boolean).length >= 2;
-        const workerId = records[0]?.workerId || '';
-        const fullName = typeof workerId === 'object'
-          ? `${workerId.firstName || ''} ${workerId.lastName || ''} (${workerId.id || ''})`
-          : workerId;
+        <Table stickyHeader size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell sx={{ fontWeight: 'bold' }}>חודש</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>סמל קבוצה</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>מסמכים</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>סטטוס</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>שם עובד</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filteredData.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
+                  <Typography color="text.secondary">
+                    לא נמצאו דיווחי נוכחות
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredData.map(({ month, symbol, records }) => {
+                const docs = [
+                  records[0]?.studentAttendanceDoc,
+                  records[0]?.workerAttendanceDoc,
+                  records[0]?.controlDoc
+                ];
+                const isOk = docs.filter(Boolean).length >= 2;
+                const workerId = records[0]?.workerId || '';
+                const fullName = typeof workerId === 'object'
+                  ? `${workerId.firstName || ''} ${workerId.lastName || ''} (${workerId.id || ''})`
+                  : workerId;
 
-        return (
-          <TableRow key={month + symbol}>
-            <TableCell>{month}</TableCell>
-            <TableCell>{symbol}</TableCell>
-            <TableCell>
-              <Stack direction="row" spacing={1}>
-                {docs.map((doc, idx) =>
-                  doc ? (
-                    <Tooltip key={doc._id || idx} title={`צפייה במסמך (${getDocLabel(idx)})`}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <IconButton onClick={() => window.open(doc.url, '_blank')}>
-                          <VisibilityIcon fontSize="small" />
-                        </IconButton>
-                        <Typography variant="caption">{getDocLabel(idx)}</Typography>
-                      </Box>
-                    </Tooltip>
-                  ) : null
-                )}
-              </Stack>
-            </TableCell>
-            <TableCell>
-              {isOk ? (
-                <Typography color="success.main">תקין</Typography>
-              ) : (
-                <Tooltip title="חסרים מסמכי נוכחות">
-                  <WarningAmberIcon color="warning" />
-                </Tooltip>
-              )}
-            </TableCell>
-            <TableCell>{fullName}</TableCell>
-          </TableRow>
-        );
-      })}
-    </TableBody>
-  </Table>
-</TableContainer>
+                return (
+                  <TableRow key={month + symbol}>
+                    <TableCell>{month}</TableCell>
+                    <TableCell>{symbol}</TableCell>
+                    <TableCell>
+                      <Stack direction="row" spacing={1}>
+                        {docs.map((doc, idx) =>
+                          doc ? (
+                            <Tooltip key={doc._id || idx} title={`צפייה במסמך (${getDocLabel(idx)})`}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <IconButton onClick={() => window.open(doc.url, '_blank')}>
+                                  <VisibilityIcon fontSize="small" />
+                                </IconButton>
+                                <Typography variant="caption">{getDocLabel(idx)}</Typography>
+                              </Box>
+                            </Tooltip>
+                          ) : null
+                        )}
+                      </Stack>
+                    </TableCell>
+                    <TableCell>
+                      {isOk ? (
+                        <Typography color="success.main">תקין</Typography>
+                      ) : (
+                        <Tooltip title="חסרים מסמכי נוכחות">
+                          <WarningAmberIcon color="warning" />
+                        </Tooltip>
+                      )}
+                    </TableCell>
+                    <TableCell>{fullName}</TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
     </Box>
   );

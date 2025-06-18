@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Box, 
   Typography, 
@@ -14,6 +14,10 @@ import {
   ListItemIcon,
   Avatar,
   Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import { useFetchAllWorkersAfterNoon } from "../../queries/workerAfterNoonQueries";
 import { useFetchAllDocuments } from "../../queries/useDocuments";
@@ -23,7 +27,6 @@ import {useMemo } from "react";
 import PersonIcon from '@mui/icons-material/Person';
 import ClassIcon from '@mui/icons-material/Class';
 import DescriptionIcon from '@mui/icons-material/Description';
-import SendIcon from '@mui/icons-material/Send';
 
 import { useNavigate } from "react-router-dom";
 import { Class } from '../../types';
@@ -31,8 +34,101 @@ import { WorkerAfterNoon } from '../../types';
 
 const REQUIRED_TAGS = ["אישור משטרה", "תעודת הוראה"];
 
+interface ClassDetailsDialogProps {
+  open: boolean;
+  onClose: () => void;
+  classItem: Class | null;
+  workers: WorkerAfterNoon[];
+}
+
+const ClassDetailsDialog: React.FC<ClassDetailsDialogProps> = ({ open, onClose, classItem, workers }) => {
+  if (!classItem) return null;
+
+  const worker1 = workers.find(w => w._id === classItem.workerAfterNoonId1);
+  const worker2 = workers.find(w => w._id === classItem.workerAfterNoonId2);
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>
+        <Typography variant="h6" align="right">
+          פרטי כיתה
+        </Typography>
+      </DialogTitle>
+      <DialogContent>
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="subtitle1" align="right" gutterBottom>
+            פרטי מוסד
+          </Typography>
+            <Typography>קוד מוסד: {classItem.institutionCode}</Typography>
+            <Typography>שם מוסד: {classItem.institutionName}</Typography>
+
+          <Divider sx={{ my: 2 }} />
+
+          <Typography variant="subtitle1" align="right" gutterBottom>
+            פרטי קבוצה
+          </Typography>
+            <Typography>שם קבוצה: {classItem.name}</Typography>
+            <Typography>כתובת: {classItem.address}</Typography>
+            <Typography>סמל : {classItem.uniqueSymbol}</Typography>
+            <Typography>ת. פתיחת צהרון: {
+              classItem.AfternoonOpenDate ? 
+                typeof classItem.AfternoonOpenDate === 'string' ? 
+                  new Date(classItem.AfternoonOpenDate).toLocaleDateString() :
+                  classItem.AfternoonOpenDate.toLocaleDateString()
+                : ''
+            }</Typography>
+
+          <Divider sx={{ my: 2 }} />
+
+          <Typography variant="subtitle1" align="right" gutterBottom>
+            עובדי צהרון
+          </Typography>
+          <Box sx={{ mb: 2 }}>
+            {worker1 && (
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                <Typography>עובד 1: {worker1.firstName} {worker1.lastName}</Typography>
+                <Typography>טלפון: {worker1.phone}</Typography>
+              </Box>
+            )}
+            {worker2 && (
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                <Typography>עובד 2: {worker2.firstName} {worker2.lastName}</Typography>
+                <Typography>טלפון: {worker2.phone}</Typography>
+              </Box>
+            )}
+            {!worker1 && !worker2 && (
+              <Typography color="error" align="center">
+                אין עובדי צהרון מוגדרים
+              </Typography>
+            )}
+          </Box>
+
+          {classItem.coordinatorId ? (
+            <>
+              <Divider sx={{ my: 2 }} />
+              <Typography variant="subtitle1" align="right" gutterBottom>
+                רכז
+              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                <Typography>שם: {classItem.coordinatorId}</Typography>
+                <Typography>טלפון: {classItem.coordinatorId}</Typography>
+              </Box>
+            </>
+          ) : (
+            <Typography>אין רכז מוגדר</Typography>
+          )}
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>סגור</Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
 const WorkersAfterNoonNotificationsPage: React.FC = () => {
   const navigate = useNavigate();
+  const [selectedClass, setSelectedClass] = useState<Class | null>(null);
   const { data: workers = [], isLoading: isLoadingWorkers } = useFetchAllWorkersAfterNoon();
   const { data: documents = [] } = useFetchAllDocuments();
   const { data: classes = [] } = useFetchClasses();
@@ -62,7 +158,6 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
     });
   }, [classes, allWorkers]);
 
-  // עובדים ללא כיתה
   const workersWithoutClass = useMemo(() => {
     return workers.filter(worker => {
       return !classes.some((c: Class) => 
@@ -214,7 +309,16 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
               }}>
                 {classesWithoutUpdatedWorker.map((classItem: Class) => (
                   <ListItem key={classItem._id} dense>
-                    <ListItemIcon sx={{ minWidth: '40px' }}>
+                    <ListItemIcon 
+                      sx={{ 
+                        minWidth: '40px',
+                        cursor: 'pointer',
+                        '&:hover': {
+                          color: 'primary.main'
+                        }
+                      }}
+                      onClick={() => setSelectedClass(classItem)}
+                    >
                       <ClassIcon color="warning" />
                     </ListItemIcon>
                     <ListItemText
@@ -291,6 +395,12 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
           </Card>
         </Grid>
       </Grid>
+      <ClassDetailsDialog 
+        open={!!selectedClass} 
+        onClose={() => setSelectedClass(null)} 
+        classItem={selectedClass}
+        workers={allWorkers}
+      />
     </Box>
   );
 };

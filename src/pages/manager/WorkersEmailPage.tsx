@@ -22,9 +22,9 @@ import {
   CircularProgress,
   Checkbox
 } from "@mui/material";
-import { useFetchAllWorkersAfterNoon } from "../queries/workerAfterNoonQueries";
-import { useFetchAllDocuments } from "../queries/useDocuments";
-import { WorkerAfterNoon } from "../types";
+import { useFetchAllWorkersAfterNoon } from "../../queries/workerAfterNoonQueries";
+import { useFetchAllDocuments } from "../../queries/useDocuments";
+import { WorkerAfterNoon } from "../../types";
 import SendIcon from '@mui/icons-material/Send';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
@@ -202,10 +202,6 @@ const WorkersDocumentsEmailPage: React.FC = () => {
 
   return (
     <Box sx={{ mx: "auto", mt: 4, width: '80%' }}>
-      <Typography variant="h4" gutterBottom>
-        שליחת מיילים לגבי מסמכים חסרים
-      </Typography>
-
       <Typography sx={{ mb: 2 }}>
         נמצאו {workersMissingDocs.length} עובדים שחסר להם לפחות מסמך אחד (שטרם אושר):
       </Typography>

@@ -19,9 +19,9 @@ import DocumentManagementPage from '../pages/DocumentManagementPage';
 import WorkerProfilePage from '../pages/WorkerProfilePage';
 import WorkersDocumentsPage from '../pages/manager/WorkersDocumentsPage';
 import WorkerDocumentsApprovalPage from '../pages/manager/ManagerOneWorkerAfterNoonPage';
-import WorkersDocumentsEmailPage from '../pages/WorkersDocumentsEmailPage';
+import WorkersDocumentsEmailPage from '../pages/manager/WorkersEmailPage';
 import WorkerAttendancePage from '../pages/manager/WorkerAttendancePage';
-import WorkersAfterNoonEmailPage from '../pages/WorkersDocumentsEmailPage';
+import WorkersAfterNoonEmailPage from '../pages/manager/WorkersEmailPage';
 import WorkersAfterNoonNotificationsPage from '../pages/manager/WorkersAfterNoonNotificationsPage';
 
 const OperatorDocumentsWrapper = () => {
