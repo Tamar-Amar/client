@@ -239,7 +239,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       setPreviewData([]);
       onSuccess?.();
     } catch (error) {
-      console.error('Error importing workers:', error);
+      console.error('Error importing workers:', error); 
       alert('שגיאה בייבוא העובדים');
     } finally {
       setIsImporting(false);
