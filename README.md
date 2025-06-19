@@ -1,47 +1,89 @@
-# Getting Started with Create React App
+# 🖥️ Client
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+React + TypeScript frontend for managing weekly educational activities, generating reports, and coordinating operators across institutions.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## 🌟 Key Features
 
-### `npm start`
+- View and assign activities per class and operator
+- Export reports to PDF and Google Sheets
+- Supports groups (kindergartens + schools)
+- Holiday-based logic for disabling certain weeks
 
-Runs the app in the development mode.\
-123
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+---
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## 📑 PDF Reports
 
-### `npm test`
+- Monthly PDF reports generated automatically for each operator
+- Report includes:
+  - Weekly schedule
+  - Hebrew day headers
+  - Class symbols per day
+- Generated on the backend with `PDFKit`
+- Sent via email using `nodemailer`
+- PDF files are passed as `Buffer` attachments for accurate formatting and delivery
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+---
 
-### `npm run build`
+## 📊 Google Sheets & Excel Integration
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- Monthly Excel-style reports per group and year
+- Written directly to Google Sheets using `googleapis` v4
+- Uses centralized `holidays.ts` file to detect non-operational weeks
+- Non-operational weeks are auto-filled with **non-operational**
+- User-initiated export via admin panel button
+- Last export time is displayed to prevent repeated syncing
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 🛠️ Tech Stack
 
-### `npm run eject`
+- **React 18** + **TypeScript**
+- **React Query** – for state, cache, and refetching
+- **Zod** – for frontend validation
+- **MUI** – for styled components
+- **Axios** – for backend communication
+- **PDFKit** – for PDF generation
+- **ExcelJS** – for programmatic Excel (.xlsx) file generation and export
+- **Google Sheets API v4** – for writing Excel-style data to sheets
+- **NodeMailer** – for email delivery
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+---
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## 💡 Design Logic
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+- **Smart Calendar Engine**  
+  Based on a dynamic Jewish `holidays.ts` file.  
+  Entire weeks (Sunday–Thursday) are skipped if all days are holidays.
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+- **Weekly Aggregation**  
+  Activities are grouped and exported per calendar week (Sunday–Saturday).
 
-## Learn More
+- **Soft Deletion Logic**  
+  Only active entities (`isActive: true`) are displayed in the UI.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- **Manual Export Trigger**  
+  Admin triggers the report export manually.  
+  Status indicator shows the last successful update.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+---
+
+## 📥 Report Flow
+
+1. Admin clicks "Export Reports"
+2. Frontend calls `POST /export-to-sheets`
+3. Backend:
+   - Groups activities by week
+   - Writes to Google Sheets (monthly + yearly)
+   - Generates PDF buffers
+   - Sends emails to each operator
+
+---
+
+## 🛡️ License Notice
+
+**This project is proprietary and all rights are reserved.**  
+You may **not copy, use, modify, or distribute** any part of this code without **explicit written permission** from the author.
+
+📩 For inquiries, please contact: [amtamar747@gmail.com](mailto:amtamar747@gmail.com)

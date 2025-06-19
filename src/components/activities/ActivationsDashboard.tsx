@@ -22,7 +22,7 @@ interface Props {
 
 const TOTAL_GROUPS = 292;
 const TOTAL_WEEKS = 33;
-const START_DATE = new Date('2024-11-01');
+const START_DATE = new Date('2024-10-27');
 
 const ActivationsDashboard: React.FC<Props> = ({ activities }) => {
   const { data: classes = [] } = useFetchClasses();

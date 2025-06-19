@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Invoice } from '../types/index';
 
-const API_URL = process.env.REACT_APP_API_URL+ '/api/operators' || "https://server-manage.onrender.com" + '/api/invoices';
+const API_URL = process.env.REACT_APP_API_URL+ '/api/invoices' || "https://server-manage.onrender.com" + '/api/invoices';
 
 
 export const fetchInvoices = async (): Promise<Invoice[]> => {

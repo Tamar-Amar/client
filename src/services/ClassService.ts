@@ -5,6 +5,7 @@ const API_URL = process.env.REACT_APP_API_URL+ '/api/classes' || "https://server
 
 export const fetchClasses = async () => {
   const response = await axios.get(API_URL);
+  console.log("response.data", response.data);
   return response.data;
 };
 
@@ -21,3 +22,9 @@ export const updateClass = async (id: string, updatedClass: Partial<Class>) => {
   const response = await axios.put(`${API_URL}/${id}`, updatedClass);
   return response.data;
 };
+
+export const fetchWorkerClasses = async (workerId: string) => {
+  const response = await axios.get(`${API_URL}/worker/${workerId}`);
+  return response.data;
+};
+  

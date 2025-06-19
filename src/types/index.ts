@@ -1,4 +1,3 @@
-
 export interface Activity {
     _id?: string; 
     classId:
@@ -23,30 +22,26 @@ export interface Activity {
   export interface Class {
     _id?: string;
     name: string;
-    isSpecialEducation: boolean;
+    education: string;
     gender: 'בנים' | 'בנות';
     address?: string;
     uniqueSymbol: string;
     chosenStore: string;
-    institutionId: string;
+    institutionName: string;
+    institutionCode: string;
     type: 'כיתה' | 'גן';
     hasAfternoonCare: boolean;
+    AfternoonOpenDate?: Date;
     monthlyBudget?: number;
     childresAmount?: number;
     regularOperatorId?: string;
     isActive: boolean;
-    contactsId?: string[];
     description?: string;
+    workerAfterNoonId1?: string;
+    workerAfterNoonId2?: string;
+    coordinatorId: string;
   }
 
-  export interface Institution {
-    _id?: string;
-    institutionCode: string;
-    institutionSymbol?: string;
-    name: string;
-    contacts: string[];
-    isActive: boolean;
-  }
 
   export enum InvoiceType {
     CHARGE = 'חיוב',
@@ -96,7 +91,7 @@ export interface Activity {
   
   export interface WeeklySchedule {
     day: 'ראשון' | 'שני' | 'שלישי' | 'רביעי' | 'חמישי';
-    classes: string[]; 
+    classes: string[];
   }
   export interface Operator {
     _id?: string;
@@ -111,11 +106,6 @@ export interface Activity {
     address: string;
     description: string;
     paymentMethod: PaymentMethodChoicesEnum;
-    businessDetails?: {
-      businessId: string;
-      businessName: string;
-    };
-    bankDetailsId: string;
     regularClasses?: string[];
     gender: Gender;
     educationType: EducationType;
@@ -146,25 +136,35 @@ export interface Activity {
     contactPhone: string;
     regularClasses?: string[];
   }
-  
-  // BankDetails.ts 
-  export interface BankDetails {
-    _id?: string;
-    operator_id: string;
-    bankName: string;
-    accountNumber: string;
-    branchNumber: string;
+
+
+  export interface WorkerAfterNoon {
+    _id: string;
+    id: string;
+    firstName: string;
+    lastName: string;
+    accountantCode: string;
+    project: string;
+    createDate: Date; 
+    updateDate: Date;
+    updateBy: string;
+    startDate: Date;
+    endDate: Date;
+    status: string;
+    phone: string;
+    email?: string;
+    isActive: boolean;
+    notes?: string;
+    roleType: string;
+    roleName: string;
   }
   
 
-  export interface Contact {
+  export interface Coordinator {
     _id?: string;
-    name: string;
+    firstName: string;
+    lastName: string;
     phone: string;
     email: string;
-    description: string;
-    entityType: "Institution" | "Store" | "Class"; 
-    entityId: string; 
+    password: string;
   }
-  
-  

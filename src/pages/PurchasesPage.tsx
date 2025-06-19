@@ -1,7 +1,5 @@
 import React, { useState } from "react";
 import { Button, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
-import OperatorList from "../components/operators/OperatorList";
-import OperatorCreate from "../components/operators/OperatorCreate";
 import PurchaseList from "../components/other/PurchasesList";
 import PurchasesCreate from "../components/other/PurchasesCreate";
 

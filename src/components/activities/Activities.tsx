@@ -12,15 +12,14 @@ import GeneralStats from './GeneralStats';
 import ActivationsDashboard from './ActivationsDashboard';
 import { useFetchOperatorById, useFetchOperators } from '../../queries/operatorQueries';
 import AddActivity from './addActivity/AddActivity';
+import ExportToSheetsButton from './ExportButton';
 
 const Activities: React.FC = () => {
   const { data: activities = [], isLoading, isError } = useFetchActivities();
-  console.log("activities", activities)
   const { mutation: addActivityMutation, errorMessage, setErrorMessage } = useAddActivity();
   const deleteActivityMutation = useDeleteActivity();
   const [showDashboard, setShowDashboard] = useState(false);
-
-
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [quickFilterText, setQuickFilterText] = useState('');
   const [filterMonth, setFilterMonth] = useState('all');
@@ -31,9 +30,22 @@ const Activities: React.FC = () => {
   const [operatorId, setOperatorId] = useState<string>('');
   const { data: operators = [], isLoading: operatorsLoading } = useFetchOperators();
   const { data: operator, isLoading: operatorLoading } = useFetchOperatorById(operatorId);
-
   const handleAddClick = () => setIsDialogOpen(true);
   const handleDialogClose = () => setIsDialogOpen(false);
+
+
+  useEffect(() => {
+  fetch(`${API_URL}/api/activities/last-google-update`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.updatedAt) {
+        setLastUpdated(data.updatedAt);
+      }
+    })
+    .catch(err => {
+      console.error('שגיאה בהבאת תאריך עדכון', err);
+    });
+}, []);
 
 
   const handleActivityAdded = async (newActivities: Activity[]) => {
@@ -61,7 +73,6 @@ const Activities: React.FC = () => {
     const body = operatorId
       ? { month: attendanceMonth, operatorId }
       : { month: attendanceMonth };
-
   
     const response = await fetch(url, {
       method: "POST",
@@ -109,6 +120,13 @@ const Activities: React.FC = () => {
         <Button variant="contained" color="primary" onClick={handleAddClick}>
           הוסף פעילות חדשה
         </Button>
+
+        <ExportToSheetsButton onSuccess={() => setLastUpdated(new Date().toISOString())} />
+          {lastUpdated && (
+            <Typography variant="body2" sx={{ alignSelf: 'center', color: 'gray' }}>
+              עודכן לאחרונה: {new Date(lastUpdated).toLocaleString('he-IL')}
+            </Typography>
+          )}
 
       </Box>
 

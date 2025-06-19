@@ -19,17 +19,9 @@ export const createOperator = async (newOperator: {
   address: string;
   description: string;
   paymentMethod: "חשבונית" | "תלוש" | "לא נבחר";
-  businessDetails?: {
-    businessId: string;
-    businessName: string;
-  };
-  bankDetails: { 
-    bankName: string;
-    accountNumber: string;
-    branchNumber: string;
-  };
   gender: "בנים" | "בנות" | "גם וגם";
   educationType: "רגיל" | "מיוחד" | "גם וגם";
+  regularClasses?: string[];
 }) => {
   const response = await axios.post(API_URL, newOperator);
   return response.data;
@@ -68,7 +60,6 @@ export const fetchOperatorById = async (operatorId: string): Promise<Operator> =
 export const fetchCurrentOperator = async (): Promise<Operator> => {
   
   const token = localStorage.getItem('token');
-  console.log("token:", token);
   if (!token) {
     throw new Error("No token found. User might not be logged in.");
   }
@@ -77,8 +68,6 @@ export const fetchCurrentOperator = async (): Promise<Operator> => {
     headers: { Authorization: `Bearer ${token}` },
   });
 
-
-  console.log("response.data",response.data)
   return response.data;
 };
 

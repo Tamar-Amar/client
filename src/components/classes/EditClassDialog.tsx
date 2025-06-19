@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, MenuItem, Grid, Autocomplete } from '@mui/material';
 import { useUpdateClass } from '../../queries/classQueries';
-import { useFetchContacts } from '../../queries/contactQueries';
 import { useFetchStores } from '../../queries/storeQueries';
 import { useFetchOperators } from '../../queries/operatorQueries';
 
 const EditClassDialog = ({ classData, onClose }: any) => {
   const updateClassMutation = useUpdateClass();
-  const { data: contacts } = useFetchContacts();
   const { data: stores } = useFetchStores();
   const { data: operators } = useFetchOperators();
   const [formData, setFormData] = useState({ ...classData });
@@ -71,11 +69,6 @@ const EditClassDialog = ({ classData, onClose }: any) => {
             </TextField>
           </Grid>
           <Grid item xs={12}><TextField fullWidth label="תיאור" name="description" value={formData.description} onChange={handleChange} /></Grid>
-          <Grid item xs={12}>
-            <TextField select fullWidth label="איש קשר" name="contactsId" value={formData.contactsId?.[0] || ''} onChange={(e) => setFormData({ ...formData, contactsId: [e.target.value] })}>
-              {contacts?.map((c: any) => (<MenuItem key={c._id} value={c._id}>{c.name}</MenuItem>))}
-            </TextField>
-          </Grid>
           <Grid item xs={12}>
             <TextField select fullWidth label="חנות רכש" name="chosenStore" value={formData.chosenStore} onChange={handleChange}>
               {stores?.map((s: any) => (<MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>))}

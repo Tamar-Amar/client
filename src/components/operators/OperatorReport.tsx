@@ -16,7 +16,6 @@ const getMonthLabel = (date: Date) => {
 
 const OperatorReport: React.FC<{ operator: any }> = ({ operator }) => {
   const { data: activities = [] } = useFetchActivitiesByOperator(operator._id);
-  console.log("activities by operator id: ", activities)
   const [openDialog, setOpenDialog] = useState(false);
   const [operatorState, setOperatorState] = useState(operator);
   const { data: classes = [] } = useFetchClasses();

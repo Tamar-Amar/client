@@ -1,8 +1,7 @@
-// components/Activities/AddActivity/AddActivity.tsx
 import React, { useState } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, RadioGroup,
-  FormControlLabel, Radio, Box, Button
+  FormControlLabel, Radio, Box, Button, Divider
 } from '@mui/material';
 import { Activity, Operator } from '../../../types';
 import WeeklyForm from './WeeklyForm';
@@ -15,15 +14,15 @@ interface AddActivityProps {
   open: boolean;
   onClose: () => void;
   onAdd: (newActivities: Activity[]) => Promise<void>;
+  operatorId?: string;
 }
 
-const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd }) => {
+const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd, operatorId }) => {
   const [selectedOption, setSelectedOption] = useState<'weekly' | 'single' | 'pdf'>('pdf');
-  
-  // ✅ state מרוכז:
+
   const [selectedMonth, setSelectedMonth] = useState<Date | null>(new Date());
   const [paymentMonth, setPaymentMonth] = useState<Date | null>(new Date());
-  const [operatorId, setOperatorId] = useState<string>('');
+  const [newOperatorId, setNewOperatorId] = useState<string>(operatorId || '');
   const { data: operators = [] } = useFetchOperators();
 
   return (
@@ -38,6 +37,7 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd }) => {
     >
       <DialogTitle>דיווח נוכחות</DialogTitle>
       <DialogContent>
+        {/* שלב ראשון: בחירת סוג דיווח */}
         <Box mb={2}>
           <RadioGroup
             value={selectedOption}
@@ -46,27 +46,34 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd }) => {
           >
             <FormControlLabel value="pdf" control={<Radio />} label="מילוי דוח PDF" />
             <FormControlLabel value="weekly" control={<Radio />} label="דיווח שבועי" />
-            <FormControlLabel value="single" control={<Radio />} label="דיווח יחיד" />
+            {/* <FormControlLabel value="single" control={<Radio />} label="דיווח יחיד" /> */}
           </RadioGroup>
         </Box>
 
+        <Divider sx={{ my: 2 }} />
+
+        {/* שלב שני: בחירת חודש ומפעיל */}
         <MonthAndOperatorPickers
           selectedMonth={selectedMonth}
           onSelectedMonthChange={setSelectedMonth}
           paymentMonth={paymentMonth}
           setPaymentMonth={setPaymentMonth}
           operators={operators}
-          operatorId={operatorId}
-          setOperatorId={setOperatorId}
+          operatorId={newOperatorId}
+          setOperatorId={setNewOperatorId}
+          isOperatorFixed={!!operatorId}
         />
 
+        <Divider sx={{ my: 2 }} />
+
+        {/* שלב שלישי: טופס דיווח */}
         {selectedOption === 'weekly' && (
           <WeeklyForm
             onAdd={onAdd}
             onClose={onClose}
             selectedMonth={selectedMonth}
             paymentMonth={paymentMonth}
-            operatorId={operatorId}
+            operatorId={newOperatorId}
           />
         )}
         {selectedOption === 'single' && (
@@ -75,7 +82,7 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd }) => {
             onClose={onClose}
             selectedMonth={selectedMonth}
             paymentMonth={paymentMonth}
-            operatorId={operatorId}
+            operatorId={newOperatorId}
           />
         )}
         {selectedOption === 'pdf' && (
@@ -84,7 +91,7 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd }) => {
             onClose={onClose}
             selectedMonth={selectedMonth}
             paymentMonth={paymentMonth}
-            operatorId={operatorId}
+            operatorId={newOperatorId}
           />
         )}
       </DialogContent>

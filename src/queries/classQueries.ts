@@ -1,6 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchClasses, createClass, deleteClass, updateClass } from '../services/ClassService';
+import { fetchClasses, createClass, deleteClass, updateClass, fetchWorkerClasses } from '../services/ClassService';
 import { Class } from '../types/index';
+import axios from 'axios';
+const API_URL = process.env.REACT_APP_API_URL+ '/api/classes' || "https://server-manage.onrender.com" + '/api/classes';
+
 
 export const useFetchClasses = () => {
   return useQuery({
@@ -38,4 +41,17 @@ export const useUpdateClass = () => {
       queryClient.invalidateQueries({ queryKey: ['classes'] });
     },
   });
+};
+
+export const useWorkerClasses = (workerId: string) => {
+  return useQuery({
+    queryKey: ['workerClasses', workerId],
+    queryFn: () => fetchWorkerClasses(workerId),
+  });
+};
+
+
+
+export const updateClassWithWorker = async (classId: string, update: any) => {
+  return axios.put(`${API_URL}/${classId}`, update);
 };

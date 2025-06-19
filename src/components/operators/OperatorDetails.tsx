@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 import { useFetchOperatorById } from "../../queries/operatorQueries";
 import OperatorGeneralInfo from "./OperatorGeneralInfo";
 import OperatorReport from "./OperatorReport";
+import OperatorDocuments from "./OperatorDocuments";
 
 const OperatorDetails: React.FC = () => {
   const { id } = useParams();
@@ -23,11 +24,13 @@ const OperatorDetails: React.FC = () => {
         <Tabs value={tabIndex} onChange={(e, newIndex) => setTabIndex(newIndex)} centered>
           <Tab label="פרטים כלליים" />
           <Tab label="דוח הפעלות" />
+          <Tab label="מסמכים" />
         </Tabs>
 
         <Box sx={{ mt: 3 }}>
           {tabIndex === 0 && <OperatorGeneralInfo operator={operator} />}
           {tabIndex === 1 && <OperatorReport operator={operator} />}
+          {tabIndex === 2 && <OperatorDocuments operatorId={operator._id!} />}
         </Box>
       </Box>
     </Container>
