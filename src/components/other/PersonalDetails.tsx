@@ -6,6 +6,7 @@ import { Operator } from '../../types/index';
 import { fetchCurrentOperator } from '../../services/OperatorService';
 
 const PersonalDetails: React.FC = () => {
+  debugger;
   const [operator, setOperator] = useState<Operator | null>(null);
   const { mutate: updateOperator, status } = useUpdateOperator();
   const isLoading = status === 'pending';
