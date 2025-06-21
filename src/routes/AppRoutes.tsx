@@ -17,7 +17,7 @@ import { jwtDecode } from 'jwt-decode';
 import PersonalDocuments from '../components/operators/PersonalDocuments';
 import DocumentManagementPage from '../pages/DocumentManagementPage';
 import WorkerProfilePage from '../pages/WorkerProfilePage';
-import WorkersDocumentsPage from '../pages/manager/WorkersDocumentsPage';
+import WorkersPage from '../pages/manager/WorkersPage';
 import WorkerDocumentsApprovalPage from '../pages/manager/ManagerOneWorkerAfterNoonPage';
 import WorkersDocumentsEmailPage from '../pages/manager/WorkersEmailPage';
 import WorkerAttendancePage from '../pages/manager/WorkerAttendancePage';
@@ -44,9 +44,9 @@ const AppRoutes: React.FC = () => {
 
       <Route element={<ProtectedRoute allowedRoles={['manager', 'admin']} />}>
         <Route path="/documents" element={<DocumentManagementPage />} />
-        <Route path="/workers-documents" element={<WorkersDocumentsPage />} />
-        <Route path="/workers-documents/:id" element={<WorkerDocumentsApprovalPage />} />
-        <Route path="/workers-documents-email" element={<WorkersDocumentsEmailPage />} />
+        <Route path="/workers" element={<WorkersPage />} />
+        <Route path="/workers/:id" element={<WorkerDocumentsApprovalPage />} />
+        <Route path="/workers-email" element={<WorkersDocumentsEmailPage />} />
         <Route path="/worker-attendance" element={<WorkerAttendancePage />} />
         <Route path="/workers-after-noon-email" element={<WorkersAfterNoonEmailPage />} />
         <Route path="/workers-after-noon-notifications" element={<WorkersAfterNoonNotificationsPage />} />
@@ -71,6 +71,7 @@ const AppRoutes: React.FC = () => {
 
       <Route element={<ProtectedRoute allowedRoles={['worker']} />}>
         <Route path="/worker/profile" element={<WorkerProfilePage />} />
+        <Route path="/worker/:id" element={<WorkerDocumentsApprovalPage />} />
       </Route>
 
     </Routes>

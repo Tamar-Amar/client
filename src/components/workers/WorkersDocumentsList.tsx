@@ -121,8 +121,8 @@ const WorkersDocumentsList: React.FC = () => {
     }
   };
 
-  const handleViewDocuments = (worker: WorkerAfterNoon) => {
-    navigate(`/workers-documents/${worker._id}`);
+  const handleViewWorker = (worker: WorkerAfterNoon) => {
+    navigate(`/workers/${worker._id}`);
   };
   
 
@@ -199,7 +199,7 @@ const WorkersDocumentsList: React.FC = () => {
                       </IconButton>
                       <IconButton
                         color="info"
-                        onClick={() => handleViewDocuments(worker)}
+                        onClick={() => handleViewWorker(worker)}
                         size="small"
                       >
                         <VisibilityIcon fontSize="small" />

@@ -214,7 +214,7 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
                 <Button
                   variant="outlined"
                   color="primary"
-                  onClick={() => navigate('/workers-documents-email')}
+                  onClick={() => navigate('/workers-email')}
                   sx={{
                     marginRight: '10px'
                   }}
@@ -242,7 +242,7 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
                           color: 'primary.main'
                         }
                       }}
-                      onClick={() => navigate(`/workers-documents/${worker._id}`)}
+                      onClick={() => navigate(`/workers/${worker._id}`)}
                     >
                       <PersonIcon color="error" />
                     </ListItemIcon>
@@ -380,7 +380,7 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
                           color: 'primary.main'
                         }
                       }}
-                      onClick={() => navigate(`/workers-documents/${worker._id}`)}
+                      onClick={() => navigate(`/workers/${worker._id}`)}
                     >
                       <PersonIcon color="info" />
                     </ListItemIcon>

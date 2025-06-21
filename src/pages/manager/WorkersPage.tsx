@@ -10,7 +10,8 @@ import WorkersDocumentsList from '../../components/workers/WorkersDocumentsList'
 import WorkerAfterNoonForm from '../../components/workers/CreateWorkerAfterNoonForm';
 import { useNavigate } from 'react-router-dom';
 import { useFetchClasses } from '../../queries/classQueries';
-const WorkersDocumentsPage: React.FC = () => {
+
+const WorkersPage: React.FC = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
@@ -191,4 +192,4 @@ const WorkersDocumentsPage: React.FC = () => {
   );
 };
 
-export default WorkersDocumentsPage; 
+export default WorkersPage; 
