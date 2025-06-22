@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useRecoilValue } from 'recoil';
 import { 
   Paper, 
   Typography, 
@@ -27,6 +28,8 @@ import { useWorkerDocuments } from '../../../queries/useDocuments';
 import { useAttendance } from '../../../queries/useAttendance';
 import { attendanceService } from '../../../services/attendanceService';
 import { useFetchWorkerAfterNoon } from '../../../queries/workerAfterNoonQueries';
+import { userRoleState } from '../../../recoil/storeAtom';
+
 interface AttendanceRecord {
   _id: string;
   workerId: string;
@@ -48,6 +51,7 @@ const WorkerAttendanceDocuments: React.FC<WorkerAttendanceDocumentsProps> = ({
   isAttendanceLoading, 
   workerClasses
 }) => {
+  const userRole = useRecoilValue(userRoleState);
   const [deletingDocIds, setDeletingDocIds] = useState<Set<string>>(new Set());
   const [deletingMonths, setDeletingMonths] = useState<Set<string>>(new Set());
   const [uploadingDocs, setUploadingDocs] = useState<Set<string>>(new Set());
@@ -344,7 +348,7 @@ const WorkerAttendanceDocuments: React.FC<WorkerAttendanceDocumentsProps> = ({
                             <IconButton
                               color="error"
                               onClick={() => handleDeleteMonth(month, classId)}
-                              disabled={deletingMonths.has(month)}
+                              disabled={userRole === 'worker' || deletingMonths.has(month)}
                               sx={{ 
                                 bgcolor: '#ffebee',
                                 '&:hover': { bgcolor: '#ffcdd2' }
@@ -391,7 +395,7 @@ const WorkerAttendanceDocuments: React.FC<WorkerAttendanceDocumentsProps> = ({
                                         size="small"
                                         color="error" 
                                         onClick={() => handleDelete(classRecords[0].studentAttendanceDoc?._id, month, classId)}
-                                        disabled={deletingDocIds.has(classRecords[0].studentAttendanceDoc?._id)}
+                                        disabled={userRole === 'worker' || deletingDocIds.has(classRecords[0].studentAttendanceDoc?._id)}
                                         sx={{ bgcolor: '#ffebee', '&:hover': { bgcolor: '#ffcdd2' } }}
                                       >
                                         {deletingDocIds.has(classRecords[0].studentAttendanceDoc?._id) ? (
@@ -472,7 +476,7 @@ const WorkerAttendanceDocuments: React.FC<WorkerAttendanceDocumentsProps> = ({
                                         size="small"
                                         color="error" 
                                         onClick={() => handleDelete(classRecords[0].workerAttendanceDoc?._id, month, classId)}
-                                        disabled={deletingDocIds.has(classRecords[0].workerAttendanceDoc?._id)}
+                                        disabled={userRole === 'worker' || deletingDocIds.has(classRecords[0].workerAttendanceDoc?._id)}
                                         sx={{ bgcolor: '#ffebee', '&:hover': { bgcolor: '#ffcdd2' } }}
                                       >
                                         {deletingDocIds.has(classRecords[0].workerAttendanceDoc?._id) ? (
@@ -553,7 +557,7 @@ const WorkerAttendanceDocuments: React.FC<WorkerAttendanceDocumentsProps> = ({
                                         size="small"
                                         color="error" 
                                         onClick={() => handleDelete(classRecords[0].controlDoc?._id, month, classId)}
-                                        disabled={deletingDocIds.has(classRecords[0].controlDoc?._id)}
+                                        disabled={userRole === 'worker' || deletingDocIds.has(classRecords[0].controlDoc?._id)}
                                         sx={{ bgcolor: '#ffebee', '&:hover': { bgcolor: '#ffcdd2' } }}
                                       >
                                         {deletingDocIds.has(classRecords[0].controlDoc?._id) ? (

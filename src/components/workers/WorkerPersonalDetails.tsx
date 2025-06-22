@@ -150,8 +150,6 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
                     updateData.workerAfterNoonId2 = workerData._id;
                   }
                   if (workerData._id && selectedClass._id) {
-                    console.log('updateData', updateData);
-                    console.log('selectedClass', selectedClass);
                     updateClassWithWorker(selectedClass._id, updateData);
                   }
                 }

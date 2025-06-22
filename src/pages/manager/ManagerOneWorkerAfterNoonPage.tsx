@@ -111,11 +111,6 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
   const [studentAttendanceFile, setStudentAttendanceFile] = useState<File | null>(null);
   const [workerAttendanceFile, setWorkerAttendanceFile] = useState<File | null>(null);
   const [controlFile, setControlFile] = useState<File | null>(null);
-  const [isPersonalDocDialogOpen, setIsPersonalDocDialogOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [documentType, setDocumentType] = useState<DocumentType | "NULL">("NULL");
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [expirationDate, setExpirationDate] = useState<Date | null>(null);
   const [selectedTab, setSelectedTab] = useState<'documents' | 'personal' | 'afternoon-documents'>('personal');
   const [drawerOpen, setDrawerOpen] = useState(true);
 
@@ -251,31 +246,6 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
     }
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) setSelectedFile(file);
-  };
-
-  const handleUpload = () => {
-    if (!selectedFile || !workerId) return;
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-    formData.append('workerId', workerId);
-    formData.append('documentType', documentType as string);
-    if (expirationDate) {
-      formData.append('expiryDate', expirationDate.toISOString());
-    }
-    uploadDocument(formData, {
-      onSuccess: () => {
-        setSelectedFile(null);
-        setDocumentType("NULL");
-        setExpirationDate(null);
-        setIsPersonalDocDialogOpen(false);
-        if (fileInputRef.current) fileInputRef.current.value = '';
-      }
-    });
-  };
-
   const handleDelete = (docId: string) => {
     deleteDocument(docId);
   };
@@ -379,60 +349,6 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Personal Document Dialog */}
-      <Dialog open={isPersonalDocDialogOpen} onClose={() => setIsPersonalDocDialogOpen(false)}>
-        <DialogTitle>העלאת מסמך אישי לעובד</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} mt={1}>
-            <TextField
-              select
-              size="small"
-              label="סוג מסמך"
-              value={documentType}
-              onChange={(e) => setDocumentType(e.target.value as unknown as DocumentType)}
-              sx={{ minWidth: 150 }}
-            >
-              {DOCUMENT_TYPES.map((type) => (
-                <MenuItem key={type.value} value={type.value} disabled={type.value === "NULL"}>{type.label}</MenuItem>
-              ))}
-            </TextField>
-            <input
-              type="file"
-              hidden
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-            />
-            <Button
-              variant="outlined"
-              onClick={() => fileInputRef.current?.click()}
-              startIcon={<CloudUploadIcon />}
-            >
-              {selectedFile ? selectedFile.name : 'בחר קובץ'}
-            </Button>
-            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={he}>
-              <DatePicker
-                label="  תוקף (אופציונלי)"
-                value={expirationDate}
-                onChange={(newValue) => setExpirationDate(newValue)}
-                slotProps={{ textField: { fullWidth: true, size: 'small' } }}
-              />
-            </LocalizationProvider>
-
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setIsPersonalDocDialogOpen(false)}>ביטול</Button>
-          <Button
-            variant="contained"
-            onClick={handleUpload}
-            disabled={!selectedFile || documentType === "NULL"}
-          >
-            העלה
-          </Button>
-        </DialogActions>
-      </Dialog>
-
       <Box sx={{ marginLeft: drawerOpen ? '180px' : 0,  transition: 'margin 0.3s' }}>
 
         {selectedTab === 'documents' ? (
@@ -445,20 +361,13 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
             {error && <Alert severity="error">שגיאה בטעינת המסמכים</Alert>}
 
             <Stack spacing={2} mt={3} >
-              <Box m={4}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={() => setIsPersonalDocDialogOpen(true)}
-                >
-                  העלאת מסמכים אישיים
-                </Button>
-              </Box>
               <WorkerPersonalDocuments
                 documents={documents}
                 handleStatusUpdate={handleStatusUpdate}
                 handleDelete={handleDelete}
                 is101={workerData?.is101 || false}
+                workerId={workerId || ''}
+                workerTz={workerData?.id || ''}
               />
             </Stack>
           </Box>

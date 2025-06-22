@@ -5,7 +5,6 @@ const API_URL = process.env.REACT_APP_API_URL+ '/api/classes' || "https://server
 
 export const fetchClasses = async () => {
   const response = await axios.get(API_URL);
-  console.log("response.data", response.data);
   return response.data;
 };
 

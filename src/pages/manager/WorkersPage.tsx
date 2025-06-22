@@ -22,8 +22,6 @@ const WorkersPage: React.FC = () => {
   const navigate = useNavigate();
 
   const { data: classes = [] } = useFetchClasses();
-  console.log(classes);
-
 
   const handleDeleteAll = async () => {
     try {
