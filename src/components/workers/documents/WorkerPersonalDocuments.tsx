@@ -112,7 +112,7 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
   };
 
   return (
-    <Container maxWidth="lg" sx={{ pt: 2, pb: 4 }}>
+    <Container maxWidth="lg">
       {/* The Dialog for uploading personal documents */}
       <Dialog open={isPersonalDocDialogOpen} onClose={() => setIsPersonalDocDialogOpen(false)}>
         <DialogTitle>העלאת מסמך אישי לעובד</DialogTitle>

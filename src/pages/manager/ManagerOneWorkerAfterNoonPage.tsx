@@ -111,7 +111,7 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
   const [studentAttendanceFile, setStudentAttendanceFile] = useState<File | null>(null);
   const [workerAttendanceFile, setWorkerAttendanceFile] = useState<File | null>(null);
   const [controlFile, setControlFile] = useState<File | null>(null);
-  const [selectedTab, setSelectedTab] = useState<'documents' | 'personal' | 'afternoon-documents'>('personal');
+  const [selectedTab, setSelectedTab] = useState<'documents' | 'personal' | 'afternoon-documents' | 'hanukah-camp' | 'passover-camp' | 'summer-camp'>('personal');
   const [drawerOpen, setDrawerOpen] = useState(true);
 
   // בדיקה אם העובד שייך לפרויקט צהרון
@@ -349,7 +349,7 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      <Box sx={{ marginLeft: drawerOpen ? '180px' : 0,  transition: 'margin 0.3s' }}>
+      <Box sx={{ marginLeft:'180px',  transition: 'margin 0.3s' }}>
 
         {selectedTab === 'documents' ? (
           // Personal Documents Tab
@@ -373,9 +373,38 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
           </Box>
         ) : selectedTab === 'personal' ? (
           // Personal Tab
+
+            <WorkerPersonalDetails workerData={workerData} classes={allClasses} />     
+        ) : selectedTab === 'hanukah-camp' ? (
+          // Hanukah Camp Tab
           <Box>
-            <WorkerPersonalDetails workerData={workerData} classes={allClasses} />
-          </Box>          
+            <Typography variant="h5" gutterBottom>
+              קייטנת חנוכה
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              תוכן קייטנת חנוכה יוצג כאן
+            </Typography>
+          </Box>
+        ) : selectedTab === 'passover-camp' ? (
+          // Passover Camp Tab
+          <Box>
+            <Typography variant="h5" gutterBottom>
+              קייטנת פסח
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              תוכן קייטנת פסח יוצג כאן
+            </Typography>
+          </Box>
+        ) : selectedTab === 'summer-camp' ? (
+          // Summer Camp Tab
+          <Box>
+            <Typography variant="h5" gutterBottom>
+              קייטנת קיץ
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              תוכן קייטנת קיץ יוצג כאן
+            </Typography>
+          </Box>
         ) : (
           // Afternoon Documents Tab
           <Box>
@@ -392,7 +421,7 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
                   color="primary"
                   onClick={handleOpenAttendanceDialog}
                 >
-                  דיווח נוכחות חודשית
+                  דיווח נוכחות חודשי
                 </Button>
               </Box>
               <WorkerAttendanceDocuments
@@ -415,7 +444,7 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
           flexShrink: 0,
           '& .MuiDrawer-paper': {
             width: '10%',
-            top: '115px',
+            top: '65px',
           },
         }}
       >
@@ -441,6 +470,27 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
             <ListItem disablePadding>
               <ListItemButton selected={selectedTab === 'afternoon-documents'} onClick={() => setSelectedTab('afternoon-documents')}>
                 <ListItemText primary="מסמכי צהרון" />
+              </ListItemButton>
+            </ListItem>
+          )}
+          {workerData?.isHanukaCamp && (
+            <ListItem disablePadding>
+              <ListItemButton selected={selectedTab === 'hanukah-camp'} onClick={() => setSelectedTab('hanukah-camp')}>
+                <ListItemText primary="קייטנת חנוכה" />
+              </ListItemButton>
+            </ListItem>
+          )}
+          {workerData?.isPassoverCamp && (
+            <ListItem disablePadding>
+              <ListItemButton selected={selectedTab === 'passover-camp'} onClick={() => setSelectedTab('passover-camp')}>
+                <ListItemText primary="קייטנת פסח" />
+              </ListItemButton>
+            </ListItem>
+          )}
+          {workerData?.isSummerCamp && (
+            <ListItem disablePadding>
+              <ListItemButton selected={selectedTab === 'summer-camp'} onClick={() => setSelectedTab('summer-camp')}>
+                <ListItemText primary="קייטנת קיץ" />
               </ListItemButton>
             </ListItem>
           )}
