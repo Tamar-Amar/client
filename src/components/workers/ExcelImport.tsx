@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, CircularProgress, Backdrop, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, FormGroup, FormControlLabel, Checkbox, List, ListItem, ListItemText, ListItemIcon } from '@mui/material';
+import { Button, Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, CircularProgress, Backdrop, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, FormGroup, FormControlLabel, Checkbox, List, ListItem, ListItemText, ListItemIcon, Divider } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import * as XLSX from 'xlsx';
@@ -37,6 +37,14 @@ interface ExcelImportProps {
   onSuccess?: () => void;
 }
 
+interface ProjectSelection {
+  isBaseWorker: boolean;
+  isAfterNoon: boolean;
+  isHanukaCamp: boolean;
+  isPassoverCamp: boolean;
+  isSummerCamp: boolean;
+}
+
 const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
   const [previewData, setPreviewData] = useState<PreviewWorker[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -48,6 +56,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
   const [invalidWorkers, setInvalidWorkers] = useState<PreviewWorker[]>([]);
   const [validForImportWorkers, setValidForImportWorkers] = useState<PreviewWorker[]>([]);
   const [showSummaryDialog, setShowSummaryDialog] = useState(false);
+  const [showProjectSelectionDialog, setShowProjectSelectionDialog] = useState(true);
   const [importInvalidId, setImportInvalidId] = useState(false);
   const [importInvalidPhone, setImportInvalidPhone] = useState(false);
   const [importMissingPhone, setImportMissingPhone] = useState(false);
@@ -57,6 +66,13 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
     missingPhone: PreviewWorker[];
   }>({ invalidId: [], invalidPhone: [], missingPhone: [] });
   const [allWorkers, setAllWorkers] = useState<PreviewWorker[]>([]);
+  const [projectSelection, setProjectSelection] = useState<ProjectSelection>({
+    isBaseWorker: false,
+    isAfterNoon: false,
+    isHanukaCamp: false,
+    isPassoverCamp: false,
+    isSummerCamp: false
+  });
 
   const findClassIdBySymbol = (symbol: string): string | null => {
     if (isLoadingClasses) return null;
@@ -89,8 +105,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
     
     const symbol = row.__EMPTY?.toString().trim();
 
-
-    
     return {
       firstName: row.__EMPTY_15 || '',
       lastName: row.__EMPTY_14 || '',
@@ -109,13 +123,48 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       accountantCode: row.__EMPTY_9 || 'לא נבחר',
       project: 'צהרון',
       notes:'לא נבחר',     
-      workingSymbol: symbol || ''  
+      workingSymbol: symbol || '',
+      isBaseWorker: false,
+      isAfterNoon: false,
+      isHanukaCamp: false,
+      isPassoverCamp: false,
+      isSummerCamp: false,
+      is101: false
     };
+  };
+
+  const handleProjectSelectionChange = (field: keyof ProjectSelection) => {
+    setProjectSelection(prev => {
+      const newSelection = { ...prev };
+      newSelection[field] = !prev[field];
+      return newSelection;
+    });
+  };
+
+  const getProjectDisplayName = (selection: ProjectSelection): string => {
+    const projects = [];
+    if (selection.isBaseWorker) projects.push('עובד בסיס');
+    if (selection.isAfterNoon) projects.push('צהרון');
+    if (selection.isHanukaCamp) projects.push('קייטנת חנוכה');
+    if (selection.isPassoverCamp) projects.push('קייטנת פסח');
+    if (selection.isSummerCamp) projects.push('קייטנת קיץ');
+    
+    return projects.length > 0 ? projects.join(', ') : 'לא נבחר';
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // בדיקה שיש לפחות פרויקט אחד נבחר
+    if (!projectSelection.isBaseWorker && 
+        !projectSelection.isAfterNoon && 
+        !projectSelection.isHanukaCamp && 
+        !projectSelection.isPassoverCamp && 
+        !projectSelection.isSummerCamp) {
+      alert('יש לבחור לפחות פרויקט אחד לפני טעינת הקובץ');
+      return;
+    }
 
     setIsUploading(true);
     const reader = new FileReader();
@@ -222,8 +271,13 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
         seen.add(w.id);
         return true;
       });
+      
       for (const worker of toImport) {
-        const normalizedWorker = { ...worker, phone: normalizePhone(worker.phone) };
+        const normalizedWorker = { 
+          ...worker, 
+          phone: normalizePhone(worker.phone),
+          ...projectSelection
+        };
         const savedWorker = await addWorkerMutation.mutateAsync(normalizedWorker);
         const classSymbol = worker.workingSymbol;
         const classObj = classes.find((c: Class) => c.uniqueSymbol === classSymbol);
@@ -237,6 +291,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       }
       alert('הייבוא הושלם בהצלחה!');
       setPreviewData([]);
+      setShowProjectSelectionDialog(false);
       onSuccess?.();
     } catch (error) {
       console.error('Error importing workers:', error); 
@@ -244,6 +299,11 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
     } finally {
       setIsImporting(false);
     }
+  };
+
+  const handleConfirmImport = () => {
+    setShowSummaryDialog(false);
+    handleImport();
   };
 
   const calculateTotalWorkersToImport = () => {
@@ -303,11 +363,106 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
         </Box>
       </Backdrop>
 
+      <Dialog open={showProjectSelectionDialog} onClose={() => setShowProjectSelectionDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>בחירת פרויקט לעובדים</DialogTitle>
+        <DialogContent>
+          <Box sx={{ p: 2 }}>
+            <Typography variant="body1" gutterBottom>
+              בחר את סוג הפרויקט עבור העובדים שייובאו:
+            </Typography>
+            
+            <FormGroup sx={{ mt: 2 }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={projectSelection.isBaseWorker}
+                    onChange={() => handleProjectSelectionChange('isBaseWorker')}
+                  />
+                }
+                label="עובד בסיס"
+              />
+              
+              <Divider sx={{ my: 2 }} />
+              
+              <Typography variant="subtitle1" gutterBottom>
+                פרויקטים ספציפיים:
+              </Typography>
+              
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={projectSelection.isAfterNoon}
+                    onChange={() => handleProjectSelectionChange('isAfterNoon')}
+                  />
+                }
+                label="עובד צהרון"
+              />
+              
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={projectSelection.isHanukaCamp}
+                    onChange={() => handleProjectSelectionChange('isHanukaCamp')}
+                  />
+                }
+                label="עובד קייטנת חנוכה"
+              />
+              
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={projectSelection.isPassoverCamp}
+                    onChange={() => handleProjectSelectionChange('isPassoverCamp')}
+                  />
+                }
+                label="עובד קייטנת פסח"
+              />
+              
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={projectSelection.isSummerCamp}
+                    onChange={() => handleProjectSelectionChange('isSummerCamp')}
+                  />
+                }
+                label="עובד קייטנת קיץ"
+              />
+            </FormGroup>
+            
+            <Box sx={{ mt: 3, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                פרויקטים נבחרים:
+              </Typography>
+              <Typography variant="body2" color="primary">
+                {getProjectDisplayName(projectSelection)}
+              </Typography>
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowProjectSelectionDialog(false)} color="secondary">
+            ביטול
+          </Button>
+          <Button 
+            onClick={() => setShowProjectSelectionDialog(false)}
+            color="primary" 
+            disabled={!projectSelection.isBaseWorker && 
+                     !projectSelection.isAfterNoon && 
+                     !projectSelection.isHanukaCamp && 
+                     !projectSelection.isPassoverCamp && 
+                     !projectSelection.isSummerCamp}
+            autoFocus
+          >
+            המשך לטעינת קובץ
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Box sx={{ mb: 2 }}>
           <Button
             variant="contained"
             component="label"
-            disabled={isUploading || isImporting}
+            disabled={isUploading || isImporting || showProjectSelectionDialog}
             startIcon={<UploadFileIcon />}
             sx={{
               color: '#2e7d32',
@@ -332,7 +487,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
               hidden
               accept=".xlsx,.xls"
               onChange={handleFileUpload}
-              disabled={isUploading || isImporting}
+              disabled={isUploading || isImporting || showProjectSelectionDialog}
             />
           </Button>
       </Box>
@@ -420,8 +575,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
         </>
       ) : null}
 
-
-      <Dialog open={showSummaryDialog} onClose={() => setShowSummaryDialog(false)}>
+      <Dialog open={showSummaryDialog} onClose={() => setShowSummaryDialog(false)} maxWidth="md" fullWidth>
         <DialogTitle>סיכום נתוני קובץ</DialogTitle>
         <DialogContent>
           <Box sx={{ p: 2 }}>
@@ -516,10 +670,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
         <DialogActions>
           <Button onClick={() => setShowSummaryDialog(false)} color="secondary">ביטול</Button>
           <Button 
-            onClick={() => {
-              setShowSummaryDialog(false);
-              handleImport();
-            }} 
+            onClick={handleConfirmImport}
             color="primary" 
             autoFocus
           >

@@ -157,6 +157,12 @@ export interface Activity {
     notes?: string;
     roleType: string;
     roleName: string;
+    isAfterNoon: boolean;
+    isBaseWorker: boolean;
+    isHanukaCamp: boolean;
+    isPassoverCamp: boolean;
+    isSummerCamp: boolean;
+    is101: boolean;
   }
   
 

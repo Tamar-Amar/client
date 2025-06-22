@@ -74,7 +74,16 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
                 <Chip key={cls._id} label={`${cls.name} (${cls.uniqueSymbol})`} color="info" />
               ))
             )}
-            <Chip label={workerData.project} color="primary" />
+            {/* תגיות פרויקטים לפי המאפיינים האמיתיים */}
+            {workerData.isBaseWorker && <Chip label="עובד בסיס" color="primary" />}
+            {workerData.isAfterNoon && <Chip label="צהרון" color="success" />}
+            {workerData.isHanukaCamp && <Chip label="קייטנת חנוכה" color="secondary" />}
+            {workerData.isPassoverCamp && <Chip label="קייטנת פסח" color="warning" />}
+            {workerData.isSummerCamp && <Chip label="קייטנת קיץ" color="info" />}
+            {/* אם אין פרויקטים מסומנים, מציג את השדה project הישן */}
+            {!workerData.isBaseWorker && !workerData.isAfterNoon && !workerData.isHanukaCamp && !workerData.isPassoverCamp && !workerData.isSummerCamp && (
+              <Chip label={workerData.project} color="primary" />
+            )}
           </Stack>
         </Box>
       </Box>

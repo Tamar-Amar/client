@@ -116,9 +116,18 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
   const [documentType, setDocumentType] = useState<DocumentType | "NULL">("NULL");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [expirationDate, setExpirationDate] = useState<Date | null>(null);
-  const [selectedTab, setSelectedTab] = useState<'documents' | 'personal'>('personal');
+  const [selectedTab, setSelectedTab] = useState<'documents' | 'personal' | 'afternoon-documents'>('personal');
   const [drawerOpen, setDrawerOpen] = useState(true);
 
+  // בדיקה אם העובד שייך לפרויקט צהרון
+  const isAfterNoonWorker = workerData?.isAfterNoon;
+
+  // אם העובד לא שייך לפרויקט צהרון, נחזור לטאב פרטים אישיים
+  React.useEffect(() => {
+    if (!isAfterNoonWorker && selectedTab === 'afternoon-documents') {
+      setSelectedTab('personal');
+    }
+  }, [isAfterNoonWorker, selectedTab]);
 
   const handleStatusUpdate = (docId: string, newStatus: DocumentStatus) => {
     updateStatus({ documentId: docId, status: newStatus });
@@ -427,39 +436,15 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
       <Box sx={{ marginLeft: drawerOpen ? '180px' : 0,  transition: 'margin 0.3s' }}>
 
         {selectedTab === 'documents' ? (
-          // Documents Tab
+          // Personal Documents Tab
           <Box>
             <Typography variant="h5" gutterBottom>
-              ניהול מסמכים לעובד
+              ניהול מסמכים אישיים לעובד
             </Typography>
             {isLoading && <CircularProgress />}
             {error && <Alert severity="error">שגיאה בטעינת המסמכים</Alert>}
 
-            {documents && (
-              <>
-              <Box>
-                <Typography variant="h6" gutterBottom>
-                  מסמכים חסרים:
-                </Typography>
-              </Box>
-              <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
-                {[{ tag: 'אישור משטרה', label: 'אישור משטרה' },
-                  { tag: 'תעודת הוראה', label: 'תעודת הוראה' },
-                ].map(({ tag, label }) => {
-                  const hasDoc = documents.some(doc => doc.tag === tag && doc.status === 'מאושר');
-                  return !hasDoc ? (
-                    <Tooltip title={`חסר ${label}`}>
-                      <Typography key={tag} variant="body2" color="warning.main" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <WarningAmberIcon fontSize="small" />
-                        {label}
-                      </Typography>
-                    </Tooltip>
-                  ) : null;
-                })}
-              </Stack>
-              </>
-            )}
-            <Stack spacing={2} mt={3} paddingRight={80}>
+            <Stack spacing={2} mt={3} >
               <Box m={4}>
                 <Button
                   variant="contained"
@@ -473,7 +458,25 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
                 documents={documents}
                 handleStatusUpdate={handleStatusUpdate}
                 handleDelete={handleDelete}
+                is101={workerData?.is101 || false}
               />
+            </Stack>
+          </Box>
+        ) : selectedTab === 'personal' ? (
+          // Personal Tab
+          <Box>
+            <WorkerPersonalDetails workerData={workerData} classes={allClasses} />
+          </Box>          
+        ) : (
+          // Afternoon Documents Tab
+          <Box>
+            <Typography variant="h5" gutterBottom>
+              ניהול מסמכי צהרון
+            </Typography>
+            {isLoading && <CircularProgress />}
+            {error && <Alert severity="error">שגיאה בטעינת המסמכים</Alert>}
+
+            <Stack spacing={2} mt={3} >
               <Box m={4}>
                 <Button
                   variant="contained"
@@ -490,11 +493,6 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
               />
             </Stack>
           </Box>
-        ) : (
-          // Personal Tab
-          <Box>
-            <WorkerPersonalDetails workerData={workerData} classes={allClasses} />
-          </Box>          
         )}
       </Box>
 
@@ -527,9 +525,16 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
           </ListItem>
           <ListItem disablePadding>
             <ListItemButton selected={selectedTab === 'documents'} onClick={() => setSelectedTab('documents')}>
-              <ListItemText primary="מסמכים" />
+              <ListItemText primary="מסמכים אישיים" />
             </ListItemButton>
           </ListItem>
+          {workerData?.isAfterNoon && (
+            <ListItem disablePadding>
+              <ListItemButton selected={selectedTab === 'afternoon-documents'} onClick={() => setSelectedTab('afternoon-documents')}>
+                <ListItemText primary="מסמכי צהרון" />
+              </ListItemButton>
+            </ListItem>
+          )}
         </List>
       </Drawer>
     </Box>
