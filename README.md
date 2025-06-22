@@ -4,7 +4,7 @@ React + TypeScript frontend for managing weekly educational activities, generati
 
 ---
 
-## 🌟 Key Features
+## 🌟 Key Features;
 
 - View and assign activities per class and operator
 - Export reports to PDF and Google Sheets
