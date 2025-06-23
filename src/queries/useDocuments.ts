@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchDocumentsByWorker, uploadDocument, updateOperatorDocuments, deleteDocument, fetchAllDocuments, updateDocumentStatus } from '../services/documentService';
+import { fetchDocumentsByWorker, uploadDocument, updateOperatorDocuments, deleteDocument, fetchAllDocuments, updateDocumentStatus, fetchAllPersonalDocuments } from '../services/documentService';
 import { DocumentStatus } from '../types/Document';
 
 export const useUploadDocument = () => {
@@ -17,6 +17,13 @@ export const useFetchAllDocuments = () => {
   return useQuery({
     queryKey: ['documents'],
     queryFn: () => fetchAllDocuments(),
+  });
+};
+
+export const useFetchAllPersonalDocuments = () => {
+  return useQuery({
+    queryKey: ['personal-documents'],
+    queryFn: () => fetchAllPersonalDocuments(),
   });
 };
 

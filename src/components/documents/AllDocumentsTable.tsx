@@ -12,10 +12,15 @@ import {
   DialogActions,
   Button,
   CircularProgress,
-  Autocomplete
+  Autocomplete,
+  Grid,
+  Card,
+  CardContent,
+  TablePagination
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { useFetchAllDocuments, useWorkerDocuments } from '../../queries/useDocuments';
+import { useFetchAllDocuments, useFetchAllPersonalDocuments, useWorkerDocuments } from '../../queries/useDocuments';
 import { useFetchAllWorkersAfterNoon } from '../../queries/workerAfterNoonQueries';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
@@ -31,6 +36,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { he } from 'date-fns/locale';
 
 const REQUIRED_DOC_TAGS = ['תעודת זהות', 'אישור משטרה', 'תעודת השכלה'];
+const ROWS_PER_PAGE = 15;
 
 const getStatusChip = (status: DocumentStatus) => {
   switch (status) {
@@ -46,7 +52,7 @@ const getStatusChip = (status: DocumentStatus) => {
 };
 
 const AllDocumentsTable: React.FC = () => {
-  const { data: documents = [], isLoading: isLoadingDocs } = useFetchAllDocuments();
+  const { data: personalDocuments = [], isLoading: isLoadingPersonalDocs } = useFetchAllPersonalDocuments();
   const { data: workers = [], isLoading: isLoadingWorkers } = useFetchAllWorkersAfterNoon();
   const { updateStatus, isUpdatingStatus, uploadDocument, isUploading } = useWorkerDocuments('all');
 
@@ -59,6 +65,7 @@ const AllDocumentsTable: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [expirationDate, setExpirationDate] = useState<Date | null>(null);
   const [manualUploadData, setManualUploadData] = useState<{ worker: WorkerAfterNoon | null; tag: string }>({ worker: null, tag: '' });
+  const [page, setPage] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const workerDocumentsData = useMemo(() => {
@@ -67,14 +74,14 @@ const AllDocumentsTable: React.FC = () => {
       workerMap.set(w._id, { worker: w, docs: {} });
     });
 
-    documents.forEach(doc => {
+    personalDocuments.forEach(doc => {
       if (workerMap.has(doc.operatorId)) {
         const entry = workerMap.get(doc.operatorId)!;
         entry.docs[doc.tag] = doc;
       }
     });
     return Array.from(workerMap.values());
-  }, [workers, documents]);
+  }, [workers, personalDocuments]);
 
   const filteredData = useMemo(() => {
     return workerDocumentsData.filter(({ worker, docs }) => {
@@ -96,7 +103,15 @@ const AllDocumentsTable: React.FC = () => {
     });
   }, [workerDocumentsData, searchName, searchId, filterStatus, filterType]);
 
-  if (isLoadingDocs || isLoadingWorkers) {
+  const paginatedData = useMemo(() => {
+    return filteredData.slice(page * ROWS_PER_PAGE, page * ROWS_PER_PAGE + ROWS_PER_PAGE);
+  }, [filteredData, page]);
+  
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  if (isLoadingPersonalDocs || isLoadingWorkers) {
     return <Typography>טוען...</Typography>;
   }
 
@@ -159,114 +174,175 @@ const AllDocumentsTable: React.FC = () => {
   const handleApprove = (documentId: string) => updateStatus({ documentId, status: DocumentStatus.APPROVED });
   const handleReject = (documentId: string) => updateStatus({ documentId, status: DocumentStatus.REJECTED });
 
+  const approvedDocsCount = personalDocuments.filter(d => d.status === DocumentStatus.APPROVED).length;
+  const pendingDocsCount = personalDocuments.filter(d => d.status === DocumentStatus.PENDING).length;
+  const rejectedDocsCount = personalDocuments.filter(d => d.status === DocumentStatus.REJECTED).length;
+
   return (
-    <Box sx={{ mb: 4 }}>
-      <Typography variant="h5" gutterBottom>ניהול מסמכי עובדים</Typography>
+    <Box sx={{ p: 3 }}>
+        <Grid container spacing={2}>
+            <Grid item xs={12} md={10}>
+                <Card component={Paper} elevation={3} sx={{ height: '100%' }}>
+                    <CardContent>
+                        <Typography variant="h5" gutterBottom>ניהול מסמכי עובדים</Typography>
 
-      <Stack direction="row" spacing={2} mb={2} flexWrap="wrap">
-        <Tooltip title="איפוס מסננים">
-          <IconButton onClick={() => { setSearchName(''); setSearchId(''); setFilterStatus(''); setFilterType(''); }} sx={{ color: 'grey.600', alignSelf: 'center' }}>
-            <RestartAltIcon />
-          </IconButton>
-        </Tooltip>
-        <TextField size="small" label="חפש לפי שם" value={searchName} onChange={(e) => setSearchName(e.target.value)} />
-        <TextField size="small" label="חפש לפי ת.ז" value={searchId} onChange={(e) => setSearchId(e.target.value)} />
-
-        <FormControl size="small" sx={{ minWidth: 150 }}>
-          <InputLabel>סטטוס מסמך</InputLabel>
-          <Select value={filterStatus} label="סטטוס מסמך" onChange={(e) => setFilterStatus(e.target.value as DocumentStatus)}>
-            <MenuItem value="">הכל</MenuItem>
-            <MenuItem value={DocumentStatus.APPROVED}>מאושר</MenuItem>
-            <MenuItem value={DocumentStatus.PENDING}>ממתין</MenuItem>
-            <MenuItem value={DocumentStatus.REJECTED}>נדחה</MenuItem>
-          </Select>
-        </FormControl>
-        <FormControl size="small" sx={{ minWidth: 180 }}>
-          <InputLabel>סוג מסמך</InputLabel>
-          <Select value={filterType} label="סוג מסמך" onChange={(e) => setFilterType(e.target.value)}>
-            <MenuItem value="">הכל</MenuItem>
-            {REQUIRED_DOC_TAGS.map(tag => (
-              <MenuItem key={tag} value={tag}>{tag}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <Box sx={{ flexGrow: 1 }} />
-        <Button
-            variant="contained"
-            startIcon={<UploadFileIcon />}
-            onClick={handleOpenManualUploadDialog}
-        >
-            העלאת מסמך
-        </Button>
-      </Stack>
-
-      <TableContainer component={Paper} sx={{ maxHeight: 600, overflow: 'auto' }}>
-        <Table size="small" stickyHeader>
-          <TableHead>
-            <TableRow sx={{ '& th': { backgroundColor: 'grey.100', fontWeight: 'bold' } }}>
-              <TableCell>שם עובד</TableCell>
-              <TableCell>ת"ז</TableCell>
-              {REQUIRED_DOC_TAGS.map(tag => (
-                <TableCell key={tag} align="center">{tag}</TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredData.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={REQUIRED_DOC_TAGS.length + 2} align="center">
-                  לא נמצאו עובדים התואמים את הסינון
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredData.map(({ worker, docs }) => (
-                <TableRow key={worker._id} hover>
-                  <TableCell>{`${worker.lastName} ${worker.firstName}`}</TableCell>
-                  <TableCell>{worker.id}</TableCell>
-                  {REQUIRED_DOC_TAGS.map(tag => {
-                    const doc = docs[tag];
-                    return (
-                      <TableCell key={tag} align="center">
-                        {doc ? (
-                          <Stack direction="row" spacing={1} justifyContent="center" alignItems="center">
-                            {getStatusChip(doc.status)}
-                            <Tooltip title="צפה במסמך">
-                              <IconButton size="small" onClick={() => window.open(doc.url, '_blank')} disabled={!doc.url}>
-                                <VisibilityIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            {doc.status === DocumentStatus.PENDING && (
-                              <>
-                                <Tooltip title="אשר">
-                                  <IconButton size="small" onClick={() => handleApprove(doc._id!)} disabled={isUpdatingStatus}>
-                                    <CheckIcon fontSize="small" color="success" />
-                                  </IconButton>
-                                </Tooltip>
-                                <Tooltip title="דחה">
-                                  <IconButton size="small" onClick={() => handleReject(doc._id!)} disabled={isUpdatingStatus}>
-                                    <CloseIcon fontSize="small" color="error" />
-                                  </IconButton>
-                                </Tooltip>
-                              </>
-                            )}
-                          </Stack>
-                        ) : (
-                          <Tooltip title={`העלה ${tag}`}>
-                            <IconButton color="primary" sx={{fontSize: '14px'}} onClick={() => handleOpenUploadDialog(worker, tag)}>
-                              <UploadFileIcon />
-                              העלה
+                        <Stack direction="row" spacing={1.5} mb={2} flexWrap="wrap">
+                            <Tooltip title="איפוס מסננים">
+                            <IconButton onClick={() => { setSearchName(''); setSearchId(''); setFilterStatus(''); setFilterType(''); setPage(0); }} sx={{ color: 'grey.600', alignSelf: 'center' }}>
+                                <RestartAltIcon />
                             </IconButton>
-                          </Tooltip>
-                        )}
-                      </TableCell>
-                    );
-                  })}
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                            </Tooltip>
+                            <TextField size="small" label="חפש לפי שם" value={searchName} onChange={(e) => {setSearchName(e.target.value); setPage(0);}} />
+                            <TextField size="small" label="חפש לפי ת.ז" value={searchId} onChange={(e) => {setSearchId(e.target.value); setPage(0);}} />
+
+                            <FormControl size="small" sx={{ minWidth: 150 }}>
+                            <InputLabel>סטטוס מסמך</InputLabel>
+                            <Select value={filterStatus} label="סטטוס מסמך" onChange={(e) => {setFilterStatus(e.target.value as DocumentStatus); setPage(0);}}>
+                                <MenuItem value="">הכל</MenuItem>
+                                <MenuItem value={DocumentStatus.APPROVED}>מאושר</MenuItem>
+                                <MenuItem value={DocumentStatus.PENDING}>ממתין</MenuItem>
+                                <MenuItem value={DocumentStatus.REJECTED}>נדחה</MenuItem>
+                            </Select>
+                            </FormControl>
+                            <FormControl size="small" sx={{ minWidth: 180 }}>
+                            <InputLabel>סוג מסמך</InputLabel>
+                            <Select value={filterType} label="סוג מסמך" onChange={(e) => {setFilterType(e.target.value); setPage(0);}}>
+                                <MenuItem value="">הכל</MenuItem>
+                                {REQUIRED_DOC_TAGS.map(tag => (
+                                <MenuItem key={tag} value={tag}>{tag}</MenuItem>
+                                ))}
+                            </Select>
+                            </FormControl>
+                            <Box sx={{ flexGrow: 1 }} />
+                            <Button
+                                variant="contained"
+                                startIcon={<UploadFileIcon />}
+                                onClick={handleOpenManualUploadDialog}
+                            >
+                                העלאת מסמך
+                            </Button>
+                        </Stack>
+
+                        <TableContainer sx={{ minHeight: 400 }}>
+                            <Table 
+                                size="small" 
+                                stickyHeader
+                                sx={{
+                                    '& thead th': {
+                                        padding: '6px 10px',
+                                    },
+                                    '& tbody td': {
+                                        padding: '2px 10px',
+                                    },
+                                }}
+                            >
+                            <TableHead>
+                                <TableRow sx={{ '& th': { backgroundColor: 'grey.100', fontWeight: 'bold' } }}>
+                                <TableCell>שם עובד</TableCell>
+                                <TableCell>ת"ז</TableCell>
+                                {REQUIRED_DOC_TAGS.map(tag => (
+                                    <TableCell key={tag} align="center">{tag}</TableCell>
+                                ))}
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {paginatedData.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={REQUIRED_DOC_TAGS.length + 2} align="center" sx={{ py: 5 }}>
+                                        <Typography color="text.secondary">לא נמצאו עובדים התואמים את הסינון</Typography>
+                                    </TableCell>
+                                </TableRow>
+                                ) : (
+                                paginatedData.map(({ worker, docs }) => (
+                                    <TableRow key={worker._id} hover>
+                                    <TableCell>{`${worker.lastName} ${worker.firstName}`}</TableCell>
+                                    <TableCell>{worker.id}</TableCell>
+                                    {REQUIRED_DOC_TAGS.map(tag => {
+                                        const doc = docs[tag];
+                                        return (
+                                        <TableCell key={tag} align="center">
+                                            {doc ? (
+                                            <Stack direction="row" spacing={0.5} justifyContent="center" alignItems="center">
+                                                {getStatusChip(doc.status)}
+                                                <Tooltip title="צפה במסמך">
+                                                <IconButton size="small" onClick={() => window.open(doc.url, '_blank')} disabled={!doc.url}>
+                                                    <VisibilityIcon fontSize="small" />
+                                                </IconButton>
+                                                </Tooltip>
+                                                {doc.status === DocumentStatus.PENDING && (
+                                                <>
+                                                    <Tooltip title="אשר">
+                                                    <IconButton size="small" onClick={() => handleApprove(doc._id!)} disabled={isUpdatingStatus}>
+                                                        <CheckIcon fontSize="small" color="success" />
+                                                    </IconButton>
+                                                    </Tooltip>
+                                                    <Tooltip title="דחה">
+                                                    <IconButton size="small" onClick={() => handleReject(doc._id!)} disabled={isUpdatingStatus}>
+                                                        <CloseIcon fontSize="small" color="error" />
+                                                    </IconButton>
+                                                    </Tooltip>
+                                                </>
+                                                )}
+                                            </Stack>
+                                            ) : (
+                                            <Tooltip title={`העלה ${tag}`}>
+                                                <IconButton size="small" color="primary" sx={{fontSize: '13px'}} onClick={() => handleOpenUploadDialog(worker, tag)}>
+                                                <UploadFileIcon fontSize="small" sx={{ mr: 0.5 }}/>
+                                                העלה
+                                                </IconButton>
+                                            </Tooltip>
+                                            )}
+                                        </TableCell>
+                                        );
+                                    })}
+                                    </TableRow>
+                                ))
+                                )}
+                            </TableBody>
+                            </Table>
+                        </TableContainer>
+                        <TablePagination
+                            component="div"
+                            count={filteredData.length}
+                            page={page}
+                            onPageChange={handleChangePage}
+                            rowsPerPage={ROWS_PER_PAGE}
+                            rowsPerPageOptions={[ROWS_PER_PAGE]}
+                            labelRowsPerPage="שורות בעמוד:"
+                            labelDisplayedRows={({ from, to, count }) => `${from}-${to} מתוך ${count}`}
+                        />
+                    </CardContent>
+                </Card>
+            </Grid>
+            <Grid item xs={12} md={2}>
+                <Stack spacing={2}>
+                    <Card sx={{ bgcolor: alpha('#2196f3', 0.1), color: 'primary.dark' }}>
+                        <CardContent>
+                            <Typography variant="h5" fontWeight="bold">{workers.length}</Typography>
+                            <Typography variant="body2">עובדים במערכת</Typography>
+                        </CardContent>
+                    </Card>
+                    <Card sx={{ bgcolor: alpha('#4caf50', 0.1), color: 'success.dark' }}>
+                        <CardContent>
+                            <Typography variant="h5" fontWeight="bold">{approvedDocsCount}</Typography>
+                            <Typography variant="body2">מסמכים מאושרים</Typography>
+                        </CardContent>
+                    </Card>
+                    <Card sx={{ bgcolor: alpha('#ff9800', 0.1), color: 'warning.dark' }}>
+                        <CardContent>
+                            <Typography variant="h5" fontWeight="bold">{pendingDocsCount}</Typography>
+                            <Typography variant="body2">מסמכים ממתינים</Typography>
+                        </CardContent>
+                    </Card>
+                    <Card sx={{ bgcolor: alpha('#f44336', 0.1), color: 'error.dark' }}>
+                        <CardContent>
+                            <Typography variant="h5" fontWeight="bold">{rejectedDocsCount}</Typography>
+                            <Typography variant="body2">מסמכים שנדחו</Typography>
+                        </CardContent>
+                    </Card>
+                </Stack>
+            </Grid>
+        </Grid>
 
       <Dialog open={isUploadDialogOpen} onClose={handleCloseUploadDialog}>
         <DialogTitle>

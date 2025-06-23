@@ -39,3 +39,9 @@ export const updateDocumentStatus = async (documentId: string, status: DocumentS
   const response = await axios.patch(`${API_URL}/status/${documentId}`, { status });
   return response.data;
 };
+
+export const fetchAllPersonalDocuments = async (): Promise<Document[]> => {
+  const response = await axios.get(`${API_URL}/personal`);
+  console.log("response.data", response.data);
+  return response.data;
+};

@@ -66,6 +66,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
     missingPhone: PreviewWorker[];
   }>({ invalidId: [], invalidPhone: [], missingPhone: [] });
   const [allWorkers, setAllWorkers] = useState<PreviewWorker[]>([]);
+  const [missingSymbols, setMissingSymbols] = useState<string[]>([]);
   const [projectSelection, setProjectSelection] = useState<ProjectSelection>({
     isBaseWorker: false,
     isAfterNoon: false,
@@ -185,23 +186,14 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
 
         setAllWorkers(workers);
 
-        const missingSymbols = new Set<string>();
+        const foundMissingSymbols = new Set<string>();
         jsonData.forEach(row => {
           const symbol = row.__EMPTY?.toString().trim();
           if (symbol && !findClassIdBySymbol(symbol)) {
-            missingSymbols.add(symbol);
+            foundMissingSymbols.add(symbol);
           }
         });
-        if (missingSymbols.size > 0) {
-          const symbolsList = Array.from(missingSymbols).join('\n');
-          const shouldContinue = window.confirm(
-            `שים לב: נמצאו סמלי מוסד שלא קיימים במערכת:\n${symbolsList}\n\nהאם ברצונך להמשיך בייבוא העובדים ללא הכיתות החסרות?`
-          );
-          if (!shouldContinue) {
-            setIsUploading(false);
-            return;
-          }
-        }
+        setMissingSymbols(Array.from(foundMissingSymbols));
 
         const existingIds = new Set(existingWorkers.map((w: WorkerAfterNoon) => w.id));
 
@@ -579,6 +571,17 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
         <DialogTitle>סיכום נתוני קובץ</DialogTitle>
         <DialogContent>
           <Box sx={{ p: 2 }}>
+            {missingSymbols.length > 0 && (
+                <Box sx={{ mb: 3, p: 2, border: '1px solid', borderColor: 'warning.main', borderRadius: 1, bgcolor: '#fff3e0' }}>
+                    <Typography variant="h6" color="warning.dark" gutterBottom>סמלי מוסד חסרים</Typography>
+                    <Typography variant="body2" color="warning.dark">
+                        נמצאו סמלי מוסד שלא קיימים במערכת (בדר"כ מסגרות שלא נפתחו). עובדים המשויכים לסמלים אלו ייוצאו ללא קישור לכיתה.
+                    </Typography>
+                    <List dense sx={{ maxHeight: 150, overflow: 'auto', mt: 1 }}>
+                        {missingSymbols.map(s => <ListItem key={s}><ListItemText primary={s} /></ListItem>)}
+                    </List>
+                </Box>
+            )}
             <Typography variant="h6" gutterBottom>
               סטטיסטיקות ייבוא
             </Typography>
