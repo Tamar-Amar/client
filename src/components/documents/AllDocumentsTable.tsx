@@ -1,225 +1,340 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   Box, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, TextField, Select,
   MenuItem, InputLabel, FormControl, Stack, Typography,
   Chip,
   IconButton,
-  Tooltip
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  CircularProgress,
+  Autocomplete
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-
-import { useFetchAllDocuments } from '../../queries/useDocuments';
+import { useFetchAllDocuments, useWorkerDocuments } from '../../queries/useDocuments';
 import { useFetchAllWorkersAfterNoon } from '../../queries/workerAfterNoonQueries';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
-import { useWorkerDocuments } from '../../queries/useDocuments';
 import { DocumentStatus } from '../../types/Document';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import { WorkerAfterNoon } from '../../types';
+import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { he } from 'date-fns/locale';
 
+const REQUIRED_DOC_TAGS = ['תעודת זהות', 'אישור משטרה', 'תעודת השכלה'];
 
+const getStatusChip = (status: DocumentStatus) => {
+  switch (status) {
+    case DocumentStatus.APPROVED:
+      return <Chip icon={<CheckCircleIcon />} label="מאושר" color="success" size="small" variant="outlined" />;
+    case DocumentStatus.REJECTED:
+      return <Chip icon={<CancelIcon />} label="נדחה" color="error" size="small" variant="outlined" />;
+    case DocumentStatus.PENDING:
+      return <Chip icon={<HourglassEmptyIcon />} label="ממתין" color="warning" size="small" variant="outlined" />;
+    default:
+      return null;
+  }
+};
 
 const AllDocumentsTable: React.FC = () => {
   const { data: documents = [], isLoading: isLoadingDocs } = useFetchAllDocuments();
   const { data: workers = [], isLoading: isLoadingWorkers } = useFetchAllWorkersAfterNoon();
-  const { updateStatus, isUpdatingStatus } = useWorkerDocuments('all');
+  const { updateStatus, isUpdatingStatus, uploadDocument, isUploading } = useWorkerDocuments('all');
 
   const [searchName, setSearchName] = useState('');
   const [searchId, setSearchId] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
+  const [filterStatus, setFilterStatus] = useState<DocumentStatus | ''>('');
   const [filterType, setFilterType] = useState('');
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [uploadTarget, setUploadTarget] = useState<{ workerId: string; workerName: string; workerTz: string; tag: string } | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [expirationDate, setExpirationDate] = useState<Date | null>(null);
+  const [manualUploadData, setManualUploadData] = useState<{ worker: WorkerAfterNoon | null; tag: string }>({ worker: null, tag: '' });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const getWorkerInfo = (operatorId: string) => {
-    const w = workers.find(w => w._id === operatorId);
-    return w ? { name: ` ${w.lastName} ${w.firstName}`, id: w.id } : { name: 'לא נמצא', id: '' };
-  };
-
-  const filteredDocuments = useMemo(() => {
-    return documents.filter(doc => {
-      const worker = getWorkerInfo(doc.operatorId);
-      return (
-        (!searchName || worker.name.includes(searchName)) &&
-        (!searchId || worker.id.includes(searchId)) &&
-        (!filterStatus || doc.status === filterStatus) &&
-        (!filterType || doc.tag === filterType)
-      );
+  const workerDocumentsData = useMemo(() => {
+    const workerMap = new Map<string, { worker: WorkerAfterNoon; docs: { [key: string]: any } }>();
+    workers.forEach(w => {
+      workerMap.set(w._id, { worker: w, docs: {} });
     });
-  }, [documents, workers, searchName, searchId, filterStatus, filterType]);
+
+    documents.forEach(doc => {
+      if (workerMap.has(doc.operatorId)) {
+        const entry = workerMap.get(doc.operatorId)!;
+        entry.docs[doc.tag] = doc;
+      }
+    });
+    return Array.from(workerMap.values());
+  }, [workers, documents]);
+
+  const filteredData = useMemo(() => {
+    return workerDocumentsData.filter(({ worker, docs }) => {
+      const nameMatch = !searchName || `${worker.lastName} ${worker.firstName}`.toLowerCase().includes(searchName.toLowerCase());
+      const idMatch = !searchId || (worker.id || '').includes(searchId);
+
+      if (!nameMatch || !idMatch) return false;
+
+      if (filterType && filterStatus) {
+        return docs[filterType] && docs[filterType].status === filterStatus;
+      }
+      if (filterType) {
+        return !!docs[filterType];
+      }
+      if (filterStatus) {
+        return Object.values(docs).some(doc => doc.status === filterStatus);
+      }
+      return true;
+    });
+  }, [workerDocumentsData, searchName, searchId, filterStatus, filterType]);
 
   if (isLoadingDocs || isLoadingWorkers) {
     return <Typography>טוען...</Typography>;
   }
 
- 
+  const handleOpenUploadDialog = (worker: WorkerAfterNoon, tag: string) => {
+    setUploadTarget({ 
+      workerId: worker._id, 
+      workerName: `${worker.firstName} ${worker.lastName}`,
+      workerTz: worker.id || '', 
+      tag 
+    });
+    setIsUploadDialogOpen(true);
+  };
+  
+  const handleOpenManualUploadDialog = () => {
+    setUploadTarget(null);
+    setManualUploadData({ worker: null, tag: '' });
+    setIsUploadDialogOpen(true);
+  };
 
-const handleApprove = (documentId: string) => {
-  updateStatus({ documentId, status: DocumentStatus.APPROVED });
-};
+  const handleCloseUploadDialog = () => {
+    setIsUploadDialogOpen(false);
+    setUploadTarget(null);
+    setSelectedFile(null);
+    setExpirationDate(null);
+    setManualUploadData({ worker: null, tag: '' });
+  };
 
-const handleReject = (documentId: string) => {
-  updateStatus({ documentId, status: DocumentStatus.REJECTED });
-};
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      setSelectedFile(event.target.files[0]);
+    }
+  };
 
+  const handleUpload = () => {
+    const isManual = !uploadTarget && manualUploadData.worker;
+    const targetWorkerId = isManual ? manualUploadData.worker?._id : uploadTarget?.workerId;
+    const targetTag = isManual ? manualUploadData.tag : uploadTarget?.tag;
+    const targetTz = isManual ? manualUploadData.worker?.id : uploadTarget?.workerTz;
+
+    if (!selectedFile || !targetWorkerId || !targetTag || !targetTz) return;
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    formData.append('workerId', targetWorkerId);
+    formData.append('tag', targetTag);
+    formData.append('documentType', targetTag);
+    formData.append('tz', targetTz);
+
+    if (expirationDate) {
+      formData.append('expirationDate', expirationDate.toISOString());
+    }
+
+    uploadDocument(formData, {
+      onSuccess: () => {
+        handleCloseUploadDialog();
+      }
+    });
+  };
+
+  const handleApprove = (documentId: string) => updateStatus({ documentId, status: DocumentStatus.APPROVED });
+  const handleReject = (documentId: string) => updateStatus({ documentId, status: DocumentStatus.REJECTED });
 
   return (
     <Box sx={{ mb: 4 }}>
-      <Typography variant="h6" gutterBottom>כל המסמכים</Typography>
+      <Typography variant="h5" gutterBottom>ניהול מסמכי עובדים</Typography>
 
       <Stack direction="row" spacing={2} mb={2} flexWrap="wrap">
-      <Tooltip title="איפוס מסננים">
-        <IconButton
-    onClick={() => {
-      setSearchName('');
-      setSearchId('');
-      setFilterStatus('');
-      setFilterType('');
-    }}
-    sx={{ color: 'grey.600', alignSelf: 'center' }}
-  >
-    <RestartAltIcon />
-  </IconButton>
-</Tooltip>
-        <TextField
-          size="small"
-          label="חפש לפי שם"
-          value={searchName}
-          onChange={(e) => setSearchName(e.target.value)}
-        />
-        <TextField
-          size="small"
-          label="חפש לפי ת.ז"
-          value={searchId}
-          onChange={(e) => setSearchId(e.target.value)}
-        />
+        <Tooltip title="איפוס מסננים">
+          <IconButton onClick={() => { setSearchName(''); setSearchId(''); setFilterStatus(''); setFilterType(''); }} sx={{ color: 'grey.600', alignSelf: 'center' }}>
+            <RestartAltIcon />
+          </IconButton>
+        </Tooltip>
+        <TextField size="small" label="חפש לפי שם" value={searchName} onChange={(e) => setSearchName(e.target.value)} />
+        <TextField size="small" label="חפש לפי ת.ז" value={searchId} onChange={(e) => setSearchId(e.target.value)} />
 
-
-
-        <FormControl size="small" sx={{ minWidth: 120 }}>
-          <InputLabel>סטטוס</InputLabel>
-          <Select value={filterStatus} label="סטטוס" onChange={(e) => setFilterStatus(e.target.value)}>
+        <FormControl size="small" sx={{ minWidth: 150 }}>
+          <InputLabel>סטטוס מסמך</InputLabel>
+          <Select value={filterStatus} label="סטטוס מסמך" onChange={(e) => setFilterStatus(e.target.value as DocumentStatus)}>
             <MenuItem value="">הכל</MenuItem>
-            <MenuItem value="מאושר">מאושר</MenuItem>
-            <MenuItem value="ממתין">ממתין</MenuItem>
-            <MenuItem value="נדחה">נדחה</MenuItem>
+            <MenuItem value={DocumentStatus.APPROVED}>מאושר</MenuItem>
+            <MenuItem value={DocumentStatus.PENDING}>ממתין</MenuItem>
+            <MenuItem value={DocumentStatus.REJECTED}>נדחה</MenuItem>
           </Select>
         </FormControl>
-        <FormControl size="small" sx={{ minWidth: 150 }}>
+        <FormControl size="small" sx={{ minWidth: 180 }}>
           <InputLabel>סוג מסמך</InputLabel>
           <Select value={filterType} label="סוג מסמך" onChange={(e) => setFilterType(e.target.value)}>
             <MenuItem value="">הכל</MenuItem>
-            <MenuItem value="תעודת זהות">תעודת זהות</MenuItem>
-            <MenuItem value="אישור משטרה">אישור משטרה</MenuItem>
-            <MenuItem value="תעודת השכלה">תעודת השכלה</MenuItem>
-            <MenuItem value="נוכחות תלמידים">נוכחות תלמידים</MenuItem>
-            <MenuItem value="נוכחות עובדים">נוכחות עובדים</MenuItem>
-            <MenuItem value="מסמך בקרה">מסמך בקרה</MenuItem>
-            <MenuItem value="אחר">אחר</MenuItem>
+            {REQUIRED_DOC_TAGS.map(tag => (
+              <MenuItem key={tag} value={tag}>{tag}</MenuItem>
+            ))}
           </Select>
         </FormControl>
-
+        <Button
+            variant="contained"
+            startIcon={<UploadFileIcon />}
+            onClick={handleOpenManualUploadDialog}
+            sx={{ ml: 'auto' }}
+        >
+            העלאת מסמך
+        </Button>
       </Stack>
 
-      <TableContainer component={Paper} sx={{ maxHeight: 450, overflow: 'auto', minHeight: 300 }}>
+      <TableContainer component={Paper} sx={{ maxHeight: 600, overflow: 'auto' }}>
         <Table size="small" stickyHeader>
-          <TableHead sx={{ backgroundColor: '#ffe082' }}>
-            <TableRow>
-            <TableCell sx={{ fontWeight: 'bold', color: '#37474f' }}>צפייה</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', color: '#37474f' }}>שם עובד</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', color: '#37474f' }}>ת"ז</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', color: '#37474f' }}>סוג מסמך</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', color: '#37474f' }}>תאריך</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', color: '#37474f' }}>סטטוס</TableCell>
-              <TableCell align="center">פעולות</TableCell>
+          <TableHead>
+            <TableRow sx={{ '& th': { backgroundColor: 'grey.100', fontWeight: 'bold' } }}>
+              <TableCell>שם עובד</TableCell>
+              <TableCell>ת"ז</TableCell>
+              {REQUIRED_DOC_TAGS.map(tag => (
+                <TableCell key={tag} align="center">{tag}</TableCell>
+              ))}
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredDocuments.length === 0 ? (
+            {filteredData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} align="center">
-                  לא קיימים מסמכים במערכת
+                <TableCell colSpan={REQUIRED_DOC_TAGS.length + 2} align="center">
+                  לא נמצאו עובדים התואמים את הסינון
                 </TableCell>
               </TableRow>
             ) : (
-              filteredDocuments.map((doc) => {
-                const worker = getWorkerInfo(doc.operatorId);
-                return (
-                  <TableRow key={doc._id}>
-                    <TableCell sx={{ fontWeight: 'bold', color: '#37474f' }}>
-                      <Tooltip title="צפה במסמך">
-                        <IconButton size="small" onClick={() => window.open(doc.url, '_blank')}>
-                          <VisibilityIcon fontSize="small" color="info" />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                    <TableCell sx={{ color: '#37474f' }}>{worker.name}</TableCell>
-                    <TableCell sx={{ color: '#37474f' }}>{worker.id}</TableCell>
-                    <TableCell sx={{  color: '#37474f' }}>{doc.tag}</TableCell>
-                    <TableCell sx={{ color: '#37474f' }}>{new Date(doc.createdAt).toLocaleDateString('he-IL')}</TableCell>
-
-                    <TableCell sx={{  color: '#37474f' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        {doc.status === 'מאושר' && (
-                          <Tooltip title="מאושר">
-                            <CheckCircleIcon sx={{ color: 'success.main' }} fontSize="small" />
-                          </Tooltip>
-                        )}
-                        {doc.status === 'נדחה' && (
-                          <Tooltip title="נדחה">
-                            <CancelIcon sx={{ color: 'error.main' }} fontSize="small" />
-                          </Tooltip>
-                        )}
-                        {doc.status === 'ממתין' && (
-                          <Tooltip title="ממתין">
-                            <HourglassEmptyIcon sx={{ color: 'warning.main' }} fontSize="small" />
-                          </Tooltip>
-                        )}
-                      </Box>
-                    </TableCell>
-
-                    <TableCell align="center">
-                      {doc.status === 'ממתין' && (
-                        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
-                          <Tooltip title="אשר">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleApprove(doc._id!)}
-                              disabled={isUpdatingStatus}
-                            >
-                              <CheckIcon fontSize="small" sx={{ color: 'success.main' }} />
+              filteredData.map(({ worker, docs }) => (
+                <TableRow key={worker._id} hover>
+                  <TableCell>{`${worker.lastName} ${worker.firstName}`}</TableCell>
+                  <TableCell>{worker.id}</TableCell>
+                  {REQUIRED_DOC_TAGS.map(tag => {
+                    const doc = docs[tag];
+                    return (
+                      <TableCell key={tag} align="center">
+                        {doc ? (
+                          <Stack direction="row" spacing={1} justifyContent="center" alignItems="center">
+                            {getStatusChip(doc.status)}
+                            <Tooltip title="צפה במסמך">
+                              <IconButton size="small" onClick={() => window.open(doc.url, '_blank')} disabled={!doc.url}>
+                                <VisibilityIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            {doc.status === DocumentStatus.PENDING && (
+                              <>
+                                <Tooltip title="אשר">
+                                  <IconButton size="small" onClick={() => handleApprove(doc._id!)} disabled={isUpdatingStatus}>
+                                    <CheckIcon fontSize="small" color="success" />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title="דחה">
+                                  <IconButton size="small" onClick={() => handleReject(doc._id!)} disabled={isUpdatingStatus}>
+                                    <CloseIcon fontSize="small" color="error" />
+                                  </IconButton>
+                                </Tooltip>
+                              </>
+                            )}
+                          </Stack>
+                        ) : (
+                          <Tooltip title={`העלה ${tag}`}>
+                            <IconButton color="primary" sx={{fontSize: '14px'}} onClick={() => handleOpenUploadDialog(worker, tag)}>
+                              <UploadFileIcon />
+                              העלה
                             </IconButton>
                           </Tooltip>
-                          <Tooltip title="דחה">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleReject(doc._id!)}
-                              disabled={isUpdatingStatus}
-                            >
-                              <CloseIcon fontSize="small" sx={{ color: 'error.main' }} />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })
+                        )}
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              ))
             )}
           </TableBody>
         </Table>
       </TableContainer>
 
-      {/* Summary rows */}
-      <Box sx={{ mt: 2, p: 2, border: '1px solid #e0e0e0', borderRadius: 2, backgroundColor: '#fafafa' }}>
-        <Typography variant="subtitle1" gutterBottom>סיכום מסמכים:</Typography>
-        <Stack direction="row" spacing={4}>
-          <Typography>סה"כ מסמכים שהתקבלו: {filteredDocuments.length}</Typography>
-          <Typography>סה"כ אישורי משטרה: {filteredDocuments.filter(doc => doc.tag === 'אישור משטרה').length}</Typography>
-          <Typography>סה"כ תעודות הוראה: {filteredDocuments.filter(doc => doc.tag === 'תעודת השכלה').length}</Typography>
-        </Stack>
-      </Box>
+      <Dialog open={isUploadDialogOpen} onClose={handleCloseUploadDialog}>
+        <DialogTitle>
+          {uploadTarget ? `העלאת מסמך: ${uploadTarget.tag}` : 'העלאת מסמך חדש'}
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1, minWidth: 400 }}>
+            {uploadTarget ? (
+              <Typography variant="body1">
+                עבור: <strong>{uploadTarget.workerName}</strong>
+              </Typography>
+            ) : (
+                <>
+                 <Autocomplete
+                    options={workers}
+                    getOptionLabel={(option) => `${option.firstName} ${option.lastName} (${option.id})`}
+                    value={manualUploadData.worker}
+                    onChange={(_, newValue) => setManualUploadData(prev => ({ ...prev, worker: newValue }))}
+                    renderInput={(params) => <TextField {...params} label="בחר עובד" />}
+                 />
+                 <FormControl fullWidth>
+                    <InputLabel>סוג מסמך</InputLabel>
+                    <Select
+                        value={manualUploadData.tag}
+                        label="סוג מסמך"
+                        onChange={(e) => setManualUploadData(prev => ({ ...prev, tag: e.target.value }))}
+                    >
+                        {REQUIRED_DOC_TAGS.map(tag => (
+                            <MenuItem key={tag} value={tag}>{tag}</MenuItem>
+                        ))}
+                    </Select>
+                 </FormControl>
+                </>
+            )}
+            <input
+              type="file"
+              hidden
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+            />
+            <Button
+              variant="outlined"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {selectedFile ? selectedFile.name : 'בחר קובץ'}
+            </Button>
+            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={he}>
+              <DatePicker
+                label="תוקף (אופציונלי)"
+                value={expirationDate}
+                onChange={(newValue) => setExpirationDate(newValue)}
+                slotProps={{ textField: { fullWidth: true, size: 'small' } }}
+              />
+            </LocalizationProvider>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseUploadDialog}>ביטול</Button>
+          <Button
+            variant="contained"
+            onClick={handleUpload}
+            disabled={!selectedFile || isUploading || (uploadTarget === null && (!manualUploadData.worker || !manualUploadData.tag)) }
+          >
+            {isUploading ? <CircularProgress size={24} /> : 'העלה'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
