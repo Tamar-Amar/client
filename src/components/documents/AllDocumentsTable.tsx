@@ -190,11 +190,11 @@ const AllDocumentsTable: React.FC = () => {
             ))}
           </Select>
         </FormControl>
+        <Box sx={{ flexGrow: 1 }} />
         <Button
             variant="contained"
             startIcon={<UploadFileIcon />}
             onClick={handleOpenManualUploadDialog}
-            sx={{ ml: 'auto' }}
         >
             העלאת מסמך
         </Button>
