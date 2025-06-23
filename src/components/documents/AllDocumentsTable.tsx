@@ -26,9 +26,6 @@ import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import { DocumentStatus } from '../../types/Document';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
-import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CancelIcon from '@mui/icons-material/Cancel';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { WorkerAfterNoon } from '../../types';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
@@ -41,11 +38,11 @@ const ROWS_PER_PAGE = 15;
 const getStatusChip = (status: DocumentStatus) => {
   switch (status) {
     case DocumentStatus.APPROVED:
-      return <Chip icon={<CheckCircleIcon />} label="מאושר" color="success" size="small" variant="outlined" />;
+      return <Chip label="מאושר" color="success" size="small" variant="outlined" />;
     case DocumentStatus.REJECTED:
-      return <Chip icon={<CancelIcon />} label="נדחה" color="error" size="small" variant="outlined" />;
+      return <Chip label="נדחה" color="error" size="small" variant="outlined" />;
     case DocumentStatus.PENDING:
-      return <Chip icon={<HourglassEmptyIcon />} label="ממתין" color="warning" size="small" variant="outlined" />;
+      return <Chip label="ממתין" color="warning" size="small" variant="outlined" />;
     default:
       return null;
   }
@@ -179,7 +176,7 @@ const AllDocumentsTable: React.FC = () => {
   const rejectedDocsCount = personalDocuments.filter(d => d.status === DocumentStatus.REJECTED).length;
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 1 }}>
         <Grid container spacing={2}>
             <Grid item xs={12} md={10}>
                 <Card component={Paper} elevation={3} sx={{ height: '100%' }}>
@@ -228,11 +225,14 @@ const AllDocumentsTable: React.FC = () => {
                                 size="small" 
                                 stickyHeader
                                 sx={{
+                                    tableLayout: 'fixed',
                                     '& thead th': {
                                         padding: '6px 10px',
+                                        width: '120px',
                                     },
                                     '& tbody td': {
                                         padding: '2px 10px',
+                                        width: '120px',
                                     },
                                 }}
                             >
@@ -241,7 +241,7 @@ const AllDocumentsTable: React.FC = () => {
                                 <TableCell>שם עובד</TableCell>
                                 <TableCell>ת"ז</TableCell>
                                 {REQUIRED_DOC_TAGS.map(tag => (
-                                    <TableCell key={tag} align="center">{tag}</TableCell>
+                                    <TableCell key={tag} >{tag}</TableCell>
                                 ))}
                                 </TableRow>
                             </TableHead>
@@ -260,9 +260,9 @@ const AllDocumentsTable: React.FC = () => {
                                     {REQUIRED_DOC_TAGS.map(tag => {
                                         const doc = docs[tag];
                                         return (
-                                        <TableCell key={tag} align="center">
+                                        <TableCell key={tag} >
                                             {doc ? (
-                                            <Stack direction="row" spacing={0.5} justifyContent="center" alignItems="center">
+                                            <Stack direction="row" spacing={0.5} >
                                                 {getStatusChip(doc.status)}
                                                 <Tooltip title="צפה במסמך">
                                                 <IconButton size="small" onClick={() => window.open(doc.url, '_blank')} disabled={!doc.url}>

@@ -44,6 +44,8 @@ export const useUpdateDocuments = () => {
       updateOperatorDocuments(tempId, newOperatorId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
+      queryClient.invalidateQueries({ queryKey: ['personal-documents'] });
+      queryClient.invalidateQueries({ queryKey: ['worker-documents'] });
     }
   });
 };
@@ -61,6 +63,7 @@ export const useWorkerDocuments = (workerId: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['worker-documents', workerId] });
       queryClient.invalidateQueries({ queryKey: ['worker-attendance', workerId] });
+      queryClient.invalidateQueries({ queryKey: ['personal-documents'] });
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
     }
   });
@@ -70,6 +73,7 @@ export const useWorkerDocuments = (workerId: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['worker-documents', workerId] });
       queryClient.invalidateQueries({ queryKey: ['worker-attendance', workerId] });
+      queryClient.invalidateQueries({ queryKey: ['personal-documents'] });
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
     }
   });
@@ -80,6 +84,7 @@ export const useWorkerDocuments = (workerId: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['worker-documents', workerId] });
       queryClient.invalidateQueries({ queryKey: ['worker-attendance', workerId] });
+      queryClient.invalidateQueries({ queryKey: ['personal-documents'] });
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
     }
   });
@@ -91,6 +96,7 @@ export const useWorkerDocuments = (workerId: string) => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       queryClient.invalidateQueries({ queryKey: ['worker-documents', workerId] });
       queryClient.invalidateQueries({ queryKey: ['worker-attendance', workerId] });
+      queryClient.invalidateQueries({ queryKey: ['personal-documents'] });
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
     }
   });

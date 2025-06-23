@@ -35,7 +35,7 @@ const AppContent = () => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       {!isPublic && <MainNav />}
-      <Box sx={{ mt: '30px' }}>
+      <Box sx={{ mt: '60px' }}>
         <AppRoutes />
       </Box>
     </Box>
