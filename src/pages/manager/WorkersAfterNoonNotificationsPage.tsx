@@ -202,7 +202,7 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
               }
               title={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography variant="h6">מסמכים אישיים חסרים</Typography>
+                  <Typography variant="h6" fontWeight="bold">מסמכים אישיים חסרים</Typography>
                   <Chip 
                     label={workersWithMissingDocs.length} 
                     color="error" 
@@ -210,23 +210,20 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
                   />
                 </Box>
               }
-              action={
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  onClick={() => navigate('/workers-email')}
-                  sx={{
-                    marginRight: '10px'
-                  }}
-                >
-                  מעבר לעמוד שליחת מיילים
-                </Button>
-              }
             />
             <Divider />
             <CardContent>
+                <Button
+                    variant="outlined"
+                    color="primary"
+                    fullWidth
+                    onClick={() => navigate('/workers-email')}
+                    sx={{ mb: 2 }}
+                >
+                    מעבר לעמוד שליחת מיילים
+                </Button>
               <List sx={{ 
-                maxHeight: '400px', 
+                maxHeight: '360px', 
                 overflow: 'auto',
                 '& .MuiListItem-root': {
                   py: 0.5
@@ -289,7 +286,7 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
               }
               title={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography variant="h6">כיתות ללא עובד מעודכן</Typography>
+                  <Typography variant="h6" fontWeight="bold">כיתות ללא עובד מעודכן</Typography>
                   <Chip 
                     label={classesWithoutUpdatedWorker.length} 
                     color="warning" 
@@ -352,7 +349,7 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
               }
               title={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography variant="h6">עובדים ללא כיתה</Typography>
+                  <Typography variant="h6" fontWeight="bold">עובדים ללא כיתה</Typography>
                   <Chip 
                     label={workersWithoutClass.length} 
                     color="info" 
