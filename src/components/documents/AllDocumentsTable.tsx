@@ -20,7 +20,7 @@ import {
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { useFetchAllDocuments, useFetchAllPersonalDocuments, useWorkerDocuments } from '../../queries/useDocuments';
+import { useFetchAllPersonalDocuments, useWorkerDocuments } from '../../queries/useDocuments';
 import { useFetchAllWorkersAfterNoon } from '../../queries/workerAfterNoonQueries';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
