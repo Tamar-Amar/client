@@ -54,14 +54,6 @@ const WorkersPage: React.FC = () => {
               <>
                 <Button
                   variant="outlined"
-                  color="secondary"
-                  onClick={() => navigate('/workers-documents-email')}
-                  sx={{ whiteSpace: 'nowrap' }}
-                >
-                  שליחת מיילים
-                </Button>
-                <Button
-                  variant="outlined"
                   size="small"
                   onClick={() => setIsImportDialogOpen(true)}
                   startIcon={<UploadFileIcon />}

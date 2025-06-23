@@ -27,7 +27,7 @@ const DocumentUpload: React.FC = () => {
   const documentTypes = [
     'תעודת זהות',
     'אישור משטרה',
-    'תעודת הוראה',
+    'תעודת השכלה',
     'אחר'
   ];
 

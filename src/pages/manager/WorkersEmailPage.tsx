@@ -29,7 +29,7 @@ import SendIcon from '@mui/icons-material/Send';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 
-const REQUIRED_TAGS = ["אישור משטרה", "תעודת הוראה"];
+const REQUIRED_TAGS = ["אישור משטרה", "תעודת השכלה"];
 const API_URL = process.env.REACT_APP_API_URL;
 
 const WorkersDocumentsEmailPage: React.FC = () => {

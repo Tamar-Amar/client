@@ -32,7 +32,7 @@ import { useNavigate } from "react-router-dom";
 import { Class } from '../../types';
 import { WorkerAfterNoon } from '../../types';
 
-const REQUIRED_TAGS = ["אישור משטרה", "תעודת הוראה"];
+const REQUIRED_TAGS = ["אישור משטרה", "תעודת השכלה"];
 
 interface ClassDetailsDialogProps {
   open: boolean;

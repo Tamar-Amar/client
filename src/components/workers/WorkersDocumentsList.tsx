@@ -37,6 +37,7 @@ const WorkersDocumentsList: React.FC = () => {
   const deleteWorkerMutation = useDeleteWorkerAfterNoon();
   const [searchQuery, setSearchQuery] = useState('');
   const [salaryAccountFilter, setSalaryAccountFilter] = useState<string>('');
+  const [projectFilter, setProjectFilter] = useState<string>('');
   const [page, setPage] = useState(0);
   const navigate = useNavigate();
 
@@ -78,6 +79,13 @@ const WorkersDocumentsList: React.FC = () => {
     return map;
   }, [classes]);
 
+  const projectOptions = [
+    { value: '', label: 'כל הפרויקטים' },
+    { value: 'isAfterNoon', label: 'צהרון' },
+    { value: 'isHanukaCamp', label: 'קייטנת חנוכה' },
+    { value: 'isPassoverCamp', label: 'קייטנת פסח' },
+    { value: 'isSummerCamp', label: 'קייטנת קיץ' },
+  ];
 
 
   // Filter workers based on search query and salary account
@@ -96,10 +104,11 @@ const WorkersDocumentsList: React.FC = () => {
       );
 
       const matchesSalaryAccount = !salaryAccountFilter || worker.accountantCode === salaryAccountFilter;
+      const matchesProject = !projectFilter || worker[projectFilter as keyof WorkerAfterNoon] === true;
 
-      return matchesSearch && matchesSalaryAccount;
+      return matchesSearch && matchesSalaryAccount && matchesProject;
     });
-  }, [workers, searchQuery, salaryAccountFilter]);
+  }, [workers, searchQuery, salaryAccountFilter, projectFilter]);
 
   // Calculate pagination
   const paginatedWorkers = useMemo(() => {
@@ -166,9 +175,26 @@ const WorkersDocumentsList: React.FC = () => {
             <MenuItem value="מרים">מרים</MenuItem>
           </Select>
         </FormControl>
+        <FormControl size="small" sx={{ minWidth: 200 }}>
+          <InputLabel>פרויקט</InputLabel>
+          <Select
+            value={projectFilter}
+            label="פרויקט"
+            onChange={(e) => {
+              setProjectFilter(e.target.value);
+              setPage(0);
+            }}
+          >
+            {projectOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </Box>
 
-      <TableContainer component={Paper} sx={{ mb: 2 }}>
+      <TableContainer component={Paper} sx={{ mb: 2, minHeight: 500 }}>
         <Table size="small">
           <TableHead>
             <TableRow>
@@ -180,7 +206,7 @@ const WorkersDocumentsList: React.FC = () => {
               <TableCell sx={{ fontWeight: 'bold' }}>סטטוס</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>חשב שכר</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>אישור משטרה</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>תעודת הוראה</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>תעודת השכלה</TableCell>
 
             </TableRow>
           </TableHead>
@@ -214,7 +240,7 @@ const WorkersDocumentsList: React.FC = () => {
                   <TableCell>{!worker.status || worker.status === "לא נבחר" ? "פעיל" : worker.status}</TableCell>
                   <TableCell>{worker.accountantCode}</TableCell>
                   <TableCell>{getDocStatus(worker._id, 'אישור משטרה')}</TableCell>
-                  <TableCell>{getDocStatus(worker._id, 'תעודת הוראה')}</TableCell>
+                  <TableCell>{getDocStatus(worker._id, 'תעודת השכלה')}</TableCell>
 
                 </TableRow>
               ))

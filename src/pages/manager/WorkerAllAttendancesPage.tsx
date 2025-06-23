@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
-  Tooltip, IconButton, Typography, TextField, Box, Stack, Chip
+  Tooltip, IconButton, Typography, TextField, Box, Stack, Chip, MenuItem
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import WarningIcon from '@mui/icons-material/Warning';
@@ -20,7 +20,16 @@ interface AttendanceDocument {
 
 interface AttendanceRecord {
   _id: string;
-  workerId: string | { _id: string; firstName?: string; lastName?: string; id?: string };
+  workerId: string | { 
+    _id: string; 
+    firstName?: string; 
+    lastName?: string; 
+    id?: string;
+    isAfterNoon?: boolean;
+    isHanukkah?: boolean;
+    isPassover?: boolean;
+    isSummer?: boolean;
+  };
   classId: string | { _id: string; name?: string; uniqueSymbol?: string };
   month: string;
   studentAttendanceDoc: AttendanceDocument | null;
@@ -42,6 +51,14 @@ const getDocLabel = (index: number) => {
     default: return '';
   }
 };
+
+const projectOptions = [
+    { value: '', label: 'כל הפרויקטים' },
+    { value: 'isAfterNoon', label: 'צהרון' },
+    { value: 'isHanukkah', label: 'קייטנת חנוכה' },
+    { value: 'isPassover', label: 'קייטנת פסח' },
+    { value: 'isSummer', label: 'קייטנת קיץ' },
+];
 
 const getStatus = (record: AttendanceRecord) => {
   const { studentAttendanceDoc, workerAttendanceDoc } = record;
@@ -69,6 +86,7 @@ const WorkerAttendancePage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMonth, setFilterMonth] = useState('');
   const [filterWorkerId, setFilterWorkerId] = useState('');
+  const [filterProject, setFilterProject] = useState('');
 
   const grouped: { [month: string]: { [symbol: string]: AttendanceRecord[] } } = {};
   attendanceData.forEach((record: AttendanceRecord) => {
@@ -85,13 +103,23 @@ const WorkerAttendancePage: React.FC = () => {
       .filter(([month]) => !filterMonth || month.includes(filterMonth))
       .flatMap(([month, symbols]) =>
         Object.entries(symbols)
-          .filter(([symbol]) => symbol.includes(searchTerm))
+          .filter(([symbol]) => symbol.toLowerCase().includes(searchTerm.toLowerCase()))
           .flatMap(([symbol, records]) => {
-            if (filterWorkerId && !records[0].workerId.toString().includes(filterWorkerId)) return [];
+            const worker = records[0]?.workerId;
+            const workerIdString = typeof worker === 'object' ? worker?.id || '' : worker.toString();
+            
+            if (filterWorkerId && !workerIdString.includes(filterWorkerId)) return [];
+
+            if (filterProject && typeof worker === 'object' && worker !== null) {
+              if (!worker[filterProject as keyof typeof worker]) {
+                return [];
+              }
+            }
+            
             return [{ month, symbol, records }];
           })
       );
-  }, [grouped, searchTerm, filterMonth, filterWorkerId]);
+  }, [grouped, searchTerm, filterMonth, filterWorkerId, filterProject]);
 
   return (
     <Box sx={{ p: 10}}>
@@ -111,12 +139,27 @@ const WorkerAttendancePage: React.FC = () => {
           size="small"
         />
         <TextField
-          label="סינון לפי מזהה עובד"
+          label="סינון לפי ת.ז עובד"
           variant="outlined"
           value={filterWorkerId}
           onChange={(e) => setFilterWorkerId(e.target.value)}
           size="small"
         />
+        <TextField
+          select
+          label="סינון לפי פרויקט"
+          variant="outlined"
+          value={filterProject}
+          onChange={(e) => setFilterProject(e.target.value)}
+          size="small"
+          sx={{ minWidth: 180 }}
+        >
+          {projectOptions.map((option) => (
+            <MenuItem key={option.value} value={option.value}>
+              {option.label}
+            </MenuItem>
+          ))}
+        </TextField>
       </Stack>
 
       <TableContainer component={Paper} sx={{ maxHeight: 600, overflowY: 'auto' }}>

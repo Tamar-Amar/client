@@ -71,7 +71,7 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
 
   const requiredDocuments = [
     { tag: 'אישור משטרה', label: 'אישור משטרה', description: 'אישור משטרה תקף' },
-    { tag: 'תעודת השכלה', label: 'תעודת השכלה', description: 'תעודת השכלה או תעודת הוראה' },
+    { tag: 'תעודת השכלה', label: 'תעודת השכלה', description: 'תעודת השכלה או תעודת השכלה' },
     { tag: 'תעודת זהות', label: 'תעודת זהות', description: 'תעודת זהות ישראלית' },
     { tag: 'תיאום מס', label: 'תיאום מס', description: 'טופס תיאום מס מעביד' }
   ];

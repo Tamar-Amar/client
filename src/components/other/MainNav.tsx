@@ -63,8 +63,10 @@ const MainNav: React.FC = () => {
   const managerTabs: TabInfo[] = [
     { label: 'ניהול עובדים', path: '/workers' },
     { label: 'דיווחי נוכחות', path: '/worker-attendance' },
+    { label: 'מסמכים אישיים', path: '/documents' },
     { label: 'מיילים', path: '/workers-after-noon-email' },
     { label: 'התראות', path: '/workers-after-noon-notifications' },
+
   ];
 
   const operatorTabs: TabInfo[] = [

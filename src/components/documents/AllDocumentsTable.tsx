@@ -112,7 +112,7 @@ const handleReject = (documentId: string) => {
             <MenuItem value="">הכל</MenuItem>
             <MenuItem value="תעודת זהות">תעודת זהות</MenuItem>
             <MenuItem value="אישור משטרה">אישור משטרה</MenuItem>
-            <MenuItem value="תעודת הוראה">תעודת הוראה</MenuItem>
+            <MenuItem value="תעודת השכלה">תעודת השכלה</MenuItem>
             <MenuItem value="נוכחות תלמידים">נוכחות תלמידים</MenuItem>
             <MenuItem value="נוכחות עובדים">נוכחות עובדים</MenuItem>
             <MenuItem value="מסמך בקרה">מסמך בקרה</MenuItem>
@@ -217,7 +217,7 @@ const handleReject = (documentId: string) => {
         <Stack direction="row" spacing={4}>
           <Typography>סה"כ מסמכים שהתקבלו: {filteredDocuments.length}</Typography>
           <Typography>סה"כ אישורי משטרה: {filteredDocuments.filter(doc => doc.tag === 'אישור משטרה').length}</Typography>
-          <Typography>סה"כ תעודות הוראה: {filteredDocuments.filter(doc => doc.tag === 'תעודת הוראה').length}</Typography>
+          <Typography>סה"כ תעודות הוראה: {filteredDocuments.filter(doc => doc.tag === 'תעודת השכלה').length}</Typography>
         </Stack>
       </Box>
     </Box>

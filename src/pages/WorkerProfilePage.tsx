@@ -18,7 +18,7 @@ export const DOCUMENT_TYPES = [
   { value: DocumentType.ID, label: 'תעודת זהות' },
   { value: DocumentType.BANK_DETAILS, label: 'פרטי בנק' },  
   { value: DocumentType.POLICE_APPROVAL, label: 'אישור משטרה' },
-  { value: DocumentType.TEACHING_CERTIFICATE, label: 'תעודת הוראה' },
+  { value: DocumentType.TEACHING_CERTIFICATE, label: 'תעודת השכלה' },
   { value: DocumentType.OTHER, label: 'אחר' }
 ];
 
