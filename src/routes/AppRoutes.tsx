@@ -20,7 +20,7 @@ import WorkerProfilePage from '../pages/WorkerProfilePage';
 import WorkersPage from '../pages/manager/WorkersPage';
 import WorkerDocumentsApprovalPage from '../pages/manager/ManagerOneWorkerAfterNoonPage';
 import WorkersDocumentsEmailPage from '../pages/manager/WorkersEmailPage';
-import WorkerAttendancePage from '../pages/manager/WorkerAttendancePage';
+import WorkerAttendancePage from '../pages/manager/WorkerAllAttendancesPage';
 import WorkersAfterNoonEmailPage from '../pages/manager/WorkersEmailPage';
 import WorkersAfterNoonNotificationsPage from '../pages/manager/WorkersAfterNoonNotificationsPage';
 

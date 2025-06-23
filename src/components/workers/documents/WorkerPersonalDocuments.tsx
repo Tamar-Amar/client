@@ -168,7 +168,7 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
       
       {/* אזהרת טופס 101 */}
       {!is101 && (
-        <Alert severity="info" sx={{ mt: 2, mb: 3 }}>
+        <Alert severity="warning" sx={{ mt: 2, mb: 3 }}>
           <AlertTitle>שימו לב</AlertTitle>
           יש למלא טופס 101 מקוון עם קליטת העובד/ת.
           <Link href="https://www.google.com" target="_blank" rel="noopener">
@@ -238,10 +238,10 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
             boxShadow: 3
           }}>
             <CardContent sx={{ textAlign: 'center', py: 2 }}>
-              <Typography variant="h4" color="secondary.main" fontWeight="bold">
+              <Typography variant="h4" color="#9c27b0" fontWeight="bold">
                 {missingDocs.length}
               </Typography>
-              <Typography variant="body2" color="secondary.dark">
+              <Typography variant="body2" color="#9c27b0">
                 מסמכים חסרים
               </Typography>
             </CardContent>

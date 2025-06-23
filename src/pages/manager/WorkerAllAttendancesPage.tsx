@@ -1,21 +1,31 @@
 import React, { useMemo, useState } from 'react';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
-  Tooltip, IconButton, Typography, TextField, Box, Stack
+  Tooltip, IconButton, Typography, TextField, Box, Stack, Chip
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import WarningAmberIcon from '@mui/icons-material/Warning';
+import WarningIcon from '@mui/icons-material/Warning';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import { useFetchClasses } from '../../queries/classQueries';
 import { useAttendance } from '../../queries/useAttendance';
+import { DocumentStatus } from '../../types/Document';
+
+interface AttendanceDocument {
+  _id: string;
+  url: string;
+  status: DocumentStatus;
+}
 
 interface AttendanceRecord {
   _id: string;
   workerId: string | { _id: string; firstName?: string; lastName?: string; id?: string };
   classId: string | { _id: string; name?: string; uniqueSymbol?: string };
   month: string;
-  studentAttendanceDoc: any;
-  workerAttendanceDoc: any;
-  controlDoc: any;
+  studentAttendanceDoc: AttendanceDocument | null;
+  workerAttendanceDoc: AttendanceDocument | null;
+  controlDoc: AttendanceDocument | null;
 }
 
 interface Class {
@@ -31,6 +41,26 @@ const getDocLabel = (index: number) => {
     case 2: return 'בקרה';
     default: return '';
   }
+};
+
+const getStatus = (record: AttendanceRecord) => {
+  const { studentAttendanceDoc, workerAttendanceDoc } = record;
+  
+  if (!studentAttendanceDoc || !workerAttendanceDoc) {
+    return { text: 'חסר מסמכים', color: 'warning' as const, icon: <WarningIcon fontSize="small" /> };
+  }
+  
+  const docs = [studentAttendanceDoc, workerAttendanceDoc];
+  
+  if (docs.some(doc => doc.status === DocumentStatus.REJECTED || doc.status === DocumentStatus.EXPIRED)) {
+    return { text: 'נדחה', color: 'error' as const, icon: <CancelIcon fontSize="small" /> };
+  }
+
+  if (docs.every(doc => doc.status === DocumentStatus.APPROVED)) {
+    return { text: 'תקין', color: 'success' as const, icon: <CheckCircleIcon fontSize="small" /> };
+  }
+  
+  return { text: 'ממתין לאישור', color: 'primary' as const, icon: <HourglassEmptyIcon fontSize="small" /> };
 };
 
 const WorkerAttendancePage: React.FC = () => {
@@ -111,13 +141,14 @@ const WorkerAttendancePage: React.FC = () => {
               </TableRow>
             ) : (
               filteredData.map(({ month, symbol, records }) => {
+                const record = records[0];
                 const docs = [
-                  records[0]?.studentAttendanceDoc,
-                  records[0]?.workerAttendanceDoc,
-                  records[0]?.controlDoc
+                  record?.studentAttendanceDoc,
+                  record?.workerAttendanceDoc,
+                  record?.controlDoc
                 ];
-                const isOk = docs.filter(Boolean).length >= 2;
-                const workerId = records[0]?.workerId || '';
+                const status = getStatus(record);
+                const workerId = record?.workerId || '';
                 const fullName = typeof workerId === 'object'
                   ? `${workerId.firstName || ''} ${workerId.lastName || ''} (${workerId.id || ''})`
                   : workerId;
@@ -132,8 +163,8 @@ const WorkerAttendancePage: React.FC = () => {
                           doc ? (
                             <Tooltip key={doc._id || idx} title={`צפייה במסמך (${getDocLabel(idx)})`}>
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                <IconButton onClick={() => window.open(doc.url, '_blank')}>
-                                  <VisibilityIcon fontSize="small" />
+                                <IconButton onClick={() => window.open(doc.url, '_blank')} size="small">
+                                  <VisibilityIcon fontSize="inherit" />
                                 </IconButton>
                                 <Typography variant="caption">{getDocLabel(idx)}</Typography>
                               </Box>
@@ -143,13 +174,13 @@ const WorkerAttendancePage: React.FC = () => {
                       </Stack>
                     </TableCell>
                     <TableCell>
-                      {isOk ? (
-                        <Typography color="success.main">תקין</Typography>
-                      ) : (
-                        <Tooltip title="חסרים מסמכי נוכחות">
-                          <WarningAmberIcon color="warning" />
-                        </Tooltip>
-                      )}
+                      <Chip 
+                        icon={status.icon}
+                        label={status.text} 
+                        color={status.color}
+                        size="small"
+                        variant="outlined"
+                      />
                     </TableCell>
                     <TableCell>{fullName}</TableCell>
                   </TableRow>
