@@ -82,13 +82,13 @@ const LoginPage: React.FC = () => {
           code: verificationCode 
         });
         
-        const { token } = response.data;
+        const { token, worker } = response.data;
         setUserRole('worker');
         setUserToken(token);
         localStorage.setItem('token', token);
         localStorage.setItem('role', 'worker');
 
-        window.location.href = `/workers/${id}`;
+        window.location.href = `/worker/${worker._id}`;
       }
     } catch (error: any) {
       setErrorMessage(error.response?.data?.message || 'שגיאה בהתחברות');

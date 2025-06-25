@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+  import React, { useState, useMemo } from 'react';
 import {
   Table,
   TableBody,
@@ -16,7 +16,11 @@ import {
   Select,
   MenuItem,
   FormControl,
-  InputLabel
+  InputLabel,
+  Checkbox,
+  Button,
+  Tooltip,
+  LinearProgress
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
@@ -26,6 +30,7 @@ import { useFetchClasses } from '../../queries/classQueries';
 import { WorkerAfterNoon, Class } from '../../types';
 import { useNavigate } from 'react-router-dom';
 import { useFetchAllDocuments } from '../../queries/useDocuments';
+import { useQueryClient } from '@tanstack/react-query';
 
 const ROWS_PER_PAGE = 15;
 
@@ -33,12 +38,15 @@ const WorkersDocumentsList: React.FC = () => {
   const { data: workers = [], isLoading, error } = useFetchAllWorkersAfterNoon();
   const { data: classes = [] } = useFetchClasses();
   const { data: documents = [] } = useFetchAllDocuments();
-
+  const queryClient = useQueryClient();
   const deleteWorkerMutation = useDeleteWorkerAfterNoon();
   const [searchQuery, setSearchQuery] = useState('');
   const [salaryAccountFilter, setSalaryAccountFilter] = useState<string>('');
   const [projectFilter, setProjectFilter] = useState<string>('');
   const [page, setPage] = useState(0);
+  const [selectedWorkers, setSelectedWorkers] = useState<Set<string>>(new Set());
+  const [isDeletingSelected, setIsDeletingSelected] = useState(false);
+  const [deleteProgress, setDeleteProgress] = useState(0);
   const navigate = useNavigate();
 
 
@@ -134,7 +142,72 @@ const WorkersDocumentsList: React.FC = () => {
     navigate(`/workers/${worker._id}`);
   };
   
+  // Handle individual worker selection
+  const handleWorkerSelect = (workerId: string) => {
+    const newSelected = new Set(selectedWorkers);
+    if (newSelected.has(workerId)) {
+      newSelected.delete(workerId);
+    } else {
+      newSelected.add(workerId);
+    }
+    setSelectedWorkers(newSelected);
+  };
 
+  // Handle select all workers on current page
+  const handleSelectAll = () => {
+    const allWorkerIds = filteredWorkers.map(worker => worker._id);
+    const allSelected = allWorkerIds.every(id => selectedWorkers.has(id));
+    
+    const newSelected = new Set(selectedWorkers);
+    if (allSelected) {
+      // Deselect all workers
+      allWorkerIds.forEach(id => newSelected.delete(id));
+    } else {
+      // Select all workers
+      allWorkerIds.forEach(id => newSelected.add(id));
+    }
+    setSelectedWorkers(newSelected);
+  };
+
+  // Handle delete selected workers
+  const handleDeleteSelected = async () => {
+    if (selectedWorkers.size === 0) return;
+    
+    const confirmMessage = `האם אתה בטוח שברצונך למחוק ${selectedWorkers.size} עובדים?`;
+    if (!window.confirm(confirmMessage)) return;
+
+    try {
+      setIsDeletingSelected(true);
+      setDeleteProgress(0);
+      
+      const selectedWorkerIds = Array.from(selectedWorkers);
+      const totalWorkers = selectedWorkerIds.length;
+      
+      for (let i = 0; i < selectedWorkerIds.length; i++) {
+        await deleteWorkerMutation.mutateAsync(selectedWorkerIds[i]);
+        queryClient.invalidateQueries({ queryKey: ['workers'] });
+        const progress = ((i + 1) / totalWorkers) * 100;
+
+        setDeleteProgress(progress);
+      }
+      
+      setSelectedWorkers(new Set());
+      alert(`נמחקו ${totalWorkers} עובדים בהצלחה!`);
+    } catch (error) {
+      console.error('Error deleting selected workers:', error);
+      alert('שגיאה במחיקת העובדים');
+    } finally {
+      setIsDeletingSelected(false);
+      setDeleteProgress(0);
+    }
+  };
+
+  // Check if all current page workers are selected
+  const isAllSelected = filteredWorkers.length > 0 && 
+    filteredWorkers.every(worker => selectedWorkers.has(worker._id));
+
+  // Check if some current page workers are selected
+  const isSomeSelected = filteredWorkers.some(worker => selectedWorkers.has(worker._id));
 
   if (isLoading) return <Typography>טוען...</Typography>;
   if (error) return <Typography>שגיאה בטעינת הנתונים</Typography>;
@@ -194,10 +267,63 @@ const WorkersDocumentsList: React.FC = () => {
         </FormControl>
       </Box>
 
+      {selectedWorkers.size > 0 && (
+        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Typography variant="body2" color="primary">
+            נבחרו {selectedWorkers.size} עובדים
+          </Typography>
+          <Tooltip title="מחק עובדים נבחרים">
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
+              disabled={isDeletingSelected}
+              onClick={handleDeleteSelected}
+              startIcon={<DeleteIcon />}
+            >
+              {isDeletingSelected ? 'מוחק...' : `מחק ${selectedWorkers.size} עובדים`}
+            </Button>
+          </Tooltip>
+        </Box>
+      )}
+
+      {isDeletingSelected && (
+        <Box sx={{ width: '100%', mb: 2 }}>
+          <LinearProgress 
+            variant="determinate" 
+            value={deleteProgress} 
+            color="error"
+            sx={{
+              height: 8,
+              borderRadius: 4,
+              '& .MuiLinearProgress-bar': {
+                borderRadius: 4,
+              }
+            }}
+          />
+          <Typography 
+            variant="body2" 
+            color="text.secondary" 
+            align="center" 
+            sx={{ mt: 0.5 }}
+          >
+            {`מוחק ${Math.round(deleteProgress)}% מהעובדים הנבחרים...`}
+          </Typography>
+        </Box>
+      )}
+
       <TableContainer component={Paper} sx={{ mb: 2, minHeight: 500 }}>
         <Table size="small">
           <TableHead>
             <TableRow>
+              <TableCell padding="checkbox" sx={{ fontWeight: 'bold' }}>
+                <Checkbox
+                  checked={isAllSelected}
+                  indeterminate={isSomeSelected && !isAllSelected}
+                  onChange={handleSelectAll}
+                  size="small"
+                />
+              </TableCell>
               <TableCell padding="checkbox" sx={{ fontWeight: 'bold' }}>פעולות</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>ת.ז.</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>שם מלא</TableCell>
@@ -214,6 +340,13 @@ const WorkersDocumentsList: React.FC = () => {
             {paginatedWorkers.length > 0 ? (
               paginatedWorkers.map((worker) => (
                 <TableRow key={worker._id} hover>
+                  <TableCell padding="checkbox">
+                    <Checkbox
+                      checked={selectedWorkers.has(worker._id)}
+                      onChange={() => handleWorkerSelect(worker._id)}
+                      size="small"
+                    />
+                  </TableCell>
                   <TableCell padding="checkbox">
                     <Box sx={{ display: 'flex', gap: 0.5 }}>
                       <IconButton
@@ -246,7 +379,7 @@ const WorkersDocumentsList: React.FC = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
+                <TableCell colSpan={10} align="center" sx={{ py: 3 }}>
                   <Typography variant="body2" color="text.secondary">
                     {searchQuery ? 'לא נמצאו תוצאות לחיפוש' : 'לא קיימים עובדים במערכת'}
                   </Typography>
