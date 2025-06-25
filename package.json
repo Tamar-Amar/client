@@ -2,7 +2,7 @@
   "name": "client",
   "version": "0.1.0",
   "private": true,
-  "proxy": "http://localhost:5000",
+  "proxy": "http://localhost:5050",
   "dependencies": {
     "@ag-grid-community/client-side-row-model": "^29.3.5",
     "@emotion/react": "^11.14.0",

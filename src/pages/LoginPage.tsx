@@ -88,7 +88,7 @@ const LoginPage: React.FC = () => {
         localStorage.setItem('token', token);
         localStorage.setItem('role', 'worker');
 
-        window.location.href = '/worker/profile';
+        window.location.href = `/workers/${id}`;
       }
     } catch (error: any) {
       setErrorMessage(error.response?.data?.message || 'שגיאה בהתחברות');

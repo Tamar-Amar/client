@@ -22,7 +22,7 @@ const OperatorVerificationDialog: React.FC<Props> = ({ operatorId, onVerified })
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<'initial' | 'sending' | 'input' | 'error'>('initial');
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  const API_URL = process.env.REACT_APP_API_URL as string;
 
   const sendCode = async () => {
     try {
