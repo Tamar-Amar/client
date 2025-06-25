@@ -98,7 +98,7 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
   if (!workerData) return null;
 
   const isSameId = (a?: any, b?: any) => a?.toString() === b?.toString();
-  const registeredClasses = classes.filter(c => isSameId(c.workerAfterNoonId1, workerData._id) || isSameId(c.workerAfterNoonId2, workerData._id));
+  const registeredClasses = classes.filter(c => isSameId(c.workers?.[0]?.workerId, workerData._id) || isSameId(c.workers?.[1]?.workerId, workerData._id));
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -276,12 +276,12 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
             {editing && (
               <Autocomplete
                 sx={{ mt: 2 }}
-                options={classes.filter(c => !isSameId(c.workerAfterNoonId1, workerData._id) && !isSameId(c.workerAfterNoonId2, workerData._id))}
+                options={classes.filter(c => !isSameId(c.workers?.[0]?.workerId, workerData._id) && !isSameId(c.workers?.[1]?.workerId, workerData._id))}
                 getOptionLabel={(option) => `${option.name} (${option.uniqueSymbol})`}
                 renderInput={(params) => <TextField {...params} label="הוסף שיוך לכיתה" />}
                 onChange={async (_, newValue) => {
                   if (newValue) {
-                    const updateData = { ...newValue, workerAfterNoonId1: newValue.workerAfterNoonId1 || workerData._id };
+                    const updateData = { ...newValue, workers: [...(newValue.workers || []), { workerId: workerData._id }] };
                     await updateClassWithWorker(newValue._id as string, updateData);
                   }
                 }}

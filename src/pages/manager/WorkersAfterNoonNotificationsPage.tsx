@@ -44,8 +44,8 @@ interface ClassDetailsDialogProps {
 const ClassDetailsDialog: React.FC<ClassDetailsDialogProps> = ({ open, onClose, classItem, workers }) => {
   if (!classItem) return null;
 
-  const worker1 = workers.find(w => w._id === classItem.workerAfterNoonId1);
-  const worker2 = workers.find(w => w._id === classItem.workerAfterNoonId2);
+  const worker1 = workers.find(w => w._id === classItem.workers?.[0]?.workerId);
+  const worker2 = workers.find(w => w._id === classItem.workers?.[1]?.workerId);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -150,9 +150,9 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
   // כיתות ללא עובד מעודכן
   const classesWithoutUpdatedWorker = useMemo(() => {
     return classes.filter((classItem: Class) => {
-      const worker1 = allWorkers.find(w => w._id === classItem.workerAfterNoonId1);
-      const worker2 = allWorkers.find(w => w._id === classItem.workerAfterNoonId2);
-      return (!classItem.workerAfterNoonId1 && !classItem.workerAfterNoonId2) || 
+      const worker1 = allWorkers.find(w => w._id === classItem.workers?.[0]?.workerId);
+      const worker2 = allWorkers.find(w => w._id === classItem.workers?.[1]?.workerId);
+      return (!classItem.workers?.[0]?.workerId && !classItem.workers?.[1]?.workerId) || 
              (!worker1 && !worker2) || 
              (!worker1?.isActive && !worker2?.isActive);
     });
@@ -161,8 +161,8 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
   const workersWithoutClass = useMemo(() => {
     return workers.filter(worker => {
       return !classes.some((c: Class) => 
-        c.workerAfterNoonId1 === worker._id || 
-        c.workerAfterNoonId2 === worker._id
+        c.workers?.[0]?.workerId === worker._id || 
+        c.workers?.[1]?.workerId === worker._id
       );
     });
   }, [workers, classes]);

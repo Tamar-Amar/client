@@ -3,8 +3,9 @@ import { Button, Box, Typography, Table, TableBody, TableCell, TableContainer, T
 import DeleteIcon from '@mui/icons-material/Delete';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import * as XLSX from 'xlsx';
+import { useQueryClient } from '@tanstack/react-query';
 import { useFetchClasses, updateClassWithWorker } from '../../queries/classQueries';
-import { useAddWorkerAfterNoon, useFetchAllWorkersAfterNoon } from '../../queries/workerAfterNoonQueries';
+import { useAddWorkerAfterNoon, useFetchAllWorkersAfterNoon, useUpdateWorkerAfterNoon } from '../../queries/workerAfterNoonQueries';
 import { WorkerAfterNoon, Class } from '../../types';
 import { normalizePhone, isValidPhone, formatDate, validateIsraeliID, parseDate } from './excelImportUtils';
 
@@ -50,8 +51,10 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const addWorkerMutation = useAddWorkerAfterNoon();
+  const updateWorkerMutation = useUpdateWorkerAfterNoon();
   const { data: classes = [], isLoading: isLoadingClasses } = useFetchClasses();
   const { data: existingWorkers = [] } = useFetchAllWorkersAfterNoon();
+  const queryClient = useQueryClient();
 
   const [invalidWorkers, setInvalidWorkers] = useState<PreviewWorker[]>([]);
   const [validForImportWorkers, setValidForImportWorkers] = useState<PreviewWorker[]>([]);
@@ -95,33 +98,41 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
 
 
   const convertExcelRowToWorker = (row: any): PreviewWorker => {
-    const id = row.__EMPTY_13?.toString() || '';
+    const id = row[13]?.toString()?.trim() || '';
+    const firstName = row[15]?.toString()?.trim() || '';
+    const lastName = row[14]?.toString()?.trim() || '';
+    
+    // בדיקה שהנתונים החיוניים קיימים
+    if (!id || !firstName || !lastName) {
+      throw new Error(`נתונים חסרים: תעודת זהות: ${id}, שם פרטי: ${firstName}, שם משפחה: ${lastName}`);
+    }
+    
     if (!validateIsraeliID(id)) {
       throw new Error(`תעודת זהות ${id} אינה תקינה`);
     }
     
     const now = new Date().toISOString();
-    const startDate = new Date(parseDate(row.__EMPTY_18));
-    const endDate = new Date(parseDate(row.__EMPTY_19));
+    const startDate = new Date(parseDate(row[18]));
+    const endDate = new Date(parseDate(row[19]));
     
-    const symbol = row.__EMPTY?.toString().trim();
+    const symbol = row[0]?.toString().trim();
 
     return {
-      firstName: row.__EMPTY_15 || '',
-      lastName: row.__EMPTY_14 || '',
+      firstName: firstName,
+      lastName: lastName,
       id: id,
-      phone: row.__EMPTY_16?.toString() || '',
-      email: row.__EMPTY_17?.toString() || '',
+      phone: row[16]?.toString() || '',
+      email: row[17]?.toString() || '',
       isActive: true,
       createDate: new Date(now),
       startDate: startDate || new Date(now),
       endDate: endDate || new Date(now),
       updateDate: new Date(now),
       updateBy: 'מערכת',
-      status: row.__EMPTY_20 || 'לא נבחר',
-      roleType: row.__EMPTY_11 || 'לא נבחר',
-      roleName: row.__EMPTY_12 || 'לא נבחר',
-      accountantCode: row.__EMPTY_9 || 'לא נבחר',
+      status: row[20] || 'לא נבחר',
+      roleType: row[11] || 'לא נבחר',
+      roleName: row[12] || 'לא נבחר',
+      accountantCode: row[9] || 'לא נבחר',
       project: 'צהרון',
       notes:'לא נבחר',     
       workingSymbol: symbol || '',
@@ -174,21 +185,34 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false }) as any[];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false, header: 1 }) as any[];
 
-        const workers: PreviewWorker[] = jsonData.map(row => {
+        // דילוג על שורת הכותרת (השורה הראשונה)
+        const dataRows = jsonData.slice(1);
+
+        // סינון שורות ריקות ושורות ללא נתונים חיוניים
+        const filteredData = dataRows.filter(row => {
+          const id = row[13]?.toString()?.trim(); // תעודת זהות
+          const firstName = row[15]?.toString()?.trim(); // שם פרטי
+          const lastName = row[14]?.toString()?.trim(); // שם משפחה
+          
+          // מחזיר true רק אם יש לפחות תעודת זהות ושם
+          return id && firstName && lastName && id !== '' && firstName !== '' && lastName !== '';
+        });
+
+        const workers: PreviewWorker[] = filteredData.map(row => {
           try {
             return convertExcelRowToWorker(row);
           } catch (error) {
-            return { id: row.__EMPTY_13?.toString() || '', firstName: row.__EMPTY_15 || '', lastName: row.__EMPTY_14 || '', isActive: false } as PreviewWorker;
+            return { id: row[13]?.toString() || '', firstName: row[15] || '', lastName: row[14] || '', isActive: false } as PreviewWorker;
           }
         });
 
         setAllWorkers(workers);
 
         const foundMissingSymbols = new Set<string>();
-        jsonData.forEach(row => {
-          const symbol = row.__EMPTY?.toString().trim();
+        workers.forEach(w => {
+          const symbol = w.workingSymbol;
           if (symbol && !findClassIdBySymbol(symbol)) {
             foundMissingSymbols.add(symbol);
           }
@@ -211,6 +235,11 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
         const invalids = Array.from(new Set([...invalidId, ...invalidPhone, ...missingPhone]));
         setInvalidWorkers(invalids);
         setInvalidByReason({ invalidId, invalidPhone, missingPhone });
+
+        // הודעה למשתמש על מספר השורות
+        if (jsonData.length !== filteredData.length + 1) { // +1 כי דילגנו על שורת הכותרת
+          alert(`נסרקו ${jsonData.length - 1} שורות נתונים בקובץ (לא כולל כותרת), ${filteredData.length} שורות עברו את הסינון (שורות ריקות הוסרו)`);
+        }
 
         setShowSummaryDialog(true);
         setPreviewData(validForImportWorkers); 
@@ -245,8 +274,18 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       const existingIds = new Set(existingWorkers.map((w: WorkerAfterNoon) => w.id));
       const idCount: Record<string, number> = {};
       allWorkers.forEach((w: PreviewWorker) => { idCount[w.id] = (idCount[w.id] || 0) + 1; });
+      
+      // עובדים חדשים לחלוטין
       const validNewWorkers = allWorkers.filter((w: PreviewWorker) =>
         !existingIds.has(w.id) &&
+        idCount[w.id] === 1 &&
+        validateIsraeliID(w.id) &&
+        (!w.phone || isValidPhone(w.phone))
+      );
+
+      // עובדים קיימים שצריך לבדוק
+      const existingWorkersToCheck = allWorkers.filter((w: PreviewWorker) =>
+        existingIds.has(w.id) &&
         idCount[w.id] === 1 &&
         validateIsraeliID(w.id) &&
         (!w.phone || isValidPhone(w.phone))
@@ -257,30 +296,92 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       if (importInvalidPhone) toImport = toImport.concat(invalidByReason.invalidPhone);
       if (importMissingPhone) toImport = toImport.concat(invalidByReason.missingPhone);
 
-      const seen = new Set();
-      toImport = toImport.filter(w => {
-        if (seen.has(w.id)) return false;
-        seen.add(w.id);
-        return true;
-      });
-      
-      for (const worker of toImport) {
-        const normalizedWorker = { 
-          ...worker, 
-          phone: normalizePhone(worker.phone),
-          ...projectSelection
-        };
-        const savedWorker = await addWorkerMutation.mutateAsync(normalizedWorker);
+      console.log('toImport', toImport);
+      console.log('allWorkers', allWorkers);
+      console.log('existingWorkers', existingWorkers);
+
+      // ייבוא עובדים חדשים
+      for (const worker of validNewWorkers) {
+        try {
+          const normalizedWorker = {
+            ...worker,
+            phone: normalizePhone(worker.phone),
+            ...projectSelection
+          };
+          const savedWorker = await addWorkerMutation.mutateAsync(normalizedWorker);
+
+          // שיוך לכיתה (אם צריך)
+          const classSymbol = worker.workingSymbol;
+          const classObj = classes.find((c: Class) => c.uniqueSymbol === classSymbol);
+          if (classObj && savedWorker) {
+            const projectName = getProjectDisplayName(projectSelection);
+            const workerAssignment = {
+              workerId: savedWorker._id,
+              roleType: worker.roleType,
+              project: projectName
+            };
+            await updateClassWithWorker(classObj._id, {
+              $push: { workers: workerAssignment }
+            });
+          }
+        } catch (err) {
+          console.error('שגיאה ביצירת עובד חדש:', err, worker);
+        }
+      }
+
+      // עובדים קיימים שיועדכנו
+      for (const worker of existingWorkersToCheck) {
+        const existingWorker = existingWorkers.find((w: WorkerAfterNoon) => w.id === worker.id);
+        if (!existingWorker) continue;
+
+        // עובד יכול לקבל כמה פרויקטים חדשים בבת אחת, בלי לדרוס את הישנים
+        const updateFields: Partial<WorkerAfterNoon> = {};
+        let shouldUpdate = false;
+        for (const key of Object.keys(projectSelection)) {
+          if (
+            projectSelection[key as keyof ProjectSelection] && // נבחר לייבוא
+            !existingWorker[key as keyof WorkerAfterNoon]      // עדיין לא משויך
+          ) {
+            updateFields[key as keyof ProjectSelection] = true;
+            shouldUpdate = true;
+          }
+        }
+        if (shouldUpdate) {
+          await updateWorkerMutation.mutateAsync({
+            id: existingWorker._id,
+            data: {
+              ...updateFields,
+              phone: normalizePhone(worker.phone)
+            }
+          });
+        }
+        const savedWorker = { ...existingWorker, ...updateFields };
+
+        // שיוך לכיתה (גם אם העובד קיים)
         const classSymbol = worker.workingSymbol;
         const classObj = classes.find((c: Class) => c.uniqueSymbol === classSymbol);
-        if (classObj) {
-          if (!classObj.workerAfterNoonId1) {
-            await updateClassWithWorker(classObj._id, { workerAfterNoonId1: savedWorker._id });
-          } else if (!classObj.workerAfterNoonId2) {
-            await updateClassWithWorker(classObj._id, { workerAfterNoonId2: savedWorker._id });
+        if (classObj && savedWorker) {
+          const projectName = getProjectDisplayName(projectSelection);
+          const workerAssignment = {
+            workerId: savedWorker._id,
+            roleType: worker.roleType,
+            project: projectName
+          };
+          // בדוק אם כבר משויך לכיתה הזו עם אותו פרויקט
+          const isAlreadyAssigned = classObj.workers?.some((w: any) =>
+            w.workerId === savedWorker._id && w.project === projectName
+          );
+          if (!isAlreadyAssigned) {
+            await updateClassWithWorker(classObj._id, {
+              $push: { workers: workerAssignment }
+            });
           }
         }
       }
+      
+      queryClient.invalidateQueries({ queryKey: ['workers'] });
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      
       alert('הייבוא הושלם בהצלחה!');
       setPreviewData([]);
       setShowProjectSelectionDialog(false);
@@ -309,12 +410,29 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       (!w.phone || isValidPhone(w.phone))
     ).length;
 
+    // עובדים קיימים שיועדכנו
+    const existingWorkersToUpdate = allWorkers.filter((w: PreviewWorker) =>
+      existingIds.has(w.id) &&
+      idCount[w.id] === 1 &&
+      validateIsraeliID(w.id) &&
+      (!w.phone || isValidPhone(w.phone))
+    ).filter((w: PreviewWorker) => {
+      const existingWorker = existingWorkers.find((ew: WorkerAfterNoon) => ew.id === w.id);
+      if (!existingWorker) return false;
+      
+      // בדיקה אם העובד כבר משויך לפרויקט הנוכחי
+      return !Object.keys(projectSelection).some(key => 
+        projectSelection[key as keyof ProjectSelection] && 
+        existingWorker[key as keyof WorkerAfterNoon] === true
+      );
+    }).length;
+
     let invalidToImport = 0;
     if (importInvalidId) invalidToImport += invalidByReason.invalidId.length;
     if (importInvalidPhone) invalidToImport += invalidByReason.invalidPhone.length;
     if (importMissingPhone) invalidToImport += invalidByReason.missingPhone.length;
 
-    return validNewWorkers + invalidToImport;
+    return validNewWorkers + existingWorkersToUpdate + invalidToImport;
   };
 
   const calculateTotalInvalidWorkers = () => {
@@ -336,7 +454,26 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
     const notInSystem = allWorkers.filter((w: PreviewWorker) => !existingIds.has(w.id));
     const idCount: Record<string, number> = {};
     notInSystem.forEach((w: PreviewWorker) => { idCount[w.id] = (idCount[w.id] || 0) + 1; });
-    return notInSystem.filter((w: PreviewWorker) => idCount[w.id] === 1).length;
+    const newWorkers = notInSystem.filter((w: PreviewWorker) => idCount[w.id] === 1).length;
+    
+    // עובדים קיימים שיועדכנו
+    const existingWorkersToUpdate = allWorkers.filter((w: PreviewWorker) =>
+      existingIds.has(w.id) &&
+      idCount[w.id] === 1 &&
+      validateIsraeliID(w.id) &&
+      (!w.phone || isValidPhone(w.phone))
+    ).filter((w: PreviewWorker) => {
+      const existingWorker = existingWorkers.find((ew: WorkerAfterNoon) => ew.id === w.id);
+      if (!existingWorker) return false;
+      
+      // בדיקה אם העובד כבר משויך לפרויקט הנוכחי
+      return !Object.keys(projectSelection).some(key => 
+        projectSelection[key as keyof ProjectSelection] && 
+        existingWorker[key as keyof WorkerAfterNoon] === true
+      );
+    }).length;
+    
+    return newWorkers + existingWorkersToUpdate;
   };
 
   return (

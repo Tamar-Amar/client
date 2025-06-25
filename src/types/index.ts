@@ -37,8 +37,11 @@ export interface Activity {
     regularOperatorId?: string;
     isActive: boolean;
     description?: string;
-    workerAfterNoonId1?: string;
-    workerAfterNoonId2?: string;
+    workers?: Array<{
+      workerId: string;
+      roleType: string;
+      project: string;
+    }>;
     coordinatorId: string;
   }
 
