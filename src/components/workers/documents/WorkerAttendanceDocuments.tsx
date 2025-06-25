@@ -43,11 +43,10 @@ import { useFetchWorkerAfterNoon } from '../../../queries/workerAfterNoonQueries
 import { userRoleState } from '../../../recoil/storeAtom';
 import { DocumentStatus } from '../../../types/Document';
 import ConfirmationDialog from '../../other/ConfirmationDialog';
-import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { he } from 'date-fns/locale';
+import UploadAttendanceDialog from '../UploadAttendanceDialog';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 import { format } from 'date-fns';
-import Autocomplete from '@mui/material/Autocomplete';
 
 interface AttendanceDocument {
   _id: string;
@@ -162,14 +161,11 @@ const WorkerAttendanceDocuments: React.FC<WorkerAttendanceDocumentsProps> = ({
   const { deleteDocument, uploadDocument, updateStatus } = useWorkerDocuments(workerId);
   const { data: workerData } = useFetchWorkerAfterNoon(workerId);
   const { deleteAttendance, submitAttendance } = useAttendance(workerId);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  // State for the new dialog
+  // State for the upload dialog
   const [isAttendanceDialogOpen, setIsAttendanceDialogOpen] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState<Date | null>(null);
-  const [selectedClass, setSelectedClass] = useState('');
-  const [studentAttendanceFile, setStudentAttendanceFile] = useState<File | null>(null);
-  const [workerAttendanceFile, setWorkerAttendanceFile] = useState<File | null>(null);
-  const [controlFile, setControlFile] = useState<File | null>(null);
 
   const handleOpenAttendanceDialog = () => {
     setIsAttendanceDialogOpen(true);
@@ -177,74 +173,6 @@ const WorkerAttendanceDocuments: React.FC<WorkerAttendanceDocumentsProps> = ({
 
   const handleCloseAttendanceDialog = () => {
     setIsAttendanceDialogOpen(false);
-    setSelectedMonth(null);
-    setSelectedClass('');
-    setStudentAttendanceFile(null);
-    setWorkerAttendanceFile(null);
-    setControlFile(null);
-  };
-
-  const handleSubmitAttendance = async () => {
-    if (selectedMonth && selectedClass) {
-      try {
-        const formattedMonth = format(selectedMonth, 'yyyy-MM');
-        
-        const existingRecord = attendanceData?.find((record: AttendanceRecord) => {
-          const recordMonth = format(new Date(record.month), 'yyyy-MM');
-          const recordClassId = typeof record.classId === 'string' ? record.classId : record.classId._id;
-          return recordMonth === formattedMonth && recordClassId === selectedClass;
-        });
-
-        if (existingRecord) {
-          if (!window.confirm(`קיים כבר דיווח נוכחות...`)) {
-            return;
-          }
-        }
-        
-        let studentAttendanceDocId: string | undefined;
-        let workerAttendanceDocId: string | undefined;
-        let controlDocId: string | undefined;
-
-        if (studentAttendanceFile) {
-          studentAttendanceDocId = await handleFileUpload(studentAttendanceFile, 'נוכחות תלמידים');
-        }
-        if (workerAttendanceFile) {
-            workerAttendanceDocId = await handleFileUpload(workerAttendanceFile, 'נוכחות עובדים');
-        }
-        if (controlFile) {
-            controlDocId = await handleFileUpload(controlFile, 'מסמך בקרה');
-        }
-
-        submitAttendance({
-          workerId: workerId,
-          classId: selectedClass,
-          month: formattedMonth,
-          studentAttendanceDoc: studentAttendanceDocId,
-          workerAttendanceDoc: workerAttendanceDocId,
-          controlDoc: controlDocId,
-        });
-
-        handleCloseAttendanceDialog();
-      } catch (error) {
-        console.error('Error submitting attendance:', error);
-      }
-    }
-  };
-  
-  const handleFileUpload = (file: File, tag: string): Promise<string> => {
-      return new Promise((resolve, reject) => {
-          const formData = new FormData();
-          formData.append('file', file);
-          formData.append('workerId', workerId);
-          formData.append('tag', tag);
-          formData.append('documentType', tag);
-          formData.append('tz', workerData?.id as string);
-          
-          uploadDocument(formData, {
-              onSuccess: (response) => resolve(response._id),
-              onError: (error) => reject(error)
-          });
-      });
   };
 
   const handleStatusUpdate = (docId: string, status: DocumentStatus) => {
@@ -384,512 +312,405 @@ const WorkerAttendanceDocuments: React.FC<WorkerAttendanceDocumentsProps> = ({
         contentText={confirmationDialog.content}
       />
 
-      <Dialog open={isAttendanceDialogOpen} onClose={handleCloseAttendanceDialog} maxWidth="md" fullWidth>
-        <DialogTitle>דיווח נוכחות חודשית</DialogTitle>
-        <DialogContent>
-            <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12}>
-              <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={he}>
-                <DatePicker
-                  label="בחר חודש"
-                  value={selectedMonth}
-                  onChange={(newValue) => setSelectedMonth(newValue)}
-                  views={['month', 'year']}
-                  sx={{ width: '100%' }}
-                />
-              </LocalizationProvider>
-            </Grid>
-            
-            <Grid item xs={12}>
-              <Autocomplete<Class>
-                options={workerClasses || []}
-                getOptionLabel={(option) => `${option.name} (${option.uniqueSymbol})`}
-                value={workerClasses?.find((cls: Class) => cls._id === selectedClass) || null}
-                onChange={(_, newValue) => setSelectedClass(newValue?._id || '')}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="בחר כיתה"
-                    fullWidth
-                  />
-                )}
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <Typography variant="subtitle1" gutterBottom>
-                מסמכי נוכחות
-              </Typography>
-            </Grid>
-
-            <Grid item xs={12} md={4}>
-              <TextField
-                type="file"
-                label="נוכחות תלמידים"
-                fullWidth
-                onChange={(e) => {
-                  const file = (e.target as HTMLInputElement).files?.[0];
-                  if (file) setStudentAttendanceFile(file);
-                }}
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-
-            <Grid item xs={12} md={4}>
-              <TextField
-                type="file"
-                label="נוכחות עובד"
-                fullWidth
-                onChange={(e) => {
-                  const file = (e.target as HTMLInputElement).files?.[0];
-                  if (file) setWorkerAttendanceFile(file);
-                }}
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-
-            <Grid item xs={12} md={4}>
-              <TextField
-                type="file"
-                label="מסמך בקרה (אופציונלי)"
-                fullWidth
-                onChange={(e) => {
-                  const file = (e.target as HTMLInputElement).files?.[0];
-                  if (file) setControlFile(file);
-                }}
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseAttendanceDialog}>ביטול</Button>
-          <Button onClick={handleSubmitAttendance} variant="contained" disabled={!selectedMonth || !selectedClass || !studentAttendanceFile || !workerAttendanceFile}>
-            שלח דיווח
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <UploadAttendanceDialog
+        open={isAttendanceDialogOpen}
+        onClose={handleCloseAttendanceDialog}
+        workerId={workerId}
+        workerClasses={workerClasses}
+        attendanceData={attendanceData || []}
+        onSuccess={() => {
+          // Refresh data if needed
+        }}
+      />
       
-      {/* Statistics Cards */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={4}>
-          <Card sx={{ 
-            bgcolor: '#e3f2fd', 
-            border: '2px solid #2196f3',
-            borderRadius: 3,
-            boxShadow: 3
-          }}>
-            <CardContent sx={{ textAlign: 'center', py: 2 }}>
-              <Typography variant="h4" color="primary.main" fontWeight="bold">
-                {totalRecords}
-              </Typography>
-              <Typography variant="body2" color="primary.dark">
-                סך הכל דיווחים חודשיים
-              </Typography>
-            </CardContent>
-          </Card>
+      <Grid container spacing={2} alignItems="flex-start" sx={{ mb: 2 }}>
+        {/* Sidebar summary - right */}
+        <Grid item xs={12} md={3} order={{ xs: 1, md: 2 }}>
+          <Paper elevation={0} sx={{ p: 2, bgcolor: '#fcfcfc', border: '1px solid #eee', borderRadius: 2 }}>
+            <Stack spacing={2}>
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary">סך הכל דיווחים חודשיים</Typography>
+                <Typography variant="h6" color="primary.main" fontWeight="bold">{totalRecords}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary">דיווחים מאושרים</Typography>
+                <Typography variant="h6" color="success.main" fontWeight="bold">{approvedRecords}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary">דיווחים להשלמה/בבדיקה</Typography>
+                <Typography variant="h6" color="warning.main" fontWeight="bold">{pendingRecords}</Typography>
+              </Box>
+            </Stack>
+          </Paper>
         </Grid>
-        <Grid item xs={12} md={4}>
-          <Card sx={{ 
-            bgcolor: '#e8f5e9', 
-            border: '2px solid #4caf50',
+        {/* Main table - left */}
+        <Grid item xs={12} md={9} order={{ xs: 2, md: 1 }}>
+          <Paper sx={{ 
+            p: 3, 
             borderRadius: 3,
-            boxShadow: 3
+            boxShadow: 3,
+            bgcolor: '#fafafa'
           }}>
-            <CardContent sx={{ textAlign: 'center', py: 2 }}>
-              <Typography variant="h4" color="success.main" fontWeight="bold">
-                {approvedRecords}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h5" component="div" sx={{ 
+                color: '#1976d2', 
+                fontWeight: 'bold',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1
+              }}>
+                <AssignmentIcon color="primary" />
+                מסמכי נוכחות צהרון
               </Typography>
-              <Typography variant="body2" color="success.dark">
-                דיווחים מאושרים
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <Card sx={{ 
-            bgcolor: '#fff8e1', 
-            border: '2px solid #ff9800',
-            borderRadius: 3,
-            boxShadow: 3
-          }}>
-            <CardContent sx={{ textAlign: 'center', py: 2 }}>
-              <Typography variant="h4" color="warning.main" fontWeight="bold">
-                {pendingRecords}
-              </Typography>
-              <Typography variant="body2" color="warning.dark">
-                דיווחים להשלמה/בבדיקה
-              </Typography>
-            </CardContent>
-          </Card>
+              <Button variant="contained" color="primary" onClick={handleOpenAttendanceDialog}>
+                דיווח נוכחות חודשי
+              </Button>
+            </Box>
+
+            {attendanceData && attendanceData.length > 0 ? (
+              Object.entries(
+                (attendanceData as AttendanceRecord[]).reduce((acc: { [key: string]: AttendanceRecord[] }, record: AttendanceRecord) => {
+                  const month = new Date(record.month).toLocaleString('he-IL', { year: 'numeric', month: 'long' });
+                  if (!acc[month]) acc[month] = [];
+                  acc[month].push(record);
+                  return acc;
+                }, {})
+              ).map(([month, monthRecords]: [string, AttendanceRecord[]]) => (
+                <Card key={month} sx={{ 
+                  mb: 3, 
+                  borderRadius: 3,
+                  boxShadow: 2,
+                  bgcolor: 'white',
+                  border: '1px solid #e0e0e0'
+                }}>
+                  <CardContent sx={{ p: 3 }}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      mb: 2,
+                      pb: 2,
+                      borderBottom: '2px solid #f0f0f0'
+                    }}>
+                      <Typography variant="h6" sx={{ 
+                        fontWeight: 'bold', 
+                        color: '#1976d2',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1
+                      }}>
+                        <AssignmentIcon color="primary" />
+                        {month}
+                      </Typography>
+                    </Box>
+
+                    <Stack spacing={2}>
+                      {Object.entries(
+                        monthRecords.reduce((acc: { [key: string]: AttendanceRecord[] }, record: AttendanceRecord) => {
+                          const classIdKey = typeof record.classId === 'string' ? record.classId : record.classId._id;
+                          if (!acc[classIdKey]) acc[classIdKey] = [];
+                          acc[classIdKey].push(record);
+                          return acc;
+                        }, {})
+                      ).map(([classId, classRecords]: [string, AttendanceRecord[]]) => {
+                        const className = typeof classRecords[0]?.classId === 'object'
+                          ? (classRecords[0]?.classId as { name?: string }).name
+                          : workerClasses?.find((c: Class) => c._id === classId)?.name || 'כיתה לא ידועה';
+                        const classSymbol = typeof classRecords[0]?.classId === 'object'
+                          ? (classRecords[0]?.classId as { uniqueSymbol?: string }).uniqueSymbol
+                          : '';
+
+                        const combinedStatus = getCombinedStatus(classRecords[0]);
+
+                        return (
+                          <Box key={classId} sx={{ 
+                            p: 2, 
+                            borderRadius: 2,
+                            border: `2px solid`,
+                            borderColor: `${combinedStatus.color}.main`,
+                            position: 'relative'
+                          }}>
+                            {/* Header */}
+                            <Box sx={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'space-between',
+                              mb: 2
+                            }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                <Chip
+                                  label={`${className} (${classSymbol})`}
+                                  color={combinedStatus.color as any}
+                                  variant="filled"
+                                  sx={{ fontWeight: 'bold' }}
+                                />
+                                <Chip
+                                  label={combinedStatus.text}
+                                  color={combinedStatus.color as any}
+                                  size="small"
+                                  sx={{ fontWeight: 'bold' }}
+                                />
+                              </Box>
+                              <Tooltip title="מחק נוכחות לחודש זה">
+                                <IconButton
+                                  color="error"
+                                  onClick={() => handleDeleteMonth(month, classId)}
+                                  disabled={userRole === 'worker' || deletingMonths.has(month)}
+                                  sx={{ 
+                                    bgcolor: '#ffebee',
+                                    '&:hover': { bgcolor: '#ffcdd2' }
+                                  }}
+                                >
+                                  {deletingMonths.has(month) ? (
+                                    <CircularProgress size={20} />
+                                  ) : (
+                                    <HighlightOffIcon />
+                                  )}
+                                </IconButton>
+                              </Tooltip>
+                            </Box>
+
+                            {/* Documents Grid */}
+                            <Grid container spacing={2}>
+                              {/* Student Attendance */}
+                              <Grid item xs={12} md={4}>
+                                <Card sx={{ 
+                                  border: `1px solid`,
+                                  borderColor: classRecords[0]?.studentAttendanceDoc ? statusMap[classRecords[0].studentAttendanceDoc.status].color + '.main' : 'grey.300',
+                                  borderRadius: 2
+                                }}>
+                                  <CardContent sx={{ p: 2 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                                      <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+                                        <SchoolIcon color={classRecords[0]?.studentAttendanceDoc ? statusMap[classRecords[0].studentAttendanceDoc.status].color : "disabled"} />
+                                        <Typography variant="subtitle2" fontWeight="bold">
+                                          נוכחות תלמידים
+                                        </Typography>
+                                      </Box>
+                                      {classRecords[0]?.studentAttendanceDoc && <Chip size="small" label={statusMap[classRecords[0].studentAttendanceDoc.status].label} color={statusMap[classRecords[0].studentAttendanceDoc.status].color} />}
+                                    </Box>
+                                    {classRecords[0]?.studentAttendanceDoc ? (
+                                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <Tooltip title="צפייה במסמך">
+                                          <Button startIcon={<VisibilityIcon />} size="small" onClick={() => window.open(classRecords[0].studentAttendanceDoc?.url || '', '_blank')}>
+                                            צפייה
+                                          </Button>
+                                        </Tooltip>
+                                        <DocumentActions
+                                          doc={classRecords[0].studentAttendanceDoc}
+                                          onUpdateStatus={handleStatusUpdate}
+                                          onDelete={() => handleDelete(classRecords[0].studentAttendanceDoc!._id, month, classId, classRecords[0].studentAttendanceDoc!.fileName)}
+                                          userRole={userRole}
+                                        />
+                                      </Box>
+                                    ) : (
+                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <input
+                                          accept="application/pdf,image/*"
+                                          style={{ display: 'none' }}
+                                          id={`upload-student-${classRecords[0]._id}`}
+                                          type="file"
+                                          onChange={e => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                              handleUploadDocument(file, classRecords[0]._id, 'studentAttendanceDoc');
+                                            }
+                                          }}
+                                        />
+                                        <label htmlFor={`upload-student-${classRecords[0]._id}`}>
+                                          <Tooltip title="העלה מסמך">
+                                            <IconButton 
+                                              size="small"
+                                              color="primary" 
+                                              component="span"
+                                              disabled={uploadingDocs.has(`${classRecords[0]._id}-studentAttendanceDoc`)}
+                                              sx={{ bgcolor: '#e3f2fd', '&:hover': { bgcolor: '#bbdefb' } }}
+                                            >
+                                              {uploadingDocs.has(`${classRecords[0]._id}-studentAttendanceDoc`) ? (
+                                                <CircularProgress size={16} />
+                                              ) : (
+                                                <UploadIcon fontSize="small" />
+                                              )}
+                                            </IconButton>
+                                          </Tooltip>
+                                        </label>
+                                        <Typography variant="caption" color="error">
+                                          חסר
+                                        </Typography>
+                                      </Box>
+                                    )}
+                                  </CardContent>
+                                </Card>
+                              </Grid>
+
+                              {/* Worker Attendance */}
+                              <Grid item xs={12} md={4}>
+                                <Card sx={{ 
+                                  border: `1px solid`,
+                                  borderColor: classRecords[0]?.workerAttendanceDoc ? statusMap[classRecords[0].workerAttendanceDoc.status].color + '.main' : 'grey.300',
+                                  borderRadius: 2
+                                }}>
+                                  <CardContent sx={{ p: 2 }}>
+                                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                                      <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+                                        <PersonIcon color={classRecords[0]?.workerAttendanceDoc ? statusMap[classRecords[0].workerAttendanceDoc.status].color : "disabled"} />
+                                        <Typography variant="subtitle2" fontWeight="bold">
+                                          נוכחות עובדים
+                                        </Typography>
+                                      </Box>
+                                      {classRecords[0]?.workerAttendanceDoc && <Chip size="small" label={statusMap[classRecords[0].workerAttendanceDoc.status].label} color={statusMap[classRecords[0].workerAttendanceDoc.status].color} />}
+                                    </Box>
+                                    {classRecords[0]?.workerAttendanceDoc ? (
+                                       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <Tooltip title="צפייה במסמך">
+                                          <Button startIcon={<VisibilityIcon />} size="small" onClick={() => window.open(classRecords[0].workerAttendanceDoc?.url || '', '_blank')}>
+                                            צפייה
+                                          </Button>
+                                        </Tooltip>
+                                        <DocumentActions
+                                          doc={classRecords[0].workerAttendanceDoc}
+                                          onUpdateStatus={handleStatusUpdate}
+                                          onDelete={() => handleDelete(classRecords[0].workerAttendanceDoc!._id, month, classId, classRecords[0].workerAttendanceDoc!.fileName)}
+                                          userRole={userRole}
+                                        />
+                                      </Box>
+                                    ) : (
+                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <input
+                                          accept="application/pdf,image/*"
+                                          style={{ display: 'none' }}
+                                          id={`upload-worker-${classRecords[0]._id}`}
+                                          type="file"
+                                          onChange={e => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                              handleUploadDocument(file, classRecords[0]._id, 'workerAttendanceDoc');
+                                            }
+                                          }}
+                                        />
+                                        <label htmlFor={`upload-worker-${classRecords[0]._id}`}>
+                                          <Tooltip title="העלה מסמך">
+                                            <IconButton 
+                                              size="small"
+                                              color="primary" 
+                                              component="span"
+                                              disabled={uploadingDocs.has(`${classRecords[0]._id}-workerAttendanceDoc`)}
+                                              sx={{ bgcolor: '#e3f2fd', '&:hover': { bgcolor: '#bbdefb' } }}
+                                            >
+                                              {uploadingDocs.has(`${classRecords[0]._id}-workerAttendanceDoc`) ? (
+                                                <CircularProgress size={16} />
+                                              ) : (
+                                                <UploadIcon fontSize="small" />
+                                              )}
+                                            </IconButton>
+                                          </Tooltip>
+                                        </label>
+                                        <Typography variant="caption" color="error">
+                                          חסר
+                                        </Typography>
+                                      </Box>
+                                    )}
+                                  </CardContent>
+                                </Card>
+                              </Grid>
+
+                              {/* Control Document */}
+                              <Grid item xs={12} md={4}>
+                                <Card sx={{ 
+                                  border: `1px solid`,
+                                  borderColor: classRecords[0]?.controlDoc ? statusMap[classRecords[0].controlDoc.status].color + '.main' : 'grey.300',
+                                  borderRadius: 2
+                                }}>
+                                  <CardContent sx={{ p: 2 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                                      <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+                                        <VerifiedIcon color={classRecords[0]?.controlDoc ? statusMap[classRecords[0].controlDoc.status].color : "disabled"} />
+                                        <Typography variant="subtitle2" fontWeight="bold" color={classRecords[0]?.controlDoc ? "success.main" : "text.secondary"}>
+                                          מסמך בקרה
+                                        </Typography>
+                                      </Box>
+                                      {classRecords[0]?.controlDoc && <Chip size="small" label={statusMap[classRecords[0].controlDoc.status].label} color={statusMap[classRecords[0].controlDoc.status].color} />}
+                                    </Box>
+                                    {classRecords[0]?.controlDoc ? (
+                                      <Box sx={{ display: 'flex', gap: 1 }}>
+                                        <Tooltip title="צפייה במסמך">
+                                          <Button startIcon={<VisibilityIcon />} size="small" onClick={() => window.open(classRecords[0].controlDoc?.url || '', '_blank')}>
+                                            צפייה
+                                          </Button>
+                                        </Tooltip>
+                                        <DocumentActions
+                                          doc={classRecords[0].controlDoc}
+                                          onUpdateStatus={handleStatusUpdate}
+                                          onDelete={() => handleDelete(classRecords[0].controlDoc!._id, month, classId, classRecords[0].controlDoc!.fileName)}
+                                          userRole={userRole}
+                                        />
+                                      </Box>
+                                    ) : (
+                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <input
+                                          accept="application/pdf,image/*"
+                                          style={{ display: 'none' }}
+                                          id={`upload-control-${classRecords[0]._id}`}
+                                          type="file"
+                                          onChange={e => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                              handleUploadDocument(file, classRecords[0]._id, 'controlDoc');
+                                            }
+                                          }}
+                                        />
+                                        <label htmlFor={`upload-control-${classRecords[0]._id}`}>
+                                          <Tooltip title="העלה מסמך (אופציונלי)">
+                                            <IconButton 
+                                              size="small"
+                                              color="primary" 
+                                              component="span"
+                                              disabled={uploadingDocs.has(`${classRecords[0]._id}-controlDoc`)}
+                                              sx={{ bgcolor: '#f5f5f5', '&:hover': { bgcolor: '#e0e0e0' } }}
+                                            >
+                                              {uploadingDocs.has(`${classRecords[0]._id}-controlDoc`) ? (
+                                                <CircularProgress size={16} />
+                                              ) : (
+                                                <UploadIcon fontSize="small" />
+                                              )}
+                                            </IconButton>
+                                          </Tooltip>
+                                        </label>
+                                        <Typography variant="caption" color="text.secondary">
+                                          אופציונלי
+                                        </Typography>
+                                      </Box>
+                                    )}
+                                  </CardContent>
+                                </Card>
+                              </Grid>
+                            </Grid>
+                          </Box>
+                        );
+                      })}
+                    </Stack>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <Box sx={{ 
+                textAlign: 'center', 
+                py: 6,
+                bgcolor: 'white',
+                borderRadius: 2,
+                border: '2px dashed #ccc'
+              }}>
+                <AssignmentIcon sx={{ fontSize: 60, color: '#ccc', mb: 2 }} />
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  אין מסמכי נוכחות
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  יש להעלות דיווחי נוכחות חודשיים
+                </Typography>
+              </Box>
+            )}
+          </Paper>
         </Grid>
       </Grid>
-
-      {/* Main Content */}
-      <Paper sx={{ 
-        p: 3, 
-        borderRadius: 3,
-        boxShadow: 3,
-        bgcolor: '#fafafa'
-      }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h5" component="div" sx={{ 
-            color: '#1976d2', 
-            fontWeight: 'bold',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1
-          }}>
-            <AssignmentIcon color="primary" />
-            מסמכי נוכחות צהרון
-          </Typography>
-          <Button variant="contained" color="primary" onClick={handleOpenAttendanceDialog}>
-            דיווח נוכחות חודשי
-          </Button>
-        </Box>
-
-        {attendanceData && attendanceData.length > 0 ? (
-          Object.entries(
-            (attendanceData as AttendanceRecord[]).reduce((acc: { [key: string]: AttendanceRecord[] }, record: AttendanceRecord) => {
-              const month = new Date(record.month).toLocaleString('he-IL', { year: 'numeric', month: 'long' });
-              if (!acc[month]) acc[month] = [];
-              acc[month].push(record);
-              return acc;
-            }, {})
-          ).map(([month, monthRecords]: [string, AttendanceRecord[]]) => (
-            <Card key={month} sx={{ 
-              mb: 3, 
-              borderRadius: 3,
-              boxShadow: 2,
-              bgcolor: 'white',
-              border: '1px solid #e0e0e0'
-            }}>
-              <CardContent sx={{ p: 3 }}>
-                <Box sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  mb: 2,
-                  pb: 2,
-                  borderBottom: '2px solid #f0f0f0'
-                }}>
-                  <Typography variant="h6" sx={{ 
-                    fontWeight: 'bold', 
-                    color: '#1976d2',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1
-                  }}>
-                    <AssignmentIcon color="primary" />
-                    {month}
-                  </Typography>
-                </Box>
-
-                <Stack spacing={2}>
-                  {Object.entries(
-                    monthRecords.reduce((acc: { [key: string]: AttendanceRecord[] }, record: AttendanceRecord) => {
-                      const classIdKey = typeof record.classId === 'string' ? record.classId : record.classId._id;
-                      if (!acc[classIdKey]) acc[classIdKey] = [];
-                      acc[classIdKey].push(record);
-                      return acc;
-                    }, {})
-                  ).map(([classId, classRecords]: [string, AttendanceRecord[]]) => {
-                    const className = typeof classRecords[0]?.classId === 'object'
-                      ? (classRecords[0]?.classId as { name?: string }).name
-                      : workerClasses?.find((c: Class) => c._id === classId)?.name || 'כיתה לא ידועה';
-                    const classSymbol = typeof classRecords[0]?.classId === 'object'
-                      ? (classRecords[0]?.classId as { uniqueSymbol?: string }).uniqueSymbol
-                      : '';
-
-                    const combinedStatus = getCombinedStatus(classRecords[0]);
-
-                    return (
-                      <Box key={classId} sx={{ 
-                        p: 2, 
-                        borderRadius: 2,
-                        border: `2px solid`,
-                        borderColor: `${combinedStatus.color}.main`,
-                        position: 'relative'
-                      }}>
-                        {/* Header */}
-                        <Box sx={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'space-between',
-                          mb: 2
-                        }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <Chip
-                              label={`${className} (${classSymbol})`}
-                              color={combinedStatus.color as any}
-                              variant="filled"
-                              sx={{ fontWeight: 'bold' }}
-                            />
-                            <Chip
-                              label={combinedStatus.text}
-                              color={combinedStatus.color as any}
-                              size="small"
-                              sx={{ fontWeight: 'bold' }}
-                            />
-                          </Box>
-                          <Tooltip title="מחק נוכחות לחודש זה">
-                            <IconButton
-                              color="error"
-                              onClick={() => handleDeleteMonth(month, classId)}
-                              disabled={userRole === 'worker' || deletingMonths.has(month)}
-                              sx={{ 
-                                bgcolor: '#ffebee',
-                                '&:hover': { bgcolor: '#ffcdd2' }
-                              }}
-                            >
-                              {deletingMonths.has(month) ? (
-                                <CircularProgress size={20} />
-                              ) : (
-                                <HighlightOffIcon />
-                              )}
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-
-                        {/* Documents Grid */}
-                        <Grid container spacing={2}>
-                          {/* Student Attendance */}
-                          <Grid item xs={12} md={4}>
-                            <Card sx={{ 
-                              border: `1px solid`,
-                              borderColor: classRecords[0]?.studentAttendanceDoc ? statusMap[classRecords[0].studentAttendanceDoc.status].color + '.main' : 'grey.300',
-                              borderRadius: 2
-                            }}>
-                              <CardContent sx={{ p: 2 }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                                  <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-                                    <SchoolIcon color={classRecords[0]?.studentAttendanceDoc ? statusMap[classRecords[0].studentAttendanceDoc.status].color : "disabled"} />
-                                    <Typography variant="subtitle2" fontWeight="bold">
-                                      נוכחות תלמידים
-                                    </Typography>
-                                  </Box>
-                                  {classRecords[0]?.studentAttendanceDoc && <Chip size="small" label={statusMap[classRecords[0].studentAttendanceDoc.status].label} color={statusMap[classRecords[0].studentAttendanceDoc.status].color} />}
-                                </Box>
-                                {classRecords[0]?.studentAttendanceDoc ? (
-                                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <Tooltip title="צפייה במסמך">
-                                      <Button startIcon={<VisibilityIcon />} size="small" onClick={() => window.open(classRecords[0].studentAttendanceDoc?.url || '', '_blank')}>
-                                        צפייה
-                                      </Button>
-                                    </Tooltip>
-                                    <DocumentActions
-                                      doc={classRecords[0].studentAttendanceDoc}
-                                      onUpdateStatus={handleStatusUpdate}
-                                      onDelete={() => handleDelete(classRecords[0].studentAttendanceDoc!._id, month, classId, classRecords[0].studentAttendanceDoc!.fileName)}
-                                      userRole={userRole}
-                                    />
-                                  </Box>
-                                ) : (
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <input
-                                      accept="application/pdf,image/*"
-                                      style={{ display: 'none' }}
-                                      id={`upload-student-${classRecords[0]._id}`}
-                                      type="file"
-                                      onChange={e => {
-                                        const file = e.target.files?.[0];
-                                        if (file) {
-                                          handleUploadDocument(file, classRecords[0]._id, 'studentAttendanceDoc');
-                                        }
-                                      }}
-                                    />
-                                    <label htmlFor={`upload-student-${classRecords[0]._id}`}>
-                                      <Tooltip title="העלה מסמך">
-                                        <IconButton 
-                                          size="small"
-                                          color="primary" 
-                                          component="span"
-                                          disabled={uploadingDocs.has(`${classRecords[0]._id}-studentAttendanceDoc`)}
-                                          sx={{ bgcolor: '#e3f2fd', '&:hover': { bgcolor: '#bbdefb' } }}
-                                        >
-                                          {uploadingDocs.has(`${classRecords[0]._id}-studentAttendanceDoc`) ? (
-                                            <CircularProgress size={16} />
-                                          ) : (
-                                            <UploadIcon fontSize="small" />
-                                          )}
-                                        </IconButton>
-                                      </Tooltip>
-                                    </label>
-                                    <Typography variant="caption" color="warning.main">
-                                      חסר
-                                    </Typography>
-                                  </Box>
-                                )}
-                              </CardContent>
-                            </Card>
-                          </Grid>
-
-                          {/* Worker Attendance */}
-                          <Grid item xs={12} md={4}>
-                            <Card sx={{ 
-                              border: `1px solid`,
-                              borderColor: classRecords[0]?.workerAttendanceDoc ? statusMap[classRecords[0].workerAttendanceDoc.status].color + '.main' : 'grey.300',
-                              borderRadius: 2
-                            }}>
-                              <CardContent sx={{ p: 2 }}>
-                                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                                  <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-                                    <PersonIcon color={classRecords[0]?.workerAttendanceDoc ? statusMap[classRecords[0].workerAttendanceDoc.status].color : "disabled"} />
-                                    <Typography variant="subtitle2" fontWeight="bold">
-                                      נוכחות עובדים
-                                    </Typography>
-                                  </Box>
-                                  {classRecords[0]?.workerAttendanceDoc && <Chip size="small" label={statusMap[classRecords[0].workerAttendanceDoc.status].label} color={statusMap[classRecords[0].workerAttendanceDoc.status].color} />}
-                                </Box>
-                                {classRecords[0]?.workerAttendanceDoc ? (
-                                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <Tooltip title="צפייה במסמך">
-                                      <Button startIcon={<VisibilityIcon />} size="small" onClick={() => window.open(classRecords[0].workerAttendanceDoc?.url || '', '_blank')}>
-                                        צפייה
-                                      </Button>
-                                    </Tooltip>
-                                    <DocumentActions
-                                      doc={classRecords[0].workerAttendanceDoc}
-                                      onUpdateStatus={handleStatusUpdate}
-                                      onDelete={() => handleDelete(classRecords[0].workerAttendanceDoc!._id, month, classId, classRecords[0].workerAttendanceDoc!.fileName)}
-                                      userRole={userRole}
-                                    />
-                                  </Box>
-                                ) : (
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <input
-                                      accept="application/pdf,image/*"
-                                      style={{ display: 'none' }}
-                                      id={`upload-worker-${classRecords[0]._id}`}
-                                      type="file"
-                                      onChange={e => {
-                                        const file = e.target.files?.[0];
-                                        if (file) {
-                                          handleUploadDocument(file, classRecords[0]._id, 'workerAttendanceDoc');
-                                        }
-                                      }}
-                                    />
-                                    <label htmlFor={`upload-worker-${classRecords[0]._id}`}>
-                                      <Tooltip title="העלה מסמך">
-                                        <IconButton 
-                                          size="small"
-                                          color="primary" 
-                                          component="span"
-                                          disabled={uploadingDocs.has(`${classRecords[0]._id}-workerAttendanceDoc`)}
-                                          sx={{ bgcolor: '#e3f2fd', '&:hover': { bgcolor: '#bbdefb' } }}
-                                        >
-                                          {uploadingDocs.has(`${classRecords[0]._id}-workerAttendanceDoc`) ? (
-                                            <CircularProgress size={16} />
-                                          ) : (
-                                            <UploadIcon fontSize="small" />
-                                          )}
-                                        </IconButton>
-                                      </Tooltip>
-                                    </label>
-                                    <Typography variant="caption" color="warning.main">
-                                      חסר
-                                    </Typography>
-                                  </Box>
-                                )}
-                              </CardContent>
-                            </Card>
-                          </Grid>
-
-                          {/* Control Document */}
-                          <Grid item xs={12} md={4}>
-                            <Card sx={{ 
-                              border: `1px solid`,
-                              borderColor: classRecords[0]?.controlDoc ? statusMap[classRecords[0].controlDoc.status].color + '.main' : 'grey.300',
-                              borderRadius: 2
-                            }}>
-                              <CardContent sx={{ p: 2 }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                                  <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-                                    <VerifiedIcon color={classRecords[0]?.controlDoc ? statusMap[classRecords[0].controlDoc.status].color : "disabled"} />
-                                    <Typography variant="subtitle2" fontWeight="bold" color={classRecords[0]?.controlDoc ? "success.main" : "text.secondary"}>
-                                      מסמך בקרה
-                                    </Typography>
-                                  </Box>
-                                  {classRecords[0]?.controlDoc && <Chip size="small" label={statusMap[classRecords[0].controlDoc.status].label} color={statusMap[classRecords[0].controlDoc.status].color} />}
-                                </Box>
-                                {classRecords[0]?.controlDoc ? (
-                                  <Box sx={{ display: 'flex', gap: 1 }}>
-                                    <Tooltip title="צפייה במסמך">
-                                      <Button startIcon={<VisibilityIcon />} size="small" onClick={() => window.open(classRecords[0].controlDoc?.url || '', '_blank')}>
-                                        צפייה
-                                      </Button>
-                                    </Tooltip>
-                                    <DocumentActions
-                                      doc={classRecords[0].controlDoc}
-                                      onUpdateStatus={handleStatusUpdate}
-                                      onDelete={() => handleDelete(classRecords[0].controlDoc!._id, month, classId, classRecords[0].controlDoc!.fileName)}
-                                      userRole={userRole}
-                                    />
-                                  </Box>
-                                ) : (
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <input
-                                      accept="application/pdf,image/*"
-                                      style={{ display: 'none' }}
-                                      id={`upload-control-${classRecords[0]._id}`}
-                                      type="file"
-                                      onChange={e => {
-                                        const file = e.target.files?.[0];
-                                        if (file) {
-                                          handleUploadDocument(file, classRecords[0]._id, 'controlDoc');
-                                        }
-                                      }}
-                                    />
-                                    <label htmlFor={`upload-control-${classRecords[0]._id}`}>
-                                      <Tooltip title="העלה מסמך (אופציונלי)">
-                                        <IconButton 
-                                          size="small"
-                                          color="primary" 
-                                          component="span"
-                                          disabled={uploadingDocs.has(`${classRecords[0]._id}-controlDoc`)}
-                                          sx={{ bgcolor: '#f5f5f5', '&:hover': { bgcolor: '#e0e0e0' } }}
-                                        >
-                                          {uploadingDocs.has(`${classRecords[0]._id}-controlDoc`) ? (
-                                            <CircularProgress size={16} />
-                                          ) : (
-                                            <UploadIcon fontSize="small" />
-                                          )}
-                                        </IconButton>
-                                      </Tooltip>
-                                    </label>
-                                    <Typography variant="caption" color="text.secondary">
-                                      אופציונלי
-                                    </Typography>
-                                  </Box>
-                                )}
-                              </CardContent>
-                            </Card>
-                          </Grid>
-                        </Grid>
-                      </Box>
-                    );
-                  })}
-                </Stack>
-              </CardContent>
-            </Card>
-          ))
-        ) : (
-          <Box sx={{ 
-            textAlign: 'center', 
-            py: 6,
-            bgcolor: 'white',
-            borderRadius: 2,
-            border: '2px dashed #ccc'
-          }}>
-            <AssignmentIcon sx={{ fontSize: 60, color: '#ccc', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              אין מסמכי נוכחות
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              יש להעלות דיווחי נוכחות חודשיים
-            </Typography>
-          </Box>
-        )}
-      </Paper>
     </Container>
   );
 };

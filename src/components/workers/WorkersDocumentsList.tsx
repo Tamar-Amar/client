@@ -50,32 +50,6 @@ const WorkersDocumentsList: React.FC = () => {
   const navigate = useNavigate();
 
 
-  const documentsByWorkerId = useMemo(() => {
-    const map = new Map<string, any[]>();
-    documents.forEach((doc) => {
-      if (!map.has(doc.operatorId)) map.set(doc.operatorId, []);
-      map.get(doc.operatorId)?.push(doc);
-    });
-    return map;
-  }, [documents]);
-  
-  const getDocStatus = (workerId: string, tag: string) => {
-    const docs = documentsByWorkerId.get(workerId) || [];
-    const doc = docs.find((doc) => doc.tag === tag);
-    if (!doc) return '----';
-  
-    const color = doc.status === 'מאושר' ? 'green' :
-                  doc.status === 'ממתין' ? 'orange' :
-                  doc.status === 'נדחה' ? 'red' : 'grey';
-  
-    return (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: color }} />
-        <Typography variant="body2">{doc.status}</Typography>
-      </Box>
-    );
-  };
-  
   
 
   // Create a map of class IDs to symbols for quick lookup
@@ -331,8 +305,7 @@ const WorkersDocumentsList: React.FC = () => {
               <TableCell sx={{ fontWeight: 'bold' }}>אימייל</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>סטטוס</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>חשב שכר</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>אישור משטרה</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>תעודת השכלה</TableCell>
+
 
             </TableRow>
           </TableHead>
@@ -372,8 +345,7 @@ const WorkersDocumentsList: React.FC = () => {
                   <TableCell>{worker.email}</TableCell>
                   <TableCell>{!worker.status || worker.status === "לא נבחר" ? "פעיל" : worker.status}</TableCell>
                   <TableCell>{worker.accountantCode}</TableCell>
-                  <TableCell>{getDocStatus(worker._id, 'אישור משטרה')}</TableCell>
-                  <TableCell>{getDocStatus(worker._id, 'תעודת השכלה')}</TableCell>
+
 
                 </TableRow>
               ))

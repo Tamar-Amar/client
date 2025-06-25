@@ -32,7 +32,7 @@ import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { he } from 'date-fns/locale';
 
-const REQUIRED_DOC_TAGS = ['תעודת זהות', 'אישור משטרה', 'תעודת השכלה'];
+const REQUIRED_DOC_TAGS = ['אישור משטרה', 'תעודת השכלה', 'חוזה', 'טופס פנסיה'];
 const ROWS_PER_PAGE = 15;
 
 const getStatusChip = (status: DocumentStatus) => {
@@ -42,7 +42,7 @@ const getStatusChip = (status: DocumentStatus) => {
     case DocumentStatus.REJECTED:
       return <Chip label="נדחה" color="error" size="small" variant="outlined" />;
     case DocumentStatus.PENDING:
-      return <Chip label="ממתין" color="warning" size="small" variant="outlined" />;
+      return null;
     default:
       return null;
   }
@@ -57,6 +57,7 @@ const AllDocumentsTable: React.FC = () => {
   const [searchId, setSearchId] = useState('');
   const [filterStatus, setFilterStatus] = useState<DocumentStatus | ''>('');
   const [filterType, setFilterType] = useState('');
+  const [filterProject, setFilterProject] = useState('');
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [uploadTarget, setUploadTarget] = useState<{ workerId: string; workerName: string; workerTz: string; tag: string } | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -80,12 +81,22 @@ const AllDocumentsTable: React.FC = () => {
     return Array.from(workerMap.values());
   }, [workers, personalDocuments]);
 
+  const PROJECT_OPTIONS = [
+    { value: '', label: 'כל הפרויקטים' },
+    { value: 'isBaseWorker', label: 'עובד בסיס' },
+    { value: 'isAfterNoon', label: 'צהרון' },
+    { value: 'isHanukaCamp', label: 'קייטנת חנוכה' },
+    { value: 'isPassoverCamp', label: 'קייטנת פסח' },
+    { value: 'isSummerCamp', label: 'קייטנת קיץ' },
+  ];
+
   const filteredData = useMemo(() => {
     return workerDocumentsData.filter(({ worker, docs }) => {
       const nameMatch = !searchName || `${worker.lastName} ${worker.firstName}`.toLowerCase().includes(searchName.toLowerCase());
       const idMatch = !searchId || (worker.id || '').includes(searchId);
+      const projectMatch = !filterProject || (worker as any)[filterProject];
 
-      if (!nameMatch || !idMatch) return false;
+      if (!nameMatch || !idMatch || !projectMatch) return false;
 
       if (filterType && filterStatus) {
         return docs[filterType] && docs[filterType].status === filterStatus;
@@ -98,7 +109,7 @@ const AllDocumentsTable: React.FC = () => {
       }
       return true;
     });
-  }, [workerDocumentsData, searchName, searchId, filterStatus, filterType]);
+  }, [workerDocumentsData, searchName, searchId, filterStatus, filterType, filterProject]);
 
   const paginatedData = useMemo(() => {
     return filteredData.slice(page * ROWS_PER_PAGE, page * ROWS_PER_PAGE + ROWS_PER_PAGE);
@@ -185,12 +196,21 @@ const AllDocumentsTable: React.FC = () => {
 
                         <Stack direction="row" spacing={1.5} mb={2} flexWrap="wrap">
                             <Tooltip title="איפוס מסננים">
-                            <IconButton onClick={() => { setSearchName(''); setSearchId(''); setFilterStatus(''); setFilterType(''); setPage(0); }} sx={{ color: 'grey.600', alignSelf: 'center' }}>
+                            <IconButton onClick={() => { setSearchName(''); setSearchId(''); setFilterStatus(''); setFilterType(''); setFilterProject(''); setPage(0); }} sx={{ color: 'grey.600', alignSelf: 'center' }}>
                                 <RestartAltIcon />
                             </IconButton>
                             </Tooltip>
-                            <TextField size="small" label="חפש לפי שם" value={searchName} onChange={(e) => {setSearchName(e.target.value); setPage(0);}} />
-                            <TextField size="small" label="חפש לפי ת.ז" value={searchId} onChange={(e) => {setSearchId(e.target.value); setPage(0);}} />
+                            <TextField size="small" sx={{ width: '120px' }} label="חפש שם" value={searchName} onChange={(e) => {setSearchName(e.target.value); setPage(0);}} />
+                            <TextField size="small" sx={{ width: '120px' }} label="חפש ת.ז" value={searchId} onChange={(e) => {setSearchId(e.target.value); setPage(0);}} />
+
+                            <FormControl size="small" sx={{ minWidth: 140 }}>
+                              <InputLabel>פרויקט</InputLabel>
+                              <Select value={filterProject} label="פרויקט" onChange={(e) => { setFilterProject(e.target.value); setPage(0); }}>
+                                {PROJECT_OPTIONS.map(opt => (
+                                  <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                                ))}
+                              </Select>
+                            </FormControl>
 
                             <FormControl size="small" sx={{ minWidth: 150 }}>
                             <InputLabel>סטטוס מסמך</InputLabel>
@@ -262,13 +282,15 @@ const AllDocumentsTable: React.FC = () => {
                                         return (
                                         <TableCell key={tag} >
                                             {doc ? (
-                                            <Stack direction="row" spacing={0.5} >
-                                                {getStatusChip(doc.status)}
-                                                <Tooltip title="צפה במסמך">
+                                            <Stack direction="row" spacing={0.5} alignItems="center">
+                                                                                              <Tooltip title="צפה במסמך">
                                                 <IconButton size="small" onClick={() => window.open(doc.url, '_blank')} disabled={!doc.url}>
                                                     <VisibilityIcon fontSize="small" />
                                                 </IconButton>
                                                 </Tooltip>
+                                                {doc.status !== DocumentStatus.PENDING && getStatusChip(doc.status)}
+
+                                
                                                 {doc.status === DocumentStatus.PENDING && (
                                                 <>
                                                     <Tooltip title="אשר">

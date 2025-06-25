@@ -54,7 +54,7 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
           ביטול
         </Button>
         <Button onClick={onConfirm} variant="contained" color="error" autoFocus>
-          אישור מחיקה
+          אישור
         </Button>
       </DialogActions>
     </Dialog>

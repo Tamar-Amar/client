@@ -11,11 +11,8 @@ import BadgeIcon from '@mui/icons-material/Badge';
 import WorkIcon from '@mui/icons-material/Work';
 import NotesIcon from '@mui/icons-material/Notes';
 import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
-import PersonIcon from '@mui/icons-material/Person';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
-import ClassIcon from '@mui/icons-material/Class';
-import EventAvailableIcon from '@mui/icons-material/EventAvailable';
+
 import { WorkerAfterNoon, Class } from '../../types';
 import { useUpdateWorkerAfterNoon } from '../../queries/workerAfterNoonQueries';
 import { updateClassWithWorker } from '../../queries/classQueries';
@@ -26,7 +23,7 @@ interface WorkerPersonalDetailsProps {
   classes?: Class[];
 }
 
-const accountantOptions = ['מירי', 'אסתי', 'מרים'];
+const accountantOptions = ['מירי', 'אסתי', 'מרים', 'רוחי'];
 
 // Helper Component for Stat Cards
 const StatCard = ({ icon, label, value, color }: { icon: React.ReactNode, label: string, value: string | number, color: string }) => (
@@ -122,155 +119,99 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
 
   return (
     <Container>
-      {/* Stats Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}><StatCard icon={<PersonIcon />} label="סטטוס" value={workerData.status || 'לא זמין'} color="success" /></Grid>
-        <Grid item xs={12} sm={6} md={3}><StatCard icon={<ClassIcon />} label="כיתות משויכות" value={registeredClasses.length} color="info" /></Grid>
-        <Grid item xs={12} sm={6} md={3}><StatCard icon={<BusinessCenterIcon />} label="פרויקטים" value={getProjectCount()} color="secondary" /></Grid>
-        <Grid item xs={12} sm={6} md={3}><StatCard icon={<EventAvailableIcon />} label="תאריך קליטה" value={new Date(workerData.createDate).toLocaleDateString('he-IL')} color="warning" /></Grid>
-      </Grid>
-      
-      <Paper sx={{ p: { xs: 2, md: 4 }, borderRadius: 3, boxShadow: 3, position: 'relative' }}>
+      {/* Minimalist Stats Row */}
+      <Box sx={{ mb: 2, color: 'text.secondary', fontSize: 16, display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+        <span>סטטוס: <b>{workerData.status || 'לא זמין'}</b></span>
+        <span>כיתות משויכות: <b>{registeredClasses.length}</b></span>
+        <span>פרויקטים: <b>{getProjectCount()}</b></span>
+        <span>תאריך קליטה: <b>{new Date(workerData.createDate).toLocaleDateString('he-IL')}</b></span>
+      </Box>
+      <Paper sx={{
+        p: { xs: 2, md: 3 },
+        borderRadius: 2,
+        bgcolor: '#f7f7fa',
+        border: '1px solid #e0e0e0',
+        borderBottom: '3px solid #1976d2',
+        position: 'relative'
+      }}>
+        <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 6, bgcolor: 'primary.main', borderRadius: '8px 8px 0 0' }} />
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
           <Box>
-            <Typography variant="h4" fontWeight="bold" color="primary.main">{workerData.firstName} {workerData.lastName}</Typography>
-            <Typography color="text.secondary" variant="h6">{workerData.id}, {workerData.roleType} - {workerData.roleName}</Typography>
+            <Typography variant="h5" fontWeight="bold" color="primary.main" sx={{ mb: 0.5 }}>{workerData.firstName} {workerData.lastName}</Typography>
+            <Typography color="text.secondary" variant="subtitle1">{workerData.id}, {workerData.roleType} - {workerData.roleName}</Typography>
             <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 1 }}>
-              {workerData.isBaseWorker && <Chip label="עובד בסיס" color="primary" size="small" />}
-              {workerData.isAfterNoon && <Chip label="צהרון" color="success" size="small" />}
-              {workerData.isHanukaCamp && <Chip label="קייטנת חנוכה" color="secondary" size="small" />}
-              {workerData.isPassoverCamp && <Chip label="קייטנת פסח" color="warning" size="small" />}
-              {workerData.isSummerCamp && <Chip label="קייטנת קיץ" color="info" size="small" />}
+              {workerData.isBaseWorker && <Chip label="עובד בסיס" variant="outlined" size="small" />}
+              {workerData.isAfterNoon && <Chip label="צהרון" variant="outlined" size="small" />}
+              {workerData.isHanukaCamp && <Chip label="קייטנת חנוכה" variant="outlined" size="small" />}
+              {workerData.isPassoverCamp && <Chip label="קייטנת פסח" variant="outlined" size="small" />}
+              {workerData.isSummerCamp && <Chip label="קייטנת קיץ" variant="outlined" size="small" />}
             </Stack>
           </Box>
           <Box sx={{ display: 'flex', gap: 1 }}>
             {editing && <Button variant="text" color="secondary" onClick={() => { setForm(workerData); setEditing(false); }}>ביטול</Button>}
             <Tooltip title={editing ? "שמור שינויים" : "ערוך פרטים"}>
-              <Button variant="contained" color="primary" onClick={() => editing ? handleSave() : setEditing(true)} startIcon={editing ? <SaveIcon /> : <EditIcon />}>
+              <Button variant="contained" color="primary" onClick={() => editing ? handleSave() : setEditing(true)} startIcon={editing ? <SaveIcon fontSize="small" /> : <EditIcon fontSize="small" />} sx={{ fontSize: 15, px: 2, py: 0.5 }}>
                 {editing ? "שמור" : "ערוך"}
               </Button>
             </Tooltip>
           </Box>
         </Box>
-        <Divider sx={{ my: 3 }} />
+        <Divider sx={{ my: 2 }} />
 
-        <Grid container spacing={4}>
+        <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
-            <Typography variant="h6" gutterBottom color="text.primary">פרטי התקשרות</Typography>
+            <Typography variant="subtitle1" gutterBottom color="text.primary">פרטי התקשרות</Typography>
             <Stack spacing={1}>
-              <EditableField label="טלפון" name="phone" value={form.phone} editing={editing} onChange={handleChange} icon={<PhoneIcon color="action" />} />
-              <EditableField label="אימייל" name="email" value={form.email} editing={editing} onChange={handleChange} icon={<EmailIcon color="action" />} />
+              <EditableField label="טלפון" name="phone" value={form.phone} editing={editing} onChange={handleChange} icon={<PhoneIcon color="action" fontSize="small" />} />
+              <EditableField label="אימייל" name="email" value={form.email} editing={editing} onChange={handleChange} icon={<EmailIcon color="action" fontSize="small" />} />
+            
+              <EditableField label="סטטוס" name="status" value={form.status} editing={editing} onChange={handleChange} icon={<AssignmentIndIcon color="action" fontSize="small" />} />
             </Stack>
           </Grid>
-          
           <Grid item xs={12} md={6}>
-            <Typography variant="h6" gutterBottom color="text.primary">פרטי תעסוקה</Typography>
+            <Typography variant="subtitle1" gutterBottom color="text.primary">פרטי תעסוקה</Typography>
             <Stack spacing={1}>
-              <EditableField label="תאריך התחלה" name="startDate" value={form.startDate} editing={editing} onChange={handleChange} type="date" icon={<CalendarTodayIcon color="action" />} />
-              <EditableField label="תאריך סיום" name="endDate" value={form.endDate} editing={editing} onChange={handleChange} type="date" icon={<CalendarTodayIcon color="action" />} />
-              <EditableField label="סטטוס" name="status" value={form.status} editing={editing} onChange={handleChange} icon={<AssignmentIndIcon color="action" />} />
-              
+              <EditableField label="תאריך התחלה" name="startDate" value={form.startDate} editing={editing} onChange={handleChange} type="date" icon={<CalendarTodayIcon color="action" fontSize="small" />} />
+              <EditableField label="תאריך סיום" name="endDate" value={form.endDate} editing={editing} onChange={handleChange} type="date" icon={<CalendarTodayIcon color="action" fontSize="small" />} />
               {editing ? (
                 <Box>
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    פרויקטים
-                  </Typography>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>פרויקטים</Typography>
                   <Stack spacing={1}>
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={form.isBaseWorker}
-                          onChange={(e) => handleCheckboxChange('isBaseWorker', e.target.checked)}
-                          color="primary"
-                        />
-                      }
-                      label="עובד בסיס"
-                    />
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={form.isAfterNoon}
-                          onChange={(e) => handleCheckboxChange('isAfterNoon', e.target.checked)}
-                          color="primary"
-                        />
-                      }
-                      label="צהרון"
-                    />
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={form.isHanukaCamp}
-                          onChange={(e) => handleCheckboxChange('isHanukaCamp', e.target.checked)}
-                          color="primary"
-                        />
-                      }
-                      label="קייטנת חנוכה"
-                    />
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={form.isPassoverCamp}
-                          onChange={(e) => handleCheckboxChange('isPassoverCamp', e.target.checked)}
-                          color="primary"
-                        />
-                      }
-                      label="קייטנת פסח"
-                    />
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={form.isSummerCamp}
-                          onChange={(e) => handleCheckboxChange('isSummerCamp', e.target.checked)}
-                          color="primary"
-                        />
-                      }
-                      label="קייטנת קיץ"
-                    />
+                    <FormControlLabel control={<Checkbox checked={form.isBaseWorker} onChange={(e) => handleCheckboxChange('isBaseWorker', e.target.checked)} color="primary" />} label="עובד בסיס" />
+                    <FormControlLabel control={<Checkbox checked={form.isAfterNoon} onChange={(e) => handleCheckboxChange('isAfterNoon', e.target.checked)} color="primary" />} label="צהרון" />
+                    <FormControlLabel control={<Checkbox checked={form.isHanukaCamp} onChange={(e) => handleCheckboxChange('isHanukaCamp', e.target.checked)} color="primary" />} label="קייטנת חנוכה" />
+                    <FormControlLabel control={<Checkbox checked={form.isPassoverCamp} onChange={(e) => handleCheckboxChange('isPassoverCamp', e.target.checked)} color="primary" />} label="קייטנת פסח" />
+                    <FormControlLabel control={<Checkbox checked={form.isSummerCamp} onChange={(e) => handleCheckboxChange('isSummerCamp', e.target.checked)} color="primary" />} label="קייטנת קיץ" />
                   </Stack>
                 </Box>
               ) : (
                 <Box>
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    פרויקטים
-                  </Typography>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>פרויקטים</Typography>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {form.isBaseWorker && (
-                      <Chip label="עובד בסיס" color="primary" size="small" />
-                    )}
-                    {form.isAfterNoon && (
-                      <Chip label="צהרון" color="secondary" size="small" />
-                    )}
-                    {form.isHanukaCamp && (
-                      <Chip label="קייטנת חנוכה" color="success" size="small" />
-                    )}
-                    {form.isPassoverCamp && (
-                      <Chip label="קייטנת פסח" color="warning" size="small" />
-                    )}
-                    {form.isSummerCamp && (
-                      <Chip label="קייטנת קיץ" color="info" size="small" />
-                    )}
+                    {form.isBaseWorker && (<Chip label="עובד בסיס" variant="outlined" size="small" />)}
+                    {form.isAfterNoon && (<Chip label="צהרון" variant="outlined" size="small" />)}
+                    {form.isHanukaCamp && (<Chip label="קייטנת חנוכה" variant="outlined" size="small" />)}
+                    {form.isPassoverCamp && (<Chip label="קייטנת פסח" variant="outlined" size="small" />)}
+                    {form.isSummerCamp && (<Chip label="קייטנת קיץ" variant="outlined" size="small" />)}
                   </Box>
                 </Box>
               )}
             </Stack>
           </Grid>
-          
           <Grid item xs={12}><Divider sx={{ my: 1 }} /></Grid>
-
           <Grid item xs={12} md={6}>
-            <Typography variant="h6" gutterBottom color="text.primary">תפקיד וחשבונאות</Typography>
+            <Typography variant="subtitle1" gutterBottom color="text.primary">תפקיד וחשבונאות</Typography>
             <Stack spacing={1}>
-              <EditableField label="סוג תפקיד" name="roleType" value={form.roleType} editing={editing} onChange={handleChange} icon={<WorkIcon color="action" />} />
-              <EditableField label="שם תפקיד" name="roleName" value={form.roleName} editing={editing} onChange={handleChange} icon={<WorkIcon color="action" />} />
-              <EditableField label="חשב שכר" name="accountantCode" value={form.accountantCode} editing={editing} onChange={handleChange} select options={accountantOptions} icon={<BadgeIcon color="action" />} />
+              <EditableField label="סוג תפקיד" name="roleType" value={form.roleType} editing={editing} onChange={handleChange} icon={<WorkIcon color="action" fontSize="small" />} />
+              <EditableField label="שם תפקיד" name="roleName" value={form.roleName} editing={editing} onChange={handleChange} icon={<WorkIcon color="action" fontSize="small" />} />
+              <EditableField label="חשב שכר" name="accountantCode" value={form.accountantCode} editing={editing} onChange={handleChange} select options={accountantOptions} icon={<BadgeIcon color="action" fontSize="small" />} />
             </Stack>
           </Grid>
-          
           <Grid item xs={12} md={6}>
-            <Typography variant="h6" gutterBottom color="text.primary">כיתות משויכות ({registeredClasses.length})</Typography>
+            <Typography variant="subtitle1" gutterBottom color="text.primary">כיתות משויכות ({registeredClasses.length})</Typography>
             {registeredClasses.length > 0 ? (
                 <Stack direction="row" spacing={1} flexWrap="wrap">
-                    {registeredClasses.map(cls => <Chip key={cls._id} label={`${cls.name} (${cls.uniqueSymbol})`} color="info" />)}
+                    {registeredClasses.map(cls => <Chip key={cls._id} label={`${cls.name} (${cls.uniqueSymbol})`} variant="outlined" size="small" />)}
                 </Stack>
             ) : <Typography color="text.secondary">לא משויך לכיתות</Typography>}
             {editing && (
@@ -289,15 +230,12 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
               />
             )}
           </Grid>
-
           <Grid item xs={12}><Divider sx={{ my: 1 }} /></Grid>
-
           <Grid item xs={12}>
-            <Typography variant="h6" gutterBottom color="text.primary">הערות</Typography>
-            <EditableField label="הערות" name="notes" value={form.notes} editing={editing} onChange={handleChange} multiline icon={<NotesIcon color="action" />} />
+            <Typography variant="subtitle1" gutterBottom color="text.primary">הערות</Typography>
+            <EditableField label="הערות" name="notes" value={form.notes} editing={editing} onChange={handleChange} multiline icon={<NotesIcon color="action" fontSize="small" />} />
           </Grid>
         </Grid>
-        
       </Paper>
       <Snackbar open={openSnackbar} autoHideDuration={3000} onClose={() => setOpenSnackbar(false)}>
         <Alert severity="success" sx={{ width: '100%' }}>העובד עודכן בהצלחה!</Alert>

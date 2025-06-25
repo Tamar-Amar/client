@@ -23,6 +23,7 @@ import WorkersDocumentsEmailPage from '../pages/manager/WorkersEmailPage';
 import WorkerAttendancePage from '../pages/manager/WorkerAllAttendancesPage';
 import WorkersAfterNoonEmailPage from '../pages/manager/WorkersEmailPage';
 import WorkersAfterNoonNotificationsPage from '../pages/manager/WorkersAfterNoonNotificationsPage';
+import MatsevetPage from '../pages/MatsevetPage';
 
 const OperatorDocumentsWrapper = () => {
   const token = localStorage.getItem('token');
@@ -51,6 +52,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/workers-after-noon-email" element={<WorkersAfterNoonEmailPage />} />
         <Route path="/workers-after-noon-notifications" element={<WorkersAfterNoonNotificationsPage />} />
         <Route path="/classes" element={<ClassesPage />} />
+        <Route path="/matsevet" element={<MatsevetPage />} />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={['admin']} />}>

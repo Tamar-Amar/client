@@ -20,6 +20,12 @@ import { useFetchClasses } from '../../queries/classQueries';
 import WorkerPersonalDocuments from '../../components/workers/documents/WorkerPersonalDocuments';
 import WorkerAttendanceDocuments from '../../components/workers/documents/WorkerAttendanceDocuments';
 import WorkerPersonalDetails from '../../components/workers/WorkerPersonalDetails';
+import PersonIcon from '@mui/icons-material/Person';
+import DescriptionIcon from '@mui/icons-material/Description';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import BeachAccessIcon from '@mui/icons-material/BeachAccess';
+import WbSunnyIcon from '@mui/icons-material/WbSunny';
+import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 
 const WorkerDocumentsApprovalPage: React.FC = () => {
   const { id: workerId } = useParams<{ id: string }>();
@@ -60,7 +66,7 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
   };
 
   return (
-    <Box p={4}>
+    <Box p={4} sx={{ bgcolor: '#f7f7fa', minHeight: '100vh' }}>
       <Box sx={{ marginLeft:'180px',  transition: 'margin 0.3s' }}>
         {selectedTab === 'documents' ? (
           <Box>
@@ -116,56 +122,65 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
         open={drawerOpen}
         variant="persistent"
         sx={{
-          width: '10%',
+          width: '14%',
           flexShrink: 0,
           '& .MuiDrawer-paper': {
-            width: '10%',
+            width: '14%',
             top: '65px',
+            bgcolor: '#f7f7fa',
+            borderRight: '4px solid #1976d2',
+            boxShadow: 2,
           },
         }}
       >
-        <List> 
+        <List>
           <ListItem>
-            <ListItemText 
-              primary={`${workerData?.firstName} ${workerData?.lastName}`}
-              secondary={`תעודת זהות: ${workerData?.id}`}
+            <ListItemText
+              primary={<Typography variant="h6" color="primary.main">{workerData?.firstName} {workerData?.lastName}</Typography>}
+              secondary={<Typography variant="caption" color="text.secondary">תעודת זהות: {workerData?.id}</Typography>}
             />
           </ListItem>
           <Divider />
           <ListItem disablePadding>
-            <ListItemButton selected={selectedTab === 'personal'} onClick={() => setSelectedTab('personal')}>
+            <ListItemButton selected={selectedTab === 'personal'} onClick={() => setSelectedTab('personal')} sx={selectedTab === 'personal' ? { bgcolor: '#e3f2fd', color: 'primary.main', borderRight: '4px solid #1976d2' } : {}}>
+              <PersonIcon sx={{ mr: 1 }} color={selectedTab === 'personal' ? 'primary' : 'action'} />
               <ListItemText primary="פרטים אישיים" />
             </ListItemButton>
           </ListItem>
           <ListItem disablePadding>
-            <ListItemButton selected={selectedTab === 'documents'} onClick={() => setSelectedTab('documents')}>
+            <ListItemButton selected={selectedTab === 'documents'} onClick={() => setSelectedTab('documents')} sx={selectedTab === 'documents' ? { bgcolor: '#e3f2fd', color: 'primary.main', borderRight: '4px solid #1976d2' } : {}}>
+              <DescriptionIcon sx={{ mr: 1 }} color={selectedTab === 'documents' ? 'primary' : 'action'} />
               <ListItemText primary="מסמכים אישיים" />
             </ListItemButton>
           </ListItem>
           {workerData?.isAfterNoon && (
             <ListItem disablePadding>
-              <ListItemButton selected={selectedTab === 'afternoon-documents'} onClick={() => setSelectedTab('afternoon-documents')}>
+              <ListItemButton selected={selectedTab === 'afternoon-documents'} onClick={() => setSelectedTab('afternoon-documents')} sx={selectedTab === 'afternoon-documents' ? { bgcolor: '#e3f2fd', color: 'primary.main', borderRight: '4px solid #1976d2' } : {}}>
+                <AssignmentIcon sx={{ mr: 1 }} color={selectedTab === 'afternoon-documents' ? 'primary' : 'action'} />
                 <ListItemText primary="מסמכי צהרון" />
               </ListItemButton>
             </ListItem>
           )}
           {workerData?.isHanukaCamp && (
             <ListItem disablePadding>
-              <ListItemButton selected={selectedTab === 'hanukah-camp'} onClick={() => setSelectedTab('hanukah-camp')}>
+              <ListItemButton selected={selectedTab === 'hanukah-camp'} onClick={() => setSelectedTab('hanukah-camp')} sx={selectedTab === 'hanukah-camp' ? { bgcolor: '#e3f2fd', color: 'primary.main', borderRight: '4px solid #1976d2' } : {}}>
+                <EventAvailableIcon sx={{ mr: 1 }} color={selectedTab === 'hanukah-camp' ? 'primary' : 'action'} />
                 <ListItemText primary="קייטנת חנוכה" />
               </ListItemButton>
             </ListItem>
           )}
           {workerData?.isPassoverCamp && (
             <ListItem disablePadding>
-              <ListItemButton selected={selectedTab === 'passover-camp'} onClick={() => setSelectedTab('passover-camp')}>
+              <ListItemButton selected={selectedTab === 'passover-camp'} onClick={() => setSelectedTab('passover-camp')} sx={selectedTab === 'passover-camp' ? { bgcolor: '#e3f2fd', color: 'primary.main', borderRight: '4px solid #1976d2' } : {}}>
+                <BeachAccessIcon sx={{ mr: 1 }} color={selectedTab === 'passover-camp' ? 'primary' : 'action'} />
                 <ListItemText primary="קייטנת פסח" />
               </ListItemButton>
             </ListItem>
           )}
           {workerData?.isSummerCamp && (
             <ListItem disablePadding>
-              <ListItemButton selected={selectedTab === 'summer-camp'} onClick={() => setSelectedTab('summer-camp')}>
+              <ListItemButton selected={selectedTab === 'summer-camp'} onClick={() => setSelectedTab('summer-camp')} sx={selectedTab === 'summer-camp' ? { bgcolor: '#e3f2fd', color: 'primary.main', borderRight: '4px solid #1976d2' } : {}}>
+                <WbSunnyIcon sx={{ mr: 1 }} color={selectedTab === 'summer-camp' ? 'primary' : 'action'} />
                 <ListItemText primary="קייטנת קיץ" />
               </ListItemButton>
             </ListItem>

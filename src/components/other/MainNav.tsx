@@ -60,13 +60,13 @@ const MainNav: React.FC = () => {
     { label: 'מיילים', path: '/emails', icon: <EmailIcon fontSize="small" /> },
   ];
 
-  const managerTabs: TabInfo[] = [
+  const managerTabs: TabInfo[] = [    
+    { label: 'מצבת', path: '/matsevet' },
     { label: 'ניהול עובדים', path: '/workers' },
     { label: 'דיווחי נוכחות', path: '/worker-attendance' },
     { label: 'מסמכים אישיים', path: '/documents' },
     { label: 'מיילים', path: '/workers-after-noon-email' },
-    { label: 'התראות', path: '/workers-after-noon-notifications' },
-
+    { label: 'התראות', path: '/workers-after-noon-notifications' }, 
   ];
 
   const operatorTabs: TabInfo[] = [

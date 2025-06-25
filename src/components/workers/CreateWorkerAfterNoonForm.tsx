@@ -139,6 +139,8 @@ const WorkerAfterNoonForm: React.FC<WorkerAfterNoonFormProps> = ({ onSuccess }) 
               <MenuItem value="מירי">מירי</MenuItem>
               <MenuItem value="אסתי">אסתי</MenuItem>
               <MenuItem value="מרים">מרים</MenuItem>
+              <MenuItem value="רוחי">רוחי</MenuItem>
+
             </Select>
           </FormControl>
         </Grid>
