@@ -97,7 +97,7 @@ const LoginPage: React.FC = () => {
         localStorage.setItem('user', JSON.stringify(user));
       }
 
-      window.location.href = '/';
+      window.location.href = '/coordinator/dashboard';
     } catch (error: any) {
       setErrorMessage(error.response?.data?.message || 'שגיאה בהתחברות');
       console.error('Login failed:', error);

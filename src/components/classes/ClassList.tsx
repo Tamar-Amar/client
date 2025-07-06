@@ -10,6 +10,7 @@ import { useFetchStores, useUpdateStore } from "../../queries/storeQueries";
 import {  Operator } from "../../types";
 import EditClassDialog from "./EditClassDialog";
 import AddClassDialog from "./AddClassDialog";
+import CoordinatorAssignmentDialog from "../coordinator/CoordinatorAssignmentDialog";
 
 const ClassList: React.FC = () => {
   const { data: classes, isLoading, isError } = useFetchClasses();
@@ -27,6 +28,8 @@ const ClassList: React.FC = () => {
   const updateStoreMutation = useUpdateStore();
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [assignDialogType, setAssignDialogType] = useState<"assignContact" | "assignInstitution" | "assignOperator" | "assignStore" | null>(null);
+  const [coordinatorDialogOpen, setCoordinatorDialogOpen] = useState(false);
+  const [selectedClassForCoordinator, setSelectedClassForCoordinator] = useState<any>(null);
 
   const handleDelete = (id: string) => {
     if (window.confirm("Are you sure you want to delete this class?")) {
@@ -53,6 +56,26 @@ const ClassList: React.FC = () => {
   const handleOpenDialog = (type: "assignContact" | "assignInstitution" | "assignOperator" | "assignStore") => {
     setAssignDialogType(type);
     setAssignDialogOpen(true);
+  };
+
+  const handleAssignCoordinator = (classData: any) => {
+    setSelectedClassForCoordinator(classData);
+    setCoordinatorDialogOpen(true);
+  };
+
+  const handleCoordinatorAssign = async (coordinatorId: string) => {
+    if (selectedClassForCoordinator) {
+      try {
+        await updateClassMutation.mutateAsync({
+          id: selectedClassForCoordinator._id,
+          updatedClass: { coordinatorId }
+        });
+        // רענון הנתונים
+        window.location.reload();
+      } catch (error) {
+        console.error('Error assigning coordinator:', error);
+      }
+    }
   };
 
   const handleSubmitDialog = async () => {
@@ -113,11 +136,14 @@ const ClassList: React.FC = () => {
     {
       field: "actions",
       headerName: "פעולות",
-      width: 120,
+      width: 150,
       renderCell: (params: GridRenderCellParams) => (
         <Box>
           <IconButton color="primary" onClick={() => setEditClassData(params.row)}>
             <EditIcon />
+          </IconButton>
+          <IconButton color="info" onClick={() => handleAssignCoordinator(params.row)} title="שייך רכז">
+            👥
           </IconButton>
           <IconButton color="secondary" onClick={() => handleDelete(params.row._id)}>
             <DeleteIcon />
@@ -167,6 +193,15 @@ const ClassList: React.FC = () => {
 
       {editClassData && <EditClassDialog classData={editClassData} onClose={() => setEditClassData(null)} />}
       {addDialogOpen && <AddClassDialog onClose={() => setAddDialogOpen(false)} />}
+      {coordinatorDialogOpen && (
+        <CoordinatorAssignmentDialog
+          open={coordinatorDialogOpen}
+          onClose={() => setCoordinatorDialogOpen(false)}
+          type="class"
+          item={selectedClassForCoordinator}
+          onAssign={handleCoordinatorAssign}
+        />
+      )}
     </Box>
   );
 };

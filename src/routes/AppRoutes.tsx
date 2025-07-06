@@ -27,6 +27,7 @@ import WorkersAfterNoonEmailPage from '../pages/manager/WorkersEmailPage';
 import WorkersAfterNoonNotificationsPage from '../pages/manager/WorkersAfterNoonNotificationsPage';
 import MatsevetPage from '../pages/MatsevetPage';
 import UsersManagementPage from '../pages/UsersManagementPage';
+import CoordinatorDashboardPage from '../pages/CoordinatorDashboardPage';
 
 const OperatorDocumentsWrapper = () => {
   const token = localStorage.getItem('token');
@@ -74,6 +75,10 @@ const AppRoutes: React.FC = () => {
         <Route path="/personal-details" element={<PersonalDetails/>} />
         <Route path="/activity-history" element={<ActivityHistory/>} />
         <Route path="/personal-documents" element={<OperatorDocumentsWrapper />} />
+      </Route>
+
+      <Route element={<ProtectedRoute allowedRoles={['coordinator']} />}>
+        <Route path="/coordinator/dashboard" element={<CoordinatorDashboardPage />} />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={['worker']} />}>

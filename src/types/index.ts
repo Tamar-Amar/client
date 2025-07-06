@@ -166,6 +166,7 @@ export interface Activity {
     isPassoverCamp: boolean;
     isSummerCamp: boolean;
     is101: boolean;
+    coordinatorId?: string;
   }
   
 
