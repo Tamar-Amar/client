@@ -12,20 +12,19 @@ import { normalizePhone, isValidPhone, formatDate, validateIsraeliID, parseDate 
 
 interface ExcelRow {
   __EMPTY: string; // סמל מוסד
-  __EMPTY_1: string; // קוד מוסד
-  __EMPTY_5: string; // סוג חינוך
-  __EMPTY_9: string; // חשב שכר
-  __EMPTY_11: string; // סוג תפקיד
-  __EMPTY_12: string; // שם תפקיד
-  __EMPTY_13: string; // תעודת זהות
-  __EMPTY_14: string; // שם משפחה
-  __EMPTY_15: string; // שם פרטי
-  __EMPTY_16: string; // טלפון
-  __EMPTY_17: string; // אימייל
-  __EMPTY_18: string; // תאריך התחלה
-  __EMPTY_19: string; // תאריך סיום
-  __EMPTY_20: string; // סטטוס
- 
+  __EMPTY_1: string; // חשב שכר
+  __EMPTY_2: string; // מודל
+  __EMPTY_3: string; // סוג תפקיד
+  __EMPTY_4: string; // שם תפקיד
+  __EMPTY_5: string; // תעודת זהות
+  __EMPTY_6: string; // שם משפחה
+  __EMPTY_7: string; // שם פרטי
+  __EMPTY_8: string; // טלפון
+  __EMPTY_9: string; // אימייל
+  __EMPTY_10: string; // תאריך התחלה
+  __EMPTY_11: string; // תאריך סיום
+  __EMPTY_12: string; // סטטוס
+  __EMPTY_13: string; // טופס 101
 }
 
 interface PreviewWorker extends Omit<WorkerAfterNoon, '_id'> {
@@ -71,7 +70,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
   const [allWorkers, setAllWorkers] = useState<PreviewWorker[]>([]);
   const [missingSymbols, setMissingSymbols] = useState<string[]>([]);
   const [projectSelection, setProjectSelection] = useState<ProjectSelection>({
-    isBaseWorker: false,
+    isBaseWorker: true,
     isAfterNoon: false,
     isHanukaCamp: false,
     isPassoverCamp: false,
@@ -98,11 +97,15 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
 
 
   const convertExcelRowToWorker = (row: any): PreviewWorker => {
-    const id = row[13]?.toString()?.trim() || '';
-    const firstName = row[15]?.toString()?.trim() || '';
-    const lastName = row[14]?.toString()?.trim() || '';
+    let id = row[5]?.toString()?.trim() || '';
+    if (id.includes('E') || id.includes('e')) {
+      const originalValue = row[5];
+      id = Number(originalValue).toString();
+    }
     
-    // בדיקה שהנתונים החיוניים קיימים
+    const firstName = row[7]?.toString()?.trim() || '';
+    const lastName = row[6]?.toString()?.trim() || '';
+    
     if (!id || !firstName || !lastName) {
       throw new Error(`נתונים חסרים: תעודת זהות: ${id}, שם פרטי: ${firstName}, שם משפחה: ${lastName}`);
     }
@@ -112,27 +115,28 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
     }
     
     const now = new Date().toISOString();
-    const startDate = new Date(parseDate(row[18]));
-    const endDate = new Date(parseDate(row[19]));
+    const startDate = new Date(parseDate(row[10]));
+    const endDate = new Date(parseDate(row[11]));
     
     const symbol = row[0]?.toString().trim();
+    const is101 = row[13]?.toString()?.trim() ? true : false;
 
     return {
       firstName: firstName,
       lastName: lastName,
       id: id,
-      phone: row[16]?.toString() || '',
-      email: row[17]?.toString() || '',
+      phone: row[8]?.toString() || '',
+      email: row[9]?.toString() || '',
       isActive: true,
       createDate: new Date(now),
       startDate: startDate || new Date(now),
       endDate: endDate || new Date(now),
       updateDate: new Date(now),
       updateBy: 'מערכת',
-      status: row[20] || 'לא נבחר',
-      roleType: row[11] || 'לא נבחר',
-      roleName: row[12] || 'לא נבחר',
-      accountantCode: row[9] || 'לא נבחר',
+      status: row[12] || 'לא נבחר',
+      roleType: row[3] || 'לא נבחר',
+      roleName: row[4] || 'לא נבחר',
+      accountantCode: row[1] || 'לא נבחר',
       project: 'צהרון',
       notes:'לא נבחר',     
       workingSymbol: symbol || '',
@@ -141,7 +145,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       isHanukaCamp: false,
       isPassoverCamp: false,
       isSummerCamp: false,
-      is101: false
+      is101: is101
     };
   };
 
@@ -168,15 +172,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // בדיקה שיש לפחות פרויקט אחד נבחר
-    if (!projectSelection.isBaseWorker && 
-        !projectSelection.isAfterNoon && 
-        !projectSelection.isHanukaCamp && 
-        !projectSelection.isPassoverCamp && 
-        !projectSelection.isSummerCamp) {
-      alert('יש לבחור לפחות פרויקט אחד לפני טעינת הקובץ');
-      return;
-    }
 
     setIsUploading(true);
     const reader = new FileReader();
@@ -187,16 +182,14 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false, header: 1 }) as any[];
 
-        // דילוג על שורת הכותרת (השורה הראשונה)
         const dataRows = jsonData.slice(1);
 
-        // סינון שורות ריקות ושורות ללא נתונים חיוניים
         const filteredData = dataRows.filter(row => {
-          const id = row[13]?.toString()?.trim(); // תעודת זהות
-          const firstName = row[15]?.toString()?.trim(); // שם פרטי
-          const lastName = row[14]?.toString()?.trim(); // שם משפחה
+          const id = row[5]?.toString()?.trim(); 
+          const firstName = row[7]?.toString()?.trim(); 
+          const lastName = row[6]?.toString()?.trim(); 
           
-          // מחזיר true רק אם יש לפחות תעודת זהות ושם
+          
           return id && firstName && lastName && id !== '' && firstName !== '' && lastName !== '';
         });
 
@@ -204,7 +197,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
           try {
             return convertExcelRowToWorker(row);
           } catch (error) {
-            return { id: row[13]?.toString() || '', firstName: row[15] || '', lastName: row[14] || '', isActive: false } as PreviewWorker;
+            return { id: row[5]?.toString() || '', firstName: row[7] || '', lastName: row[6] || '', isActive: false } as PreviewWorker;
           }
         });
 
@@ -225,7 +218,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
 
         const idCount: Record<string, number> = {};
         notInSystem.forEach(w => { idCount[w.id] = (idCount[w.id] || 0) + 1; });
-        const dups = notInSystem.filter(w => idCount[w.id] > 1);
 
         const notDuplicate = notInSystem.filter(w => idCount[w.id] === 1);
 
@@ -236,13 +228,12 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
         setInvalidWorkers(invalids);
         setInvalidByReason({ invalidId, invalidPhone, missingPhone });
 
-        // הודעה למשתמש על מספר השורות
-        if (jsonData.length !== filteredData.length + 1) { // +1 כי דילגנו על שורת הכותרת
+        if (jsonData.length !== filteredData.length + 1) { 
           alert(`נסרקו ${jsonData.length - 1} שורות נתונים בקובץ (לא כולל כותרת), ${filteredData.length} שורות עברו את הסינון (שורות ריקות הוסרו)`);
         }
 
         setShowSummaryDialog(true);
-        setPreviewData(validForImportWorkers); 
+        setPreviewData(workers); 
       } catch (err) {
         console.error('Error reading Excel file:', err);
         alert(err instanceof Error ? err.message : 'שגיאה בקריאת הקובץ');
@@ -275,7 +266,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       const idCount: Record<string, number> = {};
       allWorkers.forEach((w: PreviewWorker) => { idCount[w.id] = (idCount[w.id] || 0) + 1; });
       
-      // עובדים חדשים לחלוטין
       const validNewWorkers = allWorkers.filter((w: PreviewWorker) =>
         !existingIds.has(w.id) &&
         idCount[w.id] === 1 &&
@@ -283,7 +273,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
         (!w.phone || isValidPhone(w.phone))
       );
 
-      // עובדים קיימים שצריך לבדוק
       const existingWorkersToCheck = allWorkers.filter((w: PreviewWorker) =>
         existingIds.has(w.id) &&
         idCount[w.id] === 1 &&
@@ -296,11 +285,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       if (importInvalidPhone) toImport = toImport.concat(invalidByReason.invalidPhone);
       if (importMissingPhone) toImport = toImport.concat(invalidByReason.missingPhone);
 
-      console.log('toImport', toImport);
-      console.log('allWorkers', allWorkers);
-      console.log('existingWorkers', existingWorkers);
 
-      // ייבוא עובדים חדשים
       for (const worker of validNewWorkers) {
         try {
           const normalizedWorker = {
@@ -310,7 +295,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
           };
           const savedWorker = await addWorkerMutation.mutateAsync(normalizedWorker);
 
-          // שיוך לכיתה (אם צריך)
           const classSymbol = worker.workingSymbol;
           const classObj = classes.find((c: Class) => c.uniqueSymbol === classSymbol);
           if (classObj && savedWorker) {
@@ -329,18 +313,16 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
         }
       }
 
-      // עובדים קיימים שיועדכנו
       for (const worker of existingWorkersToCheck) {
         const existingWorker = existingWorkers.find((w: WorkerAfterNoon) => w.id === worker.id);
         if (!existingWorker) continue;
 
-        // עובד יכול לקבל כמה פרויקטים חדשים בבת אחת, בלי לדרוס את הישנים
         const updateFields: Partial<WorkerAfterNoon> = {};
         let shouldUpdate = false;
         for (const key of Object.keys(projectSelection)) {
           if (
-            projectSelection[key as keyof ProjectSelection] && // נבחר לייבוא
-            !existingWorker[key as keyof WorkerAfterNoon]      // עדיין לא משויך
+            projectSelection[key as keyof ProjectSelection] && 
+            !existingWorker[key as keyof WorkerAfterNoon]      
           ) {
             updateFields[key as keyof ProjectSelection] = true;
             shouldUpdate = true;
@@ -357,7 +339,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
         }
         const savedWorker = { ...existingWorker, ...updateFields };
 
-        // שיוך לכיתה (גם אם העובד קיים)
         const classSymbol = worker.workingSymbol;
         const classObj = classes.find((c: Class) => c.uniqueSymbol === classSymbol);
         if (classObj && savedWorker) {
@@ -367,7 +348,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
             roleType: worker.roleType,
             project: projectName
           };
-          // בדוק אם כבר משויך לכיתה הזו עם אותו פרויקט
           const isAlreadyAssigned = classObj.workers?.some((w: any) =>
             w.workerId === savedWorker._id && w.project === projectName
           );
@@ -410,7 +390,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       (!w.phone || isValidPhone(w.phone))
     ).length;
 
-    // עובדים קיימים שיועדכנו
     const existingWorkersToUpdate = allWorkers.filter((w: PreviewWorker) =>
       existingIds.has(w.id) &&
       idCount[w.id] === 1 &&
@@ -419,8 +398,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
     ).filter((w: PreviewWorker) => {
       const existingWorker = existingWorkers.find((ew: WorkerAfterNoon) => ew.id === w.id);
       if (!existingWorker) return false;
-      
-      // בדיקה אם העובד כבר משויך לפרויקט הנוכחי
+
       return !Object.keys(projectSelection).some(key => 
         projectSelection[key as keyof ProjectSelection] && 
         existingWorker[key as keyof WorkerAfterNoon] === true
@@ -456,7 +434,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
     notInSystem.forEach((w: PreviewWorker) => { idCount[w.id] = (idCount[w.id] || 0) + 1; });
     const newWorkers = notInSystem.filter((w: PreviewWorker) => idCount[w.id] === 1).length;
     
-    // עובדים קיימים שיועדכנו
     const existingWorkersToUpdate = allWorkers.filter((w: PreviewWorker) =>
       existingIds.has(w.id) &&
       idCount[w.id] === 1 &&
@@ -466,7 +443,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       const existingWorker = existingWorkers.find((ew: WorkerAfterNoon) => ew.id === w.id);
       if (!existingWorker) return false;
       
-      // בדיקה אם העובד כבר משויך לפרויקט הנוכחי
       return !Object.keys(projectSelection).some(key => 
         projectSelection[key as keyof ProjectSelection] && 
         existingWorker[key as keyof WorkerAfterNoon] === true
@@ -505,10 +481,10 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
                 control={
                   <Checkbox
                     checked={projectSelection.isBaseWorker}
-                    onChange={() => handleProjectSelectionChange('isBaseWorker')}
+                    disabled={true}
                   />
                 }
-                label="עובד בסיס"
+                label="עובד בסיס (חובה)"
               />
               
               <Divider sx={{ my: 2 }} />
@@ -575,11 +551,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
           <Button 
             onClick={() => setShowProjectSelectionDialog(false)}
             color="primary" 
-            disabled={!projectSelection.isBaseWorker && 
-                     !projectSelection.isAfterNoon && 
-                     !projectSelection.isHanukaCamp && 
-                     !projectSelection.isPassoverCamp && 
-                     !projectSelection.isSummerCamp}
             autoFocus
           >
             המשך לטעינת קובץ

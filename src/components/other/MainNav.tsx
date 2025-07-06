@@ -40,7 +40,8 @@ const MainNav: React.FC = () => {
   const sections = [
     { key: 'afternoon', label: 'צהרון', icon: <SchoolIcon fontSize="small" /> },
     { key: 'camp', label: 'קייטנות', icon: <EventIcon fontSize="small" /> },
-    { key: 'courses', label: 'חוגים', icon: <GroupsIcon fontSize="small" /> }
+    { key: 'courses', label: 'חוגים', icon: <GroupsIcon fontSize="small" /> },
+    { key: 'users', label: 'משתמשים', icon: <GroupsIcon fontSize="small" /> }
   ];
 
   const adminAfternoonTabs: TabInfo[] = [
@@ -75,12 +76,17 @@ const MainNav: React.FC = () => {
     { label: 'מסמכים', path: '/personal-documents', icon: <InsertDriveFileIcon fontSize="small" /> },
   ];
 
+  const usersTabs: TabInfo[] = [
+    { label: 'משתמשים', path: '/users', icon: <PeopleIcon fontSize="small" /> },
+  ];
+
   const getTabsBySection = () => {
     if (!selectedSection) return [];
-    if (role === 'manager' && selectedSection === 'afternoon') return managerTabs;
+    if (role === 'manager_project' && selectedSection === 'afternoon') return managerTabs;
     if (role === 'admin' && selectedSection === 'afternoon') return adminAfternoonTabs;
     if (role === 'admin' && selectedSection === 'camp') return adminCampTabs;
     if (role === 'operator' && selectedSection === 'afternoon') return operatorTabs;
+    if ((role === 'admin' || role === 'manager_project') && selectedSection === 'users') return usersTabs;
     if (role === 'worker') return [];
     return [];
   };
@@ -286,9 +292,9 @@ const MainNav: React.FC = () => {
          
                     {/* Left side: Role and Logout */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-             {(role === 'admin' || role === 'manager') && (
+             {(role === 'admin' || role === 'manager_project') && (
                 <Typography variant="h6" sx={{ color: '#1976d2', fontWeight: 'bold' }}>
-                  {role === 'admin' ? 'מערכת ניהול ראשי' : 'מערכת מנהל'}
+                  {role === 'admin' ? 'מערכת ניהול ראשי' : 'מנהל פרויקט'}
                 </Typography>
              )}
             {role ? (

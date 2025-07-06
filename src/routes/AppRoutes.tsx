@@ -7,6 +7,8 @@ import ActivitiesPage from '../pages/ActivitiesPage';
 import InvoicesPage from '../pages/InvoicesPage';
 import PurchasesPage from '../pages/PurchasesPage';
 import LoginPage from '../pages/LoginPage';
+import ForgotPasswordPage from '../pages/ForgotPasswordPage';
+import ResetPasswordPage from '../pages/ResetPasswordPage';
 import PersonalDetails from '../components/other/PersonalDetails';
 import ActivityHistory from '../components/activities/ActivityHistory';
 import ProtectedRoute from '../components/other/ProtectedRoute';
@@ -24,6 +26,7 @@ import WorkerAttendancePage from '../pages/manager/WorkerAllAttendancesPage';
 import WorkersAfterNoonEmailPage from '../pages/manager/WorkersEmailPage';
 import WorkersAfterNoonNotificationsPage from '../pages/manager/WorkersAfterNoonNotificationsPage';
 import MatsevetPage from '../pages/MatsevetPage';
+import UsersManagementPage from '../pages/UsersManagementPage';
 
 const OperatorDocumentsWrapper = () => {
   const token = localStorage.getItem('token');
@@ -40,10 +43,12 @@ const AppRoutes: React.FC = () => {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage/>}/>
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/public-report" element={<PublicReportPage />} />
       <Route path="*" element={<div>404</div>} />
 
-      <Route element={<ProtectedRoute allowedRoles={['manager', 'admin']} />}>
+      <Route element={<ProtectedRoute allowedRoles={['manager_project', 'admin']} />}>
         <Route path="/documents" element={<DocumentManagementPage />} />
         <Route path="/workers" element={<WorkersPage />} />
         <Route path="/workers/:id" element={<WorkerDocumentsApprovalPage />} />
@@ -53,11 +58,11 @@ const AppRoutes: React.FC = () => {
         <Route path="/workers-after-noon-notifications" element={<WorkersAfterNoonNotificationsPage />} />
         <Route path="/classes" element={<ClassesPage />} />
         <Route path="/matsevet" element={<MatsevetPage />} />
+        <Route path="/users" element={<UsersManagementPage />} />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
         <Route path="/operators" element={<OperatorsPage />} />
-        
         <Route path="/activities" element={<ActivitiesPage />} />
         <Route path="/invoices" element={<InvoicesPage/>}/>
         <Route path="/purchases" element={<PurchasesPage/>}/>

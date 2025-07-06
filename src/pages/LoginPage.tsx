@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { TextField, Button, Box, Typography, Alert, Tabs, Tab, Paper } from '@mui/material';
+import { TextField, Button, Box, Typography, Alert, Tabs, Tab, Paper, IconButton } from '@mui/material';
+import { Visibility as VisibilityIcon, VisibilityOff as VisibilityOffIcon } from '@mui/icons-material';
 import axios from 'axios';
 import { useRecoilState } from 'recoil';
 import { userRoleState, userTokenState } from '../recoil/storeAtom';
+import { useNavigate } from 'react-router-dom';
 
 const API_URL = process.env.REACT_APP_API_URL + '/api/auth';
 
@@ -42,6 +44,12 @@ const LoginPage: React.FC = () => {
   const [userToken, setUserToken] = useRecoilState(userTokenState);
   const [errorMessage, setErrorMessage] = useState('');
   const [maskedEmail, setMaskedEmail] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
+
+  const handlePasswordChange = (newPassword: string) => {
+    setPassword(newPassword);
+  };
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -50,17 +58,44 @@ const LoginPage: React.FC = () => {
     setPassword('');
     setVerificationCode('');
     setIsCodeSent(false);
+    setMaskedEmail('');
+    setShowPassword(false);
   };
 
   const handleOperatorLogin = async () => {
     try {
-      const response = await axios.post(API_URL, { id, password });
-      const { role, token } = response.data;
+      const response = await axios.post(API_URL, { username: id, password });
+      const { role, token, user } = response.data;
 
       setUserRole(role);
       setUserToken(token);
       localStorage.setItem('token', token);
       localStorage.setItem('role', role);
+      
+      if (user) {
+        localStorage.setItem('user', JSON.stringify(user));
+      }
+
+      window.location.href = '/';
+    } catch (error: any) {
+      setErrorMessage(error.response?.data?.message || 'שגיאה בהתחברות');
+      console.error('Login failed:', error);
+    }
+  };
+
+  const handleCoordinatorLogin = async () => {
+    try {
+      const response = await axios.post(`${API_URL}/coordinator`, { username: id, password });
+      const { role, token, user } = response.data;
+
+      setUserRole(role);
+      setUserToken(token);
+      localStorage.setItem('token', token);
+      localStorage.setItem('role', role);
+      
+      if (user) {
+        localStorage.setItem('user', JSON.stringify(user));
+      }
 
       window.location.href = '/';
     } catch (error: any) {
@@ -124,13 +159,80 @@ const LoginPage: React.FC = () => {
           variant="fullWidth"
           sx={{ borderBottom: 1, borderColor: 'divider' }}
         >
-          <Tab label="מפעיל / מנהל" />
+          <Tab label="מנהל" />
+          <Tab label="מפעיל חוגים" />
+          <Tab label="רכז" />
           <Tab label="עובד צעירון" />
         </Tabs>
 
         <TabPanel value={tabValue} index={0}>
           <Typography variant="h6" align="center" gutterBottom>
-            התחברות מפעיל / מנהל
+            התחברות  מנהל
+          </Typography>
+
+          {errorMessage && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {errorMessage}
+            </Alert>
+          )}
+
+          <TextField
+            label="שם משתמש"
+            value={id}
+            onChange={(e) => setId(e.target.value)}
+            fullWidth
+            margin="normal"
+          />
+          <TextField
+            label="סיסמה"
+            type={showPassword ? 'text' : 'password'}
+            value={password}
+            onChange={(e) => handlePasswordChange(e.target.value)}
+            fullWidth
+            margin="normal"
+            InputProps={{
+              endAdornment: (
+                <IconButton
+                  onClick={() => setShowPassword(!showPassword)}
+                  edge="end"
+                >
+                  {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                </IconButton>
+              ),
+            }}
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            fullWidth
+            size="large"
+            onClick={handleOperatorLogin}
+            sx={{ mt: 2 }}
+          >
+            התחבר
+          </Button>
+          
+          <Button
+            variant="text"
+            color="error"
+            fullWidth
+            size="small"
+            onClick={() => navigate('/forgot-password')}
+            sx={{ 
+              mt: 1,
+              textDecoration: 'underline',
+              '&:hover': {
+                textDecoration: 'underline'
+              }
+            }}
+          >
+            שכחתי סיסמה
+          </Button>
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={1}>
+          <Typography variant="h6" align="center" gutterBottom>
+            התחברות מפעיל חוגים
           </Typography>
 
           {errorMessage && (
@@ -148,11 +250,21 @@ const LoginPage: React.FC = () => {
           />
           <TextField
             label="סיסמה"
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => handlePasswordChange(e.target.value)}
             fullWidth
             margin="normal"
+            InputProps={{
+              endAdornment: (
+                <IconButton
+                  onClick={() => setShowPassword(!showPassword)}
+                  edge="end"
+                >
+                  {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                </IconButton>
+              ),
+            }}
           />
           <Button
             variant="contained"
@@ -164,9 +276,91 @@ const LoginPage: React.FC = () => {
           >
             התחבר
           </Button>
+          
+          <Button
+            variant="text"
+            color="error"
+            fullWidth
+            size="small"
+            onClick={() => navigate('/forgot-password')}
+            sx={{ 
+              mt: 1,
+              textDecoration: 'underline',
+              '&:hover': {
+                textDecoration: 'underline'
+              }
+            }}
+          >
+            שכחתי סיסמה
+          </Button>
         </TabPanel>
 
-        <TabPanel value={tabValue} index={1}>
+        <TabPanel value={tabValue} index={2}>
+          <Typography variant="h6" align="center" gutterBottom>
+            התחברות רכז
+          </Typography>
+
+          {errorMessage && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {errorMessage}
+            </Alert>
+          )}
+
+          <TextField
+            label="שם משתמש"
+            value={id}
+            onChange={(e) => setId(e.target.value)}
+            fullWidth
+            margin="normal"
+          />
+          <TextField
+            label="סיסמה"
+            type={showPassword ? 'text' : 'password'}
+            value={password}
+            onChange={(e) => handlePasswordChange(e.target.value)}
+            fullWidth
+            margin="normal"
+            InputProps={{
+              endAdornment: (
+                <IconButton
+                  onClick={() => setShowPassword(!showPassword)}
+                  edge="end"
+                >
+                  {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                </IconButton>
+              ),
+            }}
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            fullWidth
+            size="large"
+            onClick={handleCoordinatorLogin}
+            sx={{ mt: 2 }}
+          >
+            התחבר
+          </Button>
+          
+          <Button
+            variant="text"
+            color="error"
+            fullWidth
+            size="small"
+            onClick={() => navigate('/forgot-password')}
+            sx={{ 
+              mt: 1,
+              textDecoration: 'underline',
+              '&:hover': {
+                textDecoration: 'underline'
+              }
+            }}
+          >
+            שכחתי סיסמה
+          </Button>
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={3}>
           <Typography variant="h6" align="center" gutterBottom>
             התחברות עובד צעירון
           </Typography>
