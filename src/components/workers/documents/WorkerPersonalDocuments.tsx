@@ -180,10 +180,10 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
       {!is101 && (
         <Alert severity="warning" sx={{ mt: 2, mb: 3 }}>
           <AlertTitle>שימו לב</AlertTitle>
-          יש למלא טופס 101 מקוון עם קליטת העובד/ת.
-          <Link href="https://www.google.com" target="_blank" rel="noopener">
+          לחצו כאן למילוי טופס 101 לשנת המס 2025
+          <Link href="https://101.rdn.org.il/#!/account/emp-login" target="_blank" rel="noopener">
             למילוי הטופס לחצו כאן
-          </Link>
+          </Link>ד
         </Alert>
       )}
 

@@ -16,6 +16,7 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import { WorkerAfterNoon, Class } from '../../types';
 import { useUpdateWorkerAfterNoon } from '../../queries/workerAfterNoonQueries';
 import { updateClassWithWorker } from '../../queries/classQueries';
+import { jwtDecode } from 'jwt-decode';
 
 // Props Interface
 interface WorkerPersonalDetailsProps {
@@ -86,6 +87,28 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const updateWorker = useUpdateWorkerAfterNoon();
 
+  // בדיקה אם העובד הנוכחי הוא העובד שמחובר
+  const [isCurrentWorker, setIsCurrentWorker] = useState(false);
+  const [currentUserRole, setCurrentUserRole] = useState<string>('');
+
+  useEffect(() => {
+    // בדיקת המשתמש הנוכחי
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const decodedToken: any = jwtDecode(token);
+        setCurrentUserRole(decodedToken.role);
+        
+        // אם זה עובד מחובר, בדוק אם זה אותו עובד
+        if (decodedToken.role === 'worker' && workerData && decodedToken.id === workerData._id) {
+          setIsCurrentWorker(true);
+        }
+      } catch (error) {
+        console.error('Error decoding token:', error);
+      }
+    }
+  }, [workerData]);
+
   useEffect(() => {
     if (workerData) {
       setForm(workerData);
@@ -138,7 +161,10 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
           <Box>
             <Typography variant="h5" fontWeight="bold" color="primary.main" sx={{ mb: 0.5 }}>{workerData.firstName} {workerData.lastName}</Typography>
-            <Typography color="text.secondary" variant="subtitle1">{workerData.id}, {workerData.roleType} - {workerData.roleName}</Typography>
+            <Typography color="text.secondary" variant="subtitle1">
+              {workerData.id}
+              {!isCurrentWorker && `, ${workerData.roleType} - ${workerData.roleName}`}
+            </Typography>
             <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 1 }}>
               {workerData.isBaseWorker && <Chip label="עובד בסיס" variant="outlined" size="small" />}
               {workerData.isAfterNoon && <Chip label="צהרון" variant="outlined" size="small" />}
@@ -149,11 +175,14 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
           </Box>
           <Box sx={{ display: 'flex', gap: 1 }}>
             {editing && <Button variant="text" color="secondary" onClick={() => { setForm(workerData); setEditing(false); }}>ביטול</Button>}
-            <Tooltip title={editing ? "שמור שינויים" : "ערוך פרטים"}>
-              <Button variant="contained" color="primary" onClick={() => editing ? handleSave() : setEditing(true)} startIcon={editing ? <SaveIcon fontSize="small" /> : <EditIcon fontSize="small" />} sx={{ fontSize: 15, px: 2, py: 0.5 }}>
-                {editing ? "שמור" : "ערוך"}
-              </Button>
-            </Tooltip>
+            {/* הצג כפתור עריכה רק אם זה לא העובד המחובר או אם זה מנהל */}
+            {!isCurrentWorker && (
+              <Tooltip title={editing ? "שמור שינויים" : "ערוך פרטים"}>
+                <Button variant="contained" color="primary" onClick={() => editing ? handleSave() : setEditing(true)} startIcon={editing ? <SaveIcon fontSize="small" /> : <EditIcon fontSize="small" />} sx={{ fontSize: 15, px: 2, py: 0.5 }}>
+                  {editing ? "שמור" : "ערוך"}
+                </Button>
+              </Tooltip>
+            )}
           </Box>
         </Box>
         <Divider sx={{ my: 2 }} />
@@ -199,15 +228,18 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
             </Stack>
           </Grid>
           <Grid item xs={12}><Divider sx={{ my: 1 }} /></Grid>
-          <Grid item xs={12} md={6}>
-            <Typography variant="subtitle1" gutterBottom color="text.primary">תפקיד וחשבונאות</Typography>
-            <Stack spacing={1}>
-              <EditableField label="סוג תפקיד" name="roleType" value={form.roleType} editing={editing} onChange={handleChange} icon={<WorkIcon color="action" fontSize="small" />} />
-              <EditableField label="שם תפקיד" name="roleName" value={form.roleName} editing={editing} onChange={handleChange} icon={<WorkIcon color="action" fontSize="small" />} />
-              <EditableField label="חשב שכר" name="accountantCode" value={form.accountantCode} editing={editing} onChange={handleChange} select options={accountantOptions} icon={<BadgeIcon color="action" fontSize="small" />} />
-            </Stack>
-          </Grid>
-          <Grid item xs={12} md={6}>
+          {/* הצג שדות תפקיד וחשבונאות רק אם זה לא העובד המחובר */}
+          {!isCurrentWorker && (
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle1" gutterBottom color="text.primary">תפקיד וחשבונאות</Typography>
+              <Stack spacing={1}>
+                <EditableField label="סוג תפקיד" name="roleType" value={form.roleType} editing={editing} onChange={handleChange} icon={<WorkIcon color="action" fontSize="small" />} />
+                <EditableField label="שם תפקיד" name="roleName" value={form.roleName} editing={editing} onChange={handleChange} icon={<WorkIcon color="action" fontSize="small" />} />
+                <EditableField label="חשב שכר" name="accountantCode" value={form.accountantCode} editing={editing} onChange={handleChange} select options={accountantOptions} icon={<BadgeIcon color="action" fontSize="small" />} />
+              </Stack>
+            </Grid>
+          )}
+          <Grid item xs={12} md={isCurrentWorker ? 12 : 6}>
             <Typography variant="subtitle1" gutterBottom color="text.primary">כיתות משויכות ({registeredClasses.length})</Typography>
             {registeredClasses.length > 0 ? (
                 <Stack direction="row" spacing={1} flexWrap="wrap">
@@ -231,10 +263,13 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
             )}
           </Grid>
           <Grid item xs={12}><Divider sx={{ my: 1 }} /></Grid>
-          <Grid item xs={12}>
-            <Typography variant="subtitle1" gutterBottom color="text.primary">הערות</Typography>
-            <EditableField label="הערות" name="notes" value={form.notes} editing={editing} onChange={handleChange} multiline icon={<NotesIcon color="action" fontSize="small" />} />
-          </Grid>
+          {/* הצג הערות רק אם זה לא העובד המחובר */}
+          {!isCurrentWorker && (
+            <Grid item xs={12}>
+              <Typography variant="subtitle1" gutterBottom color="text.primary">הערות</Typography>
+              <EditableField label="הערות" name="notes" value={form.notes} editing={editing} onChange={handleChange} multiline icon={<NotesIcon color="action" fontSize="small" />} />
+            </Grid>
+          )}
         </Grid>
       </Paper>
       <Snackbar open={openSnackbar} autoHideDuration={3000} onClose={() => setOpenSnackbar(false)}>
