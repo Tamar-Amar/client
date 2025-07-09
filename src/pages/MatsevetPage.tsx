@@ -164,6 +164,13 @@ const MatsevetPage: React.FC = () => {
             >
               עריכת מצבת
             </Button>
+            <Button
+              variant="outlined"
+              color="secondary"
+              onClick={() => navigate('/matsevet/import')}
+            >
+              העלאת מצבת והשוואה
+            </Button>
             <TextField
               size="small"
               placeholder="חיפוש בכיתה, סמל, מוסד, כתובת או עובד..."

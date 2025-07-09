@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Class } from '../types/index';
 
-const API_URL = process.env.REACT_APP_API_URL+ '/api/classes' || "https://server-manage.onrender.com" + '/api/classes';
+const API_URL = (process.env.REACT_APP_API_URL || "https://server-manage.onrender.com") + '/api/classes';
 
 export const fetchClasses = async () => {
   const response = await axios.get(API_URL);
@@ -9,7 +9,14 @@ export const fetchClasses = async () => {
 };
 
 export const createClass = async (classData: Class) => {
+  console.log("בוא נציג את הפרמטרים שלנו", classData);
   const response = await axios.post(API_URL, classData);
+  return response.data;
+};
+
+export const createMultipleClasses = async (classesData: Class[]) => {
+  console.log(`שולח ${classesData.length} כיתות לשרת`);
+  const response = await axios.post(`${API_URL}/bulk`, { classes: classesData });
   return response.data;
 };
 

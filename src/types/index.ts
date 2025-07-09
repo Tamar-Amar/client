@@ -26,7 +26,7 @@ export interface Activity {
     gender: 'בנים' | 'בנות';
     address?: string;
     uniqueSymbol: string;
-    chosenStore: string;
+    chosenStore?: string;
     institutionName: string;
     institutionCode: string;
     type: 'כיתה' | 'גן';
@@ -34,6 +34,7 @@ export interface Activity {
     AfternoonOpenDate?: Date;
     monthlyBudget?: number;
     childresAmount?: number;
+    projectCodes?: number[]; // שינוי למערך
     regularOperatorId?: string;
     isActive: boolean;
     description?: string;

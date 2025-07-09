@@ -16,7 +16,19 @@ const EditClassDialog = ({ classData, onClose }: any) => {
   };
 
   const handleSubmit = () => {
-    updateClassMutation.mutate({ id: classData._id, updatedClass: formData });
+    // הסרת שדות ריקים
+    const cleanedFormData = { ...formData };
+    if (!cleanedFormData.chosenStore || cleanedFormData.chosenStore === '') {
+      delete cleanedFormData.chosenStore;
+    }
+    if (!cleanedFormData.regularOperatorId || cleanedFormData.regularOperatorId === '') {
+      delete cleanedFormData.regularOperatorId;
+    }
+    if (!cleanedFormData.coordinatorId || cleanedFormData.coordinatorId === '') {
+      delete cleanedFormData.coordinatorId;
+    }
+    
+    updateClassMutation.mutate({ id: classData._id, updatedClass: cleanedFormData });
     onClose();
   };
 
@@ -70,7 +82,8 @@ const EditClassDialog = ({ classData, onClose }: any) => {
           </Grid>
           <Grid item xs={12}><TextField fullWidth label="תיאור" name="description" value={formData.description} onChange={handleChange} /></Grid>
           <Grid item xs={12}>
-            <TextField select fullWidth label="חנות רכש" name="chosenStore" value={formData.chosenStore} onChange={handleChange}>
+            <TextField select fullWidth label="חנות רכש" name="chosenStore" value={formData.chosenStore || ''} onChange={handleChange}>
+              <MenuItem value="">בחר חנות</MenuItem>
               {stores?.map((s: any) => (<MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>))}
             </TextField>
           </Grid>

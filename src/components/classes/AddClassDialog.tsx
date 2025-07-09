@@ -18,7 +18,7 @@ const [formData, setFormData] = useState<Partial<Class>>({
     monthlyBudget: 0,
     gender: 'בנים',
     description: '',
-    chosenStore: '', // ברירת מחדל ריק
+    chosenStore: undefined, // לא נבחר
     regularOperatorId: '',
     type: 'גן',
     institutionCode: '',
@@ -56,11 +56,24 @@ useEffect(() => {
 
   const handleSubmit = () => {
     // ולידציה לשדות חובה
-    if (!formData.name || !formData.education || !formData.gender || !formData.uniqueSymbol || !formData.chosenStore || !formData.institutionName || !formData.institutionCode || !formData.type) {
-      alert('יש למלא את כל שדות החובה: שם, חינוך, מגדר, סמל קבוצה, חנות רכש, שם מוסד, קוד מוסד, סוג קבוצה');
+    if (!formData.name || !formData.education || !formData.gender || !formData.uniqueSymbol || !formData.institutionName || !formData.institutionCode || !formData.type) {
+      alert('יש למלא את כל שדות החובה: שם, חינוך, מגדר, סמל קבוצה, שם מוסד, קוד מוסד, סוג קבוצה');
       return;
     }
-    addClassMutation.mutate(formData as Class);
+    
+    // הסרת שדות ריקים
+    const cleanedFormData = { ...formData };
+    if (!cleanedFormData.chosenStore || cleanedFormData.chosenStore === '') {
+      delete cleanedFormData.chosenStore;
+    }
+    if (!cleanedFormData.regularOperatorId || cleanedFormData.regularOperatorId === '') {
+      delete cleanedFormData.regularOperatorId;
+    }
+    if (!cleanedFormData.coordinatorId || cleanedFormData.coordinatorId === '') {
+      delete cleanedFormData.coordinatorId;
+    }
+    
+    addClassMutation.mutate(cleanedFormData as Class);
     onClose();
   };
 
@@ -114,7 +127,7 @@ useEffect(() => {
           </Grid>
           <Grid item xs={12}><TextField fullWidth label="תיאור" name="description" value={formData.description} onChange={handleChange} /></Grid>
           <Grid item xs={12}>
-            <TextField select fullWidth label="חנות רכש" name="chosenStore" value={formData.chosenStore} onChange={handleChange} required>
+            <TextField select fullWidth label="חנות רכש" name="chosenStore" value={formData.chosenStore || ''} onChange={handleChange}>
               <MenuItem value="">בחר חנות</MenuItem>
               {stores?.map((s: any) => (<MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>))}
             </TextField>

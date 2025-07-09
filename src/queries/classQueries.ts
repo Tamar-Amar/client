@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchClasses, createClass, deleteClass, updateClass, fetchWorkerClasses } from '../services/ClassService';
+import { fetchClasses, createClass, createMultipleClasses, deleteClass, updateClass, fetchWorkerClasses } from '../services/ClassService';
 import { Class } from '../types/index';
 import axios from 'axios';
 const API_URL = process.env.REACT_APP_API_URL+ '/api/classes' || "https://server-manage.onrender.com" + '/api/classes';
@@ -17,6 +17,16 @@ export const useAddClass = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createClass,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+    },
+  });
+};
+
+export const useAddMultipleClasses = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createMultipleClasses,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['classes'] });
     },
