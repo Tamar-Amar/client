@@ -44,6 +44,10 @@ const MainNav: React.FC = () => {
     { key: 'users', label: 'משתמשים', icon: <GroupsIcon fontSize="small" /> }
   ];
 
+  const accountantSections = [
+    { key: 'users', label: 'משתמשים', icon: <GroupsIcon fontSize="small" /> }
+  ];
+
   const adminAfternoonTabs: TabInfo[] = [
     { label: 'ניהול עובדים', path: '/workers', icon: <PeopleIcon fontSize="small" /> },
     { label: 'ניהול קבוצות', path: '/classes', icon: <GroupWorkIcon fontSize="small" /> },
@@ -70,6 +74,13 @@ const MainNav: React.FC = () => {
     { label: 'התראות', path: '/workers-after-noon-notifications' }, 
   ];
 
+  const accountantTabs: TabInfo[] = [
+    { label: 'ניהול מסמכים', path: '/documents', icon: <FolderIcon fontSize="small" /> },
+    { label: 'מצבת', path: '/matsevet', icon: <AssessmentIcon fontSize="small" /> },
+    { label: 'עובדים', path: '/workers', icon: <PeopleIcon fontSize="small" /> },
+    { label: 'נוכחות עובדים', path: '/worker-attendance' },
+  ];
+
   const operatorTabs: TabInfo[] = [
     { label: 'פרטים אישיים', path: '/personal-details', icon: <AccountCircleIcon fontSize="small" /> },
     { label: 'היסטוריית הפעלות', path: '/activity-history', icon: <HistoryIcon fontSize="small" /> },
@@ -86,7 +97,8 @@ const MainNav: React.FC = () => {
     if (role === 'admin' && selectedSection === 'afternoon') return adminAfternoonTabs;
     if (role === 'admin' && selectedSection === 'camp') return adminCampTabs;
     if (role === 'operator' && selectedSection === 'afternoon') return operatorTabs;
-    if ((role === 'admin' || role === 'manager_project') && selectedSection === 'users') return usersTabs;
+    if (role === 'accountant') return accountantTabs;
+    if ((role === 'admin' || role === 'manager_project' || role === 'accountant') && selectedSection === 'users') return usersTabs;
     if (role === 'worker') return [];
     return [];
   };
@@ -146,7 +158,9 @@ const MainNav: React.FC = () => {
     handleMenuClose();
   };
 
-  const selectedSectionObject = sections.find(s => s.key === selectedSection);
+  const selectedSectionObject = role === 'accountant' 
+    ? accountantSections.find(s => s.key === selectedSection)
+    : sections.find(s => s.key === selectedSection);
 
   return (
     <>
@@ -195,7 +209,7 @@ const MainNav: React.FC = () => {
               </>
             ) : null}
 
-            {role !== 'worker' && (
+            {(role !== 'worker' && role !== 'accountant') && (
              <Box>
               <Button
                 id="section-button"
@@ -225,7 +239,7 @@ const MainNav: React.FC = () => {
                   'aria-labelledby': 'section-button',
                 }}
               >
-                {sections.map((section) => (
+                {(role === 'accountant' ? accountantSections : sections).map((section) => (
                   <MenuItem
                     key={section.key}
                     selected={section.key === selectedSection}
@@ -239,15 +253,31 @@ const MainNav: React.FC = () => {
                 ))}
               </Menu>
             </Box>
+          )}
 
-            
+          {role === 'accountant' && (
+            <Box>
+              <Button
+                onClick={() => navigate('/accountant/dashboard')}
+                sx={{
+                  color: '#1976d2',
+                  fontSize: '1.1rem',
+                  '&:hover': {
+                    backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                    color: '#1565c0'
+                  }
+                }}
+              >
+                דשבורד חשב שכר
+              </Button>
+            </Box>
           )}
           </Box>
           {/* Center: Tabs */}
            {tabs.length > 0 && (
               <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
                 <Tabs
-                  value={location.pathname}
+                  value={tabs.some(tab => tab.path === location.pathname) ? location.pathname : false}
                   onChange={(e, newValue) => navigate(newValue)}
                   indicatorColor="primary"
                   sx={{
@@ -292,9 +322,11 @@ const MainNav: React.FC = () => {
          
                     {/* Left side: Role and Logout */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-             {(role === 'admin' || role === 'manager_project') && (
+             {(role === 'admin' || role === 'manager_project' || role === 'accountant') && (
                 <Typography variant="h6" sx={{ color: '#1976d2', fontWeight: 'bold' }}>
-                  {role === 'admin' ? 'מערכת ניהול ראשי' : 'מנהל פרויקט'}
+                  {role === 'admin' ? 'מערכת ניהול ראשי' : 
+                   role === 'manager_project' ? 'מנהל פרויקט' : 
+                   role === 'accountant' ? 'חשב שכר' : ''}
                 </Typography>
              )}
             {role ? (

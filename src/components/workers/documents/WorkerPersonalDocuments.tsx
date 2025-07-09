@@ -122,8 +122,7 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
   const missingCount = missingDocs.length;
 
   return (
-    <Container maxWidth="lg">
-      {/* The Dialog for uploading personal documents */}
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Dialog open={isPersonalDocDialogOpen} onClose={() => setIsPersonalDocDialogOpen(false)}>
         <DialogTitle>העלאת מסמך אישי לעובד</DialogTitle>
         <DialogContent>

@@ -96,8 +96,13 @@ const LoginPage: React.FC = () => {
       if (user) {
         localStorage.setItem('user', JSON.stringify(user));
       }
-
-      window.location.href = '/coordinator/dashboard';
+      if (role === 'coordinator') {
+        window.location.href = '/coordinator/dashboard';
+      } else if (role === 'accountant') {
+        window.location.href = '/accountant/dashboard';
+      } else {
+        window.location.href = '/';
+      }
     } catch (error: any) {
       setErrorMessage(error.response?.data?.message || 'שגיאה בהתחברות');
       console.error('Login failed:', error);
@@ -159,13 +164,13 @@ const LoginPage: React.FC = () => {
           variant="fullWidth"
           sx={{ borderBottom: 1, borderColor: 'divider' }}
         >
-          <Tab label="מנהל" />
-          <Tab label="מפעיל חוגים" />
+          {/* <Tab label="מנהל" /> */}
+          {/* <Tab label="מפעיל חוגים" /> */}
           <Tab label="רכז" />
           <Tab label="עובד צעירון" />
         </Tabs>
 
-        <TabPanel value={tabValue} index={0}>
+        {/* <TabPanel value={tabValue} index={0}>
           <Typography variant="h6" align="center" gutterBottom>
             התחברות  מנהל
           </Typography>
@@ -228,9 +233,9 @@ const LoginPage: React.FC = () => {
           >
             שכחתי סיסמה
           </Button>
-        </TabPanel>
+        </TabPanel> */}
 
-        <TabPanel value={tabValue} index={1}>
+        {/* <TabPanel value={tabValue} index={1}>
           <Typography variant="h6" align="center" gutterBottom>
             התחברות מפעיל חוגים
           </Typography>
@@ -293,9 +298,9 @@ const LoginPage: React.FC = () => {
           >
             שכחתי סיסמה
           </Button>
-        </TabPanel>
+        </TabPanel> */}
 
-        <TabPanel value={tabValue} index={2}>
+        <TabPanel value={tabValue} index={0}>
           <Typography variant="h6" align="center" gutterBottom>
             התחברות רכז
           </Typography>
@@ -360,7 +365,7 @@ const LoginPage: React.FC = () => {
           </Button>
         </TabPanel>
 
-        <TabPanel value={tabValue} index={3}>
+        <TabPanel value={tabValue} index={1}>
           <Typography variant="h6" align="center" gutterBottom>
             התחברות עובד צעירון
           </Typography>

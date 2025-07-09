@@ -87,19 +87,16 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const updateWorker = useUpdateWorkerAfterNoon();
 
-  // בדיקה אם העובד הנוכחי הוא העובד שמחובר
   const [isCurrentWorker, setIsCurrentWorker] = useState(false);
   const [currentUserRole, setCurrentUserRole] = useState<string>('');
 
   useEffect(() => {
-    // בדיקת המשתמש הנוכחי
     const token = localStorage.getItem('token');
     if (token) {
       try {
         const decodedToken: any = jwtDecode(token);
         setCurrentUserRole(decodedToken.role);
         
-        // אם זה עובד מחובר, בדוק אם זה אותו עובד
         if (decodedToken.role === 'worker' && workerData && decodedToken.id === workerData._id) {
           setIsCurrentWorker(true);
         }

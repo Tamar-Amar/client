@@ -28,6 +28,7 @@ import WorkersAfterNoonNotificationsPage from '../pages/manager/WorkersAfterNoon
 import MatsevetPage from '../pages/MatsevetPage';
 import UsersManagementPage from '../pages/UsersManagementPage';
 import CoordinatorDashboardPage from '../pages/CoordinatorDashboardPage';
+import AccountantDashboardPage from '../pages/AccountantDashboardPage';
 
 const OperatorDocumentsWrapper = () => {
   const token = localStorage.getItem('token');
@@ -49,7 +50,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/public-report" element={<PublicReportPage />} />
       <Route path="*" element={<div>404</div>} />
 
-      <Route element={<ProtectedRoute allowedRoles={['manager_project', 'admin']} />}>
+      <Route element={<ProtectedRoute allowedRoles={['manager_project', 'admin', 'accountant']} />}>
         <Route path="/documents" element={<DocumentManagementPage />} />
         <Route path="/workers" element={<WorkersPage />} />
         <Route path="/workers/:id" element={<WorkerDocumentsApprovalPage />} />
@@ -71,6 +72,8 @@ const AppRoutes: React.FC = () => {
         <Route path="/emails" element={<EmailPage />} />
       </Route>
 
+
+
       <Route element={<ProtectedRoute allowedRoles={['operator']} />}>
         <Route path="/personal-details" element={<PersonalDetails/>} />
         <Route path="/activity-history" element={<ActivityHistory/>} />
@@ -79,6 +82,15 @@ const AppRoutes: React.FC = () => {
 
       <Route element={<ProtectedRoute allowedRoles={['coordinator']} />}>
         <Route path="/coordinator/dashboard" element={<CoordinatorDashboardPage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute allowedRoles={['accountant']} />}>
+        <Route path="/accountant/dashboard" element={<AccountantDashboardPage />} />
+        <Route path="/documents" element={<DocumentManagementPage />} />
+        <Route path="/matsevet" element={<MatsevetPage />} />
+        <Route path="/workers" element={<WorkersPage />} />
+        <Route path="/worker-attendance" element={<WorkerAttendancePage />} />
+        <Route path="/users" element={<UsersManagementPage />} />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={['worker']} />}>

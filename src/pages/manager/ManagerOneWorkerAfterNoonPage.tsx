@@ -47,10 +47,8 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState<'documents' | 'personal' | 'afternoon-documents' | 'hanukah-camp' | 'passover-camp' | 'summer-camp'>('personal');
   const [drawerOpen, setDrawerOpen] = useState(true);
 
-  // בדיקה אם העובד שייך לפרויקט צהרון
   const isAfterNoonWorker = workerData?.isAfterNoon;
 
-  // אם העובד לא שייך לפרויקט צהרון, נחזור לטאב פרטים אישיים
   React.useEffect(() => {
     if (!isAfterNoonWorker && selectedTab === 'afternoon-documents') {
       setSelectedTab('personal');
@@ -72,7 +70,6 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
           <Box>
             {isLoading && <CircularProgress />}
             {error && <Alert severity="error">שגיאה בטעינת המסמכים</Alert>}
-            <Stack spacing={2} mt={3}>
               <WorkerPersonalDocuments
                 documents={documents}
                 handleStatusUpdate={handleStatusUpdate}
@@ -81,7 +78,6 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
                 workerId={workerId || ''}
                 workerTz={workerData?.id || ''}
               />
-            </Stack>
           </Box>
         ) : selectedTab === 'personal' ? (
           <WorkerPersonalDetails workerData={workerData} classes={allClasses} />
@@ -104,15 +100,12 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
           <Box>
             {isLoading && <CircularProgress />}
             {error && <Alert severity="error">שגיאה בטעינת המסמכים</Alert>}
-
-            <Stack spacing={2} mt={3} >
               <WorkerAttendanceDocuments
                 attendanceData={attendanceData}
                 isAttendanceLoading={isAttendanceLoading}
                 workerClasses={allClasses || []}
                 workerId={workerId || ''}
               />
-            </Stack>
           </Box>
         )}
       </Box>

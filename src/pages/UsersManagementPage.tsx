@@ -76,7 +76,6 @@ const roleColors = {
   coordinator: 'primary'
 } as const;
 
-// פונקציה שמחזירה את התפקידים המותרים לפי התפקיד של המשתמש המחובר
 const getAvailableRoles = (currentUserRole: string) => {
   if (currentUserRole === 'manager_project') {
     return ['coordinator', 'accountant'];
@@ -84,7 +83,6 @@ const getAvailableRoles = (currentUserRole: string) => {
   return ['admin', 'manager_project', 'accountant', 'coordinator'];
 };
 
-// פונקציה לוולידציה של סיסמה
 const validatePassword = (password: string): string | null => {
   if (password.length < 6) {
     return 'הסיסמה חייבת להכיל לפחות 6 תווים';
@@ -214,7 +212,6 @@ const UsersManagementPage: React.FC = () => {
       setDialogError('');
       setDialogSuccess('');
       
-      // וולידציה של סיסמה בעת יצירת משתמש חדש
       if (!editingUser && formData.password) {
         const passwordError = validatePassword(formData.password);
         if (passwordError) {
