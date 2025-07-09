@@ -1,12 +1,11 @@
 import * as XLSX from 'xlsx';
 
-// דוגמה למודל ברירת מחדל לפי server/src/models/Class.ts
-// פונקציות נרמול לערכים תקניים
+
 const normalizeGender = (val: string) => {
   const v = (val || '').trim();
   if (v === 'בנים' || v === 'בן') return 'בנים';
   if (v === 'בנות' || v === 'בת') return 'בנות';
-  // ברירת מחדל
+
   return 'בנים';
 };
 
@@ -14,7 +13,7 @@ const normalizeType = (val: string) => {
   const v = (val || '').trim();
   if (v === 'גן' || v === 'גן ילדים') return 'גן';
   if (v === 'כיתה' || v === 'כיתת') return 'כיתה';
-  // ברירת מחדל
+
   return 'גן';
 };
 
@@ -22,13 +21,13 @@ const normalizeEducation = (val: string) => {
   const v = (val || '').trim();
   if (v === 'רגיל' || v === 'רגילה') return 'רגיל';
   if (v === 'מיוחד' || v === 'מיוחדת') return 'מיוחד';
-  // ברירת מחדל
+
   return 'רגיל';
 };
 const getDefaultClass = (row: any, projectCode: number) => {
   const shouldAssignProject = row['אישור פתיחה'] === 'כן';
   
-  // ולידציה לשדות חובה
+
   const name = row['שם מוסד'] || '';
   const institutionCode = row['קוד מוסד'] || '';
   const uniqueSymbol = row['סמל מאוחד'] || '';
@@ -53,12 +52,12 @@ const getDefaultClass = (row: any, projectCode: number) => {
     workers: [],
   };
 
-  // הוספת כתובת רק אם יש רחוב
+
   if (row['רחוב']) {
     classData.address = `${row['רחוב']} ${row['מס רחוב'] || ''}`;
   }
 
-  // הוספת שדות נוספים רק אם הם לא ריקים
+
   if (row['רחוב']) {
     classData.street = row['רחוב'];
   }
@@ -66,7 +65,7 @@ const getDefaultClass = (row: any, projectCode: number) => {
     classData.streetNumber = row['מס רחוב'];
   }
 
-  // הוספת projectCodes רק אם צריך
+
   if (shouldAssignProject) {
     classData.projectCodes = [projectCode];
   }
@@ -91,11 +90,9 @@ export function parseMatsevetExcel(file: File, existingSymbols: string[], projec
         const symbol = row['סמל מאוחד']?.toString().trim();
         if (!symbol) continue;
         if (!existingSymbols.includes(symbol)) {
-          // מסגרת חדשה
           const newClass = getDefaultClass(row, projectCode);
           newClasses.push(newClass);
         } else {
-          // מסגרת קיימת – נשמור את כל השדות מהאקסל להשוואה
           existingClasses.push({ symbol, excelData: row });
         }
       }

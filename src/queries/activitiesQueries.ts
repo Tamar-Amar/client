@@ -41,7 +41,7 @@ export const useAddActivity = () => {
 };
 
 
-// Delete an activity
+
 export const useDeleteActivity = () => {
   const queryClient = useQueryClient();
 

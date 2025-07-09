@@ -86,7 +86,6 @@ const WorkerProfilePage = () => {
   return (
     <Box p={6}>
       <Box display="flex" gap={3} flexWrap="wrap">
-        {/* Personal Info */}
         <Paper elevation={3} sx={{ flex: 1, minWidth: 320, p: 3, borderRadius: 2, background: 'linear-gradient(to bottom right, #e3f2fd, #ffffff)' }}>
           <Typography variant="h6" gutterBottom sx={{ color: '#1565c0' }}>פרטים אישיים</Typography>
           <Box sx={{ display: 'grid', gap: 1, mt: 2, '& > *': { bgcolor: '#fafafa', p: 1.2, borderRadius: 1 } }}>
@@ -99,7 +98,6 @@ const WorkerProfilePage = () => {
           </Box>
         </Paper>
 
-        {/* Documents */}
         <Paper elevation={3} sx={{ flex: 1, minWidth: 320, p: 3, borderRadius: 2 }}>
           <Typography variant="h6" gutterBottom>טפסי עובד</Typography>
 
@@ -172,7 +170,6 @@ const WorkerProfilePage = () => {
           </Box>
         </Paper>
 
-        {/* Attendance */}
         <Paper elevation={3} sx={{ flex: 1, minWidth: 320, p: 3, borderRadius: 2 }}>
           <Typography variant="h6" gutterBottom>טפסי נוכחות</Typography>
           <Alert severity="info">מידע על טפסי נוכחות יתווסף בקרוב</Alert>

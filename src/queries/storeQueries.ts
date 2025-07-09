@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchStores, createStore, deleteStore, updateStoreDetails } from '../services/StoreService';
 import { Store } from '../types/index';
 
-// Fetch all stores
 export const useFetchStores = () => {
   return useQuery({
     queryKey: ['stores'],
@@ -11,7 +10,6 @@ export const useFetchStores = () => {
   });
 };
 
-// Add a new store
 export const useAddStore = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -22,7 +20,6 @@ export const useAddStore = () => {
   });
 };
 
-// Delete a store
 export const useDeleteStore = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -42,7 +39,7 @@ export const useUpdateStore = () => {
       return updateStoreDetails(id, updatedStore);
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["stores"] }); // מרענן את כל החנויות
+      queryClient.invalidateQueries({ queryKey: ["stores"] }); 
     },
   });
 };

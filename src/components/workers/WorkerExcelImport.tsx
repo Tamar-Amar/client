@@ -5,7 +5,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  IconButton,
   Table,
   TableBody,
   TableCell,
@@ -16,16 +15,13 @@ import {
   Typography,
   Box
 } from '@mui/material';
-import FileUploadIcon from '@mui/icons-material/FileUpload';
-import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import TableViewIcon from '@mui/icons-material/TableView';
 import ArticleIcon from '@mui/icons-material/Article';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { WorkerAfterNoon } from '../../types';
 import { useAddWorkerAfterNoon } from '../../queries/workerAfterNoonQueries';
 
-// Template for Excel file
+
 const EXCEL_TEMPLATE = [
   {
     'תעודת זהות': '',
@@ -45,7 +41,7 @@ const EXCEL_TEMPLATE = [
   }
 ];
 
-// Column mapping from Excel to Worker type
+
 const COLUMN_MAPPING: { [key: string]: keyof WorkerAfterNoon | string } = {
   'תעודת זהות': 'id',
   'שם פרטי': 'firstName',
@@ -64,32 +60,31 @@ const COLUMN_MAPPING: { [key: string]: keyof WorkerAfterNoon | string } = {
 
 const convertRowToWorker = (row: any): WorkerAfterNoon => {
   const worker: Partial<WorkerAfterNoon> = {
-    isActive: true, // Default to true
+    isActive: true, 
   };
 
-  // Map Excel columns to Worker properties
+
   Object.entries(COLUMN_MAPPING).forEach(([excelCol, workerProp]) => {
     if (row[excelCol] === undefined) return;
     
     if (typeof workerProp === 'string') {
-      // Special handling for isActive field
 
-      // Special handling for birthDate field
+
       if (workerProp === 'startDate') {
         const dateValue = row[excelCol];
         if (dateValue) {
           let date: Date | null = null;
 
-          // Try to parse as DD/MM/YYYY format
+
           if (typeof dateValue === 'string') {
             const [day, month, year] = dateValue.trim().split('/');
             if (day && month && year) {
               date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
             }
           }
-          // Try to parse Excel's internal date number
+
           else if (typeof dateValue === 'number') {
-            // Excel's date system starts from December 30, 1899
+
             const excelEpoch = new Date(1899, 11, 30);
             date = new Date(excelEpoch.getTime() + (dateValue * 24 * 60 * 60 * 1000));
           }
@@ -98,7 +93,7 @@ const convertRowToWorker = (row: any): WorkerAfterNoon => {
       }
 
       if (workerProp.includes('.')) {
-        // Handle nested properties (e.g. bankDetails.bankName)
+
         const [parent, child] = workerProp.split('.');
         if (!worker[parent as keyof WorkerAfterNoon]) {
           (worker[parent as keyof WorkerAfterNoon] as any) = {};
@@ -123,19 +118,19 @@ const WorkerExcelImport: React.FC = () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'תבנית');
 
-    // Add data validation and comments
+
     if (!ws['!cols']) ws['!cols'] = [];
     if (!ws['!rows']) ws['!rows'] = [];
 
-    // Find birthDate column index
+
     const birthDateColIndex = Object.keys(EXCEL_TEMPLATE[0]).indexOf('תאריך לידה');
     
-    // Add column width and comments
+
     if (birthDateColIndex !== -1) {
       ws['!cols'][birthDateColIndex] = { width: 15 };
     }
     
-    // Add comment to birthDate column
+    
     ws['!comments'] = {
       'B1': { t: 'שדה חובה! הכנס תאריך בפורמט: DD/MM/YYYY\nלדוגמה: 15/02/2004' }
     };
@@ -157,7 +152,7 @@ const WorkerExcelImport: React.FC = () => {
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
 
-        // Convert Excel data to Worker objects
+          
         const workers = jsonData.map((row, index) => {
           try {
             return convertRowToWorker(row);

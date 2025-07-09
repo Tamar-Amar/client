@@ -20,14 +20,12 @@ import {
   DialogActions,
   TextField,
   CircularProgress,
-  Checkbox
 } from "@mui/material";
 import { useFetchAllWorkersAfterNoon } from "../../queries/workerAfterNoonQueries";
-import { useFetchAllDocuments, useFetchAllPersonalDocuments } from "../../queries/useDocuments";
+import {  useFetchAllPersonalDocuments } from "../../queries/useDocuments";
 import { WorkerAfterNoon } from "../../types";
 import SendIcon from '@mui/icons-material/Send';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ErrorIcon from '@mui/icons-material/Error';
+
 
 const REQUIRED_TAGS = ["אישור משטרה", "תעודת השכלה", "תעודת זהות", "חוזה"];
 const API_URL = process.env.REACT_APP_API_URL;

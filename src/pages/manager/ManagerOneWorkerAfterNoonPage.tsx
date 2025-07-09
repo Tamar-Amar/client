@@ -3,7 +3,6 @@ import { useParams } from 'react-router-dom';
 import {
   Box,
   Typography,
-  Stack,
   CircularProgress,
   Alert,
   Drawer,

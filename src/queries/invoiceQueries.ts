@@ -5,27 +5,26 @@ import {
   createInvoice,
   updateInvoice,
 } from '../services/InvoiceService';
-import { Invoice } from '../types/index';
 
-// Fetch all invoices
+
 export const useFetchAllInvoices = () => {
   return useQuery({
     queryKey: ['invoices'],
     queryFn: fetchInvoices,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5, 
   });
 };
 
-// Fetch invoices by store
+
 export const useFetchInvoicesByStore = (storeId: string) => {
   return useQuery({
     queryKey: ['invoices', storeId],
     queryFn: () => fetchInvoicesByStore(storeId),
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5, 
   });
 };
 
-// Add a new invoice
+
 export const useAddInvoice = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -36,7 +35,7 @@ export const useAddInvoice = () => {
   });
 };
 
-// Update invoice status
+
 export const useUpdateInvoiceStatus = () => {
     const queryClient = useQueryClient();
     return useMutation({

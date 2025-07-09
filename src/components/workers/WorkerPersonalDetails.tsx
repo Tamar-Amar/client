@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box, Typography, Divider, TextField, Button, Chip, Stack, IconButton, Snackbar, Alert,
-  MenuItem, Tooltip, Paper, Autocomplete, Container, Grid, Card, CardContent, InputAdornment, FormControlLabel, Checkbox
+  Box, Typography, Divider, TextField, Button, Chip, Stack, Snackbar, Alert,
+  MenuItem, Tooltip, Paper, Autocomplete, Container, Grid, InputAdornment, FormControlLabel, Checkbox
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
@@ -18,7 +18,6 @@ import { useUpdateWorkerAfterNoon } from '../../queries/workerAfterNoonQueries';
 import { updateClassWithWorker } from '../../queries/classQueries';
 import { jwtDecode } from 'jwt-decode';
 
-// Props Interface
 interface WorkerPersonalDetailsProps {
   workerData: WorkerAfterNoon | undefined;
   classes?: Class[];
@@ -26,27 +25,7 @@ interface WorkerPersonalDetailsProps {
 
 const accountantOptions = ['מירי', 'אסתי', 'מרים', 'רוחי'];
 
-// Helper Component for Stat Cards
-const StatCard = ({ icon, label, value, color }: { icon: React.ReactNode, label: string, value: string | number, color: string }) => (
-  <Card sx={{
-    display: 'flex',
-    alignItems: 'center',
-    p: 2,
-    borderRadius: 3,
-    boxShadow: 2,
-    bgcolor: `${color}.lighter`,
-    borderLeft: `5px solid`,
-    borderColor: `${color}.main`
-  }}>
-    <Box sx={{ mr: 2, color: `${color}.main` }}>{icon}</Box>
-    <Box>
-      <Typography variant="h5" fontWeight="bold">{value}</Typography>
-      <Typography variant="body2" color="text.secondary">{label}</Typography>
-    </Box>
-  </Card>
-);
 
-// Helper Component for Editable Fields
 const EditableField = ({ label, name, value, editing, onChange, icon, select, options, multiline, type }: any) => {
   if (editing) {
     return (
@@ -147,7 +126,6 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
 
   return (
     <Container>
-      {/* Minimalist Stats Row */}
       <Box sx={{ mb: 2, color: 'text.secondary', fontSize: 16, display: 'flex', flexWrap: 'wrap', gap: 2 }}>
         <span>סטטוס: <b>{workerData.status || 'לא זמין'}</b></span>
         <span>כיתות משויכות: <b>{registeredClasses.length}</b></span>
@@ -180,7 +158,6 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
           </Box>
           <Box sx={{ display: 'flex', gap: 1 }}>
             {editing && <Button variant="text" color="secondary" onClick={() => { setForm(workerData); setEditing(false); }}>ביטול</Button>}
-            {/* הצג כפתור עריכה רק אם זה לא העובד המחובר או אם זה מנהל */}
             {!isCurrentWorker && (
               <Tooltip title={editing ? "שמור שינויים" : "ערוך פרטים"}>
                 <Button variant="contained" color="primary" onClick={() => editing ? handleSave() : setEditing(true)} startIcon={editing ? <SaveIcon fontSize="small" /> : <EditIcon fontSize="small" />} sx={{ fontSize: 15, px: 2, py: 0.5 }}>
@@ -242,7 +219,6 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
             </Stack>
           </Grid>
           <Grid item xs={12}><Divider sx={{ my: 1 }} /></Grid>
-          {/* הצג שדות תפקיד וחשבונאות רק אם זה לא העובד המחובר */}
           {!isCurrentWorker && (
             <Grid item xs={12} md={6}>
               <Typography variant="subtitle1" gutterBottom color="text.primary">תפקיד וחשבונאות</Typography>
@@ -277,7 +253,6 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
             )}
           </Grid>
           <Grid item xs={12}><Divider sx={{ my: 1 }} /></Grid>
-          {/* הצג הערות רק אם זה לא העובד המחובר */}
           {!isCurrentWorker && (
             <Grid item xs={12}>
               <Typography variant="subtitle1" gutterBottom color="text.primary">הערות</Typography>

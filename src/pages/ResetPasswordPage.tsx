@@ -41,7 +41,7 @@ const ResetPasswordPage: React.FC = () => {
     }
   }, [searchParams]);
 
-  // פונקציה לוולידציה של סיסמה
+
   const validatePassword = (password: string): string | null => {
     if (password.length < 6) {
       return 'הסיסמה חייבת להכיל לפחות 6 תווים';
@@ -106,7 +106,7 @@ const ResetPasswordPage: React.FC = () => {
       
       setMessage(response.data.message);
       
-      // הפניה לדף התחברות אחרי 3 שניות
+
       setTimeout(() => {
         navigate('/login');
       }, 3000);

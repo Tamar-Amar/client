@@ -34,7 +34,7 @@ export interface Activity {
     AfternoonOpenDate?: Date;
     monthlyBudget?: number;
     childresAmount?: number;
-    projectCodes?: number[]; // שינוי למערך
+    projectCodes?: number[];
     regularOperatorId?: string;
     isActive: boolean;
     description?: string;

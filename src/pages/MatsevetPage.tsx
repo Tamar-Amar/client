@@ -15,8 +15,6 @@ import {
   InputAdornment,
   CircularProgress,
   Divider,
-  IconButton,
-  Tooltip,
   Button
 } from '@mui/material';
 import {
@@ -38,16 +36,13 @@ interface ClassWithWorkers {
   workers: WorkerAfterNoon[];
 }
 
-// רשימת הפרויקטים
+
 const projectTypes = [
   { label: 'צהרון שוטף 2025', value: 1 },
   { label: 'קייטנת חנוכה 2025', value: 2 },
   { label: 'קייטנת פסח 2025', value: 3 },
   { label: 'קייטנת קיץ 2025', value: 4 },
-  //{ label: 'צהרון שוטף 2026', value: 5 },
-  //{ label: 'קייטנת חנוכה 2026', value: 6 },
-  //{ label: 'קייטנת פסח 2026', value: 7 },
-  //{ label: 'קייטנת קיץ 2026', value: 8 },
+  
 ];
 
 type SortField = 'uniqueSymbol' | 'name' | 'institutionName' | 'workers';
@@ -62,7 +57,7 @@ const MatsevetPage: React.FC = () => {
   const [sortField, setSortField] = useState<SortField>('uniqueSymbol');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
-  // בדיקת הרשאות משתמש
+  
   let isAdmin = false;
   try {
     const token = localStorage.getItem('token');
@@ -79,21 +74,20 @@ const MatsevetPage: React.FC = () => {
   const classesWithWorkers = useMemo(() => {
     const result: ClassWithWorkers[] = [];
     
-    // עובדים שמשויכים לכיתות
+
     classes.forEach((cls: Class) => {
       let classWorkers = workers.filter(worker => 
         cls.workers?.some((w: { workerId: string; roleType: string; project: number }) => w.workerId === worker._id)
       );
       
-      // סינון לפי פרויקט נבחר
+      
       if (selectedProject !== '') {
-        // סינון כיתות שיש להן את הפרויקט הנבחר
         const hasSelectedProject = cls.projectCodes?.includes(selectedProject as number);
         if (!hasSelectedProject) {
-          return; // דלג על כיתה זו
+          return;
         }
         
-        // סינון עובדים שמשויכים לפרויקט הנבחר
+        
         classWorkers = classWorkers.filter(worker => {
           const workerAssignment = cls.workers?.find(w => w.workerId === worker._id);
           return workerAssignment && workerAssignment.project === (selectedProject as number);
@@ -106,7 +100,7 @@ const MatsevetPage: React.FC = () => {
       });
     });
     
-    // עובדים ללא מסגרת (לא משויכים לאף כיתה)
+
     const workersWithClasses = new Set<string>();
     classes.forEach((cls: Class) => {
       cls.workers?.forEach((w: { workerId: string; roleType: string; project: number }) => workersWithClasses.add(w.workerId));
@@ -114,7 +108,7 @@ const MatsevetPage: React.FC = () => {
     
     const workersWithoutClasses = workers.filter(worker => !workersWithClasses.has(worker._id));
     
-    // סינון עובדים ללא מסגרת לפי פרויקט
+
     if (selectedProject !== '') {
       const filteredWorkersWithoutClasses = workersWithoutClasses.filter(worker => 
         worker.projectCodes?.includes(selectedProject as number)
@@ -243,7 +237,6 @@ const MatsevetPage: React.FC = () => {
 
   return (
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4 , p:4}}>
-      {/* Header */}
       <Box sx={{ mb: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="body1" color="text.secondary">
@@ -321,7 +314,6 @@ const MatsevetPage: React.FC = () => {
 
       <Divider sx={{ mb: 2 }} />
 
-      {/* Main Table */}
       <TableContainer component={Paper} sx={{ boxShadow: 3, borderRadius: 2, maxHeight: 600 , minHeight: 600}}>
         <Table size="small" stickyHeader>
           <TableHead sx={{ bgcolor: 'primary.main' }}>
@@ -494,7 +486,6 @@ const MatsevetPage: React.FC = () => {
         </Table>
       </TableContainer>
 
-      {/* Empty State */}
       {sortedClasses.length === 0 && (
         <Box sx={{ 
           textAlign: 'center', 

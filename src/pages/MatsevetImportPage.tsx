@@ -29,22 +29,20 @@ const MatsevetImportPage: React.FC = () => {
   const updateClassMutation = useUpdateClass();
   const updateMultipleClassesMutation = useUpdateMultipleClasses();
 
-  // סמלים קיימים
   const existingSymbols: string[] = classes.map((c: any) => c.uniqueSymbol);
 
-  // מיפוי בין שמות עמודות האקסל לשמות שדות במודל
   const excelToClassMap: Record<string, string> = {
     'סמל מאוחד': 'uniqueSymbol',
     'שם מוסד': 'institutionName',
     'קוד מוסד': 'institutionCode',
     'סוג': 'type',
-    'אישור פתיחה': 'approvalOpen', // אם תחליט להוסיף
+    'אישור פתיחה': 'approvalOpen', 
     'מין': 'gender',
     'חינוך': 'education',
     'רחוב': 'address',
     'מס רחוב': 'streetNumber',
     'שם': 'name',
-    'projectCodes': 'projectCodes', // הוספת מיפוי לשדה projectCodes
+    'projectCodes': 'projectCodes', 
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -60,11 +58,9 @@ const MatsevetImportPage: React.FC = () => {
     const result = await parseMatsevetExcel(file, existingSymbols, projectCode) as any;
     setImportResult(result);
     setSelectedNew(new Set((result.newClasses as any[]).map((_: any, idx: number) => idx)));
-    // לכל מסגרת קיימת – כל השדות מסומנים כברירת מחדל
     const updates: {[symbol: string]: Set<string>} = {};
     for (const ex of (result.existingClasses as any[])) {
-      const fields = new Set(Object.keys(ex.excelData));
-      // הוספת projectCodes אם יש אישור פתיחה
+      const fields = new Set(Object.keys(ex.excelData)); 
       if (ex.excelData['אישור פתיחה'] === 'כן') {
         fields.add('projectCodes');
       }
@@ -110,7 +106,6 @@ const MatsevetImportPage: React.FC = () => {
     setLoading(true);
     let created = 0, updated = 0;
     try {
-      // ייבוא מסגרות חדשות - אם יש יותר מ-5, נשלח בבת אחת
       const selectedClasses = Array.from(selectedNew).map(idx => importResult.newClasses[idx]);
       
       let bulkResult: any = null;
@@ -119,15 +114,14 @@ const MatsevetImportPage: React.FC = () => {
       if (selectedClasses.length > 5) {
         bulkResult = await addMultipleClassesMutation.mutateAsync(selectedClasses);
         created = bulkResult.results.created.length;
-      } else {
-        // ייבוא כיתה אחר כיתה אם יש פחות מ-5
+      } else {  
         for (const toSend of selectedClasses) {
           await addClassMutation.mutateAsync(toSend);
           created++;
         }
       }
       
-      // עדכון מסגרות קיימות
+      
       const updatesToSend: { id: string; updatedClass: any }[] = [];
       
       for (const ex of importResult.existingClasses) {
@@ -137,13 +131,13 @@ const MatsevetImportPage: React.FC = () => {
         if (!classObj) continue;
         const updatedClass: any = {};
         
-        // הוספת projectCodes אם יש אישור פתיחה והמסגרת לא משויכת כבר לקוד הפרויקט
+        
         if (ex.excelData['אישור פתיחה'] === 'כן') {
           const currentProjectCode = projectTypes.find(pt => pt.value === projectType)?.code[String(year) as '2025' | '2026'] || 0;
           const existingProjectCodes = classObj.projectCodes || [];
 
           
-          // הוסיף רק אם המסגרת לא משויכת כבר לקוד הפרויקט הנוכחי
+          
           if (!existingProjectCodes.includes(currentProjectCode)) {
             updatedClass.projectCodes = [...existingProjectCodes, currentProjectCode];
           }
@@ -161,12 +155,12 @@ const MatsevetImportPage: React.FC = () => {
         }
       }
       
-      // שליחת עדכונים - אם יש יותר מ-5, נשלח בבת אחת
+      
       if (updatesToSend.length > 5) {
         bulkUpdateResult = await updateMultipleClassesMutation.mutateAsync(updatesToSend);
         updated = bulkUpdateResult.results.updated.length;
       } else {
-        // עדכון אחד אחד אם יש פחות מ-5
+        
         for (const update of updatesToSend) {
           await updateClassMutation.mutateAsync(update);
           updated++;
@@ -175,12 +169,12 @@ const MatsevetImportPage: React.FC = () => {
       
       let summaryMessage = `ייבוא הסתיים: ${created} מסגרות חדשות, ${updated} עדכונים.`;
       
-      // אם יש שגיאות בייבוא, נוסיף אותן להודעה
+      
       if (bulkResult && bulkResult.results.errors.length > 0) {
         summaryMessage += `\nשגיאות יצירה: ${bulkResult.results.errors.length}`;
       }
       
-      // אם יש שגיאות בעדכון, נוסיף אותן להודעה
+      
       if (updatesToSend.length > 5 && bulkUpdateResult && bulkUpdateResult.results.errors.length > 0) {
         summaryMessage += `\nשגיאות עדכון: ${bulkUpdateResult.results.errors.length}`;
       }
@@ -303,7 +297,7 @@ const MatsevetImportPage: React.FC = () => {
                           return current !== excelVal;
                         })
                         .concat(
-                          // הוספת projectCodes להשוואה אם יש אישור פתיחה
+                            
                           ex.excelData['אישור פתיחה'] === 'כן' && !(classObj.projectCodes || []).includes(currentProjectCode)
                             ? ['projectCodes'] 
                             : []

@@ -156,7 +156,6 @@ export const exportMonthlyReportExcel = (activities: Activity[], detailInfo: any
       return date >= startDate && date <= endDate;
     });
   } else if (detailInfo.type === 'general') {
-    // ✅ הוספה חדשה: כל ההפעלות בלי סינון
     filteredActivities = activities.filter(a => {
       const date = new Date(a.date);
       return date >= startDate && date <= endDate;
@@ -198,7 +197,6 @@ export const exportDetailedMonthlyReport = (
 
   const MAX_ACTIVITIES = 5;
 
-  // מיפוי פעילויות לפי קבוצה
   const activitiesByGroup: Record<string, { date: string, operator: string }[]> = {};
 
   activities.forEach(activity => {
@@ -223,7 +221,6 @@ export const exportDetailedMonthlyReport = (
     }
   });
 
-  // יצירת אקסל
   const excelData: any[] = [];
   const headerRow = ["סמל", "שם"];
   for (let i = 1; i <= MAX_ACTIVITIES; i++) {
@@ -232,10 +229,9 @@ export const exportDetailedMonthlyReport = (
   }
   excelData.push(headerRow);
 
-  // ✅ עוברים על כל הקבוצות הקיימות
   allGroups.forEach(group => {
     const groupKey = `${group.uniqueSymbol} - ${group.name}`;
-    const entries = activitiesByGroup[groupKey] ?? []; // אם אין הפעלות → מערך ריק
+    const entries = activitiesByGroup[groupKey] ?? []; 
 
     const row: any[] = [group.uniqueSymbol, group.name];
     for (let i = 0; i < MAX_ACTIVITIES; i++) {

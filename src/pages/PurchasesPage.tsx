@@ -12,7 +12,6 @@ const OperatorsPage: React.FC = () => {
   return (
     <div>
       <h1>ניהול רכש</h1>
-      {/* כפתור לפתיחת החלון */}
       <Button
         variant="contained"
         color="primary"
@@ -22,10 +21,8 @@ const OperatorsPage: React.FC = () => {
         הוספת רכישה
       </Button>
       
-      {/* רשימת מפעילים */}
       <PurchaseList />
 
-      {/* פופאפ של הוספת מפעיל */}
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
         <DialogTitle>הוספת רכישה</DialogTitle>
         <DialogContent>

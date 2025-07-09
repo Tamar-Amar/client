@@ -1,4 +1,3 @@
-// פונקציות עזר לעיבוד ונרמול טלפונים
 
 export const normalizePhone = (phone: string): string => {
   if (!phone) return '';

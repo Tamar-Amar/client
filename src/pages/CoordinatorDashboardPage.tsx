@@ -35,15 +35,12 @@ const CoordinatorDashboardPage: React.FC = () => {
   const [coordinatorName, setCoordinatorName] = useState<string>('');
 
   useEffect(() => {
-    // קבלת פרטי הרכז מהטוקן
+
     const token = localStorage.getItem('token');
     if (token) {
       try {
         const decodedToken: DecodedToken = jwtDecode(token);
         setCoordinatorId(decodedToken.id);
-        
-        // כאן נוכל לטעון את פרטי הרכז מהשרת
-        // fetchCoordinatorDetails(decodedToken.id);
       } catch (error) {
         console.error('Error decoding token:', error);
       }

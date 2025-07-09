@@ -27,12 +27,6 @@ interface WeeklySchedule {
   classes: string[];
 }
 
-interface Symbol {
-  _id: string;
-  name: string;
-  description?: string;
-}
-
 const StyledPaper = styled(Paper)(({ theme }) => ({
   backgroundColor: theme.palette.grey[100],
   padding: theme.spacing(2),

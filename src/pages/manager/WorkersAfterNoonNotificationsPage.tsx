@@ -134,7 +134,7 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
   const { data: classes = [] } = useFetchClasses();
   const { data: allWorkers = [] } = useFetchAllWorkersAfterNoon();
 
-  // מסמכים חסרים לעובדים
+  
   const workersWithMissingDocs = useMemo(() => {
     return workers.filter(worker => {
       const workerDocs = documents.filter(doc => doc.operatorId === worker._id);
@@ -147,7 +147,7 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
     }));
   }, [workers, documents]);
 
-  // כיתות ללא עובד מעודכן
+  
   const classesWithoutUpdatedWorker = useMemo(() => {
     return classes.filter((classItem: Class) => {
       const worker1 = allWorkers.find(w => w._id === classItem.workers?.[0]?.workerId);
@@ -182,7 +182,7 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
       </Typography>
 
       <Grid container spacing={2}>
-        {/* התראות מסמכים חסרים */}
+        
         <Grid item xs={12} md={4}>
           <Card 
             elevation={3}
@@ -266,7 +266,7 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
           </Card>
         </Grid>
 
-        {/* התראות כיתות ללא עובד */}
+        
         <Grid item xs={12} md={4}>
           <Card 
             elevation={3}
@@ -329,7 +329,6 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
           </Card>
         </Grid>
 
-        {/* התראות עובדים ללא כיתה */}
         <Grid item xs={12} md={4}>
           <Card 
             elevation={3}

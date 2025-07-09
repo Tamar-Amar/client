@@ -11,20 +11,20 @@ import { normalizePhone, isValidPhone, formatDate, validateIsraeliID, parseDate 
 
 
 interface ExcelRow {
-  __EMPTY: string; // סמל מוסד
-  __EMPTY_1: string; // חשב שכר
-  __EMPTY_2: string; // מודל
-  __EMPTY_3: string; // סוג תפקיד
-  __EMPTY_4: string; // שם תפקיד
-  __EMPTY_5: string; // תעודת זהות
-  __EMPTY_6: string; // שם משפחה
-  __EMPTY_7: string; // שם פרטי
-  __EMPTY_8: string; // טלפון
-  __EMPTY_9: string; // אימייל
-  __EMPTY_10: string; // תאריך התחלה
-  __EMPTY_11: string; // תאריך סיום
-  __EMPTY_12: string; // סטטוס
-  __EMPTY_13: string; // טופס 101
+  __EMPTY: string; 
+  __EMPTY_1: string; 
+  __EMPTY_2: string; 
+  __EMPTY_3: string; 
+  __EMPTY_4: string; 
+  __EMPTY_5: string; 
+  __EMPTY_6: string; 
+  __EMPTY_7: string; 
+  __EMPTY_8: string; 
+  __EMPTY_9: string; 
+  __EMPTY_10: string; 
+  __EMPTY_11: string; 
+  __EMPTY_12: string; 
+  __EMPTY_13: string; 
 }
 
 interface PreviewWorker extends Omit<WorkerAfterNoon, '_id'> {
@@ -38,7 +38,7 @@ interface ExcelImportProps {
   onSuccess?: () => void;
 }
 
-// רשימת הפרויקטים
+
 const projectTypes = [
   { label: 'צהרון שוטף 2025', value: 1 },
   { label: 'קייטנת חנוכה 2025', value: 2 },
@@ -183,7 +183,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // שמור את הקובץ והצג את דיאלוג בחירת הפרויקטים
+    
     setSelectedFile(file);
     setShowProjectSelectionDialog(true);
   };
@@ -316,7 +316,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
           const classSymbol = worker.workingSymbol;
           const classObj = classes.find((c: Class) => c.uniqueSymbol === classSymbol);
           if (classObj && savedWorker) {
-            // הוספת העובד למסגרת עם קודי הפרויקטים
+
             for (const projectCode of projectSelection.selectedProjects) {
               const workerAssignment = {
                 workerId: savedWorker._id,
@@ -339,7 +339,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
 
         const updateFields: Partial<WorkerAfterNoon> = {};
         let shouldUpdate = false;
-        // עדכון projectCodes
+        
         if (projectSelection.selectedProjects.length > 0) {
           const existingProjectCodes = existingWorker.projectCodes || [];
           const newProjectCodes = [...new Set([...existingProjectCodes, ...projectSelection.selectedProjects])];
@@ -362,7 +362,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
         const classSymbol = worker.workingSymbol;
         const classObj = classes.find((c: Class) => c.uniqueSymbol === classSymbol);
         if (classObj && savedWorker) {
-          // הוספת העובד למסגרת עם קודי הפרויקטים
+          
           for (const projectCode of projectSelection.selectedProjects) {
             const workerAssignment = {
               workerId: savedWorker._id,
@@ -421,7 +421,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       const existingWorker = existingWorkers.find((ew: WorkerAfterNoon) => ew.id === w.id);
       if (!existingWorker) return false;
 
-      // בדיקה אם יש פרויקטים חדשים להוסיף
+      
       const existingProjectCodes = existingWorker.projectCodes || [];
       const newProjectCodes = projectSelection.selectedProjects.filter(
         code => !existingProjectCodes.includes(code)
@@ -467,7 +467,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       const existingWorker = existingWorkers.find((ew: WorkerAfterNoon) => ew.id === w.id);
       if (!existingWorker) return false;
       
-      // בדיקה אם יש פרויקטים חדשים להוסיף
+
       const existingProjectCodes = existingWorker.projectCodes || [];
       const newProjectCodes = projectSelection.selectedProjects.filter(
         code => !existingProjectCodes.includes(code)
@@ -538,7 +538,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
           <Button 
             onClick={() => {
               setShowProjectSelectionDialog(false);
-              // עכשיו עבד את הקובץ עם הפרויקטים שנבחרו
+              
               processFile();
             }}
             color="primary" 

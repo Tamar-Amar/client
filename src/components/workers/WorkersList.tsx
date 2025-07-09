@@ -13,7 +13,6 @@ import {
   TextField,
   InputAdornment,
   TablePagination,
-  Tooltip
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -33,7 +32,7 @@ const WorkersList: React.FC = () => {
   const navigate = useNavigate();
 
 
-  // Filter workers based on search query
+  
   const filteredWorkers = useMemo(() => {
     return workers.filter((worker) => {
       const searchLower = searchQuery.toLowerCase();
@@ -50,7 +49,7 @@ const WorkersList: React.FC = () => {
     });
   }, [workers, searchQuery]);
 
-  // Calculate pagination
+  
   const paginatedWorkers = useMemo(() => {
     const startIndex = page * ROWS_PER_PAGE;
     return filteredWorkers.slice(startIndex, startIndex + ROWS_PER_PAGE);

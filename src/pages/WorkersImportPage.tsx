@@ -52,7 +52,6 @@ import { useAddWorkerAfterNoon, useAddMultipleWorkersAfterNoon, useFetchAllWorke
 import { WorkerAfterNoon, Class } from '../types';
 import { normalizePhone, isValidPhone, formatDate, validateIsraeliID, parseDate } from '../components/workers/excelImportUtils';
 
-// רשימת הפרויקטים
 const projectTypes = [
   { label: 'צהרון שוטף 2025', value: 1 },
   { label: 'קייטנת חנוכה 2025', value: 2 },
@@ -70,7 +69,7 @@ interface PreviewWorker extends Omit<WorkerAfterNoon, '_id'> {
   isBestDuplicate?: boolean;
   workingSymbol?: string;
   allSymbols?: string[];
-  symbols?: string[]; // <--- חדש, עבור before/after
+  symbols?: string[]; 
   projectCodes?: number[];
   isNew?: boolean;
   isExisting?: boolean;
@@ -96,10 +95,8 @@ interface ImportSummary {
   duplicateWorkers: number;
 }
 
-// פונקציה לנרמול ערכים (trim + lowercase)
-const normalize = (val: string | undefined | null) => (val ?? '').trim().toLowerCase();
+    const normalize = (val: string | undefined | null) => (val ?? '').trim().toLowerCase();
 
-// פונקציה עזר: מחזירה את כל הסמלים (uniqueSymbol) של כיתות שהעובד משויך אליהן במערכת
 const getCurrentSymbolsForWorker = (workerId: string, classes: Class[]) =>
   classes.filter(c => (c.workers || []).some(w => w.workerId === workerId)).map(c => c.uniqueSymbol);
 
@@ -269,22 +266,22 @@ const WorkersImportPage: React.FC = () => {
       }
       
       return [
-        row[0] || '', // סמל מוסד
-        row[1] || '', // חשב שכר
-        row[2] || '', // מודל
-        row[3] || '', // סוג תפקיד
-        row[4] || '', // שם תפקיד
-        row[5] || '', // תעודת זהות
-        row[6] || '', // שם משפחה
-        row[7] || '', // שם פרטי
-        row[8] || '', // טלפון
-        row[9] || '', // אימייל
-        row[10] || '', // תאריך התחלה
-        row[11] || '', // תאריך סיום
-        row[12] || '', // סטטוס
-        row[13] || '', // טופס 101
-        status, // סטטוס ייבוא
-        details // פרטי סטטוס
+        row[0] || '', 
+        row[1] || '', 
+        row[2] || '', 
+        row[3] || '', 
+        row[4] || '', 
+        row[5] || '', 
+        row[6] || '', 
+        row[7] || '', 
+        row[8] || '', 
+        row[9] || '', 
+        row[10] || '', 
+        row[11] || '', 
+        row[12] || '', 
+        row[13] || '', 
+        status, 
+        details 
       ];
     });
 
@@ -329,14 +326,12 @@ const WorkersImportPage: React.FC = () => {
       duplicateWorkers: [] as PreviewWorker[]
     };
 
-    // בדיקת כפילויות בתוך הקובץ
     const idCounts = new Map<string, number>();
     workers.forEach(worker => {
       const count = idCounts.get(worker.id) || 0;
       idCounts.set(worker.id, count + 1);
     });
 
-    // סימון עובדים כפולים וזיהוי השורה המלאה ביותר
     const duplicateGroups = new Map<string, PreviewWorker[]>();
     
     workers.forEach(worker => {
@@ -345,8 +340,7 @@ const WorkersImportPage: React.FC = () => {
         worker.isDuplicate = true;
         worker.validationErrors = worker.validationErrors || [];
         worker.validationErrors.push(`תעודת זהות ${worker.id} מופיעה ${count} פעמים בקובץ`);
-        
-        // איסוף כל השורות של אותו עובד
+
         if (!duplicateGroups.has(worker.id)) {
           duplicateGroups.set(worker.id, []);
         }
@@ -354,7 +348,7 @@ const WorkersImportPage: React.FC = () => {
       }
     });
 
-    // זיהוי השורה המלאה ביותר לכל עובד כפול
+    
     duplicateGroups.forEach((group, id) => {
       let bestRow = group[0];
       let maxFields = 0;
@@ -378,47 +372,42 @@ const WorkersImportPage: React.FC = () => {
         }
       });
 
-      // איסוף כל הסמלים של העובד הכפול
+      
       const allSymbols = [...new Set(group.map(w => w.workingSymbol).filter((s): s is string => !!s))];
       
-      // סימון השורה הטובה ביותר עם כל הסמלים
+      
       group.forEach(worker => {
         if (worker === bestRow) {
           worker.isBestDuplicate = true;
-          worker.allSymbols = allSymbols; // שמירת כל הסמלים
+          worker.allSymbols = allSymbols; 
           worker.validationErrors = worker.validationErrors || [];
           worker.validationErrors.push(`שורה זו נבחרה לייבוא (הכי מלאה בפרטים). העובד ישויך לסמלים: ${allSymbols.join(', ')}`);
         }
       });
     });
 
-    // עובדים כפולים - אחרי הסרת הכפילות, נבדוק אם הם קיימים במערכת
+    
     const processedDuplicateIds = new Set<string>();
     
     workers.forEach(worker => {
-      // בדיקת כפילויות - אם העובד כפול, הוא ייכנס לקטגוריית הכפילויות
+      
       if (worker.isDuplicate) {
-        // אם זה העובד הטוב ביותר מהכפילות
+        
         if (worker.isBestDuplicate) {
-          // בדיקה אם העובד כבר קיים במערכת
           const existingWorker = existingWorkers.find(w => w.id === worker.id);
           if (existingWorker) {
-            // העובד קיים - נטפל בו כמו עובד קיים רגיל
             worker.isExisting = true;
             worker.existingWorker = existingWorker;
             
-            // בדיקת שינויים
             const changes = {
               before: { ...existingWorker },
               after: { ...existingWorker }
             };
             
-            // הוספת פרויקטים חדשים
             const existingProjectCodes = existingWorker.projectCodes || [];
             const newProjectCodes = [...new Set([...existingProjectCodes, ...selectedProjects])];
             changes.after.projectCodes = newProjectCodes;
             
-            // בדיקה אם יש שינויים משמעותיים (קשיחה)
             const currentSymbols = getCurrentSymbolsForWorker(worker.id, classes);
             const importedSymbols = worker.allSymbols && worker.allSymbols.length > 0
               ? worker.allSymbols
@@ -443,11 +432,9 @@ const WorkersImportPage: React.FC = () => {
             
             if (hasChanges) {
               worker.changes = changes;
-              categorized.existingWorkers.push(worker); // רק אם יש שינוי
+              categorized.existingWorkers.push(worker); 
             }
-            // אם אין שינוי – לא להוסיף לרשימה בכלל
           } else {
-            // העובד לא קיים - נטפל בו כמו עובד חדש
             worker.isNew = true;
             
             if (worker.workingSymbol) {
@@ -463,13 +450,11 @@ const WorkersImportPage: React.FC = () => {
             }
           }
         } else {
-          // זה לא העובד הטוב ביותר - נשאיר אותו בקטגוריית הכפילויות
           categorized.duplicateWorkers.push(worker);
         }
         return;
       }
 
-      // בדיקת תקינות
       const validationErrors = validateWorker(worker);
       if (validationErrors.length > 0) {
         worker.validationErrors = validationErrors;
@@ -478,24 +463,20 @@ const WorkersImportPage: React.FC = () => {
         return;
       }
 
-      // בדיקה אם העובד קיים
       const existingWorker = existingWorkers.find(w => w.id === worker.id);
       if (existingWorker) {
         worker.isExisting = true;
         worker.existingWorker = existingWorker;
         
-        // בדיקת שינויים
         const changes = {
           before: { ...existingWorker },
           after: { ...existingWorker }
         };
         
-        // הוספת פרויקטים חדשים
         const existingProjectCodes = existingWorker.projectCodes || [];
         const newProjectCodes = [...new Set([...existingProjectCodes, ...selectedProjects])];
         changes.after.projectCodes = newProjectCodes;
         
-        // בדיקה אם יש שינויים משמעותיים (קשיחה)
         const currentSymbols = getCurrentSymbolsForWorker(worker.id, classes);
         const importedSymbols = worker.allSymbols && worker.allSymbols.length > 0
           ? worker.allSymbols
@@ -520,13 +501,11 @@ const WorkersImportPage: React.FC = () => {
         
         if (hasChanges) {
           worker.changes = changes;
-          categorized.existingWorkers.push(worker); // רק אם יש שינוי
+          categorized.existingWorkers.push(worker); 
         }
-        // אם אין שינוי – לא להוסיף לרשימה בכלל
         return;
       }
 
-      // עובד חדש
       worker.isNew = true;
       
       if (worker.workingSymbol) {
@@ -579,7 +558,6 @@ const WorkersImportPage: React.FC = () => {
           return id && firstName && lastName && id !== '' && firstName !== '' && lastName !== '';
         });
 
-        // שמירת הנתונים המקוריים
         setOriginalExcelData(dataRows);
 
         const workers: PreviewWorker[] = filteredData.map(row => {
@@ -628,7 +606,6 @@ const WorkersImportPage: React.FC = () => {
     setIsImporting(true);
     
     try {
-      // פונקציה לניקוי נתונים לפני שליחה לשרת
       const cleanWorkerData = (worker: PreviewWorker) => {
         const { 
           workingSymbol, 
@@ -652,28 +629,22 @@ const WorkersImportPage: React.FC = () => {
         };
       };
 
-      // הכנת עובדים חדשים עם סמל מוכר לייבוא מרובה
       const newWorkersWithSymbol = categorizedWorkers.newWorkersWithSymbol.map(cleanWorkerData);
 
-      // הכנת עובדים חדשים עם סמל לא מוכר לייבוא מרובה
       const newWorkersUnrecognizedSymbol = categorizedWorkers.newWorkersUnrecognizedSymbol
         .filter(worker => importDecisions.unrecognizedSymbols.includes(worker.id))
         .map(cleanWorkerData);
 
-      // הכנת עובדים חדשים ללא סמל לייבוא מרובה
       const newWorkersWithoutSymbol = categorizedWorkers.newWorkersWithoutSymbol.map(cleanWorkerData);
 
-      // הכנת עובדים לא תקינים לייבוא מרובה
       const invalidWorkers = categorizedWorkers.invalidWorkers
         .filter(worker => importDecisions.invalidWorkers.includes(worker.id))
         .map(cleanWorkerData);
 
-      // הכנת עובדים כפולים לייבוא מרובה
       const duplicateWorkers = categorizedWorkers.duplicateWorkers
         .filter(worker => worker.isBestDuplicate)
         .map(cleanWorkerData);
 
-      // ייבוא מרובה של כל העובדים החדשים (ללא עובדים קיימים)
       const allNewWorkers = [
         ...newWorkersWithSymbol,
         ...newWorkersUnrecognizedSymbol,
@@ -682,14 +653,12 @@ const WorkersImportPage: React.FC = () => {
         ...duplicateWorkers
       ];
 
-      // סינון עובדים קיימים
       const existingWorkerIds = new Set(categorizedWorkers.existingWorkers.map(w => w.id));
       const workersToImport = allNewWorkers.filter(worker => !existingWorkerIds.has(worker.id));
 
       if (workersToImport.length > 0) {
         const savedWorkers = await addMultipleWorkersMutation.mutateAsync(workersToImport);
         
-        // מיפוי: סמל כיתה -> מערך עובדים להוספה
         const classToWorkersMap: Record<string, any[]> = {};
         for (let i = 0; i < savedWorkers.length; i++) {
           const savedWorker = savedWorkers[i];
@@ -708,7 +677,6 @@ const WorkersImportPage: React.FC = () => {
             }
             workerIndex += category.length;
           }
-          // הוספה לכל הסמלים של העובד
           const symbols = originalWorker?.allSymbols && originalWorker.allSymbols.length > 0
             ? originalWorker.allSymbols
             : originalWorker?.workingSymbol ? [originalWorker.workingSymbol] : [];
@@ -729,13 +697,11 @@ const WorkersImportPage: React.FC = () => {
             }
           }
         }
-        // שלח קריאה אחת לשרת עם כל המיפוי
         if (Object.keys(classToWorkersMap).length > 0) {
           await bulkAddWorkersMutation.mutateAsync(classToWorkersMap);
         }
       }
 
-      // עדכון עובדים קיימים
       for (const worker of categorizedWorkers.existingWorkers) {
         if (importDecisions.existingWorkers.includes(worker.id) && worker.changes) {
           await updateWorkerMutation.mutateAsync({
@@ -750,8 +716,7 @@ const WorkersImportPage: React.FC = () => {
 
       queryClient.invalidateQueries({ queryKey: ['workers'] });
       queryClient.invalidateQueries({ queryKey: ['classes'] });
-      
-      // יצירת דוח אקסל עם סטטוס
+
       try {
         const fileName = generateStatusReport(originalExcelData, categorizedWorkers, { success: true });
         alert(`הייבוא הושלם בהצלחה! דוח יורד: ${fileName}`);
@@ -773,7 +738,6 @@ const WorkersImportPage: React.FC = () => {
     } catch (error) {
       console.error('Error importing workers:', error);
       
-      // יצירת דוח אקסל עם סטטוס גם במקרה של שגיאה
       try {
         const fileName = generateStatusReport(originalExcelData, categorizedWorkers, { success: false, error: error });
         alert(`שגיאה בייבוא העובדים! דוח יורד: ${fileName}`);
@@ -947,7 +911,6 @@ const WorkersImportPage: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* עובדים חדשים עם סמל מוכר */}
             {categorizedWorkers.newWorkersWithSymbol.length > 0 && (
               <Accordion defaultExpanded>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -964,7 +927,6 @@ const WorkersImportPage: React.FC = () => {
               </Accordion>
             )}
 
-            {/* עובדים חדשים עם סמל לא מוכר */}
             {categorizedWorkers.newWorkersUnrecognizedSymbol.length > 0 && (
               <Accordion>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>

@@ -176,7 +176,7 @@ const WorkerAttendancePage: React.FC = () => {
 
     const pendingDocuments: { documentId: string; status: DocumentStatus }[] = [];
     
-    // אוסף את כל המסמכים במצב ממתין מהשורות שנבחרו
+    
     paginatedData.forEach(({ month, symbol, records }) => {
       const rowKey = `${month}-${symbol}`;
       if (selectedRows.has(rowKey)) {
@@ -221,7 +221,7 @@ const WorkerAttendancePage: React.FC = () => {
         setConfirmationDialog({ isOpen: false, title: '', content: '', onConfirm: () => {} });
         
         try {
-          // מאשר את כל המסמכים
+          
           for (const doc of pendingDocuments) {
             await updateStatus(doc);
           }
@@ -232,7 +232,7 @@ const WorkerAttendancePage: React.FC = () => {
             content: `אושרו ${pendingDocuments.length} מסמכים בהצלחה`,
             onConfirm: () => {
               setConfirmationDialog({ isOpen: false, title: '', content: '', onConfirm: () => {} });
-              setSelectedRows(new Set()); // מנקה את הבחירה
+              setSelectedRows(new Set()); 
             }
           });
         } catch (error) {
@@ -392,7 +392,7 @@ const WorkerAttendancePage: React.FC = () => {
                 const fullName = typeof workerId === 'object'
                   ? `${workerId.firstName || ''} ${workerId.lastName || ''} (${workerId.id || ''})`
                   : workerId;
-                // מסמכים
+                  
                 const studentDoc = record?.studentAttendanceDoc;
                 const workerDoc = record?.workerAttendanceDoc;
                 const controlDoc = record?.controlDoc;

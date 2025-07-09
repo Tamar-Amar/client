@@ -1,7 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchOperators, createOperator, deleteOperator, updateOperatorDetails, fetchOperatorById, fetchCurrentOperator, updateOperatorWeeklySchedule } from '../services/OperatorService';
-import { Operator, WeeklySchedule } from '../types/index';
-import axios from 'axios';
 
 export const useFetchOperators = () => {
   return useQuery({

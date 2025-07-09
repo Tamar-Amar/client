@@ -12,7 +12,7 @@ interface WeeklyScheduleSelectProps {
   day: string;
   selectedClasses: string[];
   allClasses: Class[];
-  workerClasses?: (string | Class)[]; // Can be either IDs or Class objects
+  workerClasses?: (string | Class)[]; 
   onChange: (day: string, classes: string[]) => void;
 }
 
@@ -23,20 +23,20 @@ const WeeklyScheduleSelect: React.FC<WeeklyScheduleSelectProps> = ({
   workerClasses,
   onChange
 }) => {
-  // Filter classes based on workerClasses if provided
+  
   const availableClasses = workerClasses 
     ? allClasses.filter(cls => {
         if (!workerClasses) return true;
         return workerClasses.some(wc => {
-          // If workerClass is a string (ID), compare with cls._id
+          
           if (typeof wc === 'string') return wc === cls._id;
-          // If workerClass is a Class object, compare IDs
+          
           return wc._id === cls._id;
         });
       })
     : allClasses;
 
-  // Find selected class objects
+      
   const selectedClassObjects = selectedClasses
     .map(id => allClasses.find(c => c._id === id))
     .filter((c): c is Class => c !== undefined);

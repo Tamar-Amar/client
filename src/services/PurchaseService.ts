@@ -15,13 +15,13 @@ export const fetchPurchaseById = async (id: string): Promise<Purchase> => {
   return response.data;
 };
 
-// Fetch purchases by class ID
+
 export const fetchPurchasesByClass = async (classId: string): Promise<Purchase[]> => {
     const response = await axios.get(`${API_URL}/class/${classId}`);
     return response.data;
   };
   
-  // Fetch purchases by store ID
+  
   export const fetchPurchasesByStore = async (storeId: string): Promise<Purchase[]> => {
     const response = await axios.get(`${API_URL}/store/${storeId}`);
     return response.data;

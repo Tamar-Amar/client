@@ -1,7 +1,7 @@
 import { Activity } from '../types/index';
 import { SetStateAction } from 'react';
 
-// הוספת פעילות חדשה
+
 export const handleActivityAdded = async (
   newActivities: Activity[],
   addActivityMutation: any,
@@ -13,7 +13,7 @@ export const handleActivityAdded = async (
   setOpenDialog(false);
 };
 
-// Delete selected rows
+
 export const handleDeleteSelected = (
   selectedRows: Set<string>,
   deleteActivity: any,
@@ -29,7 +29,7 @@ export const handleDeleteSelected = (
   }
 };
 
-// ניהול בחירת שורות
+
 export const handleRowSelect = (
   id: string,
   setSelectedRows: React.Dispatch<SetStateAction<Set<string>>>

@@ -5,36 +5,34 @@ import {
   fetchPurchasesByStore,
   createPurchase,
 } from '../services/PurchaseService';
-import { Purchase } from '../types/index';
 
-// Fetch all purchases
 export const useFetchAllPurchases = () => {
   return useQuery({
     queryKey: ['purchases'],
     queryFn: fetchPurchases,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5, 
   });
 };
 
-// Fetch purchases by class
+
 export const useFetchPurchasesByClass = (classId: string) => {
   return useQuery({
     queryKey: ['purchases', classId],
     queryFn: () => fetchPurchasesByClass(classId),
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5, 
   });
 };
 
-// Fetch purchases by store
+
 export const useFetchPurchasesByStore = (storeId: string) => {
   return useQuery({
     queryKey: ['purchases', storeId],
     queryFn: () => fetchPurchasesByStore(storeId),
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5, 
   });
 };
 
-// Add a new purchase
+
 export const useAddPurchase = () => {
   const queryClient = useQueryClient();
   return useMutation({
