@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Container, Box, Typography, Button, MenuItem, Select, FormControl, InputLabel, Stepper, Step, StepLabel, Paper, TextField, CircularProgress, Checkbox, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Alert } from '@mui/material';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { parseMatsevetExcel } from '../utils/parseMatsevetExcel';
-import { useFetchClasses, useAddClass, useAddMultipleClasses, useUpdateClass } from '../queries/classQueries';
+import { useFetchClasses, useAddClass, useAddMultipleClasses, useUpdateClass, useUpdateMultipleClasses } from '../queries/classQueries';
 
 const years = [2025, 2026];
 const projectTypes = [
@@ -27,6 +27,7 @@ const MatsevetImportPage: React.FC = () => {
   const addClassMutation = useAddClass();
   const addMultipleClassesMutation = useAddMultipleClasses();
   const updateClassMutation = useUpdateClass();
+  const updateMultipleClassesMutation = useUpdateMultipleClasses();
 
   // סמלים קיימים
   const existingSymbols: string[] = classes.map((c: any) => c.uniqueSymbol);
@@ -113,6 +114,7 @@ const MatsevetImportPage: React.FC = () => {
       const selectedClasses = Array.from(selectedNew).map(idx => importResult.newClasses[idx]);
       
       let bulkResult: any = null;
+      let bulkUpdateResult: any = null;
       
       if (selectedClasses.length > 5) {
         console.log(`שולח ${selectedClasses.length} כיתות בבת אחת`);
@@ -129,6 +131,8 @@ const MatsevetImportPage: React.FC = () => {
       }
       
       // עדכון מסגרות קיימות
+      const updatesToSend: { id: string; updatedClass: any }[] = [];
+      
       for (const ex of importResult.existingClasses) {
         const fields = Array.from(selectedUpdates[ex.symbol] || []);
         if (fields.length === 0) continue;
@@ -164,7 +168,20 @@ const MatsevetImportPage: React.FC = () => {
         }
         if (Object.keys(updatedClass).length > 0) {
           console.log('מעדכן מסגרת:', ex.symbol, 'עם שדות:', updatedClass);
-          await updateClassMutation.mutateAsync({ id: classObj._id, updatedClass });
+          updatesToSend.push({ id: classObj._id, updatedClass });
+        }
+      }
+      
+      // שליחת עדכונים - אם יש יותר מ-5, נשלח בבת אחת
+      if (updatesToSend.length > 5) {
+        console.log(`שולח ${updatesToSend.length} עדכונים בבת אחת`);
+        bulkUpdateResult = await updateMultipleClassesMutation.mutateAsync(updatesToSend);
+        updated = bulkUpdateResult.results.updated.length;
+        console.log(`עודכנו ${updated} כיתות, ${bulkUpdateResult.results.errors.length} שגיאות`);
+      } else {
+        // עדכון אחד אחד אם יש פחות מ-5
+        for (const update of updatesToSend) {
+          await updateClassMutation.mutateAsync(update);
           updated++;
         }
       }
@@ -173,8 +190,14 @@ const MatsevetImportPage: React.FC = () => {
       
       // אם יש שגיאות בייבוא, נוסיף אותן להודעה
       if (bulkResult && bulkResult.results.errors.length > 0) {
-        summaryMessage += `\nשגיאות: ${bulkResult.results.errors.length}`;
-        console.log('שגיאות בייבוא:', bulkResult.results.errors);
+        summaryMessage += `\nשגיאות יצירה: ${bulkResult.results.errors.length}`;
+        console.log('שגיאות יצירה:', bulkResult.results.errors);
+      }
+      
+      // אם יש שגיאות בעדכון, נוסיף אותן להודעה
+      if (updatesToSend.length > 5 && bulkUpdateResult && bulkUpdateResult.results.errors.length > 0) {
+        summaryMessage += `\nשגיאות עדכון: ${bulkUpdateResult.results.errors.length}`;
+        console.log('שגיאות עדכון:', bulkUpdateResult.results.errors);
       }
       
       setImportSummary(summaryMessage);

@@ -30,11 +30,24 @@ import { useNavigate } from 'react-router-dom';
 import { useFetchAllWorkersAfterNoon } from '../queries/workerAfterNoonQueries';
 import { useFetchClasses } from '../queries/classQueries';
 import { Class, WorkerAfterNoon } from '../types';
+import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 
 interface ClassWithWorkers {
   class: Class;
   workers: WorkerAfterNoon[];
 }
+
+// רשימת הפרויקטים
+const projectTypes = [
+  { label: 'צהרון שוטף 2025', value: 1 },
+  { label: 'קייטנת חנוכה 2025', value: 2 },
+  { label: 'קייטנת פסח 2025', value: 3 },
+  { label: 'קייטנת קיץ 2025', value: 4 },
+  { label: 'צהרון שוטף 2026', value: 5 },
+  { label: 'קייטנת חנוכה 2026', value: 6 },
+  { label: 'קייטנת פסח 2026', value: 7 },
+  { label: 'קייטנת קיץ 2026', value: 8 },
+];
 
 type SortField = 'uniqueSymbol' | 'name' | 'institutionName' | 'workers';
 type SortDirection = 'asc' | 'desc';
@@ -44,6 +57,7 @@ const MatsevetPage: React.FC = () => {
   const { data: workers = [], isLoading: workersLoading } = useFetchAllWorkersAfterNoon();
   const { data: classes = [], isLoading: classesLoading } = useFetchClasses();
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedProject, setSelectedProject] = useState<number | ''>('');
   const [sortField, setSortField] = useState<SortField>('uniqueSymbol');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
@@ -55,11 +69,25 @@ const MatsevetPage: React.FC = () => {
     const result: ClassWithWorkers[] = [];
     
     classes.forEach((cls: Class) => {
-      const classWorkers = workers.filter(worker => 
-        cls.workers?.some((w: { workerId: string; roleType: string; project: string }) => w.workerId === worker._id) ||
-        cls.name === worker.project ||
-        cls.uniqueSymbol === worker.project
+      let classWorkers = workers.filter(worker => 
+        cls.workers?.some((w: { workerId: string; roleType: string; project: number }) => w.workerId === worker._id) ||
+        cls.projectCodes?.includes(worker.projectCodes?.[0] as unknown as number)
       );
+      
+      // סינון לפי פרויקט נבחר
+      if (selectedProject !== '') {
+        // סינון כיתות שיש להן את הפרויקט הנבחר
+        const hasSelectedProject = cls.projectCodes?.includes(selectedProject as number);
+        if (!hasSelectedProject) {
+          return; // דלג על כיתה זו
+        }
+        
+        // סינון עובדים שמשויכים לפרויקט הנבחר
+        classWorkers = classWorkers.filter(worker => {
+          const workerAssignment = cls.workers?.find(w => w.workerId === worker._id);
+          return workerAssignment && workerAssignment.project === (selectedProject as number);
+        });
+      }
       
       result.push({
         class: cls,
@@ -68,7 +96,7 @@ const MatsevetPage: React.FC = () => {
     });
     
     return result;
-  }, [classes, workers]);
+  }, [classes, workers, selectedProject]);
 
   const filteredClasses = useMemo(() => {
     if (!searchTerm) return classesWithWorkers;
@@ -155,6 +183,11 @@ const MatsevetPage: React.FC = () => {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="body1" color="text.secondary">
             סך הכל: {sortedClasses.length} כיתות
+            {selectedProject !== '' && (
+              <span>
+                {' '}(מסונן לפי {projectTypes.find(p => p.value === selectedProject)?.label})
+              </span>
+            )}
           </Typography>
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Button
@@ -171,6 +204,36 @@ const MatsevetPage: React.FC = () => {
             >
               העלאת מצבת והשוואה
             </Button>
+            <FormControl size="small" sx={{ minWidth: 200, bgcolor: 'white' }}>
+              <InputLabel>סינון לפי פרויקט</InputLabel>
+              <Select
+                value={selectedProject}
+                label="סינון לפי פרויקט"
+                onChange={(e) => setSelectedProject(e.target.value as number | '')}
+              >
+                <MenuItem value="">
+                  <em>כל הפרויקטים</em>
+                </MenuItem>
+                {projectTypes.map((project) => (
+                  <MenuItem key={project.value} value={project.value}>
+                    {project.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            {(selectedProject !== '' || searchTerm) && (
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => {
+                  setSelectedProject('');
+                  setSearchTerm('');
+                }}
+                sx={{ bgcolor: 'white' }}
+              >
+                נקה סינון
+              </Button>
+            )}
             <TextField
               size="small"
               placeholder="חיפוש בכיתה, סמל, מוסד, כתובת או עובד..."
@@ -227,6 +290,7 @@ const MatsevetPage: React.FC = () => {
               </TableCell>
               <TableCell sx={{ color: 'black', fontWeight: 'bold', minWidth: 80 }}>סוג</TableCell>
               <TableCell sx={{ color: 'black', fontWeight: 'bold', minWidth: 80 }}>מגדר</TableCell>
+              <TableCell sx={{ color: 'black', fontWeight: 'bold', minWidth: 120 }}>קודי פרויקט</TableCell>
               <TableCell 
                 sx={{ color: 'black', fontWeight: 'bold', minWidth: 80, cursor: 'pointer' }}
                 onClick={() => handleSort('workers')}
@@ -299,6 +363,29 @@ const MatsevetPage: React.FC = () => {
                       color: 'white'
                     }}
                   />
+                </TableCell>
+                <TableCell>
+                  {classData.class.projectCodes && classData.class.projectCodes.length > 0 ? (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {classData.class.projectCodes.map((projectCode) => {
+                        const project = projectTypes.find(p => p.value === projectCode);
+                        return (
+                          <Chip
+                            key={projectCode}
+                            label={project ? project.label : projectCode}
+                            size="small"
+                            variant="outlined"
+                            color="primary"
+                            sx={{ fontSize: '0.6rem' }}
+                          />
+                        );
+                      })}
+                    </Box>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary" fontStyle="italic">
+                      אין קודי פרויקט
+                    </Typography>
+                  )}
                 </TableCell>
 
                 <TableCell>

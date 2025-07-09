@@ -41,7 +41,7 @@ export interface Activity {
     workers?: Array<{
       workerId: string;
       roleType: string;
-      project: string;
+      project: number;
     }>;
     coordinatorId: string;
   }
@@ -148,7 +148,7 @@ export interface Activity {
     firstName: string;
     lastName: string;
     accountantCode: string;
-    project: string;
+    projectCodes?: number[]; 
     createDate: Date; 
     updateDate: Date;
     updateBy: string;

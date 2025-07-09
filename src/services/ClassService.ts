@@ -20,6 +20,12 @@ export const createMultipleClasses = async (classesData: Class[]) => {
   return response.data;
 };
 
+export const updateMultipleClasses = async (updatesData: { id: string; updatedClass: Partial<Class> }[]) => {
+  console.log(`שולח ${updatesData.length} עדכונים לשרת`);
+  const response = await axios.put(`${API_URL}/bulk`, { updates: updatesData });
+  return response.data;
+};
+
 export const deleteClass = async (id: string) => {
   await axios.delete(`${API_URL}/${id}`);
 };
