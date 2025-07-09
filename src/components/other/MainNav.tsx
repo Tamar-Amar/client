@@ -50,6 +50,7 @@ const MainNav: React.FC = () => {
 
   const adminAfternoonTabs: TabInfo[] = [
     { label: 'ניהול עובדים', path: '/workers', icon: <PeopleIcon fontSize="small" /> },
+    { label: 'מצבת', path: '/matsevet' },
     { label: 'ניהול קבוצות', path: '/classes', icon: <GroupWorkIcon fontSize="small" /> },
     { label: 'ניהול מסמכים', path: '/documents', icon: <FolderIcon fontSize="small" /> },
     { label: 'דיווחי נוכחות', path: '/worker-attendance' },

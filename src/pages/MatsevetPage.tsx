@@ -16,7 +16,8 @@ import {
   CircularProgress,
   Divider,
   IconButton,
-  Tooltip
+  Tooltip,
+  Button
 } from '@mui/material';
 import {
   People as PeopleIcon,
@@ -155,21 +156,29 @@ const MatsevetPage: React.FC = () => {
           <Typography variant="body1" color="text.secondary">
             סך הכל: {sortedClasses.length} כיתות
           </Typography>
-          
-          <TextField
-            size="small"
-            placeholder="חיפוש בכיתה, סמל, מוסד, כתובת או עובד..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon color="action" />
-                </InputAdornment>
-              ),
-            }}
-            sx={{ width: 350, bgcolor: 'white' }}
-          />
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => navigate('/matsevet/edit')}
+            >
+              עריכת מצבת
+            </Button>
+            <TextField
+              size="small"
+              placeholder="חיפוש בכיתה, סמל, מוסד, כתובת או עובד..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon color="action" />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ width: 350, bgcolor: 'white' }}
+            />
+          </Box>
         </Box>
       </Box>
 
