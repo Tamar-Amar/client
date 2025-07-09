@@ -262,10 +262,7 @@ const WorkerAttendancePage: React.FC = () => {
     setControlFile(null);
   };
 
-  const handleUploadSuccess = () => {
-    // רענון הנתונים אחרי העלאה מוצלחת
-    console.log('Upload successful, refreshing data...');
-  };
+
 
   return (
     <Box sx={{ p: 10 }}>
@@ -284,7 +281,6 @@ const WorkerAttendancePage: React.FC = () => {
         allWorkers={allWorkers}
         workerClasses={workerClasses}
         attendanceData={attendanceData}
-        onSuccess={handleUploadSuccess}
       />
 
       <Stack spacing={2} direction="row" sx={{ mb: 2 }} justifyContent="space-between">

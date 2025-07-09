@@ -31,18 +31,27 @@ interface PreviewWorker extends Omit<WorkerAfterNoon, '_id'> {
   _id?: string;
   isDuplicate?: boolean;
   workingSymbol?: string;
+  projectCodes?: number[];
 }
 
 interface ExcelImportProps {
   onSuccess?: () => void;
 }
 
+// רשימת הפרויקטים
+const projectTypes = [
+  { label: 'צהרון שוטף 2025', value: 1 },
+  { label: 'קייטנת חנוכה 2025', value: 2 },
+  { label: 'קייטנת פסח 2025', value: 3 },
+  { label: 'קייטנת קיץ 2025', value: 4 },
+  { label: 'צהרון שוטף 2026', value: 5 },
+  { label: 'קייטנת חנוכה 2026', value: 6 },
+  { label: 'קייטנת פסח 2026', value: 7 },
+  { label: 'קייטנת קיץ 2026', value: 8 },
+];
+
 interface ProjectSelection {
-  isBaseWorker: boolean;
-  isAfterNoon: boolean;
-  isHanukaCamp: boolean;
-  isPassoverCamp: boolean;
-  isSummerCamp: boolean;
+  selectedProjects: number[];
 }
 
 const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
@@ -58,7 +67,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
   const [invalidWorkers, setInvalidWorkers] = useState<PreviewWorker[]>([]);
   const [validForImportWorkers, setValidForImportWorkers] = useState<PreviewWorker[]>([]);
   const [showSummaryDialog, setShowSummaryDialog] = useState(false);
-  const [showProjectSelectionDialog, setShowProjectSelectionDialog] = useState(true);
+  const [showProjectSelectionDialog, setShowProjectSelectionDialog] = useState(false);
   const [importInvalidId, setImportInvalidId] = useState(false);
   const [importInvalidPhone, setImportInvalidPhone] = useState(false);
   const [importMissingPhone, setImportMissingPhone] = useState(false);
@@ -70,11 +79,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
   const [allWorkers, setAllWorkers] = useState<PreviewWorker[]>([]);
   const [missingSymbols, setMissingSymbols] = useState<string[]>([]);
   const [projectSelection, setProjectSelection] = useState<ProjectSelection>({
-    isBaseWorker: true,
-    isAfterNoon: false,
-    isHanukaCamp: false,
-    isPassoverCamp: false,
-    isSummerCamp: false
+    selectedProjects: []
   });
 
   const findClassIdBySymbol = (symbol: string): string | null => {
@@ -137,42 +142,55 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       roleType: row[3] || 'לא נבחר',
       roleName: row[4] || 'לא נבחר',
       accountantCode: row[1] || 'לא נבחר',
-      project: 'צהרון',
       notes:'לא נבחר',     
       workingSymbol: symbol || '',
-      isBaseWorker: false,
+      is101: is101,
+      projectCodes: [],
       isAfterNoon: false,
+      isBaseWorker: false,
       isHanukaCamp: false,
       isPassoverCamp: false,
-      isSummerCamp: false,
-      is101: is101
+      isSummerCamp: false
     };
   };
 
-  const handleProjectSelectionChange = (field: keyof ProjectSelection) => {
+  const handleProjectSelectionChange = (projectValue: number) => {
     setProjectSelection(prev => {
       const newSelection = { ...prev };
-      newSelection[field] = !prev[field];
+      if (newSelection.selectedProjects.includes(projectValue)) {
+        newSelection.selectedProjects = newSelection.selectedProjects.filter(p => p !== projectValue);
+      } else {
+        newSelection.selectedProjects = [...newSelection.selectedProjects, projectValue];
+      }
       return newSelection;
     });
   };
 
   const getProjectDisplayName = (selection: ProjectSelection): string => {
-    const projects = [];
-    if (selection.isBaseWorker) projects.push('עובד בסיס');
-    if (selection.isAfterNoon) projects.push('צהרון');
-    if (selection.isHanukaCamp) projects.push('קייטנת חנוכה');
-    if (selection.isPassoverCamp) projects.push('קייטנת פסח');
-    if (selection.isSummerCamp) projects.push('קייטנת קיץ');
+    if (selection.selectedProjects.length === 0) return 'לא נבחר';
     
-    return projects.length > 0 ? projects.join(', ') : 'לא נבחר';
+    const projectNames = selection.selectedProjects.map(projectValue => {
+      const project = projectTypes.find(p => p.value === projectValue);
+      return project ? project.label : `פרויקט ${projectValue}`;
+    });
+    
+    return projectNames.join(', ');
   };
+
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // שמור את הקובץ והצג את דיאלוג בחירת הפרויקטים
+    setSelectedFile(file);
+    setShowProjectSelectionDialog(true);
+  };
 
+  const processFile = () => {
+    if (!selectedFile) return;
+    
     setIsUploading(true);
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -241,7 +259,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
         setIsUploading(false);
       }
     };
-    reader.readAsArrayBuffer(file);
+    reader.readAsArrayBuffer(selectedFile);
   };
 
   const handleRemoveWorker = (index: number) => {
@@ -291,22 +309,24 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
           const normalizedWorker = {
             ...worker,
             phone: normalizePhone(worker.phone),
-            ...projectSelection
+            projectCodes: projectSelection.selectedProjects
           };
           const savedWorker = await addWorkerMutation.mutateAsync(normalizedWorker);
 
           const classSymbol = worker.workingSymbol;
           const classObj = classes.find((c: Class) => c.uniqueSymbol === classSymbol);
           if (classObj && savedWorker) {
-            const projectName = getProjectDisplayName(projectSelection);
-            const workerAssignment = {
-              workerId: savedWorker._id,
-              roleType: worker.roleType,
-              project: projectName
-            };
-            await updateClassWithWorker(classObj._id, {
-              $push: { workers: workerAssignment }
-            });
+            // הוספת העובד למסגרת עם קודי הפרויקטים
+            for (const projectCode of projectSelection.selectedProjects) {
+              const workerAssignment = {
+                workerId: savedWorker._id,
+                roleType: worker.roleType,
+                project: projectCode
+              };
+              await updateClassWithWorker(classObj._id, {
+                $push: { workers: workerAssignment }
+              });
+            }
           }
         } catch (err) {
           console.error('שגיאה ביצירת עובד חדש:', err, worker);
@@ -319,12 +339,12 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
 
         const updateFields: Partial<WorkerAfterNoon> = {};
         let shouldUpdate = false;
-        for (const key of Object.keys(projectSelection)) {
-          if (
-            projectSelection[key as keyof ProjectSelection] && 
-            !existingWorker[key as keyof WorkerAfterNoon]      
-          ) {
-            updateFields[key as keyof ProjectSelection] = true;
+        // עדכון projectCodes
+        if (projectSelection.selectedProjects.length > 0) {
+          const existingProjectCodes = existingWorker.projectCodes || [];
+          const newProjectCodes = [...new Set([...existingProjectCodes, ...projectSelection.selectedProjects])];
+          if (JSON.stringify(existingProjectCodes) !== JSON.stringify(newProjectCodes)) {
+            updateFields.projectCodes = newProjectCodes;
             shouldUpdate = true;
           }
         }
@@ -342,19 +362,21 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
         const classSymbol = worker.workingSymbol;
         const classObj = classes.find((c: Class) => c.uniqueSymbol === classSymbol);
         if (classObj && savedWorker) {
-          const projectName = getProjectDisplayName(projectSelection);
-          const workerAssignment = {
-            workerId: savedWorker._id,
-            roleType: worker.roleType,
-            project: projectName
-          };
-          const isAlreadyAssigned = classObj.workers?.some((w: any) =>
-            w.workerId === savedWorker._id && w.project === projectName
-          );
-          if (!isAlreadyAssigned) {
-            await updateClassWithWorker(classObj._id, {
-              $push: { workers: workerAssignment }
-            });
+          // הוספת העובד למסגרת עם קודי הפרויקטים
+          for (const projectCode of projectSelection.selectedProjects) {
+            const workerAssignment = {
+              workerId: savedWorker._id,
+              roleType: worker.roleType,
+              project: projectCode
+            };
+            const isAlreadyAssigned = classObj.workers?.some((w: any) =>
+              w.workerId === savedWorker._id && w.project === projectCode
+            );
+            if (!isAlreadyAssigned) {
+              await updateClassWithWorker(classObj._id, {
+                $push: { workers: workerAssignment }
+              });
+            }
           }
         }
       }
@@ -399,10 +421,12 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       const existingWorker = existingWorkers.find((ew: WorkerAfterNoon) => ew.id === w.id);
       if (!existingWorker) return false;
 
-      return !Object.keys(projectSelection).some(key => 
-        projectSelection[key as keyof ProjectSelection] && 
-        existingWorker[key as keyof WorkerAfterNoon] === true
+      // בדיקה אם יש פרויקטים חדשים להוסיף
+      const existingProjectCodes = existingWorker.projectCodes || [];
+      const newProjectCodes = projectSelection.selectedProjects.filter(
+        code => !existingProjectCodes.includes(code)
       );
+      return newProjectCodes.length > 0;
     }).length;
 
     let invalidToImport = 0;
@@ -443,10 +467,12 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       const existingWorker = existingWorkers.find((ew: WorkerAfterNoon) => ew.id === w.id);
       if (!existingWorker) return false;
       
-      return !Object.keys(projectSelection).some(key => 
-        projectSelection[key as keyof ProjectSelection] && 
-        existingWorker[key as keyof WorkerAfterNoon] === true
+      // בדיקה אם יש פרויקטים חדשים להוסיף
+      const existingProjectCodes = existingWorker.projectCodes || [];
+      const newProjectCodes = projectSelection.selectedProjects.filter(
+        code => !existingProjectCodes.includes(code)
       );
+      return newProjectCodes.length > 0;
     }).length;
     
     return newWorkers + existingWorkersToUpdate;
@@ -477,61 +503,22 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
             </Typography>
             
             <FormGroup sx={{ mt: 2 }}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={projectSelection.isBaseWorker}
-                    disabled={true}
-                  />
-                }
-                label="עובד בסיס (חובה)"
-              />
-              
-              <Divider sx={{ my: 2 }} />
-              
               <Typography variant="subtitle1" gutterBottom>
-                פרויקטים ספציפיים:
+                בחר פרויקטים לעובדים:
               </Typography>
               
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={projectSelection.isAfterNoon}
-                    onChange={() => handleProjectSelectionChange('isAfterNoon')}
-                  />
-                }
-                label="עובד צהרון"
-              />
-              
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={projectSelection.isHanukaCamp}
-                    onChange={() => handleProjectSelectionChange('isHanukaCamp')}
-                  />
-                }
-                label="עובד קייטנת חנוכה"
-              />
-              
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={projectSelection.isPassoverCamp}
-                    onChange={() => handleProjectSelectionChange('isPassoverCamp')}
-                  />
-                }
-                label="עובד קייטנת פסח"
-              />
-              
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={projectSelection.isSummerCamp}
-                    onChange={() => handleProjectSelectionChange('isSummerCamp')}
-                  />
-                }
-                label="עובד קייטנת קיץ"
-              />
+              {projectTypes.map((project) => (
+                <FormControlLabel
+                  key={project.value}
+                  control={
+                    <Checkbox
+                      checked={projectSelection.selectedProjects.includes(project.value)}
+                      onChange={() => handleProjectSelectionChange(project.value)}
+                    />
+                  }
+                  label={project.label}
+                />
+              ))}
             </FormGroup>
             
             <Box sx={{ mt: 3, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
@@ -549,11 +536,16 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
             ביטול
           </Button>
           <Button 
-            onClick={() => setShowProjectSelectionDialog(false)}
+            onClick={() => {
+              setShowProjectSelectionDialog(false);
+              // עכשיו עבד את הקובץ עם הפרויקטים שנבחרו
+              processFile();
+            }}
             color="primary" 
             autoFocus
+            disabled={projectSelection.selectedProjects.length === 0}
           >
-            המשך לטעינת קובץ
+            המשך לעיבוד הקובץ
           </Button>
         </DialogActions>
       </Dialog>
@@ -650,7 +642,15 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
                     <TableCell>{worker.roleName}</TableCell>
                     <TableCell>{worker.status}</TableCell>
                     <TableCell>{worker.accountantCode}</TableCell>
-                    <TableCell>{worker.project}</TableCell>
+                    <TableCell>
+                      {worker.projectCodes && worker.projectCodes.length > 0 
+                        ? worker.projectCodes.map(code => {
+                            const project = projectTypes.find(p => p.value === code);
+                            return project ? project.label : `פרויקט ${code}`;
+                          }).join(', ')
+                        : 'לא נבחר'
+                      }
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

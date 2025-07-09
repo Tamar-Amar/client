@@ -4,6 +4,7 @@ import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
+import ImportExportIcon from '@mui/icons-material/ImportExport';
 import { useDeleteAllWorkersAfterNoon, useFetchAllWorkersAfterNoon } from '../../queries/workerAfterNoonQueries';
 import ExcelImport from '../../components/workers/ExcelImport';
 import WorkersDocumentsList from '../../components/workers/WorkersDocumentsList';
@@ -55,6 +56,23 @@ const WorkersPage: React.FC = () => {
                 <Button
                   variant="outlined"
                   size="small"
+                  onClick={() => navigate('/workers/import')}
+                  startIcon={<ImportExportIcon />}
+                  sx={{
+                    color: '#1976d2',
+                    borderColor: '#1976d2',
+                    '&:hover': {
+                      borderColor: '#1565c0',
+                      color: '#1565c0',
+                      backgroundColor: 'rgba(25, 118, 210, 0.04)'
+                    }
+                  }}
+                >
+                  ייבוא מתקדם
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
                   onClick={() => setIsImportDialogOpen(true)}
                   startIcon={<UploadFileIcon />}
                   sx={{
@@ -67,7 +85,7 @@ const WorkersPage: React.FC = () => {
                     }
                   }}
                 >
-                  ייבוא מאקסל
+                  ייבוא מהיר
                 </Button>
                 <Tooltip title="מחק את כל העובדים מהמערכת">
                   <Button

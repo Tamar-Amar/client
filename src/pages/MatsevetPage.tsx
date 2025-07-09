@@ -31,6 +31,7 @@ import { useFetchAllWorkersAfterNoon } from '../queries/workerAfterNoonQueries';
 import { useFetchClasses } from '../queries/classQueries';
 import { Class, WorkerAfterNoon } from '../types';
 import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { jwtDecode } from 'jwt-decode';
 
 interface ClassWithWorkers {
   class: Class;
@@ -43,10 +44,10 @@ const projectTypes = [
   { label: 'קייטנת חנוכה 2025', value: 2 },
   { label: 'קייטנת פסח 2025', value: 3 },
   { label: 'קייטנת קיץ 2025', value: 4 },
-  { label: 'צהרון שוטף 2026', value: 5 },
-  { label: 'קייטנת חנוכה 2026', value: 6 },
-  { label: 'קייטנת פסח 2026', value: 7 },
-  { label: 'קייטנת קיץ 2026', value: 8 },
+  //{ label: 'צהרון שוטף 2026', value: 5 },
+  //{ label: 'קייטנת חנוכה 2026', value: 6 },
+  //{ label: 'קייטנת פסח 2026', value: 7 },
+  //{ label: 'קייטנת קיץ 2026', value: 8 },
 ];
 
 type SortField = 'uniqueSymbol' | 'name' | 'institutionName' | 'workers';
@@ -61,6 +62,16 @@ const MatsevetPage: React.FC = () => {
   const [sortField, setSortField] = useState<SortField>('uniqueSymbol');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
+  // בדיקת הרשאות משתמש
+  let isAdmin = false;
+  try {
+    const token = localStorage.getItem('token');
+    if (token) {
+      const decoded: any = jwtDecode(token);
+      isAdmin = decoded.role === 'admin';
+    }
+  } catch {}
+
   const handleWorkerClick = (workerId: string) => {
     navigate(`/workers/${workerId}`);
   };
@@ -68,10 +79,10 @@ const MatsevetPage: React.FC = () => {
   const classesWithWorkers = useMemo(() => {
     const result: ClassWithWorkers[] = [];
     
+    // עובדים שמשויכים לכיתות
     classes.forEach((cls: Class) => {
       let classWorkers = workers.filter(worker => 
-        cls.workers?.some((w: { workerId: string; roleType: string; project: number }) => w.workerId === worker._id) ||
-        cls.projectCodes?.includes(worker.projectCodes?.[0] as unknown as number)
+        cls.workers?.some((w: { workerId: string; roleType: string; project: number }) => w.workerId === worker._id)
       );
       
       // סינון לפי פרויקט נבחר
@@ -94,6 +105,60 @@ const MatsevetPage: React.FC = () => {
         workers: classWorkers
       });
     });
+    
+    // עובדים ללא מסגרת (לא משויכים לאף כיתה)
+    const workersWithClasses = new Set<string>();
+    classes.forEach((cls: Class) => {
+      cls.workers?.forEach((w: { workerId: string; roleType: string; project: number }) => workersWithClasses.add(w.workerId));
+    });
+    
+    const workersWithoutClasses = workers.filter(worker => !workersWithClasses.has(worker._id));
+    
+    // סינון עובדים ללא מסגרת לפי פרויקט
+    if (selectedProject !== '') {
+      const filteredWorkersWithoutClasses = workersWithoutClasses.filter(worker => 
+        worker.projectCodes?.includes(selectedProject as number)
+      );
+      if (filteredWorkersWithoutClasses.length > 0) {
+        result.push({
+          class: {
+            _id: 'no-class',
+            name: 'עובדים ללא מסגרת',
+            uniqueSymbol: 'ללא מסגרת',
+            institutionName: 'לא משויכים',
+            institutionCode: '000000',
+            coordinatorId: '',
+            type: 'כיתה',
+            gender: 'בנים',
+            education: 'רגיל',
+            isActive: true,
+            hasAfternoonCare: false,
+            projectCodes: [],
+            workers: []
+          } as Class,
+          workers: filteredWorkersWithoutClasses
+        });
+      }
+    } else if (workersWithoutClasses.length > 0) {
+      result.push({
+        class: {
+          _id: 'no-class',
+          name: 'עובדים ללא מסגרת',
+          uniqueSymbol: 'ללא מסגרת',
+          institutionName: 'לא משויכים',
+          institutionCode: '000000',
+          coordinatorId: '',
+          type: 'כיתה',
+          gender: 'בנים',
+          education: 'רגיל',
+          isActive: true,
+          hasAfternoonCare: false,
+          projectCodes: [],
+          workers: []
+        } as Class,
+        workers: workersWithoutClasses
+      });
+    }
     
     return result;
   }, [classes, workers, selectedProject]);
@@ -190,20 +255,22 @@ const MatsevetPage: React.FC = () => {
             )}
           </Typography>
           <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button
+            {/*<Button
               variant="contained"
               color="primary"
               onClick={() => navigate('/matsevet/edit')}
             >
               עריכת מצבת
-            </Button>
-            <Button
-              variant="outlined"
-              color="secondary"
-              onClick={() => navigate('/matsevet/import')}
-            >
-              העלאת מצבת והשוואה
-            </Button>
+            </Button>*/}
+            {isAdmin && (
+              <Button
+                variant="outlined"
+                color="secondary"
+                onClick={() => navigate('/matsevet/import')}
+              >
+                העלאת מצבת והשוואה
+              </Button>
+            )}
             <FormControl size="small" sx={{ minWidth: 200, bgcolor: 'white' }}>
               <InputLabel>סינון לפי פרויקט</InputLabel>
               <Select
@@ -278,13 +345,12 @@ const MatsevetPage: React.FC = () => {
                   {getSortIcon('name')}
                 </Box>
               </TableCell>
-              <TableCell sx={{ color: 'black', fontWeight: 'bold', minWidth: 150, maxWidth: 150 }}>כתובת</TableCell>
               <TableCell 
                 sx={{ color: 'black', fontWeight: 'bold', minWidth: 150, cursor: 'pointer' }}
                 onClick={() => handleSort('institutionName')}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  מוסד
+                  קוד מוסד
                   {getSortIcon('institutionName')}
                 </Box>
               </TableCell>
@@ -328,18 +394,8 @@ const MatsevetPage: React.FC = () => {
                   </Typography>
                 </TableCell>
                 <TableCell>
-                  <Typography variant="body2" color="text.secondary" sx={{ 
-                    maxWidth: 150, 
-                    overflow: 'hidden', 
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
-                  }}>
-                    {classData.class.address || 'לא מוגדר'}
-                  </Typography>
-                </TableCell>
-                <TableCell>
                   <Typography variant="body2" color="text.secondary">
-                    {classData.class.institutionName}
+                    {classData.class.institutionCode}
                   </Typography>
                 </TableCell>
                 <TableCell>
@@ -416,7 +472,7 @@ const MatsevetPage: React.FC = () => {
                             {worker.firstName} {worker.lastName}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            ({worker.roleName || worker.roleType || 'לא מוגדר'})
+                            ({worker.roleType || 'לא מוגדר'})
                           </Typography>
                           {workerIndex < classData.workers.length - 1 && (
                             <Typography variant="caption" color="text.secondary">

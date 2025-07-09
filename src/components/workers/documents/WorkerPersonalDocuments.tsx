@@ -70,14 +70,14 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
     'אישור משטרה', 
     'תעודת השכלה', 
     'חוזה',
-    'טופס פנסיה',
+    'תעודת זהות',
   ].includes(doc.tag));
 
   const requiredDocuments = [
     { tag: 'אישור משטרה', label: 'אישור משטרה', description: 'אישור משטרה תקף' },
     { tag: 'תעודת השכלה', label: 'תעודת השכלה', description: 'תעודת השכלה או תעודת השכלה' },
     { tag: 'חוזה', label: 'חוזה', description: 'חוזה עבודה חתום' },
-    { tag: 'טופס פנסיה', label: 'טופס פנסיה', description: 'טופס הצטרפות לפנסיה' },
+    { tag: 'תעודת זהות', label: 'תעודת זהות', description: 'תעודת זהות' },
   ];
 
   const getMissingDocuments = () => {
@@ -179,10 +179,10 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
       {!is101 && (
         <Alert severity="warning" sx={{ mt: 2, mb: 3 }}>
           <AlertTitle>שימו לב</AlertTitle>
-          לחצו כאן למילוי טופס 101 לשנת המס 2025
+          לחצו כאן למילוי טופס 101 לשנת המס 2025 <br />
           <Link href="https://101.rdn.org.il/#!/account/emp-login" target="_blank" rel="noopener">
             למילוי הטופס לחצו כאן
-          </Link>ד
+          </Link>
         </Alert>
       )}
 
@@ -249,7 +249,7 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
                 }}
               >
                 <WarningIcon color="error" />
-                מסמכים נדרשים שטרם הועלו
+                מסמכים נדרשים
               </Typography>
             </Paper>
           )}

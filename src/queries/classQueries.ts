@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchClasses, createClass, createMultipleClasses, updateMultipleClasses, deleteClass, updateClass, fetchWorkerClasses } from '../services/ClassService';
+import { fetchClasses, createClass, createMultipleClasses, updateMultipleClasses, deleteClass, updateClass, fetchWorkerClasses, bulkAddWorkersToClasses } from '../services/ClassService';
 import { Class } from '../types/index';
 import axios from 'axios';
+import { AxiosResponse } from 'axios';
 const API_URL = process.env.REACT_APP_API_URL+ '/api/classes' || "https://server-manage.onrender.com" + '/api/classes';
 
 
@@ -70,6 +71,11 @@ export const useWorkerClasses = (workerId: string) => {
   });
 };
 
+export const useBulkAddWorkersToClasses = () => {
+  return useMutation<AxiosResponse<any>, Error, Record<string, any[]>>({
+    mutationFn: bulkAddWorkersToClasses
+  });
+};
 
 
 export const updateClassWithWorker = async (classId: string, update: any) => {

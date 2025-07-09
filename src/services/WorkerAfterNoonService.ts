@@ -69,3 +69,30 @@ export const deleteAllWorkers = async (): Promise<void> => {
     throw new Error('Network response was not ok');
   }
 };
+
+export const deleteMultipleWorkers = async (workerIds: string[]): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/delete-multiple`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ workerIds }),
+  });
+  if (!response.ok) {
+    throw new Error('Network response was not ok');
+  }
+};
+
+export const createMultipleWorkers = async (workersData: Omit<WorkerAfterNoon, '_id'>[]): Promise<WorkerAfterNoon[]> => {
+  const response = await fetch(`${API_BASE_URL}/multiple`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ workers: workersData }),
+  });
+  if (!response.ok) {
+    throw new Error('Network response was not ok');
+  }
+  return response.json();
+};

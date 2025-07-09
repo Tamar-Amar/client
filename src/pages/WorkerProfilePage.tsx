@@ -14,12 +14,10 @@ interface DecodedToken {
 }
 
 export const DOCUMENT_TYPES = [
-  { value: "NULL", label: 'לא נבחר' },
   { value: DocumentType.ID, label: 'תעודת זהות' },
-  { value: DocumentType.BANK_DETAILS, label: 'פרטי בנק' },  
   { value: DocumentType.POLICE_APPROVAL, label: 'אישור משטרה' },
   { value: DocumentType.TEACHING_CERTIFICATE, label: 'תעודת השכלה' },
-  { value: DocumentType.OTHER, label: 'אחר' }
+  { value: DocumentType.CONTRACT, label: 'חוזה' },
 ];
 
 const LoadingSpinner = () => (
@@ -41,7 +39,7 @@ const WorkerProfilePage = () => {
   const token = useRecoilValue(userTokenState);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [documentType, setDocumentType] = useState<DocumentType | "NULL">("NULL");
+  const [documentType, setDocumentType] = useState<DocumentType | "">("");
 
   const decodedToken = token ? jwtDecode<DecodedToken>(token) : null;
   const workerId = decodedToken?.id;
@@ -63,7 +61,6 @@ const WorkerProfilePage = () => {
     uploadDocument(formData, {
       onSuccess: () => {
         setSelectedFile(null);
-        setDocumentType("NULL");
         if (fileInputRef.current) fileInputRef.current.value = '';
       }
     });
@@ -126,7 +123,7 @@ const WorkerProfilePage = () => {
           <Stack direction="row" spacing={2} mb={2} alignItems="center">
             <TextField select size="small" label="סוג מסמך" value={documentType} onChange={(e) => setDocumentType(e.target.value as DocumentType)} sx={{ minWidth: 150 }}>
               {DOCUMENT_TYPES.map((type) => (
-                <MenuItem key={type.value} value={type.value} disabled={type.value === "NULL"}>{type.label}</MenuItem>
+                <MenuItem key={type.value} value={type.value}>{type.label}</MenuItem>
               ))}
             </TextField>
 

@@ -117,14 +117,11 @@ const MatsevetImportPage: React.FC = () => {
       let bulkUpdateResult: any = null;
       
       if (selectedClasses.length > 5) {
-        console.log(`שולח ${selectedClasses.length} כיתות בבת אחת`);
         bulkResult = await addMultipleClassesMutation.mutateAsync(selectedClasses);
         created = bulkResult.results.created.length;
-        console.log(`נוצרו ${created} כיתות, ${bulkResult.results.errors.length} שגיאות`);
       } else {
         // ייבוא כיתה אחר כיתה אם יש פחות מ-5
         for (const toSend of selectedClasses) {
-          console.log('נשלח לשרת:', toSend);
           await addClassMutation.mutateAsync(toSend);
           created++;
         }
@@ -144,18 +141,11 @@ const MatsevetImportPage: React.FC = () => {
         if (ex.excelData['אישור פתיחה'] === 'כן') {
           const currentProjectCode = projectTypes.find(pt => pt.value === projectType)?.code[String(year) as '2025' | '2026'] || 0;
           const existingProjectCodes = classObj.projectCodes || [];
-          
-          console.log('בדיקת projectCodes:', {
-            symbol: ex.symbol,
-            currentProjectCode,
-            existingProjectCodes,
-            shouldAdd: !existingProjectCodes.includes(currentProjectCode)
-          });
+
           
           // הוסיף רק אם המסגרת לא משויכת כבר לקוד הפרויקט הנוכחי
           if (!existingProjectCodes.includes(currentProjectCode)) {
             updatedClass.projectCodes = [...existingProjectCodes, currentProjectCode];
-            console.log('מוסיף projectCode:', currentProjectCode, 'למסגרת:', ex.symbol);
           }
         }
         
@@ -167,17 +157,14 @@ const MatsevetImportPage: React.FC = () => {
           }
         }
         if (Object.keys(updatedClass).length > 0) {
-          console.log('מעדכן מסגרת:', ex.symbol, 'עם שדות:', updatedClass);
           updatesToSend.push({ id: classObj._id, updatedClass });
         }
       }
       
       // שליחת עדכונים - אם יש יותר מ-5, נשלח בבת אחת
       if (updatesToSend.length > 5) {
-        console.log(`שולח ${updatesToSend.length} עדכונים בבת אחת`);
         bulkUpdateResult = await updateMultipleClassesMutation.mutateAsync(updatesToSend);
         updated = bulkUpdateResult.results.updated.length;
-        console.log(`עודכנו ${updated} כיתות, ${bulkUpdateResult.results.errors.length} שגיאות`);
       } else {
         // עדכון אחד אחד אם יש פחות מ-5
         for (const update of updatesToSend) {
@@ -191,13 +178,11 @@ const MatsevetImportPage: React.FC = () => {
       // אם יש שגיאות בייבוא, נוסיף אותן להודעה
       if (bulkResult && bulkResult.results.errors.length > 0) {
         summaryMessage += `\nשגיאות יצירה: ${bulkResult.results.errors.length}`;
-        console.log('שגיאות יצירה:', bulkResult.results.errors);
       }
       
       // אם יש שגיאות בעדכון, נוסיף אותן להודעה
       if (updatesToSend.length > 5 && bulkUpdateResult && bulkUpdateResult.results.errors.length > 0) {
         summaryMessage += `\nשגיאות עדכון: ${bulkUpdateResult.results.errors.length}`;
-        console.log('שגיאות עדכון:', bulkUpdateResult.results.errors);
       }
       
       setImportSummary(summaryMessage);

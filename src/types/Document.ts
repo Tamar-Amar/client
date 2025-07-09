@@ -3,12 +3,14 @@ export enum DocumentType {
   BANK_DETAILS = 'פרטי בנק',
   POLICE_APPROVAL = 'אישור משטרה',
   TEACHING_CERTIFICATE = 'תעודת השכלה',
+  CONTRACT = 'חוזה',
   OTHER = 'אחר'
 }
 
 export const REQUIRED_DOCUMENTS: DocumentType[] = [
   DocumentType.POLICE_APPROVAL,
-  DocumentType.TEACHING_CERTIFICATE
+  DocumentType.TEACHING_CERTIFICATE,
+  DocumentType.CONTRACT
 ];
 
 export enum DocumentStatus {

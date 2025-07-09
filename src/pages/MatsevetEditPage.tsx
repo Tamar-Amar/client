@@ -97,7 +97,7 @@ const MatsevetEditPage: React.FC = () => {
   return (
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4, p: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5">עריכת מצבת</Typography>
+        {/*<Typography variant="h5">עריכת מצבת</Typography>*/}
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
             variant="contained"

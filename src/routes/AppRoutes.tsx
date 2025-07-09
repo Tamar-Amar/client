@@ -31,6 +31,7 @@ import CoordinatorDashboardPage from '../pages/CoordinatorDashboardPage';
 import AccountantDashboardPage from '../pages/AccountantDashboardPage';
 import MatsevetEditPage from '../pages/MatsevetEditPage';
 import MatsevetImportPage from '../pages/MatsevetImportPage';
+import WorkersImportPage from '../pages/WorkersImportPage';
 
 const OperatorDocumentsWrapper = () => {
   const token = localStorage.getItem('token');
@@ -65,6 +66,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/users" element={<UsersManagementPage />} />
         <Route path="/matsevet/edit" element={<MatsevetEditPage />} />
         <Route path="/matsevet/import" element={<MatsevetImportPage />} />
+        <Route path="/workers/import" element={<WorkersImportPage />} />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={['admin']} />}>

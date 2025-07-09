@@ -80,6 +80,16 @@ const EditableField = ({ label, name, value, editing, onChange, icon, select, op
   );
 };
 
+const projectTypes = [
+  { label: 'צהרון שוטף 2025', value: 1 },
+  { label: 'קייטנת חנוכה 2025', value: 2 },
+  { label: 'קייטנת פסח 2025', value: 3 },
+  { label: 'קייטנת קיץ 2025', value: 4 },
+  { label: 'צהרון שוטף 2026', value: 5 },
+  { label: 'קייטנת חנוכה 2026', value: 6 },
+  { label: 'קייטנת פסח 2026', value: 7 },
+  { label: 'קייטנת קיץ 2026', value: 8 },
+];
 
 const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerData, classes = [] }) => {
   const [form, setForm] = useState<Partial<WorkerAfterNoon>>({});
@@ -135,15 +145,13 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
     }
   };
 
-  const getProjectCount = () => [workerData.isBaseWorker, workerData.isAfterNoon, workerData.isHanukaCamp, workerData.isPassoverCamp, workerData.isSummerCamp].filter(Boolean).length;
-
   return (
     <Container>
       {/* Minimalist Stats Row */}
       <Box sx={{ mb: 2, color: 'text.secondary', fontSize: 16, display: 'flex', flexWrap: 'wrap', gap: 2 }}>
         <span>סטטוס: <b>{workerData.status || 'לא זמין'}</b></span>
         <span>כיתות משויכות: <b>{registeredClasses.length}</b></span>
-        <span>פרויקטים: <b>{getProjectCount()}</b></span>
+        <span>פרויקטים: <b>{(workerData.projectCodes ?? []).length}</b></span>
         <span>תאריך קליטה: <b>{new Date(workerData.createDate).toLocaleDateString('he-IL')}</b></span>
       </Box>
       <Paper sx={{
@@ -214,11 +222,20 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>פרויקטים</Typography>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {form.isBaseWorker && (<Chip label="עובד בסיס" variant="outlined" size="small" />)}
-                    {form.isAfterNoon && (<Chip label="צהרון" variant="outlined" size="small" />)}
-                    {form.isHanukaCamp && (<Chip label="קייטנת חנוכה" variant="outlined" size="small" />)}
-                    {form.isPassoverCamp && (<Chip label="קייטנת פסח" variant="outlined" size="small" />)}
-                    {form.isSummerCamp && (<Chip label="קייטנת קיץ" variant="outlined" size="small" />)}
+                    {(workerData.projectCodes ?? []).length === 0 && (
+                      <Typography color="text.secondary" fontStyle="italic">לא משויך לפרויקטים</Typography>
+                    )}
+                    {(workerData.projectCodes ?? []).map(code => {
+                      const project = projectTypes.find(p => p.value === code);
+                      return (
+                        <Chip
+                          key={code}
+                          label={project ? project.label : code}
+                          variant="outlined"
+                          size="small"
+                        />
+                      );
+                    })}
                   </Box>
                 </Box>
               )}

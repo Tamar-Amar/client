@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createWorker, deleteAllWorkers, deleteWorker, fetchWorkerById, fetchWorkers, updateWorker } from '../services/WorkerAfterNoonService';
+import { createWorker, createMultipleWorkers, deleteAllWorkers, deleteWorker, deleteMultipleWorkers, fetchWorkerById, fetchWorkers, updateWorker } from '../services/WorkerAfterNoonService';
 import { WorkerAfterNoon } from '../types';
 
 export const useFetchAllWorkersAfterNoon = () => {
@@ -48,6 +48,7 @@ export const useDeleteWorkerAfterNoon = () => {
     mutationFn: deleteWorker,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workers'] });
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
     }
   });
 }; 
@@ -59,6 +60,30 @@ export const useDeleteAllWorkersAfterNoon = () => {
     mutationFn: deleteAllWorkers,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workers'] });
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+    }
+  });
+};
+
+export const useAddMultipleWorkersAfterNoon = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (workersData: Omit<WorkerAfterNoon, '_id'>[]) => createMultipleWorkers(workersData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workers'] });
+    }
+  });
+};
+
+export const useDeleteMultipleWorkersAfterNoon = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (workerIds: string[]) => deleteMultipleWorkers(workerIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workers'] });
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
     }
   });
 };

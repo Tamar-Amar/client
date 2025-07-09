@@ -49,10 +49,10 @@ const MainNav: React.FC = () => {
   ];
 
   const adminAfternoonTabs: TabInfo[] = [
-    { label: 'ניהול עובדים', path: '/workers', icon: <PeopleIcon fontSize="small" /> },
+    { label: 'ניהול עובדים', path: '/workers' },
     { label: 'מצבת', path: '/matsevet' },
-    { label: 'ניהול קבוצות', path: '/classes', icon: <GroupWorkIcon fontSize="small" /> },
-    { label: 'ניהול מסמכים', path: '/documents', icon: <FolderIcon fontSize="small" /> },
+   // { label: 'ניהול קבוצות', path: '/classes', icon: <GroupWorkIcon fontSize="small" /> },
+    { label: 'ניהול מסמכים', path: '/documents', },
     { label: 'דיווחי נוכחות', path: '/worker-attendance' },
     { label: 'מיילים', path: '/workers-after-noon-email' },
     { label: 'התראות', path: '/workers-after-noon-notifications' },
@@ -61,7 +61,7 @@ const MainNav: React.FC = () => {
   const adminCampTabs: TabInfo[] = [
     { label: 'דוח הפעלות', path: '/activities', icon: <AssessmentIcon fontSize="small" /> },
     { label: 'ניהול מפעילים', path: '/operators', icon: <PeopleIcon fontSize="small" /> },
-    { label: 'ניהול קבוצות', path: '/classes', icon: <GroupWorkIcon fontSize="small" /> },
+    //{ label: 'ניהול קבוצות', path: '/classes', icon: <GroupWorkIcon fontSize="small" /> },
     { label: 'ניהול מסמכים', path: '/documents', icon: <FolderIcon fontSize="small" /> },
     { label: 'מיילים', path: '/emails', icon: <EmailIcon fontSize="small" /> },
   ];
@@ -210,7 +210,7 @@ const MainNav: React.FC = () => {
               </>
             ) : null}
 
-            {(role !== 'worker' && role !== 'accountant') && (
+            {role && (role !== 'worker' && role !== 'accountant') && (
              <Box>
               <Button
                 id="section-button"

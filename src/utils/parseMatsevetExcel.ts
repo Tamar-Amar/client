@@ -69,7 +69,6 @@ const getDefaultClass = (row: any, projectCode: number) => {
   // הוספת projectCodes רק אם צריך
   if (shouldAssignProject) {
     classData.projectCodes = [projectCode];
-    console.log('הוספת projectCodes:', [projectCode], 'למסגרת:', name);
   }
 
   return classData;
@@ -84,7 +83,6 @@ export function parseMatsevetExcel(file: File, existingSymbols: string[], projec
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
       const rows: any[] = XLSX.utils.sheet_to_json(worksheet);
-      console.log('שורות מהאקסל:', rows);
 
       const newClasses: any[] = [];
       const existingClasses: any[] = [];
@@ -95,31 +93,6 @@ export function parseMatsevetExcel(file: File, existingSymbols: string[], projec
         if (!existingSymbols.includes(symbol)) {
           // מסגרת חדשה
           const newClass = getDefaultClass(row, projectCode);
-          console.log('אובייקט מסגרת חדשה:', newClass);
-          console.log('סמל מאוחד:', symbol);
-          console.log('שם מוסד:', row['שם מוסד']);
-          console.log('קוד מוסד:', row['קוד מוסד']);
-          console.log('סוג:', row['סוג'], '->', normalizeType(row['סוג']));
-          console.log('מין:', row['מין'], '->', normalizeGender(row['מין']));
-          console.log('חינוך:', row['חינוך'], '->', normalizeEducation(row['חינוך']));
-          console.log('כל השדות שנשלחים:', newClass);
-          console.log('projectCodes במסגרת חדשה:', newClass.projectCodes);
-          console.log('פירוט השדות:', {
-            name: newClass.name,
-            education: newClass.education,
-            gender: newClass.gender,
-            uniqueSymbol: newClass.uniqueSymbol,
-            institutionName: newClass.institutionName,
-            institutionCode: newClass.institutionCode,
-            type: newClass.type,
-            hasAfternoonCare: newClass.hasAfternoonCare,
-            monthlyBudget: newClass.monthlyBudget,
-            childresAmount: newClass.childresAmount,
-            projectCodes: newClass.projectCodes,
-            isActive: newClass.isActive,
-            description: newClass.description,
-            workers: newClass.workers
-          });
           newClasses.push(newClass);
         } else {
           // מסגרת קיימת – נשמור את כל השדות מהאקסל להשוואה
