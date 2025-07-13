@@ -32,6 +32,7 @@ import AccountantDashboardPage from '../pages/AccountantDashboardPage';
 import MatsevetEditPage from '../pages/MatsevetEditPage';
 import MatsevetImportPage from '../pages/MatsevetImportPage';
 import WorkersImportPage from '../pages/WorkersImportPage';
+import WorkersUpdatePage from '../pages/manager/WorkersUpdatePage';
 
 const OperatorDocumentsWrapper = () => {
   const token = localStorage.getItem('token');
@@ -57,6 +58,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/documents" element={<DocumentManagementPage />} />
         <Route path="/workers" element={<WorkersPage />} />
         <Route path="/workers/:id" element={<WorkerDocumentsApprovalPage />} />
+        <Route path="/workers/update" element={<WorkersUpdatePage />} />
         <Route path="/workers-email" element={<WorkersDocumentsEmailPage />} />
         <Route path="/worker-attendance" element={<WorkerAttendancePage />} />
         <Route path="/workers-after-noon-email" element={<WorkersAfterNoonEmailPage />} />
@@ -95,6 +97,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/documents" element={<DocumentManagementPage />} />
         <Route path="/matsevet" element={<MatsevetPage />} />
         <Route path="/workers" element={<WorkersPage />} />
+        <Route path="/workers/update" element={<WorkersUpdatePage />} />
         <Route path="/worker-attendance" element={<WorkerAttendancePage />} />
         <Route path="/users" element={<UsersManagementPage />} />
       </Route>

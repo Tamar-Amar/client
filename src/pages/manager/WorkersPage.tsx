@@ -5,6 +5,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import ImportExportIcon from '@mui/icons-material/ImportExport';
+import EditIcon from '@mui/icons-material/Edit';
 import { useDeleteAllWorkersAfterNoon, useFetchAllWorkersAfterNoon } from '../../queries/workerAfterNoonQueries';
 import ExcelImport from '../../components/workers/ExcelImport';
 import WorkersDocumentsList from '../../components/workers/WorkersDocumentsList';
@@ -22,7 +23,6 @@ const WorkersPage: React.FC = () => {
   const [deleteProgress, setDeleteProgress] = useState(0);
   const navigate = useNavigate();
 
-  const { data: classes = [] } = useFetchClasses();
 
   const handleDeleteAll = async () => {
     try {
@@ -53,6 +53,23 @@ const WorkersPage: React.FC = () => {
 
             {!isCreating && (
               <>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => navigate('/workers/update')}
+                  startIcon={<EditIcon />}
+                  sx={{
+                    color: '#ed6c02',
+                    borderColor: '#ed6c02',
+                    '&:hover': {
+                      borderColor: '#e65100',
+                      color: '#e65100',
+                      backgroundColor: 'rgba(237, 108, 2, 0.04)'
+                    }
+                  }}
+                >
+                  עדכון עובדים
+                </Button>
                 <Button
                   variant="outlined"
                   size="small"

@@ -1106,7 +1106,7 @@ const WorkersImportPage: React.FC = () => {
           <Card>
             <CardHeader 
               title="אישור ייבוא" 
-              subheader="סקור את הנתונים ואישר את הייבוא"
+              subheader="סקור את הנתונים ואשר את הייבוא"
             />
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -1174,7 +1174,7 @@ const WorkersImportPage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+    <Container maxWidth="xl" sx={{ mt: 4, mb: 4, maxWidth: '1000px' }}>
       <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
         open={isProcessing || isImporting || isLoadingClasses}
@@ -1227,7 +1227,7 @@ const WorkersTable: React.FC<WorkersTableProps> = ({
   showDuplicateHighlight
 }) => {
   return (
-    <TableContainer component={Paper}>
+    <TableContainer component={Paper} > 
       <Table size="small">
         <TableHead>
           <TableRow>

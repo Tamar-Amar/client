@@ -20,15 +20,28 @@ import {
   DialogActions,
   TextField,
   CircularProgress,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import { useFetchAllWorkersAfterNoon } from "../../queries/workerAfterNoonQueries";
 import {  useFetchAllPersonalDocuments } from "../../queries/useDocuments";
 import { WorkerAfterNoon } from "../../types";
 import SendIcon from '@mui/icons-material/Send';
+import SearchIcon from '@mui/icons-material/Search';
 
 
 const REQUIRED_TAGS = ["אישור משטרה", "תעודת השכלה", "תעודת זהות", "חוזה"];
 const API_URL = process.env.REACT_APP_API_URL;
+
+// פרויקטים זמינים עם קודי הפרויקט
+const PROJECTS = [
+  { value: 1, label: "צהרון שוטף 2025" },
+  { value: 2, label: "קייטנת חנוכה 2025" },
+  { value: 3, label: "קייטנת פסח 2025" },
+  { value: 4, label: "קייטנת קיץ 2025" },
+];
 
 const WorkersDocumentsEmailPage: React.FC = () => {
   const [selectedWorkerIds, setSelectedWorkerIds] = useState<string[]>([]);
@@ -37,11 +50,15 @@ const WorkersDocumentsEmailPage: React.FC = () => {
   const [status, setStatus] = useState<string | null>(null);
   const [results, setResults] = useState<{success: string[], failed: string[]}>({ success: [], failed: [] });
   const [page, setPage] = useState(0);
-  const [rowsPerPage] = useState(15);
+  const [rowsPerPage] = useState(14);
   const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
   const [customMessage, setCustomMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isCustomEmail, setIsCustomEmail] = useState(false);
+  
+  // סינון וחיפוש
+  const [selectedProject, setSelectedProject] = useState<number | "">("");
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   const documentsByWorkerId = useMemo(() => {
     const map = new Map<string, { tag: string; status: string }[]>();
@@ -52,14 +69,62 @@ const WorkersDocumentsEmailPage: React.FC = () => {
     return map;
   }, [documents]);
 
+  // פונקציה לקבלת שם הפרויקט לפי קודי הפרויקט
+  const getProjectName = (worker: WorkerAfterNoon): string => {
+    if (!worker.projectCodes || worker.projectCodes.length === 0) {
+      return "לא מוגדר";
+    }
+    
+    const projectNames: { [key: number]: string } = {
+      1: "צהרון שוטף 2025",
+      2: "קייטנת חנוכה 2025", 
+      3: "קייטנת פסח 2025",
+      4: "קייטנת קיץ 2025"
+    };
+    
+    // מחזיר את הפרויקט הראשון (אם יש כמה)
+    const firstProjectCode = worker.projectCodes[0];
+    return projectNames[firstProjectCode] || `פרויקט ${firstProjectCode}`;
+  };
+
+  // סינון עובדים לפי פרויקט וחיפוש
+  const filteredWorkers = useMemo(() => {
+    let filtered = workers.filter((worker: WorkerAfterNoon) => {
+      // סינון לפי פרויקט
+      if (selectedProject !== "") {
+        if (!worker.projectCodes || !worker.projectCodes.includes(selectedProject as number)) {
+          return false;
+        }
+      }
+      
+      // סינון רק עובדים פעילים
+      if (!worker.isActive) {
+        return false;
+      }
+      
+      // חיפוש חופשי
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        const fullName = `${worker.firstName} ${worker.lastName}`.toLowerCase();
+        const id = worker.id?.toLowerCase() || "";
+        
+        return fullName.includes(searchLower) || id.includes(searchLower);
+      }
+      
+      return true;
+    });
+    
+    return filtered;
+  }, [workers, selectedProject, searchTerm]);
+
   const workersMissingDocs = useMemo(() => {
-    return workers.map((worker:WorkerAfterNoon) => {
+    return filteredWorkers.map((worker:WorkerAfterNoon) => {
       const workerDocs = documentsByWorkerId.get(worker._id) || [];
       const approvedTags = workerDocs.filter(d => d.status === "מאושר").map(d => d.tag);
       const missing = REQUIRED_TAGS.filter((tag) => !approvedTags.includes(tag));
       return { ...worker, missing };
     }).filter((w) => w.missing.length);
-  }, [workers, documentsByWorkerId]);
+  }, [filteredWorkers, documentsByWorkerId]);
 
   const handleSendNotificationEmails = async () => {
     const selected = selectedWorkerIds.length > 0
@@ -76,8 +141,6 @@ const WorkersDocumentsEmailPage: React.FC = () => {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              from: '"צוות צעירון" <noreply@noreply.co.il>',
-              replyTo: '"צוות צעירון" <amtamar747@gmail.com>',
               to: worker.email,
               subject: "מסמכים חסרים",
               text: `שלום ${worker.firstName},\n\nנמצאו במסד הנתונים שלנו החסרים הבאים: ${worker.missing.join(", ")}.\n${customMessage}\n\nתודה, צוות צעירון`,
@@ -128,8 +191,6 @@ const WorkersDocumentsEmailPage: React.FC = () => {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              from: '"צוות צעירון" <noreply@noreply.co.il>',
-              replyTo: '"צוות צעירון" <amtamar747@gmail.com>',
               to: worker.email,
               subject: "הודעה אישית",
               text: `שלום ${worker.firstName},\n\n${customMessage}\n\nתודה, צוות צעירון`,
@@ -204,13 +265,48 @@ const WorkersDocumentsEmailPage: React.FC = () => {
 
   return (
     <Box sx={{ mx: "auto", mt: 4, width: '80%' }}>
+      {/* סינון וחיפוש */}
+      <Paper sx={{ p: 2, mb: 2 }}>
+        <Typography variant="h6" gutterBottom>
+          סינון וחיפוש
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+          <FormControl sx={{ minWidth: 200 }}>
+            <InputLabel>פרויקט</InputLabel>
+            <Select
+              value={selectedProject}
+              label="פרויקט"
+              onChange={(e) => setSelectedProject(e.target.value === "" ? "" : Number(e.target.value))}
+            >
+              <MenuItem value="">כל הפרויקטים</MenuItem>
+              {PROJECTS.map((project) => (
+                <MenuItem key={project.value} value={project.value}>
+                  {project.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          
+          <TextField
+            label="חיפוש לפי שם או תעודת זהות"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            sx={{ minWidth: 250 }}
+            InputProps={{
+              startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />,
+            }}
+          />
+        </Box>
+      </Paper>
+
       <Typography sx={{ mb: 2 }}>
         נמצאו {workersMissingDocs.length} עובדים שחסר להם לפחות מסמך אחד (שטרם אושר):
+        {selectedProject !== "" && ` (פרויקט: ${PROJECTS.find(p => p.value === selectedProject)?.label})`}
       </Typography>
 
       <Box sx={{ display: 'flex', gap: 2 }}>
-        <Box sx={{ flex: 1, border: "1px solid #ccc", borderRadius: 1, backgroundColor: 'white' }}>
-          <TableContainer>
+        <Box sx={{ flex: 1, border: "1px solid #ccc", borderRadius: 1, backgroundColor: 'white', minHeight: '400px' }}>
+          <TableContainer sx={{ minHeight: '500px' }}>
             <Table size="small" stickyHeader>
               <TableHead>
                 <TableRow>
@@ -229,6 +325,7 @@ const WorkersDocumentsEmailPage: React.FC = () => {
                   </TableCell>
                   <TableCell sx={{ backgroundColor: 'white', position: 'sticky', top: 0, zIndex: 1, fontWeight: 'bold' }}>שם העובד</TableCell>
                   <TableCell sx={{ backgroundColor: 'white', position: 'sticky', top: 0, zIndex: 1, fontWeight: 'bold' }}>ת.ז</TableCell>
+                  <TableCell sx={{ backgroundColor: 'white', position: 'sticky', top: 0, zIndex: 1, fontWeight: 'bold' }}>פרויקט</TableCell>
                   <TableCell sx={{ backgroundColor: 'white', position: 'sticky', top: 0, zIndex: 1, fontWeight: 'bold' }}>מסמכים חסרים</TableCell>
                 </TableRow>
               </TableHead>
@@ -250,6 +347,14 @@ const WorkersDocumentsEmailPage: React.FC = () => {
                     </TableCell>
                     <TableCell>{w.firstName} {w.lastName}</TableCell>
                     <TableCell>{w.id}</TableCell>
+                    <TableCell>
+                      <Chip 
+                        label={getProjectName(w)} 
+                        size="small" 
+                        color="primary" 
+                        variant="outlined"
+                      />
+                    </TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                         {w.missing.map((doc) => (
