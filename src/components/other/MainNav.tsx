@@ -92,11 +92,6 @@ const MainNav: React.FC = () => {
     { label: 'משתמשים', path: '/users', icon: <PeopleIcon fontSize="small" /> },
   ];
 
-  const coordinatorTabs: TabInfo[] = [
-    { label: 'עובדים', path: '/coordinator/workers', icon: <PeopleIcon fontSize="small" /> },
-    { label: 'כיתות', path: '/coordinator/classes', icon: <GroupWorkIcon fontSize="small" /> },
-  ];
-
   const getTabsBySection = () => {
     if (!selectedSection) return [];
     if (role === 'manager_project' && selectedSection === 'afternoon') return managerTabs;
@@ -104,7 +99,6 @@ const MainNav: React.FC = () => {
     if (role === 'admin' && selectedSection === 'camp') return adminCampTabs;
     if (role === 'operator' && selectedSection === 'afternoon') return operatorTabs;
     if (role === 'accountant') return accountantTabs;
-    if (role === 'coordinator') return coordinatorTabs;
     if ((role === 'admin' || role === 'manager_project' || role === 'accountant') && selectedSection === 'users') return usersTabs;
     if (role === 'worker') return [];
     return [];
