@@ -8,22 +8,14 @@ interface WorkerAfterNoonFormProps {
 }
 
 interface ProjectSelection {
-  isBaseWorker: boolean;
-  isAfterNoon: boolean;
-  isHanukaCamp: boolean;
-  isPassoverCamp: boolean;
-  isSummerCamp: boolean;
+  projectCodes: number[];
 }
 
 const WorkerAfterNoonForm: React.FC<WorkerAfterNoonFormProps> = ({ onSuccess }) => {
   const [form, setForm] = useState<Partial<WorkerAfterNoon>>({});
   const [loading, setLoading] = useState(false);
   const [projectSelection, setProjectSelection] = useState<ProjectSelection>({
-    isBaseWorker: false,
-    isAfterNoon: false,
-    isHanukaCamp: false,
-    isPassoverCamp: false,
-    isSummerCamp: false
+    projectCodes: []
   });
   const addWorkerMutation = useAddWorkerAfterNoon();
 
@@ -35,22 +27,24 @@ const WorkerAfterNoonForm: React.FC<WorkerAfterNoonFormProps> = ({ onSuccess }) 
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleProjectSelectionChange = (field: keyof ProjectSelection) => {
+  const handleProjectSelectionChange = (projectCode: number) => {
     setProjectSelection(prev => {
-      const newSelection = { ...prev };
-      newSelection[field] = !prev[field];
-      return newSelection;
+      const newCodes = prev.projectCodes.includes(projectCode)
+        ? prev.projectCodes.filter(code => code !== projectCode)
+        : [...prev.projectCodes, projectCode];
+      return { projectCodes: newCodes };
     });
   };
 
   const getProjectDisplayName = (selection: ProjectSelection): string => {
-    const projects = [];
-    if (selection.isBaseWorker) projects.push('עובד בסיס');
-    if (selection.isAfterNoon) projects.push('צהרון');
-    if (selection.isHanukaCamp) projects.push('קייטנת חנוכה');
-    if (selection.isPassoverCamp) projects.push('קייטנת פסח');
-    if (selection.isSummerCamp) projects.push('קייטנת קיץ');
+    const projectNames: { [key: number]: string } = {
+      1: "צהרון שוטף 2025",
+      2: "קייטנת חנוכה 2025", 
+      3: "קייטנת פסח 2025",
+      4: "קייטנת קיץ 2025"
+    };
     
+    const projects = selection.projectCodes.map(code => projectNames[code] || `פרויקט ${code}`);
     return projects.length > 0 ? projects.join(', ') : 'לא נבחר';
   };
 
@@ -58,11 +52,7 @@ const WorkerAfterNoonForm: React.FC<WorkerAfterNoonFormProps> = ({ onSuccess }) 
     e.preventDefault();
     
     // בדיקה שיש לפחות פרויקט אחד נבחר
-    if (!projectSelection.isBaseWorker && 
-        !projectSelection.isAfterNoon && 
-        !projectSelection.isHanukaCamp && 
-        !projectSelection.isPassoverCamp && 
-        !projectSelection.isSummerCamp) {
+    if (projectSelection.projectCodes.length === 0) {
       alert('יש לבחור לפחות פרויקט אחד');
       return;
     }
@@ -71,7 +61,7 @@ const WorkerAfterNoonForm: React.FC<WorkerAfterNoonFormProps> = ({ onSuccess }) 
     try {
       const workerData = {
         ...form,
-        ...projectSelection,
+        projectCodes: projectSelection.projectCodes,
         project: getProjectDisplayName(projectSelection)
       } as WorkerAfterNoon;
       
@@ -79,11 +69,7 @@ const WorkerAfterNoonForm: React.FC<WorkerAfterNoonFormProps> = ({ onSuccess }) 
       alert('העובד נשמר בהצלחה!');
       setForm({});
       setProjectSelection({
-        isBaseWorker: false,
-        isAfterNoon: false,
-        isHanukaCamp: false,
-        isPassoverCamp: false,
-        isSummerCamp: false
+        projectCodes: []
       });
       onSuccess?.();
     } catch (err) {
@@ -154,47 +140,38 @@ const WorkerAfterNoonForm: React.FC<WorkerAfterNoonFormProps> = ({ onSuccess }) 
             <FormControlLabel
               control={
                 <Checkbox
-                  checked={projectSelection.isBaseWorker}
-                  onChange={() => handleProjectSelectionChange('isBaseWorker')}
+                  checked={projectSelection.projectCodes.includes(1)}
+                  onChange={() => handleProjectSelectionChange(1)}
                 />
               }
-              label="עובד בסיס"
+              label="צהרון שוטף 2025"
             />
             <FormControlLabel
               control={
                 <Checkbox
-                  checked={projectSelection.isAfterNoon}
-                  onChange={() => handleProjectSelectionChange('isAfterNoon')}
+                  checked={projectSelection.projectCodes.includes(2)}
+                  onChange={() => handleProjectSelectionChange(2)}
                 />
               }
-              label="עובד צהרון"
+              label="קייטנת חנוכה 2025"
             />
             <FormControlLabel
               control={
                 <Checkbox
-                  checked={projectSelection.isHanukaCamp}
-                  onChange={() => handleProjectSelectionChange('isHanukaCamp')}
+                  checked={projectSelection.projectCodes.includes(3)}
+                  onChange={() => handleProjectSelectionChange(3)}
                 />
               }
-              label="עובד קייטנת חנוכה"
+              label="קייטנת פסח 2025"
             />
             <FormControlLabel
               control={
                 <Checkbox
-                  checked={projectSelection.isPassoverCamp}
-                  onChange={() => handleProjectSelectionChange('isPassoverCamp')}
+                  checked={projectSelection.projectCodes.includes(4)}
+                  onChange={() => handleProjectSelectionChange(4)}
                 />
               }
-              label="עובד קייטנת פסח"
-            />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={projectSelection.isSummerCamp}
-                  onChange={() => handleProjectSelectionChange('isSummerCamp')}
-                />
-              }
-              label="עובד קייטנת קיץ"
+              label="קייטנת קיץ 2025"
             />
           </FormGroup>
           

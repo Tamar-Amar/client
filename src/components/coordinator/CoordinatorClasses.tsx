@@ -21,6 +21,7 @@ import SchoolIcon from '@mui/icons-material/School';
 import PeopleIcon from '@mui/icons-material/People';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import { Class } from '../../types';
+import axios from 'axios';
 
 interface CoordinatorClassesProps {
   coordinatorId: string;
@@ -41,17 +42,17 @@ const CoordinatorClasses: React.FC<CoordinatorClassesProps> = ({ coordinatorId }
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/classes/coordinator/${coordinatorId}`, {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/classes/coordinator/${coordinatorId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
       
-      if (!response.ok) {
+      if (response.status !== 200) {
         throw new Error('שגיאה בטעינת הכיתות');
       }
       
-      const data = await response.json();
+      const data = response.data;
       setClasses(data);
     } catch (err: any) {
       setError(err.message);
@@ -93,7 +94,7 @@ const CoordinatorClasses: React.FC<CoordinatorClassesProps> = ({ coordinatorId }
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
           <SchoolIcon sx={{ mr: 2, color: 'primary.main' }} />
           <Typography variant="h5" fontWeight="bold" color="primary.main">
-            כיתות תחת אחריותי
+           כיתות
           </Typography>
           <Chip 
             label={classes.length} 

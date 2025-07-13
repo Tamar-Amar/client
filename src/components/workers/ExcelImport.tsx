@@ -27,7 +27,7 @@ interface ExcelRow {
   __EMPTY_13: string; 
 }
 
-interface PreviewWorker extends Omit<WorkerAfterNoon, '_id'> {
+interface PreviewWorker extends Omit<WorkerAfterNoon, '_id' | 'isAfterNoon' | 'isBaseWorker' | 'isHanukaCamp' | 'isPassoverCamp' | 'isSummerCamp'> {
   _id?: string;
   isDuplicate?: boolean;
   workingSymbol?: string;
@@ -145,12 +145,8 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       notes:'לא נבחר',     
       workingSymbol: symbol || '',
       is101: is101,
-      projectCodes: [],
-      isAfterNoon: false,
-      isBaseWorker: false,
-      isHanukaCamp: false,
-      isPassoverCamp: false,
-      isSummerCamp: false
+      projectCodes: projectSelection.selectedProjects,
+      modelCode: row[3]?.toString() || 'לא נבחר'
     };
   };
 
@@ -309,7 +305,12 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
           const normalizedWorker = {
             ...worker,
             phone: normalizePhone(worker.phone),
-            projectCodes: projectSelection.selectedProjects
+            projectCodes: projectSelection.selectedProjects,
+            isAfterNoon: false,
+            isBaseWorker: false,
+            isHanukaCamp: false,
+            isPassoverCamp: false,
+            isSummerCamp: false
           };
           const savedWorker = await addWorkerMutation.mutateAsync(normalizedWorker);
 

@@ -46,7 +46,7 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState<'documents' | 'personal' | 'afternoon-documents' | 'hanukah-camp' | 'passover-camp' | 'summer-camp'>('personal');
   const [drawerOpen, setDrawerOpen] = useState(true);
 
-  const isAfterNoonWorker = workerData?.isAfterNoon;
+  const isAfterNoonWorker = workerData?.projectCodes?.includes(1);
 
   React.useEffect(() => {
     if (!isAfterNoonWorker && selectedTab === 'afternoon-documents') {
@@ -89,11 +89,6 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
             <Box>
                 <Typography variant="h5" gutterBottom>קייטנת פסח</Typography>
                 <Typography variant="body1" color="text.secondary">תוכן קייטנת פסח יוצג כאן</Typography>
-            </Box>
-        ) : selectedTab === 'summer-camp' ? (
-            <Box>
-                <Typography variant="h5" gutterBottom>קייטנת קיץ</Typography>
-                <Typography variant="body1" color="text.secondary">תוכן קייטנת קיץ יוצג כאן</Typography>
             </Box>
         ) : (
           <Box>
@@ -145,7 +140,7 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
               <ListItemText primary="מסמכים אישיים" />
             </ListItemButton>
           </ListItem>
-          {workerData?.isAfterNoon && (
+          {workerData?.projectCodes?.includes(1) && (
             <ListItem disablePadding>
               <ListItemButton selected={selectedTab === 'afternoon-documents'} onClick={() => setSelectedTab('afternoon-documents')} sx={selectedTab === 'afternoon-documents' ? { bgcolor: '#e3f2fd', color: 'primary.main', borderRight: '4px solid #1976d2' } : {}}>
                 <AssignmentIcon sx={{ mr: 1 }} color={selectedTab === 'afternoon-documents' ? 'primary' : 'action'} />
@@ -153,7 +148,7 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
               </ListItemButton>
             </ListItem>
           )}
-          {workerData?.isHanukaCamp && (
+          {workerData?.projectCodes?.includes(2) && (
             <ListItem disablePadding>
               <ListItemButton selected={selectedTab === 'hanukah-camp'} onClick={() => setSelectedTab('hanukah-camp')} sx={selectedTab === 'hanukah-camp' ? { bgcolor: '#e3f2fd', color: 'primary.main', borderRight: '4px solid #1976d2' } : {}}>
                 <EventAvailableIcon sx={{ mr: 1 }} color={selectedTab === 'hanukah-camp' ? 'primary' : 'action'} />
@@ -161,7 +156,7 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
               </ListItemButton>
             </ListItem>
           )}
-          {workerData?.isPassoverCamp && (
+          {workerData?.projectCodes?.includes(3) && (
             <ListItem disablePadding>
               <ListItemButton selected={selectedTab === 'passover-camp'} onClick={() => setSelectedTab('passover-camp')} sx={selectedTab === 'passover-camp' ? { bgcolor: '#e3f2fd', color: 'primary.main', borderRight: '4px solid #1976d2' } : {}}>
                 <BeachAccessIcon sx={{ mr: 1 }} color={selectedTab === 'passover-camp' ? 'primary' : 'action'} />
@@ -169,14 +164,7 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
               </ListItemButton>
             </ListItem>
           )}
-          {workerData?.isSummerCamp && (
-            <ListItem disablePadding>
-              <ListItemButton selected={selectedTab === 'summer-camp'} onClick={() => setSelectedTab('summer-camp')} sx={selectedTab === 'summer-camp' ? { bgcolor: '#e3f2fd', color: 'primary.main', borderRight: '4px solid #1976d2' } : {}}>
-                <WbSunnyIcon sx={{ mr: 1 }} color={selectedTab === 'summer-camp' ? 'primary' : 'action'} />
-                <ListItemText primary="קייטנת קיץ" />
-              </ListItemButton>
-            </ListItem>
-          )}
+
         </List>
       </Drawer>
     </Box>

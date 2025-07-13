@@ -148,6 +148,7 @@ export interface Activity {
     firstName: string;
     lastName: string;
     accountantCode: string;
+    modelCode: number;
     projectCodes?: number[]; 
     createDate: Date; 
     updateDate: Date;
@@ -161,13 +162,15 @@ export interface Activity {
     notes?: string;
     roleType: string;
     roleName: string;
-    isAfterNoon: boolean;
-    isBaseWorker: boolean;
-    isHanukaCamp: boolean;
-    isPassoverCamp: boolean;
-    isSummerCamp: boolean;
     is101: boolean;
     coordinatorId?: string;
+  }
+
+  export interface WorkerWithClassInfo extends WorkerAfterNoon {
+    classSymbol?: string;
+    className?: string;
+    project?: number;
+    documentsCount?: number;
   }
   
 
@@ -178,4 +181,24 @@ export interface Activity {
     phone: string;
     email: string;
     password: string;
+  }
+
+  export interface User {
+    _id?: string;
+    username: string;
+    role: 'admin' | 'manager_project' | 'accountant' | 'coordinator';
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string;
+    isActive: boolean;
+    lastLogin?: string;
+    createDate: string;
+    updateDate: string;
+    updateBy: string;
+    projectCodes?: Array<{
+      projectCode: number;
+      institutionCode: string;
+      institutionName: string;
+    }>;
   }

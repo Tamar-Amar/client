@@ -95,16 +95,6 @@ const CoordinatorDashboardPage: React.FC = () => {
           </ListItem>
           <ListItem disablePadding>
             <ListItemButton 
-              selected={selectedTab === 'classes'} 
-              onClick={() => setSelectedTab('classes')} 
-              sx={selectedTab === 'classes' ? { bgcolor: '#e3f2fd', color: 'primary.main', borderRight: '4px solid #1976d2' } : {}}
-            >
-              <SchoolIcon sx={{ mr: 1 }} color={selectedTab === 'classes' ? 'primary' : 'action'} />
-              <ListItemText primary="כיתות" />
-            </ListItemButton>
-          </ListItem>
-          <ListItem disablePadding>
-            <ListItemButton 
               selected={selectedTab === 'workers'} 
               onClick={() => setSelectedTab('workers')} 
               sx={selectedTab === 'workers' ? { bgcolor: '#e3f2fd', color: 'primary.main', borderRight: '4px solid #1976d2' } : {}}

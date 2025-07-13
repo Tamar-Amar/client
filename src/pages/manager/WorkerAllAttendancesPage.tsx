@@ -32,10 +32,7 @@ interface AttendanceRecord {
     firstName?: string; 
     lastName?: string; 
     id?: string;
-    isAfterNoon?: boolean;
-    isHanukkah?: boolean;
-    isPassover?: boolean;
-    isSummer?: boolean;
+    projectCodes?: number[];
   };
   classId: string | { _id: string; name?: string; uniqueSymbol?: string };
   month: string;
@@ -52,10 +49,10 @@ interface Class {
 
 const projectOptions = [
     { value: '', label: 'כל הפרויקטים' },
-    { value: 'isAfterNoon', label: 'צהרון' },
-    { value: 'isHanukkah', label: 'קייטנת חנוכה' },
-    { value: 'isPassover', label: 'קייטנת פסח' },
-    { value: 'isSummer', label: 'קייטנת קיץ' },
+    { value: '1', label: 'צהרון שוטף 2025' },
+    { value: '2', label: 'קייטנת חנוכה 2025' },
+    { value: '3', label: 'קייטנת פסח 2025' },
+    { value: '4', label: 'קייטנת קיץ 2025' },
 ];
 
 const getStatus = (record: AttendanceRecord) => {
@@ -126,7 +123,7 @@ const WorkerAttendancePage: React.FC = () => {
             const workerIdString = typeof worker === 'object' ? worker?.id || '' : worker.toString();
             if (filterWorkerId && !workerIdString.includes(filterWorkerId)) return [];
             if (filterProject && typeof worker === 'object' && worker !== null) {
-              if (!worker[filterProject as keyof typeof worker]) {
+              if (!worker.projectCodes || !worker.projectCodes.includes(parseInt(filterProject))) {
                 return [];
               }
             }

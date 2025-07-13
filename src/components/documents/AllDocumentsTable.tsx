@@ -83,18 +83,17 @@ const AllDocumentsTable: React.FC = () => {
 
   const PROJECT_OPTIONS = [
     { value: '', label: 'כל הפרויקטים' },
-    { value: 'isBaseWorker', label: 'עובד בסיס' },
-    { value: 'isAfterNoon', label: 'צהרון' },
-    { value: 'isHanukaCamp', label: 'קייטנת חנוכה' },
-    { value: 'isPassoverCamp', label: 'קייטנת פסח' },
-    { value: 'isSummerCamp', label: 'קייטנת קיץ' },
+    { value: '1', label: 'צהרון שוטף 2025' },
+    { value: '2', label: 'קייטנת חנוכה 2025' },
+    { value: '3', label: 'קייטנת פסח 2025' },
+    { value: '4', label: 'קייטנת קיץ 2025' },
   ];
 
   const filteredData = useMemo(() => {
     return workerDocumentsData.filter(({ worker, docs }) => {
       const nameMatch = !searchName || `${worker.lastName} ${worker.firstName}`.toLowerCase().includes(searchName.toLowerCase());
       const idMatch = !searchId || (worker.id || '').includes(searchId);
-      const projectMatch = !filterProject || (worker as any)[filterProject];
+      const projectMatch = !filterProject || (worker.projectCodes && worker.projectCodes.includes(parseInt(filterProject)));
 
       if (!nameMatch || !idMatch || !projectMatch) return false;
 

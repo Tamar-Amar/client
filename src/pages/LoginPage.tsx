@@ -85,23 +85,39 @@ const LoginPage: React.FC = () => {
 
   const handleCoordinatorLogin = async () => {
     try {
-      const response = await axios.post(`${API_URL}/coordinator`, { username: id, password });
-      const { role, token, user } = response.data;
-
-      setUserRole(role);
-      setUserToken(token);
-      localStorage.setItem('token', token);
-      localStorage.setItem('role', role);
-      
-      if (user) {
-        localStorage.setItem('user', JSON.stringify(user));
-      }
-      if (role === 'coordinator') {
-        window.location.href = '/coordinator/dashboard';
-      } else if (role === 'accountant') {
-        window.location.href = '/accountant/dashboard';
+      if (!isCodeSent) {
+        // שלב ראשון - בדיקת פרטי התחברות
+        const response = await axios.post(`${API_URL}/coordinator/verify`, { username: id, password });
+        const { email } = response.data;
+        
+        setMaskedEmail(email);
+        setIsCodeSent(true);
+        setErrorMessage('');
       } else {
-        window.location.href = '/';
+        // שלב שני - אימות קוד
+        const response = await axios.post(`${API_URL}/coordinator/login`, { 
+          username: id, 
+          password,
+          code: verificationCode 
+        });
+        
+        const { role, token, user } = response.data;
+
+        setUserRole(role);
+        setUserToken(token);
+        localStorage.setItem('token', token);
+        localStorage.setItem('role', role);
+        
+        if (user) {
+          localStorage.setItem('user', JSON.stringify(user));
+        }
+        if (role === 'coordinator') {
+          window.location.href = '/coordinator/dashboard';
+        } else if (role === 'accountant') {
+          window.location.href = '/accountant/dashboard';
+        } else {
+          window.location.href = '/';
+        }
       }
     } catch (error: any) {
       setErrorMessage(error.response?.data?.message || 'שגיאה בהתחברות');
@@ -311,12 +327,19 @@ const LoginPage: React.FC = () => {
             </Alert>
           )}
 
+          {isCodeSent && maskedEmail && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              קוד אימות נשלח לכתובת {maskedEmail}
+            </Alert>
+          )}
+
           <TextField
             label="שם משתמש"
             value={id}
             onChange={(e) => setId(e.target.value)}
             fullWidth
             margin="normal"
+            disabled={isCodeSent}
           />
           <TextField
             label="סיסמה"
@@ -325,6 +348,7 @@ const LoginPage: React.FC = () => {
             onChange={(e) => handlePasswordChange(e.target.value)}
             fullWidth
             margin="normal"
+            disabled={isCodeSent}
             InputProps={{
               endAdornment: (
                 <IconButton
@@ -336,6 +360,18 @@ const LoginPage: React.FC = () => {
               ),
             }}
           />
+          
+          {isCodeSent && (
+            <TextField
+              label="קוד אימות"
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value)}
+              fullWidth
+              margin="normal"
+              type="text"
+            />
+          )}
+
           <Button
             variant="contained"
             color="primary"
@@ -344,25 +380,44 @@ const LoginPage: React.FC = () => {
             onClick={handleCoordinatorLogin}
             sx={{ mt: 2 }}
           >
-            התחבר
+            {isCodeSent ? 'אמת קוד' : 'בדוק פרטי התחברות'}
           </Button>
+
+          {isCodeSent && (
+            <Button
+              variant="text"
+              color="primary"
+              fullWidth
+              size="small"
+              onClick={() => {
+                setIsCodeSent(false);
+                setVerificationCode('');
+                setErrorMessage('');
+              }}
+              sx={{ mt: 1 }}
+            >
+              שלח קוד חדש
+            </Button>
+          )}
           
-          <Button
-            variant="text"
-            color="error"
-            fullWidth
-            size="small"
-            onClick={() => navigate('/forgot-password')}
-            sx={{ 
-              mt: 1,
-              textDecoration: 'underline',
-              '&:hover': {
-                textDecoration: 'underline'
-              }
-            }}
-          >
-            שכחתי סיסמה
-          </Button>
+          {!isCodeSent && (
+            <Button
+              variant="text"
+              color="error"
+              fullWidth
+              size="small"
+              onClick={() => navigate('/forgot-password')}
+              sx={{ 
+                mt: 1,
+                textDecoration: 'underline',
+                '&:hover': {
+                  textDecoration: 'underline'
+                }
+              }}
+            >
+              שכחתי סיסמה
+            </Button>
+          )}
         </TabPanel>
 
         <TabPanel value={tabValue} index={1}>

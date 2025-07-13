@@ -15,22 +15,72 @@ import {
   TableRow,
   Chip,
   IconButton,
-  Tooltip
+  Tooltip,
+  Card,
+  CardContent,
+  Grid,
+  TextField,
+  InputAdornment,
+  Pagination,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Divider
 } from '@mui/material';
 import PeopleIcon from '@mui/icons-material/People';
 import PhoneIcon from '@mui/icons-material/Phone';
 import EmailIcon from '@mui/icons-material/Email';
 import WorkIcon from '@mui/icons-material/Work';
-import { WorkerAfterNoon } from '../../types';
+import SchoolIcon from '@mui/icons-material/School';
+import BusinessIcon from '@mui/icons-material/Business';
+import SearchIcon from '@mui/icons-material/Search';
+import ClearIcon from '@mui/icons-material/Clear';
+import DescriptionIcon from '@mui/icons-material/Description';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import WarningIcon from '@mui/icons-material/Warning';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import { WorkerWithClassInfo } from '../../types';
+import axios from 'axios';
+import { Document, DocumentStatus } from '../../types/Document';
 
 interface CoordinatorWorkersProps {
   coordinatorId: string;
 }
 
+const projectTypes = [
+  { label: 'צהרון שוטף 2025', value: 1 },
+  { label: 'קייטנת חנוכה 2025', value: 2 },
+  { label: 'קייטנת פסח 2025', value: 3 },
+  { label: 'קייטנת קיץ 2025', value: 4 },
+];
+
 const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }) => {
-  const [workers, setWorkers] = useState<WorkerAfterNoon[]>([]);
+  const [workers, setWorkers] = useState<WorkerWithClassInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [coordinatorInfo, setCoordinatorInfo] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const workersPerPage = 10;
+  const [selectedWorker, setSelectedWorker] = useState<WorkerWithClassInfo | null>(null);
+  const [documentsDialogOpen, setDocumentsDialogOpen] = useState(false);
+  const [workerDocuments, setWorkerDocuments] = useState<Document[]>([]);
+  const [documentsLoading, setDocumentsLoading] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [selectedDocumentType, setSelectedDocumentType] = useState<string>('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [expiryDate, setExpiryDate] = useState<string>('');
 
   useEffect(() => {
     if (coordinatorId) {
@@ -42,18 +92,32 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/workers/coordinator/${coordinatorId}`, {
+      
+      // קבלת פרטי הרכז
+      const coordinatorResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/users/${coordinatorId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
       
-      if (!response.ok) {
+      if (coordinatorResponse.status === 200) {
+        const coordinatorData = coordinatorResponse.data;
+        setCoordinatorInfo(coordinatorData);
+      }
+      
+      // קבלת העובדים
+      const workersResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/worker-after-noon/coordinator/${coordinatorId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (workersResponse.status !== 200) {
         throw new Error('שגיאה בטעינת העובדים');
       }
       
-      const data = await response.json();
-      setWorkers(data);
+      const workersData = workersResponse.data;
+      setWorkers(workersData);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -61,8 +125,140 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
     }
   };
 
-  const getProjectCount = (worker: WorkerAfterNoon) => {
-    return [worker.isBaseWorker, worker.isAfterNoon, worker.isHanukaCamp, worker.isPassoverCamp, worker.isSummerCamp].filter(Boolean).length;
+  const getProjectCount = (worker: WorkerWithClassInfo) => {
+    return worker.projectCodes ? worker.projectCodes.length : 0;
+  };
+
+  // סינון עובדים לפי חיפוש
+  const filteredWorkers = workers.filter(worker => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      worker.firstName?.toLowerCase().includes(searchLower) ||
+      worker.lastName?.toLowerCase().includes(searchLower) ||
+      worker.id?.includes(searchTerm) ||
+      worker.phone?.includes(searchTerm) ||
+      worker.email?.toLowerCase().includes(searchLower) ||
+      worker.roleType?.toLowerCase().includes(searchLower) ||
+      worker.classSymbol?.toLowerCase().includes(searchLower) ||
+      worker.className?.toLowerCase().includes(searchLower)
+    );
+  });
+
+  // חישוב דפדוף
+  const totalPages = Math.ceil(filteredWorkers.length / workersPerPage);
+  const startIndex = (currentPage - 1) * workersPerPage;
+  const endIndex = startIndex + workersPerPage;
+  const currentWorkers = filteredWorkers.slice(startIndex, endIndex);
+
+  const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+    setCurrentPage(1); // איפוס לדף ראשון בעת חיפוש
+  };
+
+  const clearSearch = () => {
+    setSearchTerm('');
+    setCurrentPage(1);
+  };
+
+  const fetchWorkerDocuments = async (workerId: string) => {
+    try {
+      setDocumentsLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/documents/${workerId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.status === 200) {
+        setWorkerDocuments(response.data);
+      }
+    } catch (err: any) {
+      console.error('Error fetching worker documents:', err);
+      setWorkerDocuments([]);
+    } finally {
+      setDocumentsLoading(false);
+    }
+  };
+
+  const handleWorkerClick = async (worker: WorkerWithClassInfo) => {
+    setSelectedWorker(worker);
+    setDocumentsDialogOpen(true);
+    await fetchWorkerDocuments(worker._id);
+  };
+
+  const handleCloseDialog = () => {
+    setDocumentsDialogOpen(false);
+    setSelectedWorker(null);
+    setWorkerDocuments([]);
+  };
+
+  const handleViewDocument = (document: Document) => {
+    if (document.url) {
+      window.open(document.url, '_blank');
+    }
+  };
+
+  const handleUploadDocument = async () => {
+    if (!selectedWorker || !selectedFile || !selectedDocumentType) {
+      return;
+    }
+
+    try {
+      setUploadLoading(true);
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('workerId', selectedWorker._id);
+      formData.append('documentType', selectedDocumentType);
+      formData.append('tz', selectedWorker.id);
+      if (expiryDate) {
+        formData.append('expiryDate', expiryDate);
+      }
+
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/documents/upload`, formData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      if (response.status === 201) {
+        // רענון רשימת הטפסים
+        await fetchWorkerDocuments(selectedWorker._id);
+        setUploadDialogOpen(false);
+        setSelectedFile(null);
+        setSelectedDocumentType('');
+        setExpiryDate('');
+      }
+    } catch (err: any) {
+      console.error('Error uploading document:', err);
+      alert('שגיאה בהעלאת הטפס');
+    } finally {
+      setUploadLoading(false);
+    }
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+    }
+  };
+
+  const handleOpenUploadDialog = () => {
+    setUploadDialogOpen(true);
+  };
+
+  const handleCloseUploadDialog = () => {
+    setUploadDialogOpen(false);
+    setSelectedFile(null);
+    setSelectedDocumentType('');
+    setExpiryDate('');
   };
 
   if (loading) {
@@ -98,7 +294,7 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
           <PeopleIcon sx={{ mr: 2, color: 'primary.main' }} />
           <Typography variant="h5" fontWeight="bold" color="primary.main">
-            עובדים תחת אחריותי
+           עובדים
           </Typography>
           <Chip 
             label={workers.length} 
@@ -107,14 +303,76 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
           />
         </Box>
 
-        {workers.length === 0 ? (
+        {/* כרטיס סיכום של הפרויקטים והקודי מוסד */}
+        {coordinatorInfo && coordinatorInfo.projectCodes && coordinatorInfo.projectCodes.length > 0 && (
+          <Card sx={{ mb: 3, bgcolor: '#f8f9fa' }}>
+            <CardContent>
+              <Grid container spacing={2}>
+                {coordinatorInfo.projectCodes.map((assignment: any, index: number) => {
+                  const project = projectTypes.find(p => p.value === assignment.projectCode);
+                  return (
+                    <Grid item xs={12} sm={6} md={4} key={index}>
+                      <Card variant="outlined" sx={{ p: 2 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                          <BusinessIcon color="primary" sx={{ mr: 1 }} />
+                          <Typography variant="subtitle2" fontWeight="bold">
+                            {assignment.institutionCode}
+                          </Typography>
+                        </Box>
+                        <Typography variant="body2" color="text.secondary">
+                          {assignment.institutionName}
+                        </Typography>
+                        <Chip 
+                          label={project ? project.label : `פרויקט ${assignment.projectCode}`}
+                          size="small"
+                          color="primary"
+                          sx={{ mt: 1 }}
+                        />
+                      </Card>
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* תיבת חיפוש */}
+        <Box sx={{ mb: 3 }}>
+          <TextField
+            fullWidth
+            placeholder="חיפוש עובדים..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon color="action" />
+                </InputAdornment>
+              ),
+              endAdornment: searchTerm && (
+                <InputAdornment position="end">
+                  <IconButton onClick={clearSearch} size="small">
+                    <ClearIcon />
+                  </IconButton>
+                </InputAdornment>
+              )
+            }}
+            sx={{ mb: 2 }}
+          />
+          <Typography variant="body2" color="text.secondary">
+            נמצאו {filteredWorkers.length} עובדים מתוך {workers.length} סה"כ
+          </Typography>
+        </Box>
+
+        {filteredWorkers.length === 0 ? (
           <Box textAlign="center" py={4}>
             <PeopleIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
             <Typography variant="h6" color="text.secondary" gutterBottom>
-              אין עובדים תחת אחריותך
+              {searchTerm ? 'לא נמצאו עובדים התואמים לחיפוש' : 'אין עובדים תחת אחריותך'}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              עובדים יוצגו כאן לאחר שיוך על ידי מנהל המערכת
+              {searchTerm ? 'נסה לשנות את מונח החיפוש' : 'עובדים יוצגו כאן לאחר שיוך על ידי מנהל המערכת'}
             </Typography>
           </Box>
         ) : (
@@ -124,15 +382,21 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
                 <TableRow>
                   <TableCell>שם העובד</TableCell>
                   <TableCell>תעודת זהות</TableCell>
-                  <TableCell>טלפון</TableCell>
-                  <TableCell>אימייל</TableCell>
+                  <TableCell>טפסים הועלו</TableCell>
+                  <TableCell>תפקיד</TableCell>
+                  <TableCell>כיתה</TableCell>
                   <TableCell>פרויקטים</TableCell>
                   <TableCell>סטטוס</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {workers.map((worker) => (
-                  <TableRow key={worker._id} hover>
+                {currentWorkers.map((worker) => (
+                  <TableRow 
+                    key={worker._id} 
+                    hover 
+                    onClick={() => handleWorkerClick(worker)}
+                    sx={{ cursor: 'pointer' }}
+                  >
                     <TableCell>
                       <Stack direction="row" alignItems="center" spacing={1}>
                         <PeopleIcon color="primary" fontSize="small" />
@@ -148,27 +412,50 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
                     </TableCell>
                     <TableCell>
                       <Stack direction="row" alignItems="center" spacing={1}>
-                        <PhoneIcon color="action" fontSize="small" />
+                        <DescriptionIcon color="action" fontSize="small" />
                         <Typography variant="body2">
-                          {worker.phone || 'לא צוין'}
+                          {worker.documentsCount || 0} טפסים
                         </Typography>
                       </Stack>
                     </TableCell>
                     <TableCell>
                       <Stack direction="row" alignItems="center" spacing={1}>
-                        <EmailIcon color="action" fontSize="small" />
                         <Typography variant="body2">
-                          {worker.email || 'לא צוין'}
+                          {worker.roleType || 'לא צוין'}
+                        </Typography>
+                      </Stack>
+                    </TableCell>
+                    <TableCell>
+                      <Stack direction="row" alignItems="center" spacing={1}>
+
+                        <Typography variant="body2">
+                          {worker.classSymbol ? (
+                            <Chip 
+                              label={worker.classSymbol} 
+                              size="small" 
+                              variant="outlined"
+                              color="primary"
+                            />
+                          ) : (
+                            worker.roleName || 'לא צוין'
+                          )}
                         </Typography>
                       </Stack>
                     </TableCell>
                     <TableCell>
                       <Stack direction="row" spacing={0.5} flexWrap="wrap">
-                        {worker.isBaseWorker && <Chip label="בסיס" size="small" variant="outlined" />}
-                        {worker.isAfterNoon && <Chip label="צהרון" size="small" variant="outlined" />}
-                        {worker.isHanukaCamp && <Chip label="חנוכה" size="small" variant="outlined" />}
-                        {worker.isPassoverCamp && <Chip label="פסח" size="small" variant="outlined" />}
-                        {worker.isSummerCamp && <Chip label="קיץ" size="small" variant="outlined" />}
+                        {(worker.projectCodes ?? []).map(code => {
+                          const project = projectTypes.find(p => p.value === code);
+                          return (
+                            <Chip 
+                              key={code} 
+                              label={project ? project.label : `פרויקט ${code}`} 
+                              size="small" 
+                              variant="outlined" 
+                              color="primary"
+                            />
+                          );
+                        })}
                       </Stack>
                     </TableCell>
                     <TableCell>
@@ -183,7 +470,201 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
               </TableBody>
             </Table>
           </TableContainer>
-        )}
+        )}          
+          {/* דפדוף */}
+          {totalPages > 1 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+              <Pagination
+                count={totalPages}
+                page={currentPage}
+                onChange={handlePageChange}
+                color="primary"
+                showFirstButton
+                showLastButton
+              />
+            </Box>
+          )}
+
+      {/* דיאלוג טפסים של עובד */}
+      <Dialog 
+        open={documentsDialogOpen} 
+        onClose={handleCloseDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Stack direction="row" alignItems="center" justifyContent="space-between">
+            <Stack direction="row" alignItems="center" spacing={2}>
+              <DescriptionIcon color="primary" />
+              <Typography variant="h6">
+                טפסים של {selectedWorker?.firstName} {selectedWorker?.lastName}
+              </Typography>
+            </Stack>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleOpenUploadDialog}
+              startIcon={<DescriptionIcon />}
+            >
+              העלאת טופס חדש
+            </Button>
+          </Stack> 
+        </DialogTitle>
+        <DialogContent>
+          {documentsLoading ? (
+            <Box display="flex" justifyContent="center" p={3}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <Box>
+              {workerDocuments.length === 0 ? (
+                <Box textAlign="center" py={3}>
+                  <WarningIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
+                  <Typography variant="h6" color="text.secondary" gutterBottom>
+                    אין טפסים שהועלו
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    העובד עדיין לא העלה טפסים למערכת
+                  </Typography>
+                </Box>
+              ) : (
+                <List>
+                  {workerDocuments.map((doc: Document, index: number) => (
+                    <ListItem key={index} divider>
+                      <ListItemIcon>
+                        {doc.status === DocumentStatus.APPROVED ? (
+                          <CheckCircleIcon color="success" />
+                        ) : doc.status === DocumentStatus.PENDING ? (
+                          <WarningIcon color="warning" />
+                        ) : (
+                          <DescriptionIcon color="action" />
+                        )}
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={doc.tag}
+                        secondary={
+                          <Stack direction="row" spacing={2}>
+                            <Typography variant="body2" color="text.secondary">
+                              סטטוס: {doc.status}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              תאריך העלאה: {new Date(doc.createdAt).toLocaleDateString('he-IL')}
+                            </Typography>
+                            {doc.expiryDate && (
+                              <Typography variant="body2" color="text.secondary">
+                                תאריך תפוגה: {new Date(doc.expiryDate).toLocaleDateString('he-IL')}
+                              </Typography>
+                            )}
+                          </Stack>
+                        }
+                      />
+                      <IconButton
+                        onClick={() => handleViewDocument(doc)}
+                        disabled={!doc.url}
+                        color="primary"
+                        size="small"
+                        title="צפייה בטופס"
+                      >
+                        <VisibilityIcon />
+                      </IconButton>
+                    </ListItem>
+                  ))}
+                </List>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary">
+            סגור
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* דיאלוג העלאת טפס */}
+      <Dialog 
+        open={uploadDialogOpen} 
+        onClose={handleCloseUploadDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <DescriptionIcon color="primary" />
+            <Typography variant="h6">
+              העלאת טופס ל{selectedWorker?.firstName} {selectedWorker?.lastName}
+            </Typography>
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            <FormControl fullWidth>
+              <InputLabel>סוג טופס</InputLabel>
+              <Select
+                value={selectedDocumentType}
+                onChange={(e) => setSelectedDocumentType(e.target.value)}
+                label="סוג טופס"
+              >
+                <MenuItem value="תעודת זהות">תעודת זהות</MenuItem>
+                <MenuItem value="אישור משטרה">אישור משטרה</MenuItem>
+                <MenuItem value="תעודת השכלה">תעודת השכלה</MenuItem>
+                <MenuItem value="חוזה">חוזה</MenuItem>
+                <MenuItem value="אחר">אחר</MenuItem>
+              </Select>
+            </FormControl>
+
+            <Box>
+              <input
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                style={{ display: 'none' }}
+                id="document-file"
+                type="file"
+                onChange={handleFileChange}
+              />
+              <label htmlFor="document-file">
+                <Button
+                  variant="outlined"
+                  component="span"
+                  fullWidth
+                  startIcon={<DescriptionIcon />}
+                >
+                  {selectedFile ? selectedFile.name : 'בחר קובץ'}
+                </Button>
+              </label>
+              {selectedFile && (
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  נבחר: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                </Typography>
+              )}
+            </Box>
+
+            <TextField
+              fullWidth
+              label="תאריך תפוגה (אופציונלי)"
+              type="date"
+              value={expiryDate}
+              onChange={(e) => setExpiryDate(e.target.value)}
+              InputLabelProps={{
+                shrink: true,
+              }}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseUploadDialog} color="secondary">
+            ביטול
+          </Button>
+          <Button 
+            onClick={handleUploadDocument}
+            variant="contained"
+            color="primary"
+            disabled={!selectedFile || !selectedDocumentType || uploadLoading}
+            startIcon={uploadLoading ? <CircularProgress size={16} /> : <DescriptionIcon />}
+          >
+            {uploadLoading ? 'מעלה...' : 'העלה טופס'}
+          </Button>
+        </DialogActions>
+      </Dialog>
       </Paper>
     </Container>
   );

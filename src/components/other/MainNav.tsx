@@ -92,6 +92,11 @@ const MainNav: React.FC = () => {
     { label: 'משתמשים', path: '/users', icon: <PeopleIcon fontSize="small" /> },
   ];
 
+  const coordinatorTabs: TabInfo[] = [
+    { label: 'עובדים', path: '/coordinator/workers', icon: <PeopleIcon fontSize="small" /> },
+    { label: 'כיתות', path: '/coordinator/classes', icon: <GroupWorkIcon fontSize="small" /> },
+  ];
+
   const getTabsBySection = () => {
     if (!selectedSection) return [];
     if (role === 'manager_project' && selectedSection === 'afternoon') return managerTabs;
@@ -99,6 +104,7 @@ const MainNav: React.FC = () => {
     if (role === 'admin' && selectedSection === 'camp') return adminCampTabs;
     if (role === 'operator' && selectedSection === 'afternoon') return operatorTabs;
     if (role === 'accountant') return accountantTabs;
+    if (role === 'coordinator') return coordinatorTabs;
     if ((role === 'admin' || role === 'manager_project' || role === 'accountant') && selectedSection === 'users') return usersTabs;
     if (role === 'worker') return [];
     return [];
@@ -210,7 +216,7 @@ const MainNav: React.FC = () => {
               </>
             ) : null}
 
-            {role && (role !== 'worker' && role !== 'accountant') && (
+            {role && (role !== 'worker' && role !== 'accountant' && role !== 'coordinator') && (
              <Box>
               <Button
                 id="section-button"
@@ -323,11 +329,12 @@ const MainNav: React.FC = () => {
          
                     {/* Left side: Role and Logout */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-             {(role === 'admin' || role === 'manager_project' || role === 'accountant') && (
+             {(role === 'admin' || role === 'manager_project' || role === 'accountant' || role === 'coordinator') && (
                 <Typography variant="h6" sx={{ color: '#1976d2', fontWeight: 'bold' }}>
                   {role === 'admin' ? 'מערכת ניהול ראשי' : 
                    role === 'manager_project' ? 'מנהל פרויקט' : 
-                   role === 'accountant' ? 'חשב שכר' : ''}
+                   role === 'accountant' ? 'חשב שכר' : 
+                   role === 'coordinator' ? 'רכז' : ''}
                 </Typography>
              )}
             {role ? (

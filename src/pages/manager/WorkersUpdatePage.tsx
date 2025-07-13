@@ -65,7 +65,6 @@ const WorkersUpdatePage: React.FC = () => {
   const [previewData, setPreviewData] = useState<Array<{ id: string; newValue: any; status?: string }>>([]);
   const [validationResults, setValidationResults] = useState<Array<{ id: string; newValue: any; status: string; row: number; oldValue?: any }>>([]);
   const [updatePreview, setUpdatePreview] = useState<Array<{ id: string; oldValue: any; newValue: any; needsUpdate: boolean }>>([]);
-  console.log("updatePreview",updatePreview);
   const [showUpdateDetails, setShowUpdateDetails] = useState(false);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -209,7 +208,6 @@ const WorkersUpdatePage: React.FC = () => {
       
               // יצירת תצוגה מקדימה לעדכון
         if (selectedField) {
-          console.log("validationResults",validationResults);
           const updatePreview = validationResults
             .filter(w => w.status === 'קיים במערכת')
             .map(worker => {
@@ -221,9 +219,7 @@ const WorkersUpdatePage: React.FC = () => {
               let cleanNewValue = String(newValue || '').trim();
               
               // טיפול מיוחד בשדות בוליאניים
-              if (selectedField === 'is101' || selectedField === 'isActive' || selectedField === 'isAfterNoon' || 
-                  selectedField === 'isBaseWorker' || selectedField === 'isHanukaCamp' || selectedField === 'isPassoverCamp' || 
-                  selectedField === 'isSummerCamp') {
+              if (selectedField === 'is101' || selectedField === 'isActive') {
                 
                 // המרת ערכים בוליאניים לטקסט אחיד
                 const oldBool = Boolean(oldValue);
@@ -393,7 +389,7 @@ const WorkersUpdatePage: React.FC = () => {
                       fullWidth
                       onClick={downloadValidationResults}
                       startIcon={<DownloadIcon />}
-                      color="secondary"
+                      color="error"
                     >
                       הורד תוצאות בדיקה
                     </Button>
@@ -450,28 +446,7 @@ const WorkersUpdatePage: React.FC = () => {
                      </Typography>
                    </Alert>
                    
-                   {/* תצוגה מקדימה של הערכים */}
-                   <List sx={{ maxHeight: 200, overflow: 'auto' }}>
-                     {previewData.slice(0, 5).map((item, index) => (
-                       <ListItem key={index} dense>
-                         <ListItemIcon>
-                           <Chip label={item.id} size="small" color="primary" />
-                         </ListItemIcon>
-                         <ListItemText
-                           primary={`ערך חדש: ${String(item.newValue)}`}
-                           secondary={`עובד ${index + 1} מתוך ${previewData.length}`}
-                         />
-                       </ListItem>
-                     ))}
-                     {previewData.length > 5 && (
-                       <ListItem>
-                         <ListItemText
-                           primary={`...ועוד ${previewData.length - 5} עובדים`}
-                           color="text.secondary"
-                         />
-                       </ListItem>
-                     )}
-                   </List>
+                  
                  </>
                )}
 

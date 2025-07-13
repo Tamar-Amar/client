@@ -20,6 +20,7 @@ import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
 import PersonIcon from '@mui/icons-material/Person';
 import WorkIcon from '@mui/icons-material/Work';
+import axios from 'axios';
 
 interface Coordinator {
   _id: string;
@@ -56,17 +57,17 @@ const CoordinatorPersonalDetails: React.FC<CoordinatorPersonalDetailsProps> = ({
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/users/${coordinatorId}`, {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/users/${coordinatorId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
       
-      if (!response.ok) {
+      if (response.status !== 200) {
         throw new Error('שגיאה בטעינת פרטי הרכז');
       }
       
-      const data = await response.json();
+      const data = response.data;
       setCoordinator(data);
       setForm(data);
     } catch (err: any) {
@@ -83,16 +84,14 @@ const CoordinatorPersonalDetails: React.FC<CoordinatorPersonalDetailsProps> = ({
   const handleSave = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/users/${coordinatorId}`, {
-        method: 'PUT',
+      const response = await axios.put(`${process.env.REACT_APP_API_URL}/api/users/${coordinatorId}`, form, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(form)
+        }
       });
       
-      if (!response.ok) {
+      if (response.status !== 200) {
         throw new Error('שגיאה בעדכון פרטי הרכז');
       }
       
@@ -236,23 +235,7 @@ const CoordinatorPersonalDetails: React.FC<CoordinatorPersonalDetailsProps> = ({
                   startAdornment: <WorkIcon color="action" fontSize="small" sx={{ mr: 1 }} />,
                 }}
               />
-              <TextField
-                label="תפקיד"
-                value={form.role || ''}
-                fullWidth
-                disabled
-                InputProps={{
-                  startAdornment: <WorkIcon color="action" fontSize="small" sx={{ mr: 1 }} />,
-                }}
-              />
-              <Box>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  תאריך יצירה: {new Date(coordinator.createDate).toLocaleDateString('he-IL')}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  תאריך עדכון אחרון: {new Date(coordinator.updateDate).toLocaleDateString('he-IL')}
-                </Typography>
-              </Box>
+
             </Stack>
           </Grid>
         </Grid>

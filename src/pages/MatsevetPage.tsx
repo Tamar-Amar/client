@@ -15,14 +15,31 @@ import {
   InputAdornment,
   CircularProgress,
   Divider,
-  Button
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Grid,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  IconButton
 } from '@mui/material';
 import {
   People as PeopleIcon,
   Search as SearchIcon,
   School as SchoolIcon,
   ArrowUpward as ArrowUpwardIcon,
-  ArrowDownward as ArrowDownwardIcon
+  ArrowDownward as ArrowDownwardIcon,
+  Close as CloseIcon,
+  LocationOn as LocationIcon,
+  Business as BusinessIcon,
+  Person as PersonIcon,
+  Work as WorkIcon,
+  Phone as PhoneIcon,
+  Email as EmailIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useFetchAllWorkersAfterNoon } from '../queries/workerAfterNoonQueries';
@@ -36,13 +53,11 @@ interface ClassWithWorkers {
   workers: WorkerAfterNoon[];
 }
 
-
 const projectTypes = [
   { label: 'צהרון שוטף 2025', value: 1 },
   { label: 'קייטנת חנוכה 2025', value: 2 },
   { label: 'קייטנת פסח 2025', value: 3 },
   { label: 'קייטנת קיץ 2025', value: 4 },
-  
 ];
 
 type SortField = 'uniqueSymbol' | 'name' | 'institutionName' | 'workers';
@@ -56,8 +71,8 @@ const MatsevetPage: React.FC = () => {
   const [selectedProject, setSelectedProject] = useState<number | ''>('');
   const [sortField, setSortField] = useState<SortField>('uniqueSymbol');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [selectedClassDialog, setSelectedClassDialog] = useState<ClassWithWorkers | null>(null);
 
-  
   let isAdmin = false;
   try {
     const token = localStorage.getItem('token');
@@ -71,22 +86,27 @@ const MatsevetPage: React.FC = () => {
     navigate(`/workers/${workerId}`);
   };
 
+  const handleClassClick = (classData: ClassWithWorkers) => {
+    setSelectedClassDialog(classData);
+  };
+
+  const handleCloseDialog = () => {
+    setSelectedClassDialog(null);
+  };
+
   const classesWithWorkers = useMemo(() => {
     const result: ClassWithWorkers[] = [];
-    
 
     classes.forEach((cls: Class) => {
       let classWorkers = workers.filter(worker => 
         cls.workers?.some((w: { workerId: string; roleType: string; project: number }) => w.workerId === worker._id)
       );
       
-      
       if (selectedProject !== '') {
         const hasSelectedProject = cls.projectCodes?.includes(selectedProject as number);
         if (!hasSelectedProject) {
           return;
         }
-        
         
         classWorkers = classWorkers.filter(worker => {
           const workerAssignment = cls.workers?.find(w => w.workerId === worker._id);
@@ -99,7 +119,6 @@ const MatsevetPage: React.FC = () => {
         workers: classWorkers
       });
     });
-    
 
     const workersWithClasses = new Set<string>();
     classes.forEach((cls: Class) => {
@@ -107,7 +126,6 @@ const MatsevetPage: React.FC = () => {
     });
     
     const workersWithoutClasses = workers.filter(worker => !workersWithClasses.has(worker._id));
-    
 
     if (selectedProject !== '') {
       const filteredWorkersWithoutClasses = workersWithoutClasses.filter(worker => 
@@ -248,13 +266,6 @@ const MatsevetPage: React.FC = () => {
             )}
           </Typography>
           <Box sx={{ display: 'flex', gap: 2 }}>
-            {/*<Button
-              variant="contained"
-              color="primary"
-              onClick={() => navigate('/matsevet/edit')}
-            >
-              עריכת מצבת
-            </Button>*/}
             {isAdmin && (
               <Button
                 variant="outlined"
@@ -376,7 +387,19 @@ const MatsevetPage: React.FC = () => {
                   </Typography>
                 </TableCell>
                 <TableCell>
-                  <Typography variant="body2" fontWeight="bold" color="primary.main">
+                  <Typography 
+                    variant="body2" 
+                    fontWeight="bold" 
+                    color="primary.main"
+                    sx={{ 
+                      cursor: 'pointer',
+                      '&:hover': { 
+                        color: 'primary.dark',
+                        textDecoration: 'underline'
+                      }
+                    }}
+                    onClick={() => handleClassClick(classData)}
+                  >
                     {classData.class.uniqueSymbol}
                   </Typography>
                 </TableCell>
@@ -386,7 +409,10 @@ const MatsevetPage: React.FC = () => {
                   </Typography>
                 </TableCell>
                 <TableCell>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography 
+                    variant="body2" 
+                    color="text.secondary"
+                  >
                     {classData.class.institutionCode}
                   </Typography>
                 </TableCell>
@@ -503,6 +529,229 @@ const MatsevetPage: React.FC = () => {
           </Typography>
         </Box>
       )}
+
+      {/* דיאלוג פרטי כיתה */}
+      <Dialog 
+        open={!!selectedClassDialog} 
+        onClose={handleCloseDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        {selectedClassDialog && (
+          <>
+            <DialogTitle sx={{ m: 0, p: 2, bgcolor: 'primary.main', color: 'white' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="h6">
+                  פרטי כיתה: {selectedClassDialog.class.name}
+                </Typography>
+                <IconButton
+                  aria-label="close"
+                  onClick={handleCloseDialog}
+                  sx={{
+                    color: 'white',
+                    '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+                  }}
+                >
+                  <CloseIcon />
+                </IconButton>
+              </Box>
+            </DialogTitle>
+            <DialogContent sx={{ p: 3 }}>
+              <Grid container spacing={3}>
+                {/* פרטי הכיתה */}
+                <Grid item xs={12} md={6}>
+                  <Typography variant="h6" gutterBottom color="primary.main">
+                    פרטי הכיתה
+                  </Typography>
+                  <List dense>
+                    <ListItem>
+                      <ListItemIcon>
+                        <SchoolIcon color="primary" />
+                      </ListItemIcon>
+                      <ListItemText 
+                        primary="שם כיתה"
+                        secondary={selectedClassDialog.class.name}
+                      />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemIcon>
+                        <BusinessIcon color="primary" />
+                      </ListItemIcon>
+                      <ListItemText 
+                        primary="סמל כיתה"
+                        secondary={selectedClassDialog.class.uniqueSymbol}
+                      />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemIcon>
+                        <BusinessIcon color="primary" />
+                      </ListItemIcon>
+                      <ListItemText 
+                        primary="קוד מוסד"
+                        secondary={selectedClassDialog.class.institutionCode}
+                      />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemIcon>
+                        <BusinessIcon color="primary" />
+                      </ListItemIcon>
+                      <ListItemText 
+                        primary="שם מוסד"
+                        secondary={selectedClassDialog.class.institutionName}
+                      />
+                    </ListItem>
+                    {selectedClassDialog.class.address && (
+                      <ListItem>
+                        <ListItemIcon>
+                          <LocationIcon color="primary" />
+                        </ListItemIcon>
+                        <ListItemText 
+                          primary="כתובת"
+                          secondary={selectedClassDialog.class.address}
+                        />
+                      </ListItem>
+                    )}
+                    <ListItem>
+                      <ListItemIcon>
+                        <PersonIcon color="primary" />
+                      </ListItemIcon>
+                      <ListItemText 
+                        primary="סוג"
+                        secondary={selectedClassDialog.class.type}
+                      />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemIcon>
+                        <PersonIcon color="primary" />
+                      </ListItemIcon>
+                      <ListItemText 
+                        primary="מגדר"
+                        secondary={selectedClassDialog.class.gender}
+                      />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemIcon>
+                        <SchoolIcon color="primary" />
+                      </ListItemIcon>
+                      <ListItemText 
+                        primary="חינוך"
+                        secondary={selectedClassDialog.class.education}
+                      />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemIcon>
+                        <WorkIcon color="primary" />
+                      </ListItemIcon>
+                      <ListItemText 
+                        primary="צהרון"
+                        secondary={selectedClassDialog.class.hasAfternoonCare ? 'כן' : 'לא'}
+                      />
+                    </ListItem>
+                    {selectedClassDialog.class.childresAmount && (
+                      <ListItem>
+                        <ListItemIcon>
+                          <PeopleIcon color="primary" />
+                        </ListItemIcon>
+                        <ListItemText 
+                          primary="מספר ילדים"
+                          secondary={selectedClassDialog.class.childresAmount}
+                        />
+                      </ListItem>
+                    )}
+                  </List>
+                </Grid>
+
+                {/* קודי פרויקט */}
+                <Grid item xs={12} md={6}>
+                  <Typography variant="h6" gutterBottom color="primary.main">
+                    קודי פרויקט
+                  </Typography>
+                  {selectedClassDialog.class.projectCodes && selectedClassDialog.class.projectCodes.length > 0 ? (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {selectedClassDialog.class.projectCodes.map((projectCode) => {
+                        const project = projectTypes.find(p => p.value === projectCode);
+                        return (
+                          <Chip
+                            key={projectCode}
+                            label={project ? project.label : `פרויקט ${projectCode}`}
+                            color="primary"
+                            variant="filled"
+                            sx={{ mb: 1 }}
+                          />
+                        );
+                      })}
+                    </Box>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary" fontStyle="italic">
+                      אין קודי פרויקט משויכים
+                    </Typography>
+                  )}
+                </Grid>
+
+                {/* עובדים משויכים */}
+                <Grid item xs={12}>
+                  <Typography variant="h6" gutterBottom color="primary.main">
+                    עובדים משויכים ({selectedClassDialog.workers.length})
+                  </Typography>
+                  {selectedClassDialog.workers.length > 0 ? (
+                    <List dense>
+                      {selectedClassDialog.workers.map((worker) => (
+                        <ListItem 
+                          key={worker._id}
+                          sx={{ 
+                            cursor: 'pointer',
+                            '&:hover': { bgcolor: 'rgba(25, 118, 210, 0.08)' }
+                          }}
+                          onClick={() => {
+                            handleCloseDialog();
+                            handleWorkerClick(worker._id);
+                          }}
+                        >
+                          <ListItemIcon>
+                            <PersonIcon color="primary" />
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={`${worker.firstName} ${worker.lastName}`}
+                            secondary={
+                              <Box>
+                                <Typography variant="body2" color="text.secondary">
+                                  תעודת זהות: {worker.id}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  תפקיד: {worker.roleType || 'לא מוגדר'} - {worker.roleName || 'לא מוגדר'}
+                                </Typography>
+                                {worker.phone && (
+                                  <Typography variant="body2" color="text.secondary">
+                                    טלפון: {worker.phone}
+                                  </Typography>
+                                )}
+                                {worker.email && (
+                                  <Typography variant="body2" color="text.secondary">
+                                    אימייל: {worker.email}
+                                  </Typography>
+                                )}
+                              </Box>
+                            }
+                          />
+                        </ListItem>
+                      ))}
+                    </List>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary" fontStyle="italic">
+                      אין עובדים משויכים לכיתה זו
+                    </Typography>
+                  )}
+                </Grid>
+              </Grid>
+            </DialogContent>
+            <DialogActions sx={{ p: 2 }}>
+              <Button onClick={handleCloseDialog} color="primary">
+                סגור
+              </Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
     </Container>
   );
 };

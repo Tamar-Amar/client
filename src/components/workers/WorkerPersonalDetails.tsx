@@ -149,11 +149,22 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
               {!isCurrentWorker && `, ${workerData.roleType} - ${workerData.roleName}`}
             </Typography>
             <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 1 }}>
-              {workerData.isBaseWorker && <Chip label="עובד בסיס" variant="outlined" size="small" />}
-              {workerData.isAfterNoon && <Chip label="צהרון" variant="outlined" size="small" />}
-              {workerData.isHanukaCamp && <Chip label="קייטנת חנוכה" variant="outlined" size="small" />}
-              {workerData.isPassoverCamp && <Chip label="קייטנת פסח" variant="outlined" size="small" />}
-              {workerData.isSummerCamp && <Chip label="קייטנת קיץ" variant="outlined" size="small" />}
+              {(workerData.projectCodes ?? []).map(code => {
+                const projectNames: { [key: number]: string } = {
+                  1: "צהרון שוטף 2025",
+                  2: "קייטנת חנוכה 2025", 
+                  3: "קייטנת פסח 2025",
+                  4: "קייטנת קיץ 2025"
+                };
+                return (
+                  <Chip 
+                    key={code} 
+                    label={projectNames[code] || `פרויקט ${code}`} 
+                    variant="outlined" 
+                    size="small" 
+                  />
+                );
+              })}
             </Stack>
           </Box>
           <Box sx={{ display: 'flex', gap: 1 }}>
@@ -188,11 +199,70 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>פרויקטים</Typography>
                   <Stack spacing={1}>
-                    <FormControlLabel control={<Checkbox checked={form.isBaseWorker} onChange={(e) => handleCheckboxChange('isBaseWorker', e.target.checked)} color="primary" />} label="עובד בסיס" />
-                    <FormControlLabel control={<Checkbox checked={form.isAfterNoon} onChange={(e) => handleCheckboxChange('isAfterNoon', e.target.checked)} color="primary" />} label="צהרון" />
-                    <FormControlLabel control={<Checkbox checked={form.isHanukaCamp} onChange={(e) => handleCheckboxChange('isHanukaCamp', e.target.checked)} color="primary" />} label="קייטנת חנוכה" />
-                    <FormControlLabel control={<Checkbox checked={form.isPassoverCamp} onChange={(e) => handleCheckboxChange('isPassoverCamp', e.target.checked)} color="primary" />} label="קייטנת פסח" />
-                    <FormControlLabel control={<Checkbox checked={form.isSummerCamp} onChange={(e) => handleCheckboxChange('isSummerCamp', e.target.checked)} color="primary" />} label="קייטנת קיץ" />
+                    <FormControlLabel 
+                      control={
+                        <Checkbox 
+                          checked={(form.projectCodes ?? []).includes(1)} 
+                          onChange={(e) => {
+                            const currentCodes = form.projectCodes ?? [];
+                            const newCodes = e.target.checked 
+                              ? [...currentCodes, 1]
+                              : currentCodes.filter(code => code !== 1);
+                            setForm({ ...form, projectCodes: newCodes });
+                          }} 
+                          color="primary" 
+                        />
+                      } 
+                      label="צהרון שוטף 2025" 
+                    />
+                    <FormControlLabel 
+                      control={
+                        <Checkbox 
+                          checked={(form.projectCodes ?? []).includes(2)} 
+                          onChange={(e) => {
+                            const currentCodes = form.projectCodes ?? [];
+                            const newCodes = e.target.checked 
+                              ? [...currentCodes, 2]
+                              : currentCodes.filter(code => code !== 2);
+                            setForm({ ...form, projectCodes: newCodes });
+                          }} 
+                          color="primary" 
+                        />
+                      } 
+                      label="קייטנת חנוכה 2025" 
+                    />
+                    <FormControlLabel 
+                      control={
+                        <Checkbox 
+                          checked={(form.projectCodes ?? []).includes(3)} 
+                          onChange={(e) => {
+                            const currentCodes = form.projectCodes ?? [];
+                            const newCodes = e.target.checked 
+                              ? [...currentCodes, 3]
+                              : currentCodes.filter(code => code !== 3);
+                            setForm({ ...form, projectCodes: newCodes });
+                          }} 
+                          color="primary" 
+                        />
+                      } 
+                      label="קייטנת פסח 2025" 
+                    />
+                    <FormControlLabel 
+                      control={
+                        <Checkbox 
+                          checked={(form.projectCodes ?? []).includes(4)} 
+                          onChange={(e) => {
+                            const currentCodes = form.projectCodes ?? [];
+                            const newCodes = e.target.checked 
+                              ? [...currentCodes, 4]
+                              : currentCodes.filter(code => code !== 4);
+                            setForm({ ...form, projectCodes: newCodes });
+                          }} 
+                          color="primary" 
+                        />
+                      } 
+                      label="קייטנת קיץ 2025" 
+                    />
                   </Stack>
                 </Box>
               ) : (

@@ -63,7 +63,7 @@ const projectTypes = [
   //{ label: 'קייטנת קיץ 2026', value: 8 },
 ];
 
-interface PreviewWorker extends Omit<WorkerAfterNoon, '_id'> {
+interface PreviewWorker extends Omit<WorkerAfterNoon, '_id' | 'isAfterNoon' | 'isBaseWorker' | 'isHanukaCamp' | 'isPassoverCamp' | 'isSummerCamp'> {
   _id?: string;
   isDuplicate?: boolean;
   isBestDuplicate?: boolean;
@@ -195,12 +195,8 @@ const WorkersImportPage: React.FC = () => {
       workingSymbol: symbol || '',
       is101: is101,
       projectCodes: [],
-      isAfterNoon: false,
-      isBaseWorker: false,
-      isHanukaCamp: false,
-      isPassoverCamp: false,
-      isSummerCamp: false,
-      validationErrors: []
+      validationErrors: [],
+      modelCode: row[3]?.toString() || 'לא נבחר'
     };
   };
 
@@ -625,7 +621,12 @@ const WorkersImportPage: React.FC = () => {
         return {
           ...cleanData,
           phone: normalizePhone(worker.phone),
-          projectCodes: selectedProjects
+          projectCodes: selectedProjects,
+          isAfterNoon: false,
+          isBaseWorker: false,
+          isHanukaCamp: false,
+          isPassoverCamp: false,
+          isSummerCamp: false
         };
       };
 
