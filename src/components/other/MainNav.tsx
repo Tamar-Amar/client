@@ -9,10 +9,7 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import PeopleIcon from '@mui/icons-material/People';
-import GroupWorkIcon from '@mui/icons-material/GroupWork';
 import EmailIcon from '@mui/icons-material/Email';
-import HistoryIcon from '@mui/icons-material/History';
-import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import FolderIcon from '@mui/icons-material/Folder';
 import { useRecoilValue } from 'recoil';
 import { userRoleState } from '../../recoil/storeAtom';
@@ -33,14 +30,13 @@ const MainNav: React.FC = () => {
   const role = useRecoilValue(userRoleState);
   const [operatorName, setOperatorName] = useState<string | null>(null);
   const [workerDetails, setWorkerDetails] = useState<{ idObj:string; name: string; idNumber: string } | null>(null);
-  const [selectedSection, setSelectedSection] = useState<string>('afternoon');
+  const [selectedSection, setSelectedSection] = useState<string>('general');
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
   const sections = [
-    { key: 'afternoon', label: 'צהרון', icon: <SchoolIcon fontSize="small" /> },
-    { key: 'camp', label: 'קייטנות', icon: <EventIcon fontSize="small" /> },
-    { key: 'courses', label: 'חוגים', icon: <GroupsIcon fontSize="small" /> },
+    { key: 'general', label: 'כללי', icon: <AssessmentIcon fontSize="small" /> },
+    { key: 'activity', label: 'חוגים', icon: <EventIcon fontSize="small" /> },
     { key: 'users', label: 'משתמשים', icon: <GroupsIcon fontSize="small" /> }
   ];
 
@@ -48,7 +44,7 @@ const MainNav: React.FC = () => {
     { key: 'users', label: 'משתמשים', icon: <GroupsIcon fontSize="small" /> }
   ];
 
-  const adminAfternoonTabs: TabInfo[] = [
+  const adminGeneralTabs: TabInfo[] = [
     { label: 'ניהול עובדים', path: '/workers' },
     { label: 'מצבת', path: '/matsevet' },
    // { label: 'ניהול קבוצות', path: '/classes', icon: <GroupWorkIcon fontSize="small" /> },
@@ -58,7 +54,7 @@ const MainNav: React.FC = () => {
     { label: 'התראות', path: '/workers-after-noon-notifications' },
   ];
 
-  const adminCampTabs: TabInfo[] = [
+  const adminActivityTabs: TabInfo[] = [
     { label: 'דוח הפעלות', path: '/activities', icon: <AssessmentIcon fontSize="small" /> },
     { label: 'ניהול מפעילים', path: '/operators', icon: <PeopleIcon fontSize="small" /> },
     //{ label: 'ניהול קבוצות', path: '/classes', icon: <GroupWorkIcon fontSize="small" /> },
@@ -82,22 +78,15 @@ const MainNav: React.FC = () => {
     { label: 'נוכחות עובדים', path: '/worker-attendance' },
   ];
 
-  const operatorTabs: TabInfo[] = [
-    { label: 'פרטים אישיים', path: '/personal-details', icon: <AccountCircleIcon fontSize="small" /> },
-    { label: 'היסטוריית הפעלות', path: '/activity-history', icon: <HistoryIcon fontSize="small" /> },
-    { label: 'מסמכים', path: '/personal-documents', icon: <InsertDriveFileIcon fontSize="small" /> },
-  ];
-
   const usersTabs: TabInfo[] = [
     { label: 'משתמשים', path: '/users', icon: <PeopleIcon fontSize="small" /> },
   ];
 
   const getTabsBySection = () => {
     if (!selectedSection) return [];
-    if (role === 'manager_project' && selectedSection === 'afternoon') return managerTabs;
-    if (role === 'admin' && selectedSection === 'afternoon') return adminAfternoonTabs;
-    if (role === 'admin' && selectedSection === 'camp') return adminCampTabs;
-    if (role === 'operator' && selectedSection === 'afternoon') return operatorTabs;
+    if (role === 'manager_project' && selectedSection === 'general') return managerTabs;
+    if (role === 'admin' && selectedSection === 'general') return adminGeneralTabs;
+    if (role === 'admin' && selectedSection === 'activity') return adminActivityTabs;
     if (role === 'accountant') return accountantTabs;
     if ((role === 'admin' || role === 'manager_project' || role === 'accountant') && selectedSection === 'users') return usersTabs;
     if (role === 'worker') return [];

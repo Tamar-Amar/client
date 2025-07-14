@@ -56,6 +56,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import { WorkerWithClassInfo } from '../../types';
 import axios from 'axios';
 import { Document, DocumentStatus, DocumentType } from '../../types/Document';
+import { validateDocumentFile } from '../../utils/fileValidation';
 
 interface CoordinatorWorkersProps {
   coordinatorId: string;
@@ -276,6 +277,13 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      const validation = validateDocumentFile(file);
+      
+      if (!validation.isValid) {
+        alert(validation.error);
+        return;
+      }
+      
       setSelectedFile(file);
     }
   };

@@ -16,6 +16,7 @@ import { Delete as DeleteIcon, Visibility as VisibilityIcon, CloudUpload as Clou
 import { Document, DocumentStatus, DocumentType } from '../../types/Document';
 import { useWorkerDocuments } from '../../queries/useDocuments';
 import { useFetchWorkerAfterNoon } from '../../queries/workerAfterNoonQueries';
+import { validateDocumentFile } from '../../utils/fileValidation';
 
 interface Props {
   workerId: string;
@@ -47,6 +48,13 @@ const WorkerDocuments: React.FC<Props> = ({ workerId }) => {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      const validation = validateDocumentFile(file);
+      
+      if (!validation.isValid) {
+        alert(validation.error);
+        return;
+      }
+      
       setSelectedFile(file);
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);

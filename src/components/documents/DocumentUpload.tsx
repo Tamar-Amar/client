@@ -17,6 +17,7 @@ import {
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { useFetchWorkerAfterNoon, useFetchAllWorkersAfterNoon } from '../../queries/workerAfterNoonQueries';
 import { useWorkerDocuments } from '../../queries/useDocuments';
+import { validateDocumentFile } from '../../utils/fileValidation';
 
 const DocumentUpload: React.FC = () => {
   const [selectedEmployee, setSelectedEmployee] = useState('');
@@ -37,7 +38,15 @@ const DocumentUpload: React.FC = () => {
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
-      setFile(event.target.files[0]);
+      const file = event.target.files[0];
+      const validation = validateDocumentFile(file);
+      
+      if (!validation.isValid) {
+        setError(validation.error || 'גודל הקובץ חורג מהמותר');
+        return;
+      }
+      
+      setFile(file);
       setError(null);
     }
   };

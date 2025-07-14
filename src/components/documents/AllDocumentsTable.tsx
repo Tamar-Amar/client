@@ -31,6 +31,7 @@ import { WorkerAfterNoon } from '../../types';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { he } from 'date-fns/locale';
+import { validateDocumentFile } from '../../utils/fileValidation';
 
 const REQUIRED_DOC_TAGS = ['אישור משטרה', 'תעודת השכלה', 'חוזה', 'תעודת זהות'];
 const ROWS_PER_PAGE = 15;
@@ -58,6 +59,7 @@ const AllDocumentsTable: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<DocumentStatus | ''>('');
   const [filterType, setFilterType] = useState('');
   const [filterProject, setFilterProject] = useState('');
+  const [filterAccountant, setFilterAccountant] = useState('');
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [uploadTarget, setUploadTarget] = useState<{ workerId: string; workerName: string; workerTz: string; tag: string } | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -89,13 +91,31 @@ const AllDocumentsTable: React.FC = () => {
     { value: '4', label: 'קייטנת קיץ 2025' },
   ];
 
+  // יצירת רשימת חשבי שכר ייחודיים מהעובדים
+  const accountantOptions = useMemo(() => {
+    const accountants = new Set<string>();
+    workers.forEach(worker => {
+      if (worker.accountantCode) {
+        accountants.add(worker.accountantCode);
+      }
+    });
+    return [
+      { value: '', label: 'כל חשבי השכר' },
+      ...Array.from(accountants).sort().map(code => ({
+        value: code,
+        label: `חשב שכר ${code}`
+      }))
+    ];
+  }, [workers]);
+
   const filteredData = useMemo(() => {
     return workerDocumentsData.filter(({ worker, docs }) => {
       const nameMatch = !searchName || `${worker.lastName} ${worker.firstName}`.toLowerCase().includes(searchName.toLowerCase());
       const idMatch = !searchId || (worker.id || '').includes(searchId);
       const projectMatch = !filterProject || (worker.projectCodes && worker.projectCodes.includes(parseInt(filterProject)));
+      const accountantMatch = !filterAccountant || worker.accountantCode === filterAccountant;
 
-      if (!nameMatch || !idMatch || !projectMatch) return false;
+      if (!nameMatch || !idMatch || !projectMatch || !accountantMatch) return false;
 
       if (filterType && filterStatus) {
         return docs[filterType] && docs[filterType].status === filterStatus;
@@ -108,7 +128,7 @@ const AllDocumentsTable: React.FC = () => {
       }
       return true;
     });
-  }, [workerDocumentsData, searchName, searchId, filterStatus, filterType, filterProject]);
+  }, [workerDocumentsData, searchName, searchId, filterStatus, filterType, filterProject, filterAccountant]);
 
   const paginatedData = useMemo(() => {
     return filteredData.slice(page * ROWS_PER_PAGE, page * ROWS_PER_PAGE + ROWS_PER_PAGE);
@@ -148,7 +168,15 @@ const AllDocumentsTable: React.FC = () => {
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
-      setSelectedFile(event.target.files[0]);
+      const file = event.target.files[0];
+      const validation = validateDocumentFile(file);
+      
+      if (!validation.isValid) {
+        alert(validation.error);
+        return;
+      }
+      
+      setSelectedFile(file);
     }
   };
 
@@ -181,9 +209,36 @@ const AllDocumentsTable: React.FC = () => {
   const handleApprove = (documentId: string) => updateStatus({ documentId, status: DocumentStatus.APPROVED });
   const handleReject = (documentId: string) => updateStatus({ documentId, status: DocumentStatus.REJECTED });
 
-  const approvedDocsCount = personalDocuments.filter(d => d.status === DocumentStatus.APPROVED).length;
-  const pendingDocsCount = personalDocuments.filter(d => d.status === DocumentStatus.PENDING).length;
-  const rejectedDocsCount = personalDocuments.filter(d => d.status === DocumentStatus.REJECTED).length;
+  // סטטיסטיקות מותאמות לסינון
+  const filteredWorkers = workers.filter(worker => {
+    const nameMatch = !searchName || `${worker.lastName} ${worker.firstName}`.toLowerCase().includes(searchName.toLowerCase());
+    const idMatch = !searchId || (worker.id || '').includes(searchId);
+    const projectMatch = !filterProject || (worker.projectCodes && worker.projectCodes.includes(parseInt(filterProject)));
+    const accountantMatch = !filterAccountant || worker.accountantCode === filterAccountant;
+    
+    return nameMatch && idMatch && projectMatch && accountantMatch;
+  });
+
+  // מסמכים של העובדים המסוננים
+  const filteredDocuments = personalDocuments.filter(doc => {
+    const worker = workers.find(w => w._id === doc.operatorId);
+    if (!worker) return false;
+    
+    const nameMatch = !searchName || `${worker.lastName} ${worker.firstName}`.toLowerCase().includes(searchName.toLowerCase());
+    const idMatch = !searchId || (worker.id || '').includes(searchId);
+    const projectMatch = !filterProject || (worker.projectCodes && worker.projectCodes.includes(parseInt(filterProject)));
+    const accountantMatch = !filterAccountant || worker.accountantCode === filterAccountant;
+    
+    return nameMatch && idMatch && projectMatch && accountantMatch;
+  });
+
+  const approvedDocsCount = filteredDocuments.filter(d => d.status === DocumentStatus.APPROVED).length;
+  const pendingDocsCount = filteredDocuments.filter(d => d.status === DocumentStatus.PENDING).length;
+  const rejectedDocsCount = filteredDocuments.filter(d => d.status === DocumentStatus.REJECTED).length;
+  
+  // סטטיסטיקות חשבי שכר מותאמות לסינון
+  const uniqueAccountants = new Set(filteredWorkers.map(w => w.accountantCode).filter(Boolean));
+  const accountantsCount = uniqueAccountants.size;
 
   return (
     <Box sx={{ p: 1 }}>
@@ -195,7 +250,7 @@ const AllDocumentsTable: React.FC = () => {
 
                         <Stack direction="row" spacing={1.5} mb={2} flexWrap="wrap">
                             <Tooltip title="איפוס מסננים">
-                            <IconButton onClick={() => { setSearchName(''); setSearchId(''); setFilterStatus(''); setFilterType(''); setFilterProject(''); setPage(0); }} sx={{ color: 'grey.600', alignSelf: 'center' }}>
+                            <IconButton onClick={() => { setSearchName(''); setSearchId(''); setFilterStatus(''); setFilterType(''); setFilterProject(''); setFilterAccountant(''); setPage(0); }} sx={{ color: 'grey.600', alignSelf: 'center' }}>
                                 <RestartAltIcon />
                             </IconButton>
                             </Tooltip>
@@ -212,6 +267,15 @@ const AllDocumentsTable: React.FC = () => {
                             </FormControl>
 
                             <FormControl size="small" sx={{ minWidth: 150 }}>
+                              <InputLabel>חשב שכר</InputLabel>
+                              <Select value={filterAccountant} label="חשב שכר" onChange={(e) => { setFilterAccountant(e.target.value); setPage(0); }}>
+                                {accountantOptions.map(opt => (
+                                  <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                                ))}
+                              </Select>
+                            </FormControl>
+
+                            <FormControl size="small" sx={{ minWidth: 150 }}>
                             <InputLabel>סטטוס מסמך</InputLabel>
                             <Select value={filterStatus} label="סטטוס מסמך" onChange={(e) => {setFilterStatus(e.target.value as DocumentStatus); setPage(0);}}>
                                 <MenuItem value="">הכל</MenuItem>
@@ -220,15 +284,7 @@ const AllDocumentsTable: React.FC = () => {
                                 <MenuItem value={DocumentStatus.REJECTED}>נדחה</MenuItem>
                             </Select>
                             </FormControl>
-                            <FormControl size="small" sx={{ minWidth: 180 }}>
-                            <InputLabel>סוג מסמך</InputLabel>
-                            <Select value={filterType} label="סוג מסמך" onChange={(e) => {setFilterType(e.target.value); setPage(0);}}>
-                                <MenuItem value="">הכל</MenuItem>
-                                {REQUIRED_DOC_TAGS.map(tag => (
-                                <MenuItem key={tag} value={tag}>{tag}</MenuItem>
-                                ))}
-                            </Select>
-                            </FormControl>
+                            
                             <Box sx={{ flexGrow: 1 }} />
                             <Button
                                 variant="contained"
@@ -259,6 +315,7 @@ const AllDocumentsTable: React.FC = () => {
                                 <TableRow sx={{ '& th': { backgroundColor: 'grey.100', fontWeight: 'bold' } }}>
                                 <TableCell>שם עובד</TableCell>
                                 <TableCell>ת"ז</TableCell>
+                                <TableCell>חשב שכר</TableCell>
                                 {REQUIRED_DOC_TAGS.map(tag => (
                                     <TableCell key={tag} >{tag}</TableCell>
                                 ))}
@@ -267,7 +324,7 @@ const AllDocumentsTable: React.FC = () => {
                             <TableBody>
                                 {paginatedData.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={REQUIRED_DOC_TAGS.length + 2} align="center" sx={{ py: 5 }}>
+                                    <TableCell colSpan={REQUIRED_DOC_TAGS.length + 3} align="center" sx={{ py: 5 }}>
                                         <Typography color="text.secondary">לא נמצאו עובדים התואמים את הסינון</Typography>
                                     </TableCell>
                                 </TableRow>
@@ -276,6 +333,7 @@ const AllDocumentsTable: React.FC = () => {
                                     <TableRow key={worker._id} hover>
                                     <TableCell>{`${worker.lastName} ${worker.firstName}`}</TableCell>
                                     <TableCell>{worker.id}</TableCell>
+                                    <TableCell>{worker.accountantCode || '-'}</TableCell>
                                     {REQUIRED_DOC_TAGS.map(tag => {
                                         const doc = docs[tag];
                                         return (
@@ -337,9 +395,14 @@ const AllDocumentsTable: React.FC = () => {
             </Grid>
             <Grid item xs={12} md={2}>
                 <Stack spacing={2}>
+                <Card sx={{ bgcolor: alpha('#9c27b0', 0.1), color: 'purple.dark' }}>
+                        <CardContent>
+                            <Typography variant="body2">הורדת דוחות</Typography>
+                        </CardContent>
+                    </Card>
                     <Card sx={{ bgcolor: alpha('#2196f3', 0.1), color: 'primary.dark' }}>
                         <CardContent>
-                            <Typography variant="h5" fontWeight="bold">{workers.length}</Typography>
+                            <Typography variant="h5" fontWeight="bold">{filteredWorkers.length}</Typography>
                             <Typography variant="body2">עובדים במערכת</Typography>
                         </CardContent>
                     </Card>
