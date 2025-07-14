@@ -523,7 +523,7 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
                         <TableCell>
                           <Stack direction="row" alignItems="center" spacing={1}>
                             <Typography variant="body2">
-                              {worker.roleType || 'לא צוין'}
+                              {worker.roleName || 'לא צוין'}
                             </Typography>
                           </Stack>
                         </TableCell>

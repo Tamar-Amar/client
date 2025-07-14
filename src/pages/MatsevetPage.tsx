@@ -490,7 +490,7 @@ const MatsevetPage: React.FC = () => {
                             {worker.firstName} {worker.lastName}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            ({worker.roleType || 'לא מוגדר'})
+                            ({worker.roleName || 'לא מוגדר'})
                           </Typography>
                           {workerIndex < classData.workers.length - 1 && (
                             <Typography variant="caption" color="text.secondary">
