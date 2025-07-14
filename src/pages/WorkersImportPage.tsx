@@ -172,7 +172,7 @@ const WorkersImportPage: React.FC = () => {
     const endDate = new Date(parseDate(row[11]));
     
     const symbol = row[0]?.toString().trim();
-    const is101 = row[13]?.toString()?.trim() === 'יש' ? true : false;
+    const is101 = row[13]?.toString()?.trim() === 'יש' || row[13]?.toString()?.trim() === 'כן' ? true : false;
 
     return {
       firstName: firstName,
@@ -195,7 +195,7 @@ const WorkersImportPage: React.FC = () => {
       is101: is101,
       projectCodes: [],
       validationErrors: [],
-      modelCode: row[3]?.toString() || 'לא נבחר'
+      modelCode: row[2]?.toString() || 'לא נבחר'
     };
   };
 
