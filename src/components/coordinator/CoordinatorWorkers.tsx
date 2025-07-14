@@ -5,6 +5,7 @@ import {
   Stack,
   CircularProgress,
   Alert,
+  AlertTitle,
   Container,
   Paper,
   Table,
@@ -35,7 +36,10 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Divider
+  Divider,
+  Tabs,
+  Tab,
+  Link
 } from '@mui/material';
 import PeopleIcon from '@mui/icons-material/People';
 import PhoneIcon from '@mui/icons-material/Phone';
@@ -51,7 +55,7 @@ import WarningIcon from '@mui/icons-material/Warning';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { WorkerWithClassInfo } from '../../types';
 import axios from 'axios';
-import { Document, DocumentStatus } from '../../types/Document';
+import { Document, DocumentStatus, DocumentType } from '../../types/Document';
 
 interface CoordinatorWorkersProps {
   coordinatorId: string;
@@ -81,6 +85,11 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadLoading, setUploadLoading] = useState(false);
   const [expiryDate, setExpiryDate] = useState<string>('');
+  const [activeTab, setActiveTab] = useState(0);
+  const [documentsSummary, setDocumentsSummary] = useState({
+    totalMissing: 0,
+    totalUploaded: 0
+  });
 
   useEffect(() => {
     if (coordinatorId) {
@@ -118,11 +127,32 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
       
       const workersData = workersResponse.data;
       setWorkers(workersData);
+      
+      // חישוב סיכום מסמכים
+      calculateDocumentsSummary(workersData);
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const calculateDocumentsSummary = (workersData: WorkerWithClassInfo[]) => {
+    let totalUploaded = 0;
+    let totalMissing = 0;
+    
+    workersData.forEach(worker => {
+      totalUploaded += worker.documentsCount || 0;
+      // נניח שכל עובד צריך 4 מסמכים בסיסיים
+      const requiredDocuments = 4;
+      const missing = Math.max(0, requiredDocuments - (worker.documentsCount || 0));
+      totalMissing += missing;
+    });
+    
+    setDocumentsSummary({
+      totalUploaded,
+      totalMissing
+    });
   };
 
   const getProjectCount = (worker: WorkerWithClassInfo) => {
@@ -261,6 +291,44 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
     setExpiryDate('');
   };
 
+  const getMissingDocuments = (worker: WorkerWithClassInfo) => {
+    const requiredDocuments = [
+      DocumentType.ID,
+      DocumentType.POLICE_APPROVAL, 
+      DocumentType.TEACHING_CERTIFICATE,
+      DocumentType.CONTRACT
+    ];
+    
+    const uploadedDocuments = workerDocuments
+      .filter(doc => doc.operatorId === worker.id)
+      .map(doc => doc.tag);
+    
+    const missingDocs = requiredDocuments.filter(doc => !uploadedDocuments.includes(doc));
+    
+    // הוספת מידע על קישור 101 אם חסר
+    const result: Array<{
+      tag: string;
+      hasLink: boolean;
+      link?: string;
+      linkText?: string;
+    }> = missingDocs.map(doc => ({
+      tag: doc,
+      hasLink: false
+    }));
+    
+    // אם אין מסמך 101 שהועלה וגם אין לעובד 101 - הוסף את זה
+    if (!worker.is101) {
+      result.push({
+        tag: 'טופס 101',
+        hasLink: true,
+        link: "https://101.rdn.org.il/#!/account/emp-login",
+        linkText: "למילוי הטופס לחצו כאן"
+      });
+    }
+    
+    return result;
+  };
+
   if (loading) {
     return (
       <Container>
@@ -376,114 +444,149 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
             </Typography>
           </Box>
         ) : (
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>שם העובד</TableCell>
-                  <TableCell>תעודת זהות</TableCell>
-                  <TableCell>טפסים הועלו</TableCell>
-                  <TableCell>תפקיד</TableCell>
-                  <TableCell>כיתה</TableCell>
-                  <TableCell>פרויקטים</TableCell>
-                  <TableCell>סטטוס</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {currentWorkers.map((worker) => (
-                  <TableRow 
-                    key={worker._id} 
-                    hover 
-                    onClick={() => handleWorkerClick(worker)}
-                    sx={{ cursor: 'pointer' }}
-                  >
-                    <TableCell>
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        <PeopleIcon color="primary" fontSize="small" />
-                        <Typography variant="body1" fontWeight="medium">
-                          {worker.firstName} {worker.lastName}
-                        </Typography>
-                      </Stack>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2">
-                        {worker.id}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        <DescriptionIcon color="action" fontSize="small" />
-                        <Typography variant="body2">
-                          {worker.documentsCount || 0} טפסים
-                        </Typography>
-                      </Stack>
-                    </TableCell>
-                    <TableCell>
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        <Typography variant="body2">
-                          {worker.roleType || 'לא צוין'}
-                        </Typography>
-                      </Stack>
-                    </TableCell>
-                    <TableCell>
-                      <Stack direction="row" alignItems="center" spacing={1}>
+          <>
+            {/* טאבים לסיכום מסמכים */}
+            <Card sx={{ mb: 3 }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom color="primary">
+                  סיכום מסמכים
+                </Typography>
+                <Stack direction="row" spacing={4}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      מסמכים שהועלו:
+                    </Typography>
+                    <Chip 
+                      label={documentsSummary.totalUploaded} 
+                      color="success" 
+                      size="small"
+                    />
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      מסמכים חסרים:
+                    </Typography>
+                    <Chip 
+                      label={documentsSummary.totalMissing} 
+                      color="error" 
+                      size="small"
+                    />
+                  </Box>
+                </Stack>
+              </CardContent>
+            </Card>
 
-                        <Typography variant="body2">
-                          {worker.classSymbol ? (
-                            <Chip 
-                              label={worker.classSymbol} 
-                              size="small" 
-                              variant="outlined"
-                              color="primary"
-                            />
-                          ) : (
-                            worker.roleName || 'לא צוין'
-                          )}
-                        </Typography>
-                      </Stack>
-                    </TableCell>
-                    <TableCell>
-                      <Stack direction="row" spacing={0.5} flexWrap="wrap">
-                        {(worker.projectCodes ?? []).map(code => {
-                          const project = projectTypes.find(p => p.value === code);
-                          return (
-                            <Chip 
-                              key={code} 
-                              label={project ? project.label : `פרויקט ${code}`} 
-                              size="small" 
-                              variant="outlined" 
-                              color="primary"
-                            />
-                          );
-                        })}
-                      </Stack>
-                    </TableCell>
-                    <TableCell>
-                      <Chip 
-                        label={worker.status || 'לא זמין'} 
-                        color={worker.status === 'פעיל' ? 'success' : 'default'}
-                        size="small"
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}          
-          {/* דפדוף */}
-          {totalPages > 1 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-              <Pagination
-                count={totalPages}
-                page={currentPage}
-                onChange={handlePageChange}
-                color="primary"
-                showFirstButton
-                showLastButton
-              />
+            {/* הטבלה */}
+            <Box>
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>שם העובד</TableCell>
+                      <TableCell>תעודת זהות</TableCell>
+                      <TableCell>טפסים הועלו</TableCell>
+                      <TableCell>תפקיד</TableCell>
+                      <TableCell>כיתה</TableCell>
+                      <TableCell>פרויקטים</TableCell>
+                      <TableCell>סטטוס</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {currentWorkers.map((worker) => (
+                      <TableRow 
+                        key={worker._id} 
+                        hover 
+                        onClick={() => handleWorkerClick(worker)}
+                        sx={{ cursor: 'pointer' }}
+                      >
+                        <TableCell>
+                          <Stack direction="row" alignItems="center" spacing={1}>
+                            <PeopleIcon color="primary" fontSize="small" />
+                            <Typography variant="body1" fontWeight="medium">
+                              {worker.firstName} {worker.lastName}
+                            </Typography>
+                          </Stack>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">
+                            {worker.id}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Stack direction="row" alignItems="center" spacing={1}>
+                            <DescriptionIcon color="action" fontSize="small" />
+                            <Typography variant="body2">
+                              {worker.documentsCount || 0} טפסים
+                            </Typography>
+                          </Stack>
+                        </TableCell>
+                        <TableCell>
+                          <Stack direction="row" alignItems="center" spacing={1}>
+                            <Typography variant="body2">
+                              {worker.roleType || 'לא צוין'}
+                            </Typography>
+                          </Stack>
+                        </TableCell>
+                        <TableCell>
+                          <Stack direction="row" alignItems="center" spacing={1}>
+                            <Typography variant="body2">
+                              {worker.classSymbol ? (
+                                <Chip 
+                                  label={worker.classSymbol} 
+                                  size="small" 
+                                  variant="outlined"
+                                  color="primary"
+                                />
+                              ) : (
+                                worker.roleName || 'לא צוין'
+                              )}
+                            </Typography>
+                          </Stack>
+                        </TableCell>
+                        <TableCell>
+                          <Stack direction="row" spacing={0.5} flexWrap="wrap">
+                            {(worker.projectCodes ?? []).map(code => {
+                              const project = projectTypes.find(p => p.value === code);
+                              return (
+                                <Chip 
+                                  key={code} 
+                                  label={project ? project.label : `פרויקט ${code}`} 
+                                  size="small" 
+                                  variant="outlined" 
+                                  color="primary"
+                                />
+                              );
+                            })}
+                          </Stack>
+                        </TableCell>
+                        <TableCell>
+                          <Chip 
+                            label={worker.status || 'לא זמין'} 
+                            color={worker.status === 'פעיל' ? 'success' : 'default'}
+                            size="small"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </Box>
-          )}
+          </>
+        )}          
+        {/* דפדוף */}
+        {totalPages > 1 && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+            <Pagination
+              count={totalPages}
+              page={currentPage}
+              onChange={handlePageChange}
+              color="primary"
+              showFirstButton
+              showLastButton
+            />
+          </Box>
+        )}
 
       {/* דיאלוג טפסים של עובד */}
       <Dialog 
@@ -517,6 +620,79 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
             </Box>
           ) : (
             <Box>
+              {/* טפסים חסרים */}
+              {selectedWorker && (
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="h6" color="error" gutterBottom>
+                    טפסים חסרים:
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {/* טופס 101 - מוצג בנפרד ומיוחד */}
+                    {getMissingDocuments(selectedWorker).filter(doc => doc.tag === 'טופס 101').map((doc, index) => (
+                      <Alert 
+                        key={index} 
+                        severity="warning" 
+                        sx={{ 
+                          border: '2px solid #ff9800',
+                          bgcolor: '#fff3e0',
+                          '& .MuiAlert-icon': { color: '#f57c00' }
+                        }}
+                      >
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          העובד צריך למלא טופס 101 לשנת המס 2025
+                        </Typography>
+                        <Link 
+                          href={doc.link} 
+                          target="_blank" 
+                          rel="noopener"
+                          sx={{ 
+                            fontSize: '0.875rem', 
+                            color: '#1976d2',
+                            textDecoration: 'underline',
+                            fontWeight: 'bold'
+                          }}
+                        >
+                          {doc.linkText}
+                        </Link>
+                      </Alert>
+                    ))}
+                    
+                    {/* שאר הטפסים החסרים */}
+                    {getMissingDocuments(selectedWorker).filter(doc => doc.tag !== 'טופס 101').length > 0 && (
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                          טפסים נוספים חסרים:
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                          {getMissingDocuments(selectedWorker).filter(doc => doc.tag !== 'טופס 101').map((doc, index) => (
+                            <Chip 
+                              key={index}
+                              label={doc.tag}
+                              color="error"
+                              variant="outlined"
+                              size="small"
+                            />
+                          ))}
+                        </Box>
+                      </Box>
+                    )}
+                    
+                    {getMissingDocuments(selectedWorker).length === 0 && (
+                      <Typography variant="body2" color="success.main">
+                        ✓ כל הטפסים הנדרשים הועלו
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+              )}
+
+              <Divider sx={{ my: 2 }} />
+
+              {/* טפסים שהועלו */}
+              <Typography variant="h6" gutterBottom>
+                טפסים שהועלו:
+              </Typography>
+              
               {workerDocuments.length === 0 ? (
                 <Box textAlign="center" py={3}>
                   <WarningIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />

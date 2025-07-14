@@ -28,7 +28,9 @@ import {
   ListItem,
   ListItemText,
   ListItemSecondaryAction,
-  Divider
+  Divider,
+  FormControlLabel,
+  Checkbox
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -38,7 +40,8 @@ import {
   VisibilityOff as VisibilityOffIcon,
   AddCircle as AddCircleIcon,
   RemoveCircle as RemoveCircleIcon,
-  Upload as UploadIcon
+  Upload as UploadIcon,
+  FilterList as FilterListIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 
@@ -130,6 +133,7 @@ const validatePassword = (password: string): string | null => {
 
 const UsersManagementPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -163,11 +167,39 @@ const UsersManagementPage: React.FC = () => {
   const [importError, setImportError] = useState('');
   const [importSuccess, setImportSuccess] = useState('');
 
+  // סינון לפי תפקיד
+  const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState<string>('');
+
   useEffect(() => {
     fetchUsers();
     getCurrentUserRole();
     fetchInstitutionCodes();
   }, []);
+
+  useEffect(() => {
+    // סינון המשתמשים לפי התפקיד שנבחר וחיפוש חופשי
+    let filtered = users;
+    
+    // סינון לפי תפקיד
+    if (roleFilter !== 'all') {
+      filtered = filtered.filter(user => user.role === roleFilter);
+    }
+    
+    // סינון לפי חיפוש חופשי
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(user => 
+        user.username.toLowerCase().includes(searchLower) ||
+        user.firstName.toLowerCase().includes(searchLower) ||
+        user.lastName.toLowerCase().includes(searchLower) ||
+        user.email.toLowerCase().includes(searchLower) ||
+        (user.phone && user.phone.includes(searchTerm))
+      );
+    }
+    
+    setFilteredUsers(filtered);
+  }, [users, roleFilter, searchTerm]);
 
   const getCurrentUserRole = () => {
     try {
@@ -450,28 +482,101 @@ const UsersManagementPage: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" component="h1">
-          ניהול משתמשים
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="outlined"
-            startIcon={<UploadIcon />}
-            onClick={handleImportDialogOpen}
-          >
-            ייבוא רכזים
-          </Button>
+    <Box sx={{ p: 3, mt: 5 }}>
+        {/* שורת הכפתורים והסינון */}
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 2,
+          mb: 3,
+          p: 2,
+          backgroundColor: '#f8f9fa',
+          borderRadius: 2,
+          border: '1px solid #e0e0e0',
+          flexWrap: 'wrap',
+          justifyContent: 'center'
+        }}>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => handleOpenDialog()}
+            sx={{ 
+              backgroundColor: 'rgb(55, 179, 102)',
+              '&:hover': { backgroundColor: 'rgb(62, 204, 116)' }
+            }}
           >
             הוסף משתמש חדש
           </Button>
+          
+          <Button
+            variant="outlined"
+            startIcon={<UploadIcon />}
+            onClick={handleImportDialogOpen}
+            sx={{ 
+              borderColor: '#1976d2',
+              color: '#1976d2',
+              '&:hover': { 
+                borderColor: '#1565c0',
+                backgroundColor: 'rgba(25, 118, 210, 0.04)'
+              }
+            }}
+          >
+            ייבוא רכזים
+          </Button>
+
+          <TextField
+            size="small"
+            placeholder="חיפוש חופשי..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            sx={{ 
+              minWidth: 200,
+              backgroundColor: 'white',
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': {
+                  borderColor: '#1976d2',
+                },
+                '&:hover fieldset': {
+                  borderColor: '#1565c0',
+                },
+              },
+            }}
+          />
+          
+          <FormControl size="small" sx={{ minWidth: 200 }}>
+            <InputLabel>סינון לפי תפקיד</InputLabel>
+            <Select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              label="סינון לפי תפקיד"
+              sx={{ backgroundColor: 'white' }}
+            >
+              <MenuItem value="all">כל התפקידים</MenuItem>
+              <MenuItem value="admin">מנהל מערכת</MenuItem>
+              <MenuItem value="manager_project">מנהל פרויקט</MenuItem>
+              <MenuItem value="accountant">חשב שכר</MenuItem>
+              <MenuItem value="coordinator">רכז</MenuItem>
+            </Select>
+          </FormControl>
+          
+          {(roleFilter !== 'all' || searchTerm.trim()) && (
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ 
+                backgroundColor: 'rgba(25, 118, 210, 0.1)',
+                px: 2,
+                py: 0.5,
+                borderRadius: 1,
+                border: '1px solid rgba(25, 118, 210, 0.2)'
+              }}
+            >
+              מוצגים {filteredUsers.length} מתוך {users.length} משתמשים
+            </Typography>
+          )}
         </Box>
-      </Box>
+
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -485,94 +590,137 @@ const UsersManagementPage: React.FC = () => {
         </Alert>
       )}
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>שם משתמש</TableCell>
-              <TableCell>תפקיד</TableCell>
-              <TableCell>שם מלא</TableCell>
-              <TableCell>אימייל</TableCell>
-              <TableCell>טלפון</TableCell>
-              <TableCell>סטטוס</TableCell>
-              <TableCell>שיוכי פרויקטים</TableCell>
-              <TableCell>תאריך יצירה</TableCell>
-              <TableCell>פעולות</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {users.map((user) => (
-              <TableRow key={user._id}>
-                <TableCell>{user.username}</TableCell>
-                <TableCell>
-                  <Chip
-                    label={roleLabels[user.role]}
-                    color={roleColors[user.role]}
-                    size="small"
-                  />
-                </TableCell>
-                <TableCell>{`${user.firstName} ${user.lastName}`}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{user.phone || '-'}</TableCell>
-                <TableCell>
-                  <Chip
-                    label={user.isActive ? 'פעיל' : 'לא פעיל'}
-                    color={user.isActive ? 'success' : 'error'}
-                    size="small"
-                  />
-                </TableCell>
-                <TableCell>
-                  {user.role === 'coordinator' && user.projectCodes && user.projectCodes.length > 0 ? (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                      {user.projectCodes.map((assignment, index) => {
-                        const project = projectTypes.find(p => p.value === assignment.projectCode);
-                        return (
-                          <Chip
-                            key={index}
-                            label={`${project?.label || `פרויקט ${assignment.projectCode}`} - ${assignment.institutionCode} (${assignment.institutionName})`}
-                            size="small"
-                            variant="outlined"
-                            color="primary"
-                          />
-                        );
-                      })}
-                    </Box>
-                  ) : user.role === 'coordinator' ? (
-                    <Typography variant="body2" color="text.secondary" fontStyle="italic">
-                      אין שיוכים
-                    </Typography>
-                  ) : (
-                    <Typography variant="body2" color="text.secondary">
-                      לא רלוונטי
-                    </Typography>
-                  )}
-                </TableCell>
-                <TableCell>{formatDate(user.createDate)}</TableCell>
-                <TableCell>
-                  {!(currentUserRole === 'manager_project' && (user.role === 'admin' || user.role === 'manager_project')) && (
-                    <>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleOpenDialog(user)}
-                        color="primary"
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDeleteUser(user._id)}
-                        color="error"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </>
-                  )}
-                </TableCell>
+      
+
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+        <TableContainer 
+          component={Paper} 
+          sx={{ 
+            maxWidth: 1200, 
+            width: '100%',
+            maxHeight: 600,
+            minHeight: 400,
+            overflowY: 'auto',
+            '&::-webkit-scrollbar': {
+              width: '8px',
+            },
+            '&::-webkit-scrollbar-track': {
+              backgroundColor: '#f1f1f1',
+              borderRadius: '4px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: '#c1c1c1',
+              borderRadius: '4px',
+              '&:hover': {
+                backgroundColor: '#a8a8a8',
+              },
+            },
+          }}
+        >
+          <Table stickyHeader>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>שם משתמש</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>תפקיד</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>שם מלא</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>אימייל</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>טלפון</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>סטטוס</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>שיוכי פרויקטים</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>תאריך יצירה</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>פעולות</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {filteredUsers.map((user) => (
+                <TableRow key={user._id} sx={{ 
+                  '&:hover': { backgroundColor: '#f5f5f5' },
+                  '&:nth-of-type(even)': { backgroundColor: '#fafafa' }
+                }}>
+                  <TableCell>{user.username}</TableCell>
+                  <TableCell>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: user.role === 'admin' ? '#d32f2f' : 
+                               user.role === 'manager_project' ? '#ed6c02' : 
+                               user.role === 'accountant' ? '#9c27b0' : '#1976d2',
+                        fontWeight: 'medium'
+                      }}
+                    >
+                      {roleLabels[user.role]}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>{`${user.firstName} ${user.lastName}`}</TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>{user.phone || '-'}</TableCell>
+                  <TableCell>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: user.isActive ? '#2e7d32' : '#d32f2f',
+                        fontWeight: 'medium'
+                      }}
+                    >
+                      {user.isActive ? 'פעיל' : 'לא פעיל'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    {user.role === 'coordinator' && user.projectCodes && user.projectCodes.length > 0 ? (
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                        {user.projectCodes.map((assignment, index) => {
+                          const project = projectTypes.find(p => p.value === assignment.projectCode);
+                          return (
+                            <Typography 
+                              key={index}
+                              variant="caption" 
+                              sx={{ 
+                                color: '#666',
+                                fontSize: '0.75rem'
+                              }}
+                            >
+                              {project?.label || `פרויקט ${assignment.projectCode}`} - {assignment.institutionCode}
+                            </Typography>
+                          );
+                        })}
+                      </Box>
+                    ) : user.role === 'coordinator' ? (
+                      <Typography variant="body2" color="text.secondary" fontStyle="italic">
+                        אין שיוכים
+                      </Typography>
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        לא רלוונטי
+                      </Typography>
+                    )}
+                  </TableCell>
+                  <TableCell>{formatDate(user.createDate)}</TableCell>
+                  <TableCell>
+                    {!(currentUserRole === 'manager_project' && (user.role === 'admin' || user.role === 'manager_project')) && (
+                      <>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleOpenDialog(user)}
+                          sx={{ color: '#1976d2' }}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDeleteUser(user._id)}
+                          sx={{ color: '#d32f2f' }}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
 
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle>

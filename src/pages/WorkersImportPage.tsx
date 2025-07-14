@@ -118,7 +118,6 @@ const WorkersImportPage: React.FC = () => {
     existingWorkers: []
   });
 
-  const addWorkerMutation = useAddWorkerAfterNoon();
   const addMultipleWorkersMutation = useAddMultipleWorkersAfterNoon();
   const updateWorkerMutation = useUpdateWorkerAfterNoon();
   const bulkAddWorkersMutation = useBulkAddWorkersToClasses();
@@ -173,7 +172,7 @@ const WorkersImportPage: React.FC = () => {
     const endDate = new Date(parseDate(row[11]));
     
     const symbol = row[0]?.toString().trim();
-    const is101 = row[13]?.toString()?.trim() ? true : false;
+    const is101 = row[13]?.toString()?.trim() === 'יש' ? true : false;
 
     return {
       firstName: firstName,
