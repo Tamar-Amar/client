@@ -29,22 +29,17 @@ import { useFetchAllWorkersAfterNoon, useDeleteWorkerAfterNoon, useUpdateWorkerA
 import { useFetchClasses } from '../../queries/classQueries';
 import { WorkerAfterNoon, Class } from '../../types';
 import { useNavigate } from 'react-router-dom';
-import { useFetchAllDocuments } from '../../queries/useDocuments';
 import { useQueryClient } from '@tanstack/react-query';
-import CoordinatorAssignmentDialog from '../coordinator/CoordinatorAssignmentDialog';
 
 const ROWS_PER_PAGE = 15;
 
 const WorkersDocumentsList: React.FC = () => {
   const { data: workers = [], isLoading, error } = useFetchAllWorkersAfterNoon();
   const { data: classes = [] } = useFetchClasses();
-  const { data: documents = [] } = useFetchAllDocuments();
   const queryClient = useQueryClient();
   const deleteWorkerMutation = useDeleteWorkerAfterNoon();
   const updateWorkerMutation = useUpdateWorkerAfterNoon();
   const [searchQuery, setSearchQuery] = useState('');
-  const [coordinatorDialogOpen, setCoordinatorDialogOpen] = useState(false);
-  const [selectedWorkerForCoordinator, setSelectedWorkerForCoordinator] = useState<WorkerAfterNoon | null>(null);
   const [salaryAccountFilter, setSalaryAccountFilter] = useState<string>('');
   const [projectFilter, setProjectFilter] = useState<string>('');
   const [page, setPage] = useState(0);
@@ -118,26 +113,6 @@ const WorkersDocumentsList: React.FC = () => {
 
   const handleViewWorker = (worker: WorkerAfterNoon) => {
     navigate(`/workers/${worker._id}`);
-  };
-
-  const handleAssignCoordinator = (worker: WorkerAfterNoon) => {
-    setSelectedWorkerForCoordinator(worker);
-    setCoordinatorDialogOpen(true);
-  };
-
-  const handleCoordinatorAssign = async (coordinatorId: string) => {
-    if (selectedWorkerForCoordinator) {
-      try {
-        await updateWorkerMutation.mutateAsync({
-          id: selectedWorkerForCoordinator._id,
-          data: { coordinatorId }
-        });
-        // רענון הנתונים
-        queryClient.invalidateQueries({ queryKey: ['workers'] });
-      } catch (error) {
-        console.error('Error assigning coordinator:', error);
-      }
-    }
   };
   
   // Handle individual worker selection
@@ -361,14 +336,6 @@ const WorkersDocumentsList: React.FC = () => {
                       >
                         <VisibilityIcon fontSize="small" />
                       </IconButton>
-                      <IconButton
-                        color="primary"
-                        onClick={() => handleAssignCoordinator(worker)}
-                        size="small"
-                        title="שייך רכז"
-                      >
-                        👥
-                      </IconButton>
 
                     </Box>
                   </TableCell>
@@ -410,16 +377,6 @@ const WorkersDocumentsList: React.FC = () => {
           labelDisplayedRows={({ from, to, count }) => `${from}-${to} מתוך ${count}`}
         />
       </Box>
-
-      {coordinatorDialogOpen && (
-        <CoordinatorAssignmentDialog
-          open={coordinatorDialogOpen}
-          onClose={() => setCoordinatorDialogOpen(false)}
-          type="worker"
-          item={selectedWorkerForCoordinator || undefined}
-          onAssign={handleCoordinatorAssign}
-        />
-      )}
     </Box>
   );
 };

@@ -2,21 +2,15 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
-  Stack,
-  CircularProgress,
-  Alert,
   Drawer,
   List,
   ListItem,
   ListItemButton,
   ListItemText,
   Divider,
-  Container,
-  Paper
 } from '@mui/material';
 import { jwtDecode } from 'jwt-decode';
 import PersonIcon from '@mui/icons-material/Person';
-import SchoolIcon from '@mui/icons-material/School';
 import PeopleIcon from '@mui/icons-material/People';
 import CoordinatorPersonalDetails from '../components/coordinator/CoordinatorPersonalDetails';
 import CoordinatorClasses from '../components/coordinator/CoordinatorClasses';
@@ -32,15 +26,13 @@ const CoordinatorDashboardPage: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState<'personal' | 'classes' | 'workers'>('personal');
   const [drawerOpen, setDrawerOpen] = useState(true);
   const [coordinatorId, setCoordinatorId] = useState<string>('');
-  const [coordinatorName, setCoordinatorName] = useState<string>('');
 
   useEffect(() => {
 
-    const token = localStorage.getItem('token');
-    if (token) {
+    const connectedUser = JSON.parse(localStorage.getItem('user') || '{}');
+    if (connectedUser) {
       try {
-        const decodedToken: DecodedToken = jwtDecode(token);
-        setCoordinatorId(decodedToken.id);
+        setCoordinatorId(connectedUser._id);
       } catch (error) {
         console.error('Error decoding token:', error);
       }

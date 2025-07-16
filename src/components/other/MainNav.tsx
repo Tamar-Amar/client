@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { AppBar, Toolbar, Button, Box, Typography, Stack, Menu, MenuItem, Avatar, IconButton, Tabs, Tab } from '@mui/material';
+import { AppBar, Toolbar, Button, Box, Typography, Stack, Menu, MenuItem, Avatar, IconButton, Tabs, Tab, Dialog } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import SchoolIcon from '@mui/icons-material/School';
 import EventIcon from '@mui/icons-material/Event';
 import GroupsIcon from '@mui/icons-material/Groups';
 import LoginIcon from '@mui/icons-material/Login';
@@ -17,6 +16,9 @@ import { jwtDecode } from 'jwt-decode';
 import { fetchOperatorById } from '../../services/OperatorService';
 import { Operator, WorkerAfterNoon } from '../../types';
 import { fetchWorkerById } from '../../services/WorkerAfterNoonService';
+import PersonSearchIcon from '@mui/icons-material/PersonSearch';
+import ImpersonateDialog from './ImpersonateDialog';
+
 
 interface TabInfo {
   label: string;
@@ -33,6 +35,7 @@ const MainNav: React.FC = () => {
   const [selectedSection, setSelectedSection] = useState<string>('general');
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
+  const [impersonateDialogOpen, setImpersonateDialogOpen] = useState(false);
 
   const sections = [
     { key: 'general', label: 'כללי', icon: <AssessmentIcon fontSize="small" /> },
@@ -151,6 +154,44 @@ const MainNav: React.FC = () => {
   const selectedSectionObject = role === 'accountant' 
     ? accountantSections.find(s => s.key === selectedSection)
     : sections.find(s => s.key === selectedSection);
+
+  const handleImpersonate = (user: any, type: any) => {
+    if (!localStorage.getItem('original_admin_token')) {
+      localStorage.setItem('original_admin_token', localStorage.getItem('token') || '');
+      localStorage.setItem('original_admin_role', localStorage.getItem('role') || '');
+      localStorage.setItem('original_admin_user', localStorage.getItem('user') || '');
+    }
+
+    if (type === 'user') {
+      localStorage.setItem('role', user.role);
+      localStorage.setItem('user', JSON.stringify(user));
+      if (user.role === 'coordinator') {
+        window.location.href = '/coordinator/dashboard';
+        return;
+      } else if (user.role === 'accountant') {
+        window.location.href = '/accountant/dashboard';
+        return;
+      }
+    } else if (type === 'worker') {
+      localStorage.setItem('role', 'worker');
+      localStorage.setItem('user', JSON.stringify(user));
+      window.location.href = `/worker/${user._id}`;
+      return;
+    }
+    window.location.reload();
+  };
+
+  const handleReturnToAdmin = () => {
+    if (localStorage.getItem('original_admin_token')) {
+      localStorage.setItem('token', localStorage.getItem('original_admin_token') || '');
+      localStorage.setItem('role', localStorage.getItem('original_admin_role') || '');
+      localStorage.setItem('user', localStorage.getItem('original_admin_user') || '');
+      localStorage.removeItem('original_admin_token');
+      localStorage.removeItem('original_admin_role');
+      localStorage.removeItem('original_admin_user');
+      window.location.reload();
+    }
+  };
 
   return (
     <>
@@ -308,29 +349,46 @@ const MainNav: React.FC = () => {
               </Box>
            )}
 
-          {/* Right side: User Info and Section Dropdown */}
-         
-                    {/* Left side: Role and Logout */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
              {(role === 'admin' || role === 'manager_project' || role === 'accountant' || role === 'coordinator') && (
                 <Typography variant="h6" sx={{ color: '#1976d2', fontWeight: 'bold' }}>
-                  {role === 'admin' ? 'מערכת ניהול ראשי' : 
-                   role === 'manager_project' ? 'מנהל פרויקט' : 
+
+                   {role === 'manager_project' ? 'מנהל פרויקט' : 
                    role === 'accountant' ? 'חשב שכר' : 
                    role === 'coordinator' ? 'רכז' : ''}
                 </Typography>
              )}
+            {(role === 'admin' || role === 'manager_project') && (
+              <Button
+                variant="contained"
+                color="warning"
+                startIcon={<PersonSearchIcon />}
+                sx={{ ml: 2, fontWeight: 'bold' }}
+                onClick={() => setImpersonateDialogOpen(true)}
+              >
+                התחבר כ...
+              </Button>
+            )}
+                        {localStorage.getItem('original_admin_token') && (
+              <Button
+                variant="outlined"
+                color="warning"
+                sx={{ ml: 2, fontWeight: 'bold' }}
+                onClick={handleReturnToAdmin}
+              >
+                חזור למנהל
+              </Button>
+            )}
             {role ? (
               <Button
                 variant="outlined"
                 onClick={handleLogout}
                 sx={{
-                  borderColor: '#1976d2',
-                  color: '#1976d2',
+                  borderColor: 'red',
+                  color: 'red',
                   '&:hover': {
-                    backgroundColor: '#1976d2',
-                    color: '#ffffff',
-                    borderColor: '#1976d2',
+                    backgroundColor: 'rgba(247, 43, 28, 0.29)',
+                    borderColor: 'red',
                   },
                 }}
               >
@@ -352,9 +410,22 @@ const MainNav: React.FC = () => {
                 התחברות
               </Button>
             )}
+
           </Box>
         </Toolbar>
       </AppBar>
+      <Dialog open={impersonateDialogOpen} onClose={() => setImpersonateDialogOpen(false)}>
+        <Box sx={{ p: 4, minWidth: 350 }}>
+          <Typography variant="h6">התחברות כמשתמש אחר (בקרוב)</Typography>
+          <Button onClick={() => setImpersonateDialogOpen(false)} sx={{ mt: 2 }}>סגור</Button>
+        </Box>
+      </Dialog>
+      {/* דיאלוג התחזות אמיתי */}
+      <ImpersonateDialog
+        open={impersonateDialogOpen}
+        onClose={() => setImpersonateDialogOpen(false)}
+        onImpersonate={handleImpersonate}
+      />
     </>
   );
 };
