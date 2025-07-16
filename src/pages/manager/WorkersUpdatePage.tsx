@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container,
   Box,
@@ -12,14 +12,7 @@ import {
   Alert,
   CircularProgress,
   Divider,
-  Card,
-  CardContent,
-  CardActions,
-  Chip,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
+
   Dialog,
   DialogTitle,
   DialogContent,
@@ -30,6 +23,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Checkbox,
 } from '@mui/material';
 import {
   CloudUpload as UploadIcon,
@@ -66,6 +60,14 @@ const WorkersUpdatePage: React.FC = () => {
   const [validationResults, setValidationResults] = useState<Array<{ id: string; newValue: any; status: string; row: number; oldValue?: any }>>([]);
   const [updatePreview, setUpdatePreview] = useState<Array<{ id: string; oldValue: any; newValue: any; needsUpdate: boolean }>>([]);
   const [showUpdateDetails, setShowUpdateDetails] = useState(false);
+  const [selectedToUpdate, setSelectedToUpdate] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (updatePreview.length > 0) {
+      const workersToUpdate = updatePreview.filter(w => w.needsUpdate).map(w => w.id);
+      setSelectedToUpdate(workersToUpdate);
+    }
+  }, [updatePreview]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -131,12 +133,29 @@ const WorkersUpdatePage: React.FC = () => {
       return;
     }
 
-    // updatePreview כבר מכיל רק עובדים שצריכים עדכון
-    if (updatePreview.length === 0) {
-      alert('אין עובדים שצריכים עדכון (כל הערכים כבר מעודכנים)');
+    // עדכון: שלח רק את העובדים שנבחרו
+    const filteredUpdatePreview = updatePreview.filter(w => selectedToUpdate.includes(w.id));
+    if (filteredUpdatePreview.length === 0) {
+      alert('לא נבחרו עובדים לעדכון');
       return;
     }
-
+    // המרת ערכים בוליאניים לפני שליחה לשרת
+    const processedUpdates = filteredUpdatePreview.map(worker => {
+      let processedNewValue = worker.newValue;
+      if (selectedField === 'is101' || selectedField === 'isActive') {
+        const trueValues = ['יש', 'true', 'כן', '1', 'תקין'];
+        processedNewValue = trueValues.includes(String(worker.newValue).toLowerCase());
+      }
+      return {
+        ...worker,
+        newValue: processedNewValue
+      };
+    });
+    // לוג: מה נשלח לשרת
+    console.log('נשלח לשרת:', processedUpdates);
+    processedUpdates.forEach(worker => {
+      console.log(`id: ${worker.id}, newValue: ${worker.newValue}, oldValue: ${worker.oldValue}, needsUpdate: ${worker.needsUpdate}`);
+    });
     setIsProcessing(true);
     setResults({ success: [], failed: [] });
 
@@ -148,7 +167,7 @@ const WorkersUpdatePage: React.FC = () => {
         },
         body: JSON.stringify({
           field: selectedField,
-          updates: updatePreview
+          updates: processedUpdates
         }),
       });
 
@@ -214,17 +233,22 @@ const WorkersUpdatePage: React.FC = () => {
               const oldValue = worker.oldValue;
               const newValue = worker.newValue;
               
+              console.log("oldValue", oldValue);
+              console.log("newValue", newValue);
+              
               // ניקוי רווחים והשוואה מדויקת
               let cleanOldValue = String(oldValue || '').trim();
               let cleanNewValue = String(newValue || '').trim();
               
+
+              console.log("cleanOldValue", cleanOldValue);
+              console.log("cleanNewValue", cleanNewValue);
+              
               // טיפול מיוחד בשדות בוליאניים
               if (selectedField === 'is101' || selectedField === 'isActive') {
-                
-                // המרת ערכים בוליאניים לטקסט אחיד
-                const oldBool = Boolean(oldValue);
-                const newBool = ['יש', 'true', 'כן', '1'].includes(cleanNewValue.toLowerCase());
-                
+                const trueValues = ['יש', 'true', 'כן', '1', 'תקין'];
+                const newBool = trueValues.includes(String(cleanNewValue).toLowerCase());
+                const oldBool = !!oldValue; // oldValue תמיד בוליאני
                 cleanOldValue = oldBool ? 'true' : 'false';
                 cleanNewValue = newBool ? 'true' : 'false';
               }
@@ -423,11 +447,11 @@ const WorkersUpdatePage: React.FC = () => {
                        
                        <Box sx={{ mb: 2 }}>
                          <Typography variant="body2" fontWeight="bold">
-                           סה"כ עובדים קיימים לעדכון: {updatePreview.filter(w => w.needsUpdate).length}
+                           סה"כ עובדים קיימים לעדכון: {selectedToUpdate.length}
                          </Typography>
                        </Box>
                        
-                       {updatePreview.filter(w => w.needsUpdate).length > 0 && (
+                       {selectedToUpdate.length > 0 && (
                          <Button
                            variant="outlined"
                            fullWidth
@@ -491,6 +515,19 @@ const WorkersUpdatePage: React.FC = () => {
             <Table size="small">
               <TableHead>
                 <TableRow>
+                  <TableCell padding="checkbox">
+                    <Checkbox
+                      indeterminate={selectedToUpdate.length > 0 && selectedToUpdate.length < updatePreview.filter(w => w.needsUpdate).length}
+                      checked={selectedToUpdate.length === updatePreview.filter(w => w.needsUpdate).length}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedToUpdate(updatePreview.filter(w => w.needsUpdate).map(w => w.id));
+                        } else {
+                          setSelectedToUpdate([]);
+                        }
+                      }}
+                    />
+                  </TableCell>
                   <TableCell>תעודת זהות</TableCell>
                   <TableCell>ערך קודם</TableCell>
                   <TableCell>ערך חדש</TableCell>
@@ -499,6 +536,18 @@ const WorkersUpdatePage: React.FC = () => {
               <TableBody>
                 {updatePreview.filter(w => w.needsUpdate).map((worker, index) => (
                   <TableRow key={index}>
+                    <TableCell padding="checkbox">
+                      <Checkbox
+                        checked={selectedToUpdate.includes(worker.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedToUpdate(prev => [...prev, worker.id]);
+                          } else {
+                            setSelectedToUpdate(prev => prev.filter(id => id !== worker.id));
+                          }
+                        }}
+                      />
+                    </TableCell>
                     <TableCell>{worker.id}</TableCell>
                     <TableCell>
                       {selectedField === 'is101' ? 
@@ -507,7 +556,7 @@ const WorkersUpdatePage: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       {selectedField === 'is101' ? 
-                        (String(worker.newValue).toLowerCase() === 'יש' || String(worker.newValue).toLowerCase() === 'true' || String(worker.newValue).toLowerCase() === 'כן' || String(worker.newValue).toLowerCase() === '1' ? 
+                        (["יש", "true", "כן", "1", "תקין"].includes(String(worker.newValue).toLowerCase()) ? 
                           'קיים טופס' : 'לא קיים טופס') : 
                         String(worker.newValue)}
                     </TableCell>
