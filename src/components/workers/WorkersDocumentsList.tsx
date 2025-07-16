@@ -79,7 +79,6 @@ const WorkersDocumentsList: React.FC = () => {
         (worker.lastName ?? '').toLowerCase().includes(searchLower) ||
         (worker.phone ?? '').toLowerCase().includes(searchLower) ||
         (worker.email ?? '').toLowerCase().includes(searchLower) ||
-        (worker.roleType ?? '').toLowerCase().includes(searchLower) ||
         (worker.roleName ?? '').toLowerCase().includes(searchLower) ||
         (worker.status ?? '').toLowerCase().includes(searchLower)
       );

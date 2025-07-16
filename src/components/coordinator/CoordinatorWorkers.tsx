@@ -42,10 +42,6 @@ import {
   Link
 } from '@mui/material';
 import PeopleIcon from '@mui/icons-material/People';
-import PhoneIcon from '@mui/icons-material/Phone';
-import EmailIcon from '@mui/icons-material/Email';
-import WorkIcon from '@mui/icons-material/Work';
-import SchoolIcon from '@mui/icons-material/School';
 import BusinessIcon from '@mui/icons-material/Business';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
@@ -156,9 +152,6 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
     });
   };
 
-  const getProjectCount = (worker: WorkerWithClassInfo) => {
-    return worker.projectCodes ? worker.projectCodes.length : 0;
-  };
 
   // סינון עובדים לפי חיפוש
   const filteredWorkers = workers.filter(worker => {
@@ -169,7 +162,7 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
       worker.id?.includes(searchTerm) ||
       worker.phone?.includes(searchTerm) ||
       worker.email?.toLowerCase().includes(searchLower) ||
-      worker.roleType?.toLowerCase().includes(searchLower) ||
+      worker.roleName?.toLowerCase().includes(searchLower) ||
       worker.classSymbol?.toLowerCase().includes(searchLower) ||
       worker.className?.toLowerCase().includes(searchLower)
     );

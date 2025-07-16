@@ -201,3 +201,5 @@ export interface Activity {
       institutionName: string;
     }>;
   }
+
+  export const REQUIRED_DOC_TAGS = ['אישור משטרה', 'תעודת השכלה', 'חוזה', 'תעודת זהות'];

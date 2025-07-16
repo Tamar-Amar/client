@@ -32,7 +32,6 @@ const EXCEL_TEMPLATE = [
     'פעיל': 'כן',
     'תאריך הרשמה': new Date().toISOString().split('T')[0],
     'הערות': '',
-    'סוג תפקיד': '',
     'שם תפקיד': '',
     'תאריך התחלה': '',
     'תאריך סיום': '',
@@ -51,7 +50,6 @@ const COLUMN_MAPPING: { [key: string]: keyof WorkerAfterNoon | string } = {
   'פעיל': 'isActive',
   'תאריך הרשמה': 'createDate',
   'הערות': 'notes',
-  'סוג תפקיד': 'roleType',
   'שם תפקיד': 'roleName',
   'תאריך התחלה': 'startDate',
   'תאריך סיום': 'endDate',
@@ -247,7 +245,6 @@ const WorkerExcelImport: React.FC = () => {
                   <TableCell>שם פרטי</TableCell>
                   <TableCell>טלפון</TableCell>
                   <TableCell>אימייל</TableCell>
-                  <TableCell>סוג תפקיד</TableCell>
                   <TableCell>שם תפקיד</TableCell>
                   <TableCell>תאריך התחלה</TableCell>
                   <TableCell>תאריך סיום</TableCell>
@@ -262,7 +259,6 @@ const WorkerExcelImport: React.FC = () => {
                     <TableCell>{worker.firstName}</TableCell>
                     <TableCell>{worker.phone}</TableCell>
                     <TableCell>{worker.email}</TableCell>
-                    <TableCell>{worker.roleType}</TableCell>
                     <TableCell>{worker.roleName}</TableCell>
                     <TableCell>{worker.startDate.toISOString().split('T')[0]}</TableCell>
                     <TableCell>{worker.endDate.toISOString().split('T')[0]}</TableCell>

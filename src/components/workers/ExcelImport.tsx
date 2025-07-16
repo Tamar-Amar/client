@@ -139,7 +139,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       updateDate: new Date(now),
       updateBy: 'מערכת',
       status: row[12] || 'לא נבחר',
-      roleType: row[3] || 'לא נבחר',
       roleName: row[4] || 'לא נבחר',
       accountantCode: row[1] || 'לא נבחר',
       notes:'לא נבחר',     
@@ -321,7 +320,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
             for (const projectCode of projectSelection.selectedProjects) {
               const workerAssignment = {
                 workerId: savedWorker._id,
-                roleType: worker.roleType,
+                roleName: worker.roleName,
                 project: projectCode
               };
               await updateClassWithWorker(classObj._id, {
@@ -367,7 +366,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
           for (const projectCode of projectSelection.selectedProjects) {
             const workerAssignment = {
               workerId: savedWorker._id,
-              roleType: worker.roleType,
+              roleName: worker.roleName,
               project: projectCode
             };
             const isAlreadyAssigned = classObj.workers?.some((w: any) =>
@@ -603,7 +602,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
                   <TableCell>אימייל</TableCell>
                   <TableCell>תאריך התחלה</TableCell>
                   <TableCell>תאריך סיום</TableCell>
-                  <TableCell>סוג תפקיד</TableCell>
                   <TableCell>שם תפקיד</TableCell>
                   <TableCell>סטטוס</TableCell>
                   <TableCell>חשב שכר</TableCell>
@@ -639,7 +637,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
                     <TableCell>{worker.email}</TableCell>
                     <TableCell>{formatDate(worker.startDate)}</TableCell>
                     <TableCell>{formatDate(worker.endDate)}</TableCell>
-                    <TableCell>{worker.roleType}</TableCell>
                     <TableCell>{worker.roleName}</TableCell>
                     <TableCell>{worker.status}</TableCell>
                     <TableCell>{worker.accountantCode}</TableCell>

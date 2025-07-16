@@ -34,6 +34,7 @@ import { he } from 'date-fns/locale';
 import { validateDocumentFile } from '../../utils/fileValidation';
 import { useFetchAllUsers } from '../../queries/useUsers';
 import { useFetchClasses } from '../../queries/classQueries';
+import { useNavigate } from 'react-router-dom';
 
 const REQUIRED_DOC_TAGS = ['אישור משטרה', 'תעודת השכלה', 'חוזה', 'תעודת זהות'];
 const ROWS_PER_PAGE = 15;
@@ -52,6 +53,7 @@ const getStatusChip = (status: DocumentStatus) => {
 };
 
 const AllDocumentsTable: React.FC = () => {
+  const navigate = useNavigate();
   const { data: personalDocuments = [], isLoading: isLoadingPersonalDocs } = useFetchAllPersonalDocuments();
   const { data: workers = [], isLoading: isLoadingWorkers } = useFetchAllWorkersAfterNoon();
   const { updateStatus, isUpdatingStatus, uploadDocument, isUploading } = useWorkerDocuments('all');
@@ -224,6 +226,10 @@ const AllDocumentsTable: React.FC = () => {
   const handleApprove = (documentId: string) => updateStatus({ documentId, status: DocumentStatus.APPROVED });
   const handleReject = (documentId: string) => updateStatus({ documentId, status: DocumentStatus.REJECTED });
 
+  const handleWorkerClick = (workerId: string) => {
+    navigate(`/workers/${workerId}`);
+  };
+
   // סטטיסטיקות מותאמות לסינון
   const filteredWorkers = workers.filter(worker => {
     const searchLower = searchTerm.toLowerCase();
@@ -353,7 +359,21 @@ const AllDocumentsTable: React.FC = () => {
                                 ) : (
                                 paginatedData.map(({ worker, docs }) => (
                                     <TableRow key={worker._id} hover>
-                                    <TableCell>{`${worker.lastName} ${worker.firstName}`}</TableCell>
+                                    <TableCell>
+                                      <Typography 
+                                        variant="body2" 
+                                        sx={{ 
+                                          cursor: 'pointer',
+                                          '&:hover': { 
+                                            color: 'primary.main',
+                                            textDecoration: 'underline'
+                                          }
+                                        }}
+                                        onClick={() => handleWorkerClick(worker._id)}
+                                      >
+                                        {`${worker.lastName} ${worker.firstName}`}
+                                      </Typography>
+                                    </TableCell>
                                     <TableCell>{worker.id}</TableCell>
 
                                     {REQUIRED_DOC_TAGS.map(tag => {

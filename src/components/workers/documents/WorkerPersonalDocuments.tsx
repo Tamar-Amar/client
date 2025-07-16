@@ -43,9 +43,9 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { he } from 'date-fns/locale';
 import { CloudUpload as CloudUploadIcon } from '@mui/icons-material';
-import { DOCUMENT_TYPES } from '../../../pages/WorkerProfilePage';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
+import { REQUIRED_DOC_TAGS } from '../../../types';
 
 interface WorkerPersonalDocumentsProps {
   documents: any[];
@@ -135,7 +135,7 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
               onChange={(e) => setDocumentType(e.target.value as string)}
               sx={{ minWidth: 150 }}
             >
-              {DOCUMENT_TYPES.map((type: any) => (
+              {REQUIRED_DOC_TAGS.map((type: any) => (
                 <MenuItem key={type.value} value={type.value} disabled={type.value === "NULL"}>{type.label}</MenuItem>
               ))}
             </TextField>

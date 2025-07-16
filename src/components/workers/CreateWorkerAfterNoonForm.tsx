@@ -107,11 +107,9 @@ const WorkerAfterNoonForm: React.FC<WorkerAfterNoonFormProps> = ({ onSuccess }) 
           <TextField label="סטטוס" name="status" value={form.status || ''} onChange={handleChange} fullWidth />
         </Grid>
         <Grid item xs={12} sm={6}>
-          <TextField label="סוג תפקיד - מוביל / סייע"  placeholder="מוביל / סייע" name="roleType" value={form.roleType || ''} onChange={handleChange} fullWidth />
+          <TextField label="תפקיד"  placeholder="מוביל / סייע" name="roleName" value={form.roleName || ''} onChange={handleChange} fullWidth />
         </Grid>
-        <Grid item xs={12} sm={6}>
-          <TextField label="שם תפקיד" name="roleName" value={form.roleName || ''} onChange={handleChange} fullWidth />
-        </Grid>
+
         <Grid item xs={12} sm={6}>
           <FormControl fullWidth>
             <InputLabel id="accountantCode-label">חשב שכר</InputLabel>

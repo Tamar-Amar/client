@@ -146,7 +146,7 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
             <Typography variant="h5" fontWeight="bold" color="primary.main" sx={{ mb: 0.5 }}>{workerData.firstName} {workerData.lastName}</Typography>
             <Typography color="text.secondary" variant="subtitle1">
               {workerData.id}
-              {!isCurrentWorker && `, ${workerData.roleType} - ${workerData.roleName}`}
+              {!isCurrentWorker && `, ${workerData.roleName}`}
             </Typography>
             <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 1 }}>
               {(workerData.projectCodes ?? []).map(code => {
@@ -293,8 +293,7 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
             <Grid item xs={12} md={6}>
               <Typography variant="subtitle1" gutterBottom color="text.primary">תפקיד וחשבונאות</Typography>
               <Stack spacing={1}>
-                <EditableField label="סוג תפקיד" name="roleType" value={form.roleType} editing={editing} onChange={handleChange} icon={<WorkIcon color="action" fontSize="small" />} />
-                <EditableField label="שם תפקיד" name="roleName" value={form.roleName} editing={editing} onChange={handleChange} icon={<WorkIcon color="action" fontSize="small" />} />
+                <EditableField label="תפקיד" name="roleName" value={form.roleName} editing={editing} onChange={handleChange} icon={<WorkIcon color="action" fontSize="small" />} />
                 <EditableField label="חשב שכר" name="accountantCode" value={form.accountantCode} editing={editing} onChange={handleChange} select options={accountantOptions} icon={<BadgeIcon color="action" fontSize="small" />} />
               </Stack>
             </Grid>
