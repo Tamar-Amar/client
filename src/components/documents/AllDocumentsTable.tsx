@@ -36,7 +36,10 @@ import { useFetchAllUsers } from '../../queries/useUsers';
 import { useFetchClasses } from '../../queries/classQueries';
 import { useNavigate } from 'react-router-dom';
 
-const REQUIRED_DOC_TAGS = ['אישור משטרה', 'תעודת השכלה', 'חוזה', 'תעודת זהות'];
+
+
+
+const REQUIRED_DOC_TAGS = ['אישור משטרה', 'תעודת השכלה', 'חוזה', 'תעודת זהות', 'אישור וותק'];
 const ROWS_PER_PAGE = 15;
 
 const getStatusChip = (status: DocumentStatus) => {
@@ -52,6 +55,23 @@ const getStatusChip = (status: DocumentStatus) => {
   }
 };
 
+const getRequiredDocumentsForWorker = (worker: WorkerAfterNoon) => {
+  const baseDocuments = ['אישור משטרה', 'חוזה', 'תעודת זהות'];
+  
+  // אם התפקיד הוא סייע או סייע משלים - לא צריך תעודת השכלה
+  if (worker.roleName && (worker.roleName.includes('סייע') || worker.roleName.includes('משלים'))) {
+    return baseDocuments;
+  }
+  
+  // אם התפקיד הוא רכז - צריך גם אישור וותק
+  if (worker.roleName && worker.roleName.includes('רכז')) {
+    return [...baseDocuments, 'תעודת השכלה', 'אישור וותק'];
+  }
+  
+  // אחרת - כולל תעודת השכלה
+  return [...baseDocuments, 'תעודת השכלה'];
+};
+
 const AllDocumentsTable: React.FC = () => {
   const navigate = useNavigate();
   const { data: personalDocuments = [], isLoading: isLoadingPersonalDocs } = useFetchAllPersonalDocuments();
@@ -60,7 +80,7 @@ const AllDocumentsTable: React.FC = () => {
   const { data: users = [] } = useFetchAllUsers();
   const { data: classes = [], isLoading: isLoadingClasses } = useFetchClasses();
 
-  const [searchTerm, setSearchTerm] = useState('');
+
   const [filterStatus, setFilterStatus] = useState<DocumentStatus | ''>('');
   const [filterType, setFilterType] = useState('');
   const [filterProject, setFilterProject] = useState('');
@@ -72,6 +92,8 @@ const AllDocumentsTable: React.FC = () => {
   const [manualUploadData, setManualUploadData] = useState<{ worker: WorkerAfterNoon | null; tag: string }>({ worker: null, tag: '' });
   const [page, setPage] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [searchTerm, setSearchTerm] = useState('');
 
   const workerDocumentsData = useMemo(() => {
     const workerMap = new Map<string, { worker: WorkerAfterNoon; docs: { [key: string]: any } }>();
@@ -114,25 +136,31 @@ const AllDocumentsTable: React.FC = () => {
     let filtered = workerDocumentsData.filter(({ worker, docs }) => {
       const searchLower = searchTerm.toLowerCase();
       const nameMatch = !searchTerm ||
-        (`${worker.lastName} ${worker.firstName}`.toLowerCase().includes(searchLower) ||
-         (worker.id || '').toLowerCase().includes(searchLower) ||
-         (worker.email || '').toLowerCase().includes(searchLower) ||
-         (worker.phone || '').toLowerCase().includes(searchLower));
+      (`${worker.lastName} ${worker.firstName}`.toLowerCase().includes(searchLower) ||
+       (worker.id || '').toLowerCase().includes(searchLower) ||
+       (worker.email || '').toLowerCase().includes(searchLower) ||
+       (worker.phone || '').toLowerCase().includes(searchLower));
+    
       const projectMatch = !filterProject || (worker.projectCodes && worker.projectCodes.includes(parseInt(filterProject)));
       let accountantMatch = true;
       if (filterAccountant) {
         const accountant = users.find((u: any) => u._id === filterAccountant && u.role === 'accountant');
+        console.log('נבחר חשב:', accountant);
         if (accountant && Array.isArray(accountant.accountantInstitutionCodes) && classes.length > 0) {
+          // מצא את כל הכיתות של העובד
           const workerClasses = classes.filter((cls: any) =>
             Array.isArray(cls.workers) && cls.workers.some((w: any) => w.workerId === worker._id)
           );
+          // אסוף את כל קודי המוסד של הכיתות של העובד
           const workerInstitutionCodes = workerClasses.map((cls: any) => cls.institutionCode);
+          // בדוק אם יש חפיפה בין קודי המוסד של העובד לאלו של החשב
           accountantMatch = workerInstitutionCodes.some((code: string) => accountant.accountantInstitutionCodes.includes(code));
         } else {
           accountantMatch = false;
         }
       }
       if (!nameMatch || !projectMatch || !accountantMatch) return false;
+
       if (filterType && filterStatus) {
         return docs[filterType] && docs[filterType].status === filterStatus;
       }
@@ -238,8 +266,21 @@ const AllDocumentsTable: React.FC = () => {
        (worker.id || '').toLowerCase().includes(searchLower) ||
        (worker.email || '').toLowerCase().includes(searchLower) ||
        (worker.phone || '').toLowerCase().includes(searchLower));
+    
     const projectMatch = !filterProject || (worker.projectCodes && worker.projectCodes.includes(parseInt(filterProject)));
-    const accountantMatch = !filterAccountant || worker.accountantCode === filterAccountant;
+    let accountantMatch = true;
+    if (filterAccountant) {
+      const accountant = users.find((u: any) => u._id === filterAccountant && u.role === 'accountant');
+      if (accountant && Array.isArray(accountant.accountantInstitutionCodes) && classes.length > 0) {
+        const workerClasses = classes.filter((cls: any) =>
+          Array.isArray(cls.workers) && cls.workers.some((w: any) => w.workerId === worker._id)
+        );
+        const workerInstitutionCodes = workerClasses.map((cls: any) => cls.institutionCode);
+        accountantMatch = workerInstitutionCodes.some((code: string) => accountant.accountantInstitutionCodes.includes(code));
+      } else {
+        accountantMatch = false;
+      }
+    }
     
     return nameMatch && projectMatch && accountantMatch;
   });
@@ -255,8 +296,21 @@ const AllDocumentsTable: React.FC = () => {
        (worker.id || '').toLowerCase().includes(searchLower) ||
        (worker.email || '').toLowerCase().includes(searchLower) ||
        (worker.phone || '').toLowerCase().includes(searchLower));
+    
     const projectMatch = !filterProject || (worker.projectCodes && worker.projectCodes.includes(parseInt(filterProject)));
-    const accountantMatch = !filterAccountant || worker.accountantCode === filterAccountant;
+    let accountantMatch = true;
+    if (filterAccountant) {
+      const accountant = users.find((u: any) => u._id === filterAccountant && u.role === 'accountant');
+      if (accountant && Array.isArray(accountant.accountantInstitutionCodes) && classes.length > 0) {
+        const workerClasses = classes.filter((cls: any) =>
+          Array.isArray(cls.workers) && cls.workers.some((w: any) => w.workerId === worker._id)
+        );
+        const workerInstitutionCodes = workerClasses.map((cls: any) => cls.institutionCode);
+        accountantMatch = workerInstitutionCodes.some((code: string) => accountant.accountantInstitutionCodes.includes(code));
+      } else {
+        accountantMatch = false;
+      }
+    }
     
     return nameMatch && projectMatch && accountantMatch;
   });
@@ -265,9 +319,7 @@ const AllDocumentsTable: React.FC = () => {
   const pendingDocsCount = filteredDocuments.filter(d => d.status === DocumentStatus.PENDING).length;
   const rejectedDocsCount = filteredDocuments.filter(d => d.status === DocumentStatus.REJECTED).length;
   
-  // סטטיסטיקות חשבי שכר מותאמות לסינון
-  const uniqueAccountants = new Set(filteredWorkers.map(w => w.accountantCode).filter(Boolean));
-  const accountantsCount = uniqueAccountants.size;
+
 
   return (
     <Box sx={{ p: 1 }}>
@@ -283,7 +335,8 @@ const AllDocumentsTable: React.FC = () => {
                                 <RestartAltIcon />
                             </IconButton>
                             </Tooltip>
-                            <TextField size="small" sx={{ width: '200px' }} label="חיפוש חופשי" value={searchTerm} onChange={(e) => {setSearchTerm(e.target.value); setPage(0);}} />
+
+                            <TextField size="small" sx={{ width: '120px' }} label="חיפוש חופשי" value={searchTerm} onChange={(e) => {setSearchTerm(e.target.value); setPage(0);}} />
 
                             <FormControl size="small" sx={{ minWidth: 140 }}>
                               <InputLabel>פרויקט</InputLabel>
@@ -343,16 +396,18 @@ const AllDocumentsTable: React.FC = () => {
                                 <TableRow sx={{ '& th': { backgroundColor: 'grey.100', fontWeight: 'bold' } }}>
                                 <TableCell>שם עובד</TableCell>
                                 <TableCell>ת"ז</TableCell>
-
-                                {REQUIRED_DOC_TAGS.map(tag => (
-                                    <TableCell key={tag} >{tag}</TableCell>
-                                ))}
+                                <TableCell>תפקיד </TableCell>
+                                <TableCell>אישור משטרה</TableCell>
+                                <TableCell>תעודת השכלה</TableCell>
+                                <TableCell>חוזה</TableCell>
+                                <TableCell>תעודת זהות</TableCell>
+                                <TableCell>אישור וותק</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
                                 {paginatedData.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={REQUIRED_DOC_TAGS.length + 3} align="center" sx={{ py: 5 }}>
+                                    <TableCell colSpan={8} align="center" sx={{ py: 5 }}>
                                         <Typography color="text.secondary">לא נמצאו עובדים התואמים את הסינון</Typography>
                                     </TableCell>
                                 </TableRow>
@@ -375,47 +430,217 @@ const AllDocumentsTable: React.FC = () => {
                                       </Typography>
                                     </TableCell>
                                     <TableCell>{worker.id}</TableCell>
-
-                                    {REQUIRED_DOC_TAGS.map(tag => {
-                                        const doc = docs[tag];
-                                        return (
-                                        <TableCell key={tag} >
-                                            {doc ? (
-                                            <Stack direction="row" spacing={0.5} alignItems="center">
-                                                                                              <Tooltip title="צפה במסמך">
-                                                <IconButton size="small" onClick={() => window.open(doc.url, '_blank')} disabled={!doc.url}>
-                                                    <VisibilityIcon fontSize="small" />
-                                                </IconButton>
-                                                </Tooltip>
-                                                {doc.status !== DocumentStatus.PENDING && getStatusChip(doc.status)}
-
-                                
-                                                {doc.status === DocumentStatus.PENDING && (
-                                                <>
-                                                    <Tooltip title="אשר">
-                                                    <IconButton size="small" onClick={() => handleApprove(doc._id!)} disabled={isUpdatingStatus}>
-                                                        <CheckIcon fontSize="small" color="success" />
-                                                    </IconButton>
+                                    <TableCell>{worker.roleName}</TableCell>
+                                    {/* אישור משטרה */}
+                                    <TableCell>
+                                        {(() => {
+                                            const doc = docs['אישור משטרה'];
+                                            return doc ? (
+                                                <Stack direction="row" spacing={0.5} alignItems="center">
+                                                    <Tooltip title="צפה במסמך">
+                                                        <IconButton size="small" onClick={() => window.open(doc.url, '_blank')} disabled={!doc.url}>
+                                                            <VisibilityIcon fontSize="small" />
+                                                        </IconButton>
                                                     </Tooltip>
-                                                    <Tooltip title="דחה">
-                                                    <IconButton size="small" onClick={() => handleReject(doc._id!)} disabled={isUpdatingStatus}>
-                                                        <CloseIcon fontSize="small" color="error" />
-                                                    </IconButton>
-                                                    </Tooltip>
-                                                </>
-                                                )}
-                                            </Stack>
+                                                    {doc.status !== DocumentStatus.PENDING && getStatusChip(doc.status)}
+                                                    {doc.status === DocumentStatus.PENDING && (
+                                                        <>
+                                                            <Tooltip title="אשר">
+                                                                <IconButton size="small" onClick={() => handleApprove(doc._id!)} disabled={isUpdatingStatus}>
+                                                                    <CheckIcon fontSize="small" color="success" />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                            <Tooltip title="דחה">
+                                                                <IconButton size="small" onClick={() => handleReject(doc._id!)} disabled={isUpdatingStatus}>
+                                                                    <CloseIcon fontSize="small" color="error" />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        </>
+                                                    )}
+                                                </Stack>
                                             ) : (
-                                            <Tooltip title={`העלה ${tag}`}>
-                                                <IconButton size="small" color="primary" sx={{fontSize: '13px'}} onClick={() => handleOpenUploadDialog(worker, tag)}>
-                                                <UploadFileIcon fontSize="small" sx={{ mr: 0.5 }}/>
-                                                העלה
-                                                </IconButton>
-                                            </Tooltip>
-                                            )}
-                                        </TableCell>
-                                        );
-                                    })}
+                                                <Tooltip title="העלה אישור משטרה">
+                                                    <IconButton size="small" color="primary" sx={{fontSize: '13px'}} onClick={() => handleOpenUploadDialog(worker, 'אישור משטרה')}>
+                                                        <UploadFileIcon fontSize="small" sx={{ mr: 0.5 }}/>
+                                                        העלה
+                                                    </IconButton>
+                                                </Tooltip>
+                                            );
+                                        })()}
+                                    </TableCell>
+                                    
+                                    {/* תעודת השכלה */}
+                                    <TableCell>
+                                        {(() => {
+                                            const requiredDocs = getRequiredDocumentsForWorker(worker);
+                                            if (!requiredDocs.includes('תעודת השכלה')) {
+                                                return (
+                                                  <Tooltip title="לא נדרש">
+                                                  <IconButton size="small"  sx={{fontSize: '13px'}}>
+                                                   -----
+        
+                                                  </IconButton>
+                                              </Tooltip>
+                                                );
+                                            }
+                                            
+                                            const doc = docs['תעודת השכלה'];
+                                            return doc ? (
+                                                <Stack direction="row" spacing={0.5} alignItems="center">
+                                                    <Tooltip title="צפה במסמך">
+                                                        <IconButton size="small" onClick={() => window.open(doc.url, '_blank')} disabled={!doc.url}>
+                                                            <VisibilityIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                    {doc.status !== DocumentStatus.PENDING && getStatusChip(doc.status)}
+                                                    {doc.status === DocumentStatus.PENDING && (
+                                                        <>
+                                                            <Tooltip title="אשר">
+                                                                <IconButton size="small" onClick={() => handleApprove(doc._id!)} disabled={isUpdatingStatus}>
+                                                                    <CheckIcon fontSize="small" color="success" />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                            <Tooltip title="דחה">
+                                                                <IconButton size="small" onClick={() => handleReject(doc._id!)} disabled={isUpdatingStatus}>
+                                                                    <CloseIcon fontSize="small" color="error" />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        </>
+                                                    )}
+                                                </Stack>
+                                            ) : (
+                                                <Tooltip title="העלה תעודת השכלה">
+                                                    <IconButton size="small" color="primary" sx={{fontSize: '13px'}} onClick={() => handleOpenUploadDialog(worker, 'תעודת השכלה')}>
+                                                        <UploadFileIcon fontSize="small" sx={{ mr: 0.5 }}/>
+                                                        העלה
+                                                    </IconButton>
+                                                </Tooltip>
+                                            );
+                                        })()}
+                                    </TableCell>
+                                    
+                                    {/* חוזה */}
+                                    <TableCell>
+                                        {(() => {
+                                            const doc = docs['חוזה'];
+                                            return doc ? (
+                                                <Stack direction="row" spacing={0.5} alignItems="center">
+                                                    <Tooltip title="צפה במסמך">
+                                                        <IconButton size="small" onClick={() => window.open(doc.url, '_blank')} disabled={!doc.url}>
+                                                            <VisibilityIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                    {doc.status !== DocumentStatus.PENDING && getStatusChip(doc.status)}
+                                                    {doc.status === DocumentStatus.PENDING && (
+                                                        <>
+                                                            <Tooltip title="אשר">
+                                                                <IconButton size="small" onClick={() => handleApprove(doc._id!)} disabled={isUpdatingStatus}>
+                                                                    <CheckIcon fontSize="small" color="success" />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                            <Tooltip title="דחה">
+                                                                <IconButton size="small" onClick={() => handleReject(doc._id!)} disabled={isUpdatingStatus}>
+                                                                    <CloseIcon fontSize="small" color="error" />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        </>
+                                                    )}
+                                                </Stack>
+                                            ) : (
+                                                <Tooltip title="העלה חוזה">
+                                                    <IconButton size="small" color="primary" sx={{fontSize: '13px'}} onClick={() => handleOpenUploadDialog(worker, 'חוזה')}>
+                                                        <UploadFileIcon fontSize="small" sx={{ mr: 0.5 }}/>
+                                                        העלה
+                                                    </IconButton>
+                                                </Tooltip>
+                                            );
+                                        })()}
+                                    </TableCell>
+                                    
+                                    {/* תעודת זהות */}
+                                    <TableCell>
+                                        {(() => {
+                                            const doc = docs['תעודת זהות'];
+                                            return doc ? (
+                                                <Stack direction="row" spacing={0.5} alignItems="center">
+                                                    <Tooltip title="צפה במסמך">
+                                                        <IconButton size="small" onClick={() => window.open(doc.url, '_blank')} disabled={!doc.url}>
+                                                            <VisibilityIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                    {doc.status !== DocumentStatus.PENDING && getStatusChip(doc.status)}
+                                                    {doc.status === DocumentStatus.PENDING && (
+                                                        <>
+                                                            <Tooltip title="אשר">
+                                                                <IconButton size="small" onClick={() => handleApprove(doc._id!)} disabled={isUpdatingStatus}>
+                                                                    <CheckIcon fontSize="small" color="success" />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                            <Tooltip title="דחה">
+                                                                <IconButton size="small" onClick={() => handleReject(doc._id!)} disabled={isUpdatingStatus}>
+                                                                    <CloseIcon fontSize="small" color="error" />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        </>
+                                                    )}
+                                                </Stack>
+                                            ) : (
+                                                <Tooltip title="העלה תעודת זהות">
+                                                    <IconButton size="small" color="primary" sx={{fontSize: '13px'}} onClick={() => handleOpenUploadDialog(worker, 'תעודת זהות')}>
+                                                        <UploadFileIcon fontSize="small" sx={{ mr: 0.5 }}/>
+                                                        העלה
+                                                    </IconButton>
+                                                </Tooltip>
+                                            );
+                                        })()}
+                                    </TableCell>
+                                    
+                                    {/* אישור וותק */}
+                                    <TableCell>
+                                        {(() => {
+                                            const requiredDocs = getRequiredDocumentsForWorker(worker);
+                                            if (!requiredDocs.includes('אישור וותק')) {
+                                                return (
+                                                    <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
+                                                       -----
+                                                    </Typography>
+                                                );
+                                            }
+                                            
+                                            const doc = docs['אישור וותק'];
+                                            return doc ? (
+                                                <Stack direction="row" spacing={0.5} alignItems="center">
+                                                    <Tooltip title="צפה במסמך">
+                                                        <IconButton size="small" onClick={() => window.open(doc.url, '_blank')} disabled={!doc.url}>
+                                                            <VisibilityIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                    {doc.status !== DocumentStatus.PENDING && getStatusChip(doc.status)}
+                                                    {doc.status === DocumentStatus.PENDING && (
+                                                        <>
+                                                            <Tooltip title="אשר">
+                                                                <IconButton size="small" onClick={() => handleApprove(doc._id!)} disabled={isUpdatingStatus}>
+                                                                    <CheckIcon fontSize="small" color="success" />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                            <Tooltip title="דחה">
+                                                                <IconButton size="small" onClick={() => handleReject(doc._id!)} disabled={isUpdatingStatus}>
+                                                                    <CloseIcon fontSize="small" color="error" />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        </>
+                                                    )}
+                                                </Stack>
+                                            ) : (
+                                                <Tooltip title="העלה אישור וותק">
+                                                    <IconButton size="small" color="primary" sx={{fontSize: '13px'}} onClick={() => handleOpenUploadDialog(worker, 'אישור וותק')}>
+                                                        <UploadFileIcon fontSize="small" sx={{ mr: 0.5 }}/>
+                                                        העלה
+                                                    </IconButton>
+                                                </Tooltip>
+                                            );
+                                        })()}
+                                    </TableCell>
                                     </TableRow>
                                 ))
                                 )}

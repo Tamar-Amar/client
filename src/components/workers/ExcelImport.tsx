@@ -140,7 +140,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       updateBy: 'מערכת',
       status: row[12] || 'לא נבחר',
       roleName: row[4] || 'לא נבחר',
-      accountantCode: row[1] || 'לא נבחר',
       notes:'לא נבחר',     
       workingSymbol: symbol || '',
       is101: is101,
@@ -639,7 +638,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
                     <TableCell>{formatDate(worker.endDate)}</TableCell>
                     <TableCell>{worker.roleName}</TableCell>
                     <TableCell>{worker.status}</TableCell>
-                    <TableCell>{worker.accountantCode}</TableCell>
                     <TableCell>
                       {worker.projectCodes && worker.projectCodes.length > 0 
                         ? worker.projectCodes.map(code => {

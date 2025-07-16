@@ -147,7 +147,6 @@ export interface Activity {
     id: string;
     firstName: string;
     lastName: string;
-    accountantCode: string;
     modelCode: number;
     projectCodes?: number[]; 
     createDate: Date; 
@@ -162,7 +161,6 @@ export interface Activity {
     notes?: string;
     roleName: string;
     is101: boolean;
-    coordinatorId?: string;
   }
 
   export interface WorkerWithClassInfo extends WorkerAfterNoon {
@@ -202,4 +200,4 @@ export interface Activity {
     }>;
   }
 
-  export const REQUIRED_DOC_TAGS = ['אישור משטרה', 'תעודת השכלה', 'חוזה', 'תעודת זהות'];
+  export const REQUIRED_DOC_TAGS = ['אישור משטרה', 'תעודת השכלה', 'חוזה', 'תעודת זהות', 'אישור וותק'];

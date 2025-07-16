@@ -112,19 +112,13 @@ const WorkerAfterNoonForm: React.FC<WorkerAfterNoonFormProps> = ({ onSuccess }) 
 
         <Grid item xs={12} sm={6}>
           <FormControl fullWidth>
-            <InputLabel id="accountantCode-label">חשב שכר</InputLabel>
+            <InputLabel id="roleName-label">תפקיד</InputLabel>
             <Select
-              labelId="accountantCode-label"
-              label="חשב שכר"
-              name="accountantCode"
-              value={form.accountantCode || ''}
+              labelId="roleName-label"
+              label="תפקיד"
+              name="roleName"
               onChange={handleSelectChange}
             >
-              <MenuItem value="מירי">מירי</MenuItem>
-              <MenuItem value="אסתי">אסתי</MenuItem>
-              <MenuItem value="מרים">מרים</MenuItem>
-              <MenuItem value="רוחי">רוחי</MenuItem>
-
             </Select>
           </FormControl>
         </Grid>

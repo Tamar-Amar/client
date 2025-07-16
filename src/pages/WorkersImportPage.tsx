@@ -188,7 +188,6 @@ const WorkersImportPage: React.FC = () => {
       updateBy: 'מערכת',
       status: row[12] || 'לא נבחר',
       roleName: row[4] || 'לא נבחר',
-      accountantCode: row[1] || 'לא נבחר',
       notes: 'לא נבחר',     
       workingSymbol: symbol || '',
       is101: is101,
@@ -355,7 +354,6 @@ const WorkersImportPage: React.FC = () => {
           worker.email,
           worker.workingSymbol,
           worker.roleName,
-          worker.accountantCode,
           worker.status
         ].filter(field => field && field !== '' && field !== 'לא נבחר').length;
 
@@ -415,7 +413,6 @@ const WorkersImportPage: React.FC = () => {
               normalize(existingWorker.phone) !== normalize(worker.phone) ||
               normalize(existingWorker.email) !== normalize(worker.email) ||
               normalize(existingWorker.roleName) !== normalize(worker.roleName) ||
-              normalize(existingWorker.accountantCode) !== normalize(worker.accountantCode) ||
               normalize(existingWorker.status) !== normalize(worker.status) ||
               normalize(existingWorker.firstName) !== normalize(worker.firstName) ||
               normalize(existingWorker.lastName) !== normalize(worker.lastName) ||
@@ -483,7 +480,6 @@ const WorkersImportPage: React.FC = () => {
           normalize(existingWorker.phone) !== normalize(worker.phone) ||
           normalize(existingWorker.email) !== normalize(worker.email) ||
           normalize(existingWorker.roleName) !== normalize(worker.roleName) ||
-          normalize(existingWorker.accountantCode) !== normalize(worker.accountantCode) ||
           normalize(existingWorker.status) !== normalize(worker.status) ||
           normalize(existingWorker.firstName) !== normalize(worker.firstName) ||
           normalize(existingWorker.lastName) !== normalize(worker.lastName) ||
@@ -1357,7 +1353,6 @@ const WorkersTable: React.FC<WorkersTableProps> = ({
                     {/* פרטי תפקיד */}
                     {(
                       worker.changes.before.roleName !== worker.changes.after.roleName ||
-                      worker.changes.before.accountantCode !== worker.changes.after.accountantCode ||
                       worker.changes.before.status !== worker.changes.after.status ||
                       worker.changes.before.is101 !== worker.changes.after.is101) && (
                       <>
@@ -1368,11 +1363,6 @@ const WorkersTable: React.FC<WorkersTableProps> = ({
                         {worker.changes.before.roleName !== worker.changes.after.roleName && (
                           <Typography variant="caption" display="block">
                             שם תפקיד: {worker.changes.before.roleName} → {worker.changes.after.roleName}
-                          </Typography>
-                        )}
-                        {worker.changes.before.accountantCode !== worker.changes.after.accountantCode && (
-                          <Typography variant="caption" display="block">
-                            קוד רואה חשבון: {worker.changes.before.accountantCode} → {worker.changes.after.accountantCode}
                           </Typography>
                         )}
                         {worker.changes.before.status !== worker.changes.after.status && (

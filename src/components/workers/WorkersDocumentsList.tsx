@@ -83,10 +83,9 @@ const WorkersDocumentsList: React.FC = () => {
         (worker.status ?? '').toLowerCase().includes(searchLower)
       );
 
-      const matchesSalaryAccount = !salaryAccountFilter || worker.accountantCode === salaryAccountFilter;
       const matchesProject = !projectFilter || (worker.projectCodes && worker.projectCodes.includes(parseInt(projectFilter)));
 
-      return matchesSearch && matchesSalaryAccount && matchesProject;
+      return matchesSearch && matchesProject;
     });
   }, [workers, searchQuery, salaryAccountFilter, projectFilter]);
 
@@ -303,7 +302,6 @@ const WorkersDocumentsList: React.FC = () => {
               <TableCell sx={{ fontWeight: 'bold' }}>טלפון</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>אימייל</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>סטטוס</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>חשב שכר</TableCell>
 
 
             </TableRow>
@@ -343,7 +341,6 @@ const WorkersDocumentsList: React.FC = () => {
                   <TableCell>{worker.phone}</TableCell>
                   <TableCell>{worker.email}</TableCell>
                   <TableCell>{!worker.status || worker.status === "לא נבחר" ? "פעיל" : worker.status}</TableCell>
-                  <TableCell>{worker.accountantCode}</TableCell>
 
 
                 </TableRow>

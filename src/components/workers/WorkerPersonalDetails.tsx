@@ -294,7 +294,6 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
               <Typography variant="subtitle1" gutterBottom color="text.primary">תפקיד וחשבונאות</Typography>
               <Stack spacing={1}>
                 <EditableField label="תפקיד" name="roleName" value={form.roleName} editing={editing} onChange={handleChange} icon={<WorkIcon color="action" fontSize="small" />} />
-                <EditableField label="חשב שכר" name="accountantCode" value={form.accountantCode} editing={editing} onChange={handleChange} select options={accountantOptions} icon={<BadgeIcon color="action" fontSize="small" />} />
               </Stack>
             </Grid>
           )}
