@@ -40,7 +40,7 @@ export interface Activity {
     description?: string;
     workers?: Array<{
       workerId: string;
-      roleType: string;
+      roleName: string;
       project: number;
     }>;
     coordinatorId: string;
@@ -160,7 +160,6 @@ export interface Activity {
     email?: string;
     isActive: boolean;
     notes?: string;
-    roleType: string;
     roleName: string;
     is101: boolean;
     coordinatorId?: string;

@@ -187,7 +187,6 @@ const WorkersImportPage: React.FC = () => {
       updateDate: new Date(now),
       updateBy: 'מערכת',
       status: row[12] || 'לא נבחר',
-      roleType: row[3] || 'לא נבחר',
       roleName: row[4] || 'לא נבחר',
       accountantCode: row[1] || 'לא נבחר',
       notes: 'לא נבחר',     
@@ -355,7 +354,6 @@ const WorkersImportPage: React.FC = () => {
           worker.phone,
           worker.email,
           worker.workingSymbol,
-          worker.roleType,
           worker.roleName,
           worker.accountantCode,
           worker.status
@@ -416,7 +414,6 @@ const WorkersImportPage: React.FC = () => {
               JSON.stringify((existingProjectCodes ?? []).sort()) !== JSON.stringify((newProjectCodes ?? []).sort()) ||
               normalize(existingWorker.phone) !== normalize(worker.phone) ||
               normalize(existingWorker.email) !== normalize(worker.email) ||
-              normalize(existingWorker.roleType) !== normalize(worker.roleType) ||
               normalize(existingWorker.roleName) !== normalize(worker.roleName) ||
               normalize(existingWorker.accountantCode) !== normalize(worker.accountantCode) ||
               normalize(existingWorker.status) !== normalize(worker.status) ||
@@ -485,7 +482,6 @@ const WorkersImportPage: React.FC = () => {
           JSON.stringify((existingProjectCodes ?? []).sort()) !== JSON.stringify((newProjectCodes ?? []).sort()) ||
           normalize(existingWorker.phone) !== normalize(worker.phone) ||
           normalize(existingWorker.email) !== normalize(worker.email) ||
-          normalize(existingWorker.roleType) !== normalize(worker.roleType) ||
           normalize(existingWorker.roleName) !== normalize(worker.roleName) ||
           normalize(existingWorker.accountantCode) !== normalize(worker.accountantCode) ||
           normalize(existingWorker.status) !== normalize(worker.status) ||
@@ -686,7 +682,7 @@ const WorkersImportPage: React.FC = () => {
               for (const projectCode of selectedProjects) {
                 const workerAssignment = {
                   workerId: savedWorker._id,
-                  roleType: originalWorker?.roleType,
+                  roleName: originalWorker?.roleName,
                   project: projectCode
                 };
                 if (!classToWorkersMap[classObj._id]) {
@@ -1296,7 +1292,6 @@ const WorkersTable: React.FC<WorkersTableProps> = ({
                   <Chip label="ללא סמל" size="small" color="default" />
                 )}
               </TableCell>
-              <TableCell>{worker.roleType}</TableCell>
               <TableCell>{worker.roleName}</TableCell>
               {showValidationErrors && (
                 <TableCell>
@@ -1360,7 +1355,7 @@ const WorkersTable: React.FC<WorkersTableProps> = ({
                     )}
                     
                     {/* פרטי תפקיד */}
-                    {(worker.changes.before.roleType !== worker.changes.after.roleType ||
+                    {(
                       worker.changes.before.roleName !== worker.changes.after.roleName ||
                       worker.changes.before.accountantCode !== worker.changes.after.accountantCode ||
                       worker.changes.before.status !== worker.changes.after.status ||
@@ -1369,11 +1364,7 @@ const WorkersTable: React.FC<WorkersTableProps> = ({
                         <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 1 }}>
                           <strong>פרטי תפקיד:</strong>
                         </Typography>
-                        {worker.changes.before.roleType !== worker.changes.after.roleType && (
-                          <Typography variant="caption" display="block">
-                            סוג תפקיד: {worker.changes.before.roleType} → {worker.changes.after.roleType}
-                          </Typography>
-                        )}
+
                         {worker.changes.before.roleName !== worker.changes.after.roleName && (
                           <Typography variant="caption" display="block">
                             שם תפקיד: {worker.changes.before.roleName} → {worker.changes.after.roleName}

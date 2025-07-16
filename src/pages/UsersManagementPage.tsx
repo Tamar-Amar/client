@@ -65,6 +65,7 @@ interface User {
     institutionCode: string;
     institutionName: string;
   }>;
+  accountantInstitutionCodes?: string[]; // קודי מוסד לחשבי שכר
 }
 
 interface UserFormData {
@@ -77,6 +78,7 @@ interface UserFormData {
   phone: string;
   isActive: boolean;
   projectCodes?: ProjectAssignment[];
+  accountantInstitutionCodes?: string[]; // קודי מוסד לחשבי שכר
 }
 
 const roleLabels = {
@@ -86,18 +88,13 @@ const roleLabels = {
   coordinator: 'רכז'
 };
 
-const roleColors = {
-  admin: 'error',
-  manager_project: 'warning',
-  accountant: 'secondary',
-  coordinator: 'primary'
-} as const;
+
 
 const projectTypes = [
   { label: 'צהרון שוטף 2025', value: 1 },
-  { label: 'קייטנת חנוכה 2025', value: 2 },
-  { label: 'קייטנת פסח 2025', value: 3 },
-  { label: 'קייטנת קיץ 2025', value: 4 },
+  { label: ' חנוכה 2025', value: 2 },
+  { label: ' פסח 2025', value: 3 },
+  { label: ' קיץ 2025', value: 4 },
 ];
 
 interface ProjectAssignment {
@@ -147,7 +144,8 @@ const UsersManagementPage: React.FC = () => {
     email: '',
     phone: '',
     isActive: true,
-    projectCodes: []
+    projectCodes: [],
+    accountantInstitutionCodes: []
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -269,7 +267,8 @@ const UsersManagementPage: React.FC = () => {
         email: user.email,
         phone: user.phone || '',
         isActive: user.isActive,
-        projectCodes: user.projectCodes || []
+        projectCodes: user.projectCodes || [],
+        accountantInstitutionCodes: user.accountantInstitutionCodes || []
       });
     } else {
       setEditingUser(null);
@@ -282,7 +281,8 @@ const UsersManagementPage: React.FC = () => {
         email: '',
         phone: '',
         isActive: true,
-        projectCodes: []
+        projectCodes: [],
+        accountantInstitutionCodes: []
       });
     }
     setDialogOpen(true);
@@ -625,8 +625,8 @@ const UsersManagementPage: React.FC = () => {
                 <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>שם מלא</TableCell>
                 <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>אימייל</TableCell>
                 <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>טלפון</TableCell>
-                <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>סטטוס</TableCell>
                 <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>שיוכי פרויקטים</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>קודי מוסד (חשב שכר)</TableCell>
                 <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>תאריך יצירה</TableCell>
                 <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>פעולות</TableCell>
               </TableRow>
@@ -654,17 +654,7 @@ const UsersManagementPage: React.FC = () => {
                   <TableCell>{`${user.firstName} ${user.lastName}`}</TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>{user.phone || '-'}</TableCell>
-                  <TableCell>
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
-                        color: user.isActive ? '#2e7d32' : '#d32f2f',
-                        fontWeight: 'medium'
-                      }}
-                    >
-                      {user.isActive ? 'פעיל' : 'לא פעיל'}
-                    </Typography>
-                  </TableCell>
+
                   <TableCell>
                     {user.role === 'coordinator' && user.projectCodes && user.projectCodes.length > 0 ? (
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
@@ -688,6 +678,29 @@ const UsersManagementPage: React.FC = () => {
                       <Typography variant="body2" color="text.secondary" fontStyle="italic">
                         אין שיוכים
                       </Typography>
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        לא רלוונטי
+                      </Typography>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {user.role === 'accountant' && user.accountantInstitutionCodes && user.accountantInstitutionCodes.length > 0 ? (
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {user.accountantInstitutionCodes.map((code, index) => {
+                          const codeIndex = institutionCodes.indexOf(code);
+                          const name = codeIndex !== -1 ? institutionNames[codeIndex] : code;
+                          return (
+                            <Chip 
+                              key={index} 
+                              label={`${code} - ${name}`} 
+                              size="small" 
+                              color="secondary" 
+                              variant="outlined"
+                            />
+                          );
+                        })}
+                      </Box>
                     ) : (
                       <Typography variant="body2" color="text.secondary">
                         לא רלוונטי
@@ -915,6 +928,55 @@ const UsersManagementPage: React.FC = () => {
                 >
                   הוסף שיוך פרויקט
                 </Button>
+              </Box>
+            )}
+
+            {/* קודי מוסד לחשבי שכר */}
+            {formData.role === 'accountant' && (
+              <Box sx={{ mt: 3 }}>
+                <Typography variant="h6" gutterBottom>
+                  קודי מוסד לחשב שכר
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  בחר את קודי המוסד שהחשב שכר אחראי עליהם
+                </Typography>
+                
+                <FormControl fullWidth margin="normal">
+                  <InputLabel>קודי מוסד</InputLabel>
+                  <Select
+                    multiple
+                    value={formData.accountantInstitutionCodes || []}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      accountantInstitutionCodes: typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value 
+                    })}
+                    label="קודי מוסד"
+                    disabled={loadingInstitutions}
+                    renderValue={(selected) => (
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {(selected as string[]).map((value) => {
+                          const codeIndex = institutionCodes.indexOf(value);
+                          const name = codeIndex !== -1 ? institutionNames[codeIndex] : value;
+                          return (
+                            <Chip 
+                              key={value} 
+                              label={`${value} - ${name}`} 
+                              size="small" 
+                              color="primary" 
+                              variant="outlined"
+                            />
+                          );
+                        })}
+                      </Box>
+                    )}
+                  >
+                    {institutionCodes.map((code, codeIndex) => (
+                      <MenuItem key={code} value={code}>
+                        {code} - {institutionNames[codeIndex]}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </Box>
             )}
           </Box>

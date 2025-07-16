@@ -99,7 +99,7 @@ const MatsevetPage: React.FC = () => {
 
     classes.forEach((cls: Class) => {
       let classWorkers = workers.filter(worker => 
-        cls.workers?.some((w: { workerId: string; roleType: string; project: number }) => w.workerId === worker._id)
+        cls.workers?.some((w: { workerId: string; project: number }) => w.workerId === worker._id)
       );
       
       if (selectedProject !== '') {
@@ -122,7 +122,7 @@ const MatsevetPage: React.FC = () => {
 
     const workersWithClasses = new Set<string>();
     classes.forEach((cls: Class) => {
-      cls.workers?.forEach((w: { workerId: string; roleType: string; project: number }) => workersWithClasses.add(w.workerId));
+      cls.workers?.forEach((w: { workerId: string; project: number }) => workersWithClasses.add(w.workerId));
     });
     
     const workersWithoutClasses = workers.filter(worker => !workersWithClasses.has(worker._id));
@@ -490,7 +490,7 @@ const MatsevetPage: React.FC = () => {
                             {worker.firstName} {worker.lastName}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            ({worker.roleName || 'לא מוגדר'})
+                            {worker.roleName || 'לא מוגדר'}
                           </Typography>
                           {workerIndex < classData.workers.length - 1 && (
                             <Typography variant="caption" color="text.secondary">
@@ -718,7 +718,7 @@ const MatsevetPage: React.FC = () => {
                                   תעודת זהות: {worker.id}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                  תפקיד: {worker.roleType || 'לא מוגדר'} - {worker.roleName || 'לא מוגדר'}
+                                  תפקיד: {worker.roleName || 'לא מוגדר'}
                                 </Typography>
                                 {worker.phone && (
                                   <Typography variant="body2" color="text.secondary">

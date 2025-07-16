@@ -32,6 +32,8 @@ import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { he } from 'date-fns/locale';
 import { validateDocumentFile } from '../../utils/fileValidation';
+import { useFetchAllUsers } from '../../queries/useUsers';
+import { useFetchClasses } from '../../queries/classQueries';
 
 const REQUIRED_DOC_TAGS = ['אישור משטרה', 'תעודת השכלה', 'חוזה', 'תעודת זהות'];
 const ROWS_PER_PAGE = 15;
@@ -53,9 +55,10 @@ const AllDocumentsTable: React.FC = () => {
   const { data: personalDocuments = [], isLoading: isLoadingPersonalDocs } = useFetchAllPersonalDocuments();
   const { data: workers = [], isLoading: isLoadingWorkers } = useFetchAllWorkersAfterNoon();
   const { updateStatus, isUpdatingStatus, uploadDocument, isUploading } = useWorkerDocuments('all');
+  const { data: users = [] } = useFetchAllUsers();
+  const { data: classes = [], isLoading: isLoadingClasses } = useFetchClasses();
 
-  const [searchName, setSearchName] = useState('');
-  const [searchId, setSearchId] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<DocumentStatus | ''>('');
   const [filterType, setFilterType] = useState('');
   const [filterProject, setFilterProject] = useState('');
@@ -91,32 +94,43 @@ const AllDocumentsTable: React.FC = () => {
     { value: '4', label: 'קייטנת קיץ 2025' },
   ];
 
-  // יצירת רשימת חשבי שכר ייחודיים מהעובדים
-  const accountantOptions = useMemo(() => {
-    const accountants = new Set<string>();
-    workers.forEach(worker => {
-      if (worker.accountantCode) {
-        accountants.add(worker.accountantCode);
-      }
-    });
+  // אפשרויות חשבי שכר מתוך המשתמשים
+  const accountantUserOptions = useMemo(() => {
     return [
-      { value: '', label: 'כל חשבי השכר' },
-      ...Array.from(accountants).sort().map(code => ({
-        value: code,
-        label: `חשב שכר ${code}`
-      }))
+      { value: '', label: 'כל חשבי השכר', accountant: null },
+      ...users
+        .filter((u: any) => u.role === 'accountant')
+        .map((u: any) => ({
+          value: u._id,
+          label: `${u.firstName} ${u.lastName}`,
+          accountant: u
+        }))
     ];
-  }, [workers]);
+  }, [users]);
 
   const filteredData = useMemo(() => {
-    return workerDocumentsData.filter(({ worker, docs }) => {
-      const nameMatch = !searchName || `${worker.lastName} ${worker.firstName}`.toLowerCase().includes(searchName.toLowerCase());
-      const idMatch = !searchId || (worker.id || '').includes(searchId);
+    let filtered = workerDocumentsData.filter(({ worker, docs }) => {
+      const searchLower = searchTerm.toLowerCase();
+      const nameMatch = !searchTerm ||
+        (`${worker.lastName} ${worker.firstName}`.toLowerCase().includes(searchLower) ||
+         (worker.id || '').toLowerCase().includes(searchLower) ||
+         (worker.email || '').toLowerCase().includes(searchLower) ||
+         (worker.phone || '').toLowerCase().includes(searchLower));
       const projectMatch = !filterProject || (worker.projectCodes && worker.projectCodes.includes(parseInt(filterProject)));
-      const accountantMatch = !filterAccountant || worker.accountantCode === filterAccountant;
-
-      if (!nameMatch || !idMatch || !projectMatch || !accountantMatch) return false;
-
+      let accountantMatch = true;
+      if (filterAccountant) {
+        const accountant = users.find((u: any) => u._id === filterAccountant && u.role === 'accountant');
+        if (accountant && Array.isArray(accountant.accountantInstitutionCodes) && classes.length > 0) {
+          const workerClasses = classes.filter((cls: any) =>
+            Array.isArray(cls.workers) && cls.workers.some((w: any) => w.workerId === worker._id)
+          );
+          const workerInstitutionCodes = workerClasses.map((cls: any) => cls.institutionCode);
+          accountantMatch = workerInstitutionCodes.some((code: string) => accountant.accountantInstitutionCodes.includes(code));
+        } else {
+          accountantMatch = false;
+        }
+      }
+      if (!nameMatch || !projectMatch || !accountantMatch) return false;
       if (filterType && filterStatus) {
         return docs[filterType] && docs[filterType].status === filterStatus;
       }
@@ -128,7 +142,8 @@ const AllDocumentsTable: React.FC = () => {
       }
       return true;
     });
-  }, [workerDocumentsData, searchName, searchId, filterStatus, filterType, filterProject, filterAccountant]);
+    return filtered;
+  }, [workerDocumentsData, searchTerm, filterStatus, filterType, filterProject, filterAccountant, users, classes]);
 
   const paginatedData = useMemo(() => {
     return filteredData.slice(page * ROWS_PER_PAGE, page * ROWS_PER_PAGE + ROWS_PER_PAGE);
@@ -138,7 +153,7 @@ const AllDocumentsTable: React.FC = () => {
     setPage(newPage);
   };
 
-  if (isLoadingPersonalDocs || isLoadingWorkers) {
+  if (isLoadingPersonalDocs || isLoadingWorkers || isLoadingClasses) {
     return <Typography>טוען...</Typography>;
   }
 
@@ -211,12 +226,16 @@ const AllDocumentsTable: React.FC = () => {
 
   // סטטיסטיקות מותאמות לסינון
   const filteredWorkers = workers.filter(worker => {
-    const nameMatch = !searchName || `${worker.lastName} ${worker.firstName}`.toLowerCase().includes(searchName.toLowerCase());
-    const idMatch = !searchId || (worker.id || '').includes(searchId);
+    const searchLower = searchTerm.toLowerCase();
+    const nameMatch = !searchTerm ||
+      (`${worker.lastName} ${worker.firstName}`.toLowerCase().includes(searchLower) ||
+       (worker.id || '').toLowerCase().includes(searchLower) ||
+       (worker.email || '').toLowerCase().includes(searchLower) ||
+       (worker.phone || '').toLowerCase().includes(searchLower));
     const projectMatch = !filterProject || (worker.projectCodes && worker.projectCodes.includes(parseInt(filterProject)));
     const accountantMatch = !filterAccountant || worker.accountantCode === filterAccountant;
     
-    return nameMatch && idMatch && projectMatch && accountantMatch;
+    return nameMatch && projectMatch && accountantMatch;
   });
 
   // מסמכים של העובדים המסוננים
@@ -224,12 +243,16 @@ const AllDocumentsTable: React.FC = () => {
     const worker = workers.find(w => w._id === doc.operatorId);
     if (!worker) return false;
     
-    const nameMatch = !searchName || `${worker.lastName} ${worker.firstName}`.toLowerCase().includes(searchName.toLowerCase());
-    const idMatch = !searchId || (worker.id || '').includes(searchId);
+    const searchLower = searchTerm.toLowerCase();
+    const nameMatch = !searchTerm ||
+      (`${worker.lastName} ${worker.firstName}`.toLowerCase().includes(searchLower) ||
+       (worker.id || '').toLowerCase().includes(searchLower) ||
+       (worker.email || '').toLowerCase().includes(searchLower) ||
+       (worker.phone || '').toLowerCase().includes(searchLower));
     const projectMatch = !filterProject || (worker.projectCodes && worker.projectCodes.includes(parseInt(filterProject)));
     const accountantMatch = !filterAccountant || worker.accountantCode === filterAccountant;
     
-    return nameMatch && idMatch && projectMatch && accountantMatch;
+    return nameMatch && projectMatch && accountantMatch;
   });
 
   const approvedDocsCount = filteredDocuments.filter(d => d.status === DocumentStatus.APPROVED).length;
@@ -250,12 +273,11 @@ const AllDocumentsTable: React.FC = () => {
 
                         <Stack direction="row" spacing={1.5} mb={2} flexWrap="wrap">
                             <Tooltip title="איפוס מסננים">
-                            <IconButton onClick={() => { setSearchName(''); setSearchId(''); setFilterStatus(''); setFilterType(''); setFilterProject(''); setFilterAccountant(''); setPage(0); }} sx={{ color: 'grey.600', alignSelf: 'center' }}>
+                            <IconButton onClick={() => { setSearchTerm(''); setFilterStatus(''); setFilterType(''); setFilterProject(''); setFilterAccountant(''); setPage(0); }} sx={{ color: 'grey.600', alignSelf: 'center' }}>
                                 <RestartAltIcon />
                             </IconButton>
                             </Tooltip>
-                            <TextField size="small" sx={{ width: '120px' }} label="חפש שם" value={searchName} onChange={(e) => {setSearchName(e.target.value); setPage(0);}} />
-                            <TextField size="small" sx={{ width: '120px' }} label="חפש ת.ז" value={searchId} onChange={(e) => {setSearchId(e.target.value); setPage(0);}} />
+                            <TextField size="small" sx={{ width: '200px' }} label="חיפוש חופשי" value={searchTerm} onChange={(e) => {setSearchTerm(e.target.value); setPage(0);}} />
 
                             <FormControl size="small" sx={{ minWidth: 140 }}>
                               <InputLabel>פרויקט</InputLabel>
@@ -269,7 +291,7 @@ const AllDocumentsTable: React.FC = () => {
                             <FormControl size="small" sx={{ minWidth: 150 }}>
                               <InputLabel>חשב שכר</InputLabel>
                               <Select value={filterAccountant} label="חשב שכר" onChange={(e) => { setFilterAccountant(e.target.value); setPage(0); }}>
-                                {accountantOptions.map(opt => (
+                                {accountantUserOptions.map(opt => (
                                   <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                                 ))}
                               </Select>
@@ -315,7 +337,7 @@ const AllDocumentsTable: React.FC = () => {
                                 <TableRow sx={{ '& th': { backgroundColor: 'grey.100', fontWeight: 'bold' } }}>
                                 <TableCell>שם עובד</TableCell>
                                 <TableCell>ת"ז</TableCell>
-                                <TableCell>חשב שכר</TableCell>
+
                                 {REQUIRED_DOC_TAGS.map(tag => (
                                     <TableCell key={tag} >{tag}</TableCell>
                                 ))}
@@ -333,7 +355,7 @@ const AllDocumentsTable: React.FC = () => {
                                     <TableRow key={worker._id} hover>
                                     <TableCell>{`${worker.lastName} ${worker.firstName}`}</TableCell>
                                     <TableCell>{worker.id}</TableCell>
-                                    <TableCell>{worker.accountantCode || '-'}</TableCell>
+
                                     {REQUIRED_DOC_TAGS.map(tag => {
                                         const doc = docs[tag];
                                         return (
