@@ -20,11 +20,17 @@ const WorkerAfterNoonForm: React.FC<WorkerAfterNoonFormProps> = ({ onSuccess }) 
   const addWorkerMutation = useAddWorkerAfterNoon();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    // נרמול התפקיד אם זה השדה שמתעדכן
+    const normalizedValue = name === 'roleName' ? value.trim().replace(/\s+/g, ' ') : value;
+    setForm({ ...form, [name]: normalizedValue });
   };
 
   const handleSelectChange = (e: SelectChangeEvent<string>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    // נרמול התפקיד אם זה השדה שמתעדכן
+    const normalizedValue = name === 'roleName' ? value.trim().replace(/\s+/g, ' ') : value;
+    setForm({ ...form, [name]: normalizedValue });
   };
 
   const handleProjectSelectionChange = (projectCode: number) => {
@@ -61,6 +67,7 @@ const WorkerAfterNoonForm: React.FC<WorkerAfterNoonFormProps> = ({ onSuccess }) 
     try {
       const workerData = {
         ...form,
+        roleName: form.roleName?.trim().replace(/\s+/g, ' '), // נרמול התפקיד
         projectCodes: projectSelection.projectCodes,
         project: getProjectDisplayName(projectSelection)
       } as WorkerAfterNoon;

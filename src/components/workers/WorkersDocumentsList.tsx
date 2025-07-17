@@ -73,13 +73,14 @@ const WorkersDocumentsList: React.FC = () => {
   const filteredWorkers = useMemo(() => {
     return workers.filter((worker) => {
       const searchLower = searchQuery.toLowerCase();
+      const normalizedWorkerRole = worker.roleName?.trim().replace(/\s+/g, ' ');
       const matchesSearch = (
         (worker.id ?? '').toLowerCase().includes(searchLower) ||
         (worker.firstName ?? '').toLowerCase().includes(searchLower) ||
         (worker.lastName ?? '').toLowerCase().includes(searchLower) ||
         (worker.phone ?? '').toLowerCase().includes(searchLower) ||
         (worker.email ?? '').toLowerCase().includes(searchLower) ||
-        (worker.roleName ?? '').toLowerCase().includes(searchLower) ||
+        (normalizedWorkerRole ?? '').toLowerCase().includes(searchLower) ||
         (worker.status ?? '').toLowerCase().includes(searchLower)
       );
 
@@ -301,6 +302,7 @@ const WorkersDocumentsList: React.FC = () => {
               <TableCell sx={{ fontWeight: 'bold' }}>שם מלא</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>טלפון</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>אימייל</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>תפקיד</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>סטטוס</TableCell>
 
 
@@ -340,6 +342,7 @@ const WorkersDocumentsList: React.FC = () => {
                   <TableCell>{` ${worker.lastName} ${worker.firstName}`}</TableCell>
                   <TableCell>{worker.phone}</TableCell>
                   <TableCell>{worker.email}</TableCell>
+                  <TableCell>{worker.roleName?.trim().replace(/\s+/g, ' ') || 'לא נבחר'}</TableCell>
                   <TableCell>{!worker.status || worker.status === "לא נבחר" ? "פעיל" : worker.status}</TableCell>
 
 
@@ -347,7 +350,7 @@ const WorkersDocumentsList: React.FC = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={10} align="center" sx={{ py: 3 }}>
+                <TableCell colSpan={11} align="center" sx={{ py: 3 }}>
                   <Typography variant="body2" color="text.secondary">
                     {searchQuery ? 'לא נמצאו תוצאות לחיפוש' : 'לא קיימים עובדים במערכת'}
                   </Typography>

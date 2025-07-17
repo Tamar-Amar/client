@@ -24,13 +24,15 @@ interface Props {
 
 const DOCUMENT_TYPES = [
   { value: DocumentType.ID, label: 'תעודת זהות' },
-  { value: DocumentType.BANK_DETAILS, label: 'פרטי בנק' },
-  { value: DocumentType.OTHER, label: 'אחר' }
+  { value: DocumentType.POLICE_APPROVAL, label: 'אישור משטרה' },
+  { value: DocumentType.TEACHING_CERTIFICATE, label: 'תעודת השכלה' },
+  { value: DocumentType.CONTRACT, label: 'חוזה' },
+  { value: DocumentType.VETTING_CERTIFICATE, label: 'אישור וותק' }
 ];
 
 const WorkerDocuments: React.FC<Props> = ({ workerId }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [documentType, setDocumentType] = useState<DocumentType>(DocumentType.OTHER);
+  const [documentType, setDocumentType] = useState<DocumentType>(DocumentType.ID);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -74,7 +76,7 @@ const WorkerDocuments: React.FC<Props> = ({ workerId }) => {
     uploadDocument(formData, {
       onSuccess: () => {
         setSelectedFile(null);
-        setDocumentType(DocumentType.OTHER);
+        setDocumentType(DocumentType.ID);
         setPreviewUrl(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
       }
@@ -132,11 +134,22 @@ const WorkerDocuments: React.FC<Props> = ({ workerId }) => {
               value={documentType}
               onChange={(e) => setDocumentType(e.target.value as DocumentType)}
             >
-              {DOCUMENT_TYPES.map((type) => (
-                <MenuItem key={type.value} value={type.value}>
-                  {type.label}
-                </MenuItem>
-              ))}
+              {(() => {
+                // נרמול התפקיד לצורך קביעת מסמכים נדרשים
+                const normalizedRole = workerData?.roleName?.trim().replace(/\s+/g, ' ');
+                
+                // אם התפקיד הוא סייע, סייע משלים או מד"צ - לא צריך תעודת השכלה
+                let filteredDocumentTypes = DOCUMENT_TYPES;
+                if (normalizedRole && (normalizedRole.includes('סייע') || normalizedRole.includes('משלים') || normalizedRole.includes('מד"צ'))) {
+                  filteredDocumentTypes = DOCUMENT_TYPES.filter(type => type.value !== DocumentType.TEACHING_CERTIFICATE);
+                }
+                
+                return filteredDocumentTypes.map((type) => (
+                  <MenuItem key={type.value} value={type.value}>
+                    {type.label}
+                  </MenuItem>
+                ));
+              })()}
             </TextField>
           </Grid>
 

@@ -80,18 +80,18 @@ const getStatusChip = (status: DocumentStatus) => {
 const getRequiredDocumentsForWorker = (worker: WorkerAfterNoon) => {
   const baseDocuments = ['אישור משטרה', 'חוזה', 'תעודת זהות'];
   
-  // אם התפקיד הוא סייע, סייע משלים או מד"צ - לא צריך תעודת השכלה
-  if (worker.roleName && (worker.roleName.includes('סייע') || worker.roleName.includes('משלים') || worker.roleName.includes('מד"צ'))) {
-    return baseDocuments;
+  // תעודת השכלה נדרשת רק עבור מובילים ורכזים
+  if (worker.roleName && (worker.roleName.includes('מוביל') || worker.roleName.includes('רכז'))) {
+    // אם התפקיד הוא רכז - צריך גם אישור וותק
+    if (worker.roleName.includes('רכז')) {
+      return [...baseDocuments, 'תעודת השכלה', 'אישור וותק'];
+    }
+    // אם התפקיד הוא מוביל - רק תעודת השכלה
+    return [...baseDocuments, 'תעודת השכלה'];
   }
   
-  // אם התפקיד הוא רכז - צריך גם אישור וותק
-  if (worker.roleName && worker.roleName.includes('רכז')) {
-    return [...baseDocuments, 'תעודת השכלה', 'אישור וותק'];
-  }
-  
-  // אחרת - כולל תעודת השכלה
-  return [...baseDocuments, 'תעודת השכלה'];
+  // אחרת - רק מסמכים בסיסיים
+  return baseDocuments;
 };
 
 const AllDocumentsTable: React.FC = () => {

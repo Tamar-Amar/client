@@ -107,7 +107,10 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
   const registeredClasses = classes.filter(c => isSameId(c.workers?.[0]?.workerId, workerData._id) || isSameId(c.workers?.[1]?.workerId, workerData._id));
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    // נרמול התפקיד אם זה השדה שמתעדכן
+    const normalizedValue = name === 'roleName' ? value.trim().replace(/\s+/g, ' ') : value;
+    setForm({ ...form, [name]: normalizedValue });
   };
 
   const handleCheckboxChange = (name: string, checked: boolean) => {
@@ -116,7 +119,11 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
 
   const handleSave = async () => {
     try {
-      await updateWorker.mutateAsync({ id: workerData._id, data: form });
+      const normalizedForm = {
+        ...form,
+        roleName: form.roleName?.trim().replace(/\s+/g, ' ') // נרמול התפקיד
+      };
+      await updateWorker.mutateAsync({ id: workerData._id, data: normalizedForm });
       setOpenSnackbar(true);
       setEditing(false);
     } catch {

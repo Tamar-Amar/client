@@ -12,7 +12,10 @@ import {
   Container,
   Paper,
   Grid,
-  CircularProgress
+  CircularProgress,
+  Card,
+  CardContent,
+  Chip
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
@@ -20,6 +23,7 @@ import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
 import PersonIcon from '@mui/icons-material/Person';
 import WorkIcon from '@mui/icons-material/Work';
+import BusinessIcon from '@mui/icons-material/Business';
 import axios from 'axios';
 
 interface Coordinator {
@@ -33,6 +37,11 @@ interface Coordinator {
   isActive: boolean;
   createDate: Date;
   updateDate: Date;
+  projectCodes?: Array<{
+    projectCode: number;
+    institutionCode: string;
+    institutionName: string;
+  }>;
 }
 
 interface CoordinatorPersonalDetailsProps {
@@ -177,10 +186,49 @@ const CoordinatorPersonalDetails: React.FC<CoordinatorPersonalDetailsProps> = ({
                   startAdornment: <WorkIcon color="action" fontSize="small" sx={{ mr: 1 }} />,
                 }}
               />
-
             </Stack>
           </Grid>
         </Grid>
+
+        {/* פירוט הפרויקטים */}
+        {coordinator.projectCodes && coordinator.projectCodes.length > 0 && (
+          <>
+            <Divider sx={{ my: 3 }} />
+            <Typography variant="h6" gutterBottom color="primary.main" fontWeight="bold">
+              פרויקטים 
+            </Typography>
+            <Grid container spacing={2}>
+              {coordinator.projectCodes.map((assignment, index) => {
+                const projectTypes = [
+                  { value: 1, label: 'צהרון שוטף 2025' },
+                  { value: 2, label: 'קייטנת חנוכה 2025' },
+                  { value: 3, label: 'קייטנת פסח 2025' },
+                  { value: 4, label: 'קייטנת קיץ 2025' },
+                ];
+                const project = projectTypes.find(p => p.value === assignment.projectCode);
+                
+                return (
+                  <Grid item xs={12} sm={6} md={4} key={index}>
+                    <Card variant="outlined" sx={{ p: 2, height: '100%' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <BusinessIcon color="primary" sx={{ mr: 1 }} />
+                        <Typography variant="subtitle2" fontWeight="bold">
+                         קוד מוסד: {assignment.institutionCode}
+                        </Typography>
+                      </Box>
+                      <Chip 
+                        label={project ? project.label : `פרויקט ${assignment.projectCode}`}
+                        size="small"
+                        color="primary"
+                        variant="outlined"
+                      />
+                    </Card>
+                  </Grid>
+                );
+              })}
+            </Grid>
+          </>
+        )}
       </Box>
     </Container>
   );
