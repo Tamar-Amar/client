@@ -32,7 +32,7 @@ const CoordinatorDashboardPage: React.FC = () => {
     const connectedUser = JSON.parse(localStorage.getItem('user') || '{}');
     if (connectedUser) {
       try {
-        setCoordinatorId(connectedUser._id);
+        setCoordinatorId(connectedUser.id);
       } catch (error) {
         console.error('Error decoding token:', error);
       }
