@@ -51,7 +51,7 @@ const MainNav: React.FC = () => {
     { label: 'ניהול עובדים', path: '/workers' },
     { label: 'מצבת', path: '/matsevet' },
    // { label: 'ניהול קבוצות', path: '/classes', icon: <GroupWorkIcon fontSize="small" /> },
-    { label: 'ניהול מסמכים', path: '/documents', },
+    { label: ' מסמכים אישיים', path: '/documents', },
     { label: 'דיווחי נוכחות', path: '/worker-attendance' },
     { label: 'מיילים', path: '/workers-after-noon-email' },
     { label: 'התראות', path: '/workers-after-noon-notifications' },
@@ -61,7 +61,7 @@ const MainNav: React.FC = () => {
     { label: 'דוח הפעלות', path: '/activities', icon: <AssessmentIcon fontSize="small" /> },
     { label: 'ניהול מפעילים', path: '/operators', icon: <PeopleIcon fontSize="small" /> },
     //{ label: 'ניהול קבוצות', path: '/classes', icon: <GroupWorkIcon fontSize="small" /> },
-    { label: 'ניהול מסמכים', path: '/documents', icon: <FolderIcon fontSize="small" /> },
+    { label: ' מסמכים אישיים', path: '/documents', icon: <FolderIcon fontSize="small" /> },
     { label: 'מיילים', path: '/emails', icon: <EmailIcon fontSize="small" /> },
   ];
 
@@ -75,10 +75,10 @@ const MainNav: React.FC = () => {
   ];
 
   const accountantTabs: TabInfo[] = [
-    { label: 'ניהול מסמכים', path: '/documents', icon: <FolderIcon fontSize="small" /> },
+    { label: ' מסמכים אישיים', path: '/documents', icon: <FolderIcon fontSize="small" /> },
     { label: 'מצבת', path: '/matsevet', icon: <AssessmentIcon fontSize="small" /> },
     { label: 'עובדים', path: '/workers', icon: <PeopleIcon fontSize="small" /> },
-    { label: 'נוכחות עובדים', path: '/worker-attendance' },
+    { label: 'דוחות נוכחות', path: '/worker-attendance' },
   ];
 
   const usersTabs: TabInfo[] = [

@@ -4,7 +4,7 @@ import AllDocumentsTable from '../components/documents/AllDocumentsTable';
 
 const DocumentManagementPage: React.FC = () => {
   return (
-    <Box sx={{ p: 8, height: '100%' }}>
+    <Box sx={{ p: 4, height: '100%' }}>
       <Grid item xs={12} >
         <AllDocumentsTable />
       </Grid>
