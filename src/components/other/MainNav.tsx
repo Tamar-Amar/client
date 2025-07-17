@@ -164,7 +164,10 @@ const MainNav: React.FC = () => {
 
     if (type === 'user') {
       localStorage.setItem('role', user.role);
-      localStorage.setItem('user', JSON.stringify(user));
+      if (user) {
+        user.id = user._id;
+        localStorage.setItem('user', JSON.stringify(user));
+      }
       if (user.role === 'coordinator') {
         window.location.href = '/coordinator/dashboard';
         return;
