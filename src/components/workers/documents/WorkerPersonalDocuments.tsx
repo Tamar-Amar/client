@@ -54,14 +54,15 @@ interface WorkerPersonalDocumentsProps {
   is101: boolean;
   workerId: string;
   workerTz: string;
+  workerRoleName?: string;
 }
 
-const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ documents, handleStatusUpdate, handleDelete, is101, workerId, workerTz }) => {
+const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ documents, handleStatusUpdate, handleDelete, is101, workerId, workerTz, workerRoleName }) => {
   const userRole = useRecoilValue(userRoleState);
   const { uploadDocument } = useWorkerDocuments(workerId);
   const [isPersonalDocDialogOpen, setIsPersonalDocDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [documentType, setDocumentType] = useState<string>("NULL");
+  const [documentType, setDocumentType] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [expirationDate, setExpirationDate] = useState<Date | null>(null);
   const theme = useTheme();
@@ -81,7 +82,18 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
   ];
 
   const getMissingDocuments = () => {
-    return requiredDocuments.filter(reqDoc => {
+    // נרמול התפקיד לצורך קביעת מסמכים נדרשים
+    const normalizedRole = workerRoleName?.trim().replace(/\s+/g, ' ');
+    
+    // תעודת השכלה נדרשת רק עבור מובילים ורכזים
+    let filteredRequiredDocuments = requiredDocuments;
+    if (normalizedRole && (normalizedRole.includes('מוביל') || normalizedRole.includes('רכז'))) {
+      // תעודת השכלה כבר נכללת ב-requiredDocuments
+    } else {
+      filteredRequiredDocuments = requiredDocuments.filter(doc => doc.tag !== 'תעודת השכלה');
+    }
+    
+    return filteredRequiredDocuments.filter(reqDoc => {
       const hasDoc = personalDocs.some(doc => doc.tag === reqDoc.tag && doc.status === 'מאושר');
       return !hasDoc;
     });
@@ -89,13 +101,37 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
 
   const missingDocs = getMissingDocuments();
 
+  // פונקציה לקבלת סוגי מסמכים זמינים להעלאה
+  const getAvailableDocumentTypes = () => {
+    const normalizedRole = workerRoleName?.trim().replace(/\s+/g, ' ');
+    
+    // מסמכים בסיסיים לכל העובדים
+    let filteredDocTags = [...REQUIRED_DOC_TAGS];
+    
+    // תעודת השכלה נדרשת רק עבור מובילים ורכזים
+    if (normalizedRole && (normalizedRole.includes('מוביל') || normalizedRole.includes('רכז'))) {
+      filteredDocTags.push('תעודת השכלה');
+    }
+
+    // אישור וותק נדרש רק עבור רכזים
+    if (normalizedRole && normalizedRole.includes('רכז')) {
+      filteredDocTags.push('אישור וותק');
+    }
+    
+    // הסר סוגי מסמכים שכבר קיימים אצל העובד (לא משנה מה הסטטוס)
+    const existingDocTags = documents.map(doc => doc.tag);
+    return filteredDocTags.filter(tag => !existingDocTags.includes(tag));
+  };
+
+  const availableDocTypes = getAvailableDocumentTypes();
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) setSelectedFile(file);
   };
 
   const handleUpload = () => {
-    if (!selectedFile || !workerId) return;
+    if (!selectedFile || !workerId || !documentType) return;
     const formData = new FormData();
     formData.append('file', selectedFile);
     formData.append('workerId', workerId);
@@ -107,7 +143,7 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
     uploadDocument(formData, {
       onSuccess: () => {
         setSelectedFile(null);
-        setDocumentType("NULL");
+        setDocumentType("");
         setExpirationDate(null);
         setIsPersonalDocDialogOpen(false);
         if (fileInputRef.current) fileInputRef.current.value = '';
@@ -135,9 +171,19 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
               onChange={(e) => setDocumentType(e.target.value as string)}
               sx={{ minWidth: 150 }}
             >
-              {REQUIRED_DOC_TAGS.map((type: any) => (
-                <MenuItem key={type.value} value={type.value} disabled={type.value === "NULL"}>{type.label}</MenuItem>
-              ))}
+              {(() => {
+                if (availableDocTypes.length === 0) {
+                  return (
+                    <MenuItem disabled>
+                      כל סוגי המסמכים כבר הועלו
+                    </MenuItem>
+                  );
+                }
+                
+                return availableDocTypes.map((tag: string) => (
+                  <MenuItem key={tag} value={tag}>{tag}</MenuItem>
+                ));
+              })()}
             </TextField>
             <input
               type="file"
@@ -168,7 +214,7 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
           <Button
             variant="contained"
             onClick={handleUpload}
-            disabled={!selectedFile || documentType === "NULL"}
+            disabled={!selectedFile || !documentType || availableDocTypes.length === 0}
           >
             העלה
           </Button>

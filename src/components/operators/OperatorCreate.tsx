@@ -155,7 +155,8 @@ const NewOperatorDocuments: React.FC<{ tempOperatorId: string }> = ({ tempOperat
     const finalTag = tag === 'אחר' ? customTag : tag;
     const formData = new FormData();
     formData.append('file', selectedFile);
-    formData.append('operatorId', tempOperatorId);
+    formData.append('workerId', tempOperatorId);
+    formData.append('documentType', finalTag);
     formData.append('tag', finalTag);
 
     try {

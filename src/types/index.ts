@@ -167,6 +167,7 @@ export interface Activity {
     classSymbol?: string;
     className?: string;
     project?: number;
+    institutionCode?: string;
     documentsCount?: number;
   }
   
@@ -200,4 +201,4 @@ export interface Activity {
     }>;
   }
 
-  export const REQUIRED_DOC_TAGS = ['אישור משטרה', 'תעודת השכלה', 'חוזה', 'תעודת זהות', 'אישור וותק'];
+  export const REQUIRED_DOC_TAGS = ['אישור משטרה', 'חוזה', 'תעודת זהות'];

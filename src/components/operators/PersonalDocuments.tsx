@@ -30,7 +30,8 @@ const PersonalDocuments: React.FC<Props> = ({ operatorId }) => {
 
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('operatorId', operatorId);
+    formData.append('workerId', operatorId);
+    formData.append('documentType', selectedTag);
     formData.append('tag', selectedTag);
 
     uploadDocument(formData);

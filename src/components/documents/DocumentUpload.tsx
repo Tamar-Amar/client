@@ -29,7 +29,8 @@ const DocumentUpload: React.FC = () => {
     'תעודת זהות',
     'אישור משטרה',
     'תעודת השכלה',
-    'אחר'
+    'חוזה',
+    'אישור וותק',
   ];
 
   const { data: workers, isLoading } = useFetchAllWorkersAfterNoon();
@@ -114,11 +115,32 @@ const DocumentUpload: React.FC = () => {
       }}
       label="סוג מסמך"
     >
-      {documentTypes.map((type) => (
-        <MenuItem key={type} value={type}>
-          {type}
-        </MenuItem>
-      ))}
+      {(() => {
+        // נרמול התפקיד לצורך קביעת מסמכים נדרשים
+        const selectedWorker = workers?.find(w => w._id === selectedEmployee);
+        const normalizedRole = selectedWorker?.roleName?.trim().replace(/\s+/g, ' ');
+        
+        // מסמכים בסיסיים לכל העובדים (ללא תעודת השכלה ואישור וותק)
+        let filteredDocumentTypes = documentTypes.filter(type => 
+          type !== 'תעודת השכלה' && type !== 'אישור וותק'
+        );
+        
+        // תעודת השכלה נדרשת רק עבור מובילים ורכזים
+        if (normalizedRole && (normalizedRole.includes('מוביל') || normalizedRole.includes('רכז'))) {
+          filteredDocumentTypes.push('תעודת השכלה');
+        }
+        
+        // אישור וותק נדרש רק עבור רכזים
+        if (normalizedRole && normalizedRole.includes('רכז')) {
+          filteredDocumentTypes.push('אישור וותק');
+        }
+        
+        return filteredDocumentTypes.map((type) => (
+          <MenuItem key={type} value={type}>
+            {type}
+          </MenuItem>
+        ));
+      })()}
     </Select>
   </FormControl>
 

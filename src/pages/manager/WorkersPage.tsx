@@ -11,7 +11,7 @@ import ExcelImport from '../../components/workers/ExcelImport';
 import WorkersDocumentsList from '../../components/workers/WorkersDocumentsList';
 import WorkerAfterNoonForm from '../../components/workers/CreateWorkerAfterNoonForm';
 import { useNavigate } from 'react-router-dom';
-import { useFetchClasses } from '../../queries/classQueries';
+
 
 const WorkersPage: React.FC = () => {
   const [isCreating, setIsCreating] = useState(false);

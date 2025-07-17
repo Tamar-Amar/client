@@ -76,6 +76,7 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
                 is101={workerData?.is101 || false}
                 workerId={workerId || ''}
                 workerTz={workerData?.id || ''}
+                workerRoleName={workerData?.roleName}
               />
           </Box>
         ) : selectedTab === 'personal' ? (

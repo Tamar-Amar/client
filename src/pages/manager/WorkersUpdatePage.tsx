@@ -43,7 +43,7 @@ const UPDATEABLE_FIELDS = [
   { value: 'email', label: 'אימייל' },
   { value: 'accountantCode', label: 'חשב שכר' },
   { value: 'roleType', label: 'סוג תפקיד' },
-  { value: 'roleName', label: 'שם תפקיד' },
+  { value: 'roleName', label: 'שם תפקיד (מנורמל)' },
   { value: 'is101', label: 'סטטוס 101' },
 ];
 
@@ -95,11 +95,18 @@ const WorkersUpdatePage: React.FC = () => {
 
         // המרה לפורמט הנדרש - רק שורות עם תז תקין (מעל 7 ספרות)
         const processedData = jsonData.slice(1)
-          .map((row: any, index: number) => ({
-            id: String(row[0]),
-            newValue: row[1],
-            row: index + 2 // מספר שורה בקובץ המקורי (החל מ-2 כי שורה 1 היא כותרות)
-          }))
+          .map((row: any, index: number) => {
+            let newValue = row[1];
+            // נרמול התפקיד אם זה השדה שמתעדכן
+            if (selectedField === 'roleName' && typeof newValue === 'string') {
+              newValue = newValue.trim().replace(/\s+/g, ' ');
+            }
+            return {
+              id: String(row[0]),
+              newValue: newValue,
+              row: index + 2 // מספר שורה בקובץ המקורי (החל מ-2 כי שורה 1 היא כותרות)
+            };
+          })
           .filter(item => {
             // בדוק שהתז תקין (מעל 7 ספרות) ולא ריק
             const id = String(item.id).trim();
@@ -145,6 +152,10 @@ const WorkersUpdatePage: React.FC = () => {
       if (selectedField === 'is101' || selectedField === 'isActive') {
         const trueValues = ['יש', 'true', 'כן', '1', 'תקין'];
         processedNewValue = trueValues.includes(String(worker.newValue).toLowerCase());
+      }
+      // נרמול התפקיד אם זה השדה שמתעדכן
+      if (selectedField === 'roleName' && typeof processedNewValue === 'string') {
+        processedNewValue = processedNewValue.trim().replace(/\s+/g, ' ');
       }
       return {
         ...worker,
@@ -216,10 +227,17 @@ const WorkersUpdatePage: React.FC = () => {
       const validationResults = workersData.map(worker => {
         const existingWorker = result.existingWorkers.find((w: any) => w.id === worker.id);
         const exists = !!existingWorker;
+        let oldValue = existingWorker ? existingWorker[selectedField] : undefined;
+        
+        // נרמול התפקיד אם זה השדה שמתעדכן
+        if (selectedField === 'roleName' && typeof oldValue === 'string') {
+          oldValue = oldValue.trim().replace(/\s+/g, ' ');
+        }
+        
         return {
           ...worker,
           status: exists ? 'קיים במערכת' : 'עובד חסר',
-          oldValue: existingWorker ? existingWorker[selectedField] : undefined
+          oldValue: oldValue
         };
       });
 
@@ -239,6 +257,12 @@ const WorkersUpdatePage: React.FC = () => {
               // ניקוי רווחים והשוואה מדויקת
               let cleanOldValue = String(oldValue || '').trim();
               let cleanNewValue = String(newValue || '').trim();
+              
+              // נרמול התפקיד אם זה השדה שמתעדכן
+              if (selectedField === 'roleName') {
+                cleanOldValue = cleanOldValue.replace(/\s+/g, ' ');
+                cleanNewValue = cleanNewValue.replace(/\s+/g, ' ');
+              }
               
 
               console.log("cleanOldValue", cleanOldValue);
@@ -285,8 +309,19 @@ const WorkersUpdatePage: React.FC = () => {
     const workbook = XLSX.utils.book_new();
     
     // הוספת כותרות
-    const headers = ['תעודת זהות', 'ערך חדש', 'סטטוס', 'מספר שורה בקובץ המקורי'];
-    const data = [headers, ...validationResults.map(w => [w.id, w.newValue, w.status, w.row])];
+    const headers = ['תעודת זהות', 'ערך חדש', 'סטטוס', 'מספר שורה בקובץ המקורי', 'ערך קודם'];
+    const data = [headers, ...validationResults.map(w => {
+      let newValue = w.newValue;
+      let oldValue = w.oldValue;
+      
+      // נרמול התפקיד אם זה השדה שמתעדכן
+      if (selectedField === 'roleName') {
+        newValue = typeof newValue === 'string' ? newValue.trim().replace(/\s+/g, ' ') : newValue;
+        oldValue = typeof oldValue === 'string' ? oldValue.trim().replace(/\s+/g, ' ') : oldValue;
+      }
+      
+      return [w.id, newValue, w.status, w.row, oldValue];
+    })];
     
     const worksheet = XLSX.utils.aoa_to_sheet(data);
     XLSX.utils.book_append_sheet(workbook, worksheet, 'תוצאות בדיקה');
@@ -296,7 +331,11 @@ const WorkersUpdatePage: React.FC = () => {
   };
 
   const getFieldLabel = (fieldValue: string) => {
-    return UPDATEABLE_FIELDS.find(field => field.value === fieldValue)?.label || fieldValue;
+    const field = UPDATEABLE_FIELDS.find(field => field.value === fieldValue);
+    if (field?.value === 'roleName') {
+      return `${field.label} (מנורמל)`;
+    }
+    return field?.label || fieldValue;
   };
 
   return (
@@ -331,6 +370,9 @@ const WorkersUpdatePage: React.FC = () => {
           </Typography>
           <Typography variant="body2">
             3. שורות עם תעודת זהות קצרה מ-7 ספרות או ריקות יועברו
+          </Typography>
+          <Typography variant="body2">
+            4. שמות תפקידים ינורמלו אוטומטית (רווחים מיותרים יוסרו)
           </Typography>
           <Typography variant="body2">
             5. המערכת תבדוק אוטומטית את קיום תעודות הזהות במערכת
@@ -404,7 +446,7 @@ const WorkersUpdatePage: React.FC = () => {
                     startIcon={isProcessing ? <CircularProgress size={20} /> : <CheckIcon />}
                     sx={{ mb: 2 }}
                   >
-                    {isProcessing ? 'מעדכן...' : 'עדכן עובדים'}
+                    {isProcessing ? 'מעדכן...' : `עדכן עובדים${selectedField === 'roleName' ? ' (שמות תפקידים ינורמלו)' : ''}`}
                   </Button>
                   
                   {validationResults.length > 0 && (
@@ -468,6 +510,11 @@ const WorkersUpdatePage: React.FC = () => {
                      <Typography variant="body2">
                        הקובץ מכיל {previewData.length} עובדים. לחץ על "פירוט עובדים לעדכון" כדי לראות את העובדים שיעודכנו.
                      </Typography>
+                     {selectedField === 'roleName' && (
+                       <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
+                         הערה: שמות תפקידים ינורמלו אוטומטית (רווחים מיותרים יוסרו)
+                       </Typography>
+                     )}
                    </Alert>
                    
                   
@@ -552,13 +599,17 @@ const WorkersUpdatePage: React.FC = () => {
                     <TableCell>
                       {selectedField === 'is101' ? 
                         (worker.oldValue ? 'קיים טופס' : 'לא קיים טופס') : 
-                        String(worker.oldValue || '')}
+                        (selectedField === 'roleName' ? 
+                          (worker.oldValue?.trim().replace(/\s+/g, ' ') || '') : 
+                          String(worker.oldValue || ''))}
                     </TableCell>
                     <TableCell>
                       {selectedField === 'is101' ? 
                         (["יש", "true", "כן", "1", "תקין"].includes(String(worker.newValue).toLowerCase()) ? 
                           'קיים טופס' : 'לא קיים טופס') : 
-                        String(worker.newValue)}
+                        (selectedField === 'roleName' ? 
+                          (worker.newValue?.trim().replace(/\s+/g, ' ') || '') : 
+                          String(worker.newValue))}
                     </TableCell>
                   </TableRow>
                 ))}
