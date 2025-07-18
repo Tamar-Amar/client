@@ -50,6 +50,19 @@ export const useUpdateDocuments = () => {
   });
 };
 
+export const useUpdateDocumentStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ documentId, status }: UpdateStatusParams) => 
+      updateDocumentStatus(documentId, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      queryClient.invalidateQueries({ queryKey: ['personal-documents'] });
+      queryClient.invalidateQueries({ queryKey: ['worker-documents'] });
+    }
+  });
+};
+
 export const useWorkerDocuments = (workerId: string) => {
   const queryClient = useQueryClient();
 

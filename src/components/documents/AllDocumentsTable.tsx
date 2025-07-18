@@ -14,7 +14,7 @@ import {
   TablePagination
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { useFetchAllPersonalDocuments, useWorkerDocuments } from '../../queries/useDocuments';
+import { useFetchAllPersonalDocuments, useUpdateDocumentStatus, useUploadDocument } from '../../queries/useDocuments';
 import { useFetchAllWorkersAfterNoon } from '../../queries/workerAfterNoonQueries';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
@@ -98,7 +98,8 @@ const AllDocumentsTable: React.FC = () => {
   const navigate = useNavigate();
   const { data: personalDocuments = [], isLoading: isLoadingPersonalDocs } = useFetchAllPersonalDocuments();
   const { data: workers = [], isLoading: isLoadingWorkers } = useFetchAllWorkersAfterNoon();
-  const { updateStatus, isUpdatingStatus, uploadDocument, isUploading } = useWorkerDocuments('all');
+  const { mutate: updateStatus, isPending: isUpdatingStatus } = useUpdateDocumentStatus();
+  const { mutate: uploadDocument, isPending: isUploading } = useUploadDocument();
   const { data: users = [] } = useFetchAllUsers();
   const { data: classes = [], isLoading: isLoadingClasses } = useFetchClasses();
 
