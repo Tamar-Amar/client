@@ -19,12 +19,14 @@ import { useFetchClasses } from '../../queries/classQueries';
 import WorkerPersonalDocuments from '../../components/workers/documents/WorkerPersonalDocuments';
 import WorkerAttendanceDocuments from '../../components/workers/documents/WorkerAttendanceDocuments';
 import WorkerPersonalDetails from '../../components/workers/WorkerPersonalDetails';
+import { WorkerCampReports } from '../../components/workers/WorkerCampReports';
 import PersonIcon from '@mui/icons-material/Person';
 import DescriptionIcon from '@mui/icons-material/Description';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import BeachAccessIcon from '@mui/icons-material/BeachAccess';
 import WbSunnyIcon from '@mui/icons-material/WbSunny';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
+import CampIcon from '@mui/icons-material/OutdoorGrill';
 
 const WorkerDocumentsApprovalPage: React.FC = () => {
   const { id: workerId } = useParams<{ id: string }>();
@@ -47,6 +49,7 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(true);
 
   const isAfterNoonWorker = workerData?.projectCodes?.includes(1);
+  const isSummerCampLeader = workerData?.roleName === 'מוביל' && workerData?.projectCodes?.includes(4);
 
   React.useEffect(() => {
     if (!isAfterNoonWorker && selectedTab === 'afternoon-documents') {
@@ -91,6 +94,8 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
                 <Typography variant="h5" gutterBottom>קייטנת פסח</Typography>
                 <Typography variant="body1" color="text.secondary">תוכן קייטנת פסח יוצג כאן</Typography>
             </Box>
+        ) : selectedTab === 'summer-camp' ? (
+            <WorkerCampReports workerId={workerId || ''} workerData={workerData} />
         ) : (
           <Box>
             {isLoading && <CircularProgress />}
@@ -141,6 +146,14 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
               <ListItemText primary="מסמכים אישיים" />
             </ListItemButton>
           </ListItem>
+          {isSummerCampLeader && (
+            <ListItem disablePadding>
+              <ListItemButton selected={selectedTab === 'summer-camp'} onClick={() => setSelectedTab('summer-camp')} sx={selectedTab === 'summer-camp' ? { bgcolor: '#e3f2fd', color: 'primary.main', borderRight: '4px solid #1976d2' } : {}}>
+                <WbSunnyIcon sx={{ mr: 1 }} color={selectedTab === 'summer-camp' ? 'primary' : 'action'} />
+                <ListItemText primary="דוחות קייטנת קיץ" />
+              </ListItemButton>
+            </ListItem>
+          )}
           {workerData?.projectCodes?.includes(1) && (
             <ListItem disablePadding>
               <ListItemButton selected={selectedTab === 'afternoon-documents'} onClick={() => setSelectedTab('afternoon-documents')} sx={selectedTab === 'afternoon-documents' ? { bgcolor: '#e3f2fd', color: 'primary.main', borderRight: '4px solid #1976d2' } : {}}>

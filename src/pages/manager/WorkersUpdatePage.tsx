@@ -163,10 +163,7 @@ const WorkersUpdatePage: React.FC = () => {
       };
     });
     // לוג: מה נשלח לשרת
-    console.log('נשלח לשרת:', processedUpdates);
-    processedUpdates.forEach(worker => {
-      console.log(`id: ${worker.id}, newValue: ${worker.newValue}, oldValue: ${worker.oldValue}, needsUpdate: ${worker.needsUpdate}`);
-    });
+
     setIsProcessing(true);
     setResults({ success: [], failed: [] });
 
@@ -251,9 +248,6 @@ const WorkersUpdatePage: React.FC = () => {
               const oldValue = worker.oldValue;
               const newValue = worker.newValue;
               
-              console.log("oldValue", oldValue);
-              console.log("newValue", newValue);
-              
               // ניקוי רווחים והשוואה מדויקת
               let cleanOldValue = String(oldValue || '').trim();
               let cleanNewValue = String(newValue || '').trim();
@@ -263,10 +257,6 @@ const WorkersUpdatePage: React.FC = () => {
                 cleanOldValue = cleanOldValue.replace(/\s+/g, ' ');
                 cleanNewValue = cleanNewValue.replace(/\s+/g, ' ');
               }
-              
-
-              console.log("cleanOldValue", cleanOldValue);
-              console.log("cleanNewValue", cleanNewValue);
               
               // טיפול מיוחד בשדות בוליאניים
               if (selectedField === 'is101' || selectedField === 'isActive') {

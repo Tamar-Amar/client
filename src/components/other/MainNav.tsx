@@ -10,6 +10,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import PeopleIcon from '@mui/icons-material/People';
 import EmailIcon from '@mui/icons-material/Email';
 import FolderIcon from '@mui/icons-material/Folder';
+import CampIcon from '@mui/icons-material/OutdoorGrill';
 import { useRecoilValue } from 'recoil';
 import { userRoleState } from '../../recoil/storeAtom';
 import { jwtDecode } from 'jwt-decode';
@@ -36,6 +37,7 @@ const MainNav: React.FC = () => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const [impersonateDialogOpen, setImpersonateDialogOpen] = useState(false);
+  const [isLeader, setIsLeader] = useState(false);
 
   const sections = [
     { key: 'general', label: 'כללי', icon: <AssessmentIcon fontSize="small" /> },
@@ -85,6 +87,10 @@ const MainNav: React.FC = () => {
     { label: 'משתמשים', path: '/users', icon: <PeopleIcon fontSize="small" /> },
   ];
 
+  const leaderTabs: TabInfo[] = [
+    { label: 'דוחות קייטנת קיץ', path: '/leader/camp-reports', icon: <CampIcon fontSize="small" /> },
+  ];
+
   const getTabsBySection = () => {
     if (!selectedSection) return [];
     if (role === 'manager_project' && selectedSection === 'general') return managerTabs;
@@ -92,6 +98,7 @@ const MainNav: React.FC = () => {
     if (role === 'admin' && selectedSection === 'activity') return adminActivityTabs;
     if (role === 'accountant') return accountantTabs;
     if ((role === 'admin' || role === 'manager_project' || role === 'accountant') && selectedSection === 'users') return usersTabs;
+    if (role === 'worker' && isLeader) return leaderTabs;
     if (role === 'worker') return [];
     return [];
   };
@@ -120,6 +127,11 @@ const MainNav: React.FC = () => {
               name: `${data.firstName} ${data.lastName}`,
               idNumber: data.id || ''
             });
+            
+            // בדיקה אם העובד הוא מוביל
+            if (data.roleName === 'מוביל') {
+              setIsLeader(true);
+            }
           })
           .catch((err) => {
             console.error('Failed to fetch worker details:', err);
@@ -351,6 +363,26 @@ const MainNav: React.FC = () => {
                 </Tabs>
               </Box>
            )}
+
+          {/* תפריט למוביל */}
+          {role === 'worker' && isLeader && tabs.length === 0 && (
+            <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
+              <Button
+                variant="contained"
+                startIcon={<CampIcon />}
+                onClick={() => navigate('/leader/camp-reports')}
+                sx={{
+                  backgroundColor: '#c58a00',
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: '#a07000',
+                  }
+                }}
+              >
+                דוחות קייטנת קיץ
+              </Button>
+            </Box>
+          )}
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
              {(role === 'admin' || role === 'manager_project' || role === 'accountant' || role === 'coordinator') && (

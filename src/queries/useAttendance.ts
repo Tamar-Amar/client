@@ -5,6 +5,7 @@ interface AttendanceSubmission {
   workerId: string;
   classId: string;
   month: string;
+  projectCode: number;
   studentAttendanceDoc?: string;
   workerAttendanceDoc?: string;
   controlDoc?: string;
@@ -12,7 +13,7 @@ interface AttendanceSubmission {
 
 export const useAttendance = (workerId: string) => {
   const queryClient = useQueryClient();
-
+  
   const attendance = useQuery({
     queryKey: ['attendance'],
     queryFn: () => attendanceService.geAllAttendance()
@@ -24,7 +25,7 @@ export const useAttendance = (workerId: string) => {
   });
 
   const submitAttendanceMutation = useMutation({
-    mutationFn: (data: AttendanceSubmission) => attendanceService.submitAttendance(data),
+    mutationFn: (data: AttendanceSubmission) => attendanceService.submitAttendance({ ...data, projectCode: 4 }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['worker-attendance', workerId] });
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
@@ -38,7 +39,7 @@ export const useAttendance = (workerId: string) => {
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
     }
   });
-
+  
   return {
     attendance: attendance.data || [],
     workerAttendance: workerAttendance.data || [],

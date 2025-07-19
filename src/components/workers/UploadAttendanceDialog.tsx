@@ -112,6 +112,7 @@ const UploadAttendanceDialog: React.FC<UploadAttendanceDialogProps> = ({
           workerId: workerId,
           classId: selectedClass,
           month: formattedMonth,
+          projectCode: 1,
           studentAttendanceDoc: studentAttendanceDocId,
           workerAttendanceDoc: workerAttendanceDocId,
           controlDoc: controlDocId,

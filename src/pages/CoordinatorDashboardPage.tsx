@@ -12,9 +12,11 @@ import {
 import { jwtDecode } from 'jwt-decode';
 import PersonIcon from '@mui/icons-material/Person';
 import PeopleIcon from '@mui/icons-material/People';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 import CoordinatorPersonalDetails from '../components/coordinator/CoordinatorPersonalDetails';
 import CoordinatorClasses from '../components/coordinator/CoordinatorClasses';
 import CoordinatorWorkers from '../components/coordinator/CoordinatorWorkers';
+import { CoordinatorAttendanceReports } from '../components/coordinator/CoordinatorAttendanceReports';
 
 interface DecodedToken {
   id: string;
@@ -23,7 +25,7 @@ interface DecodedToken {
 }
 
 const CoordinatorDashboardPage: React.FC = () => {
-  const [selectedTab, setSelectedTab] = useState<'personal' | 'classes' | 'workers'>('personal');
+  const [selectedTab, setSelectedTab] = useState<'personal' | 'classes' | 'workers' | 'attendanceReports'>('personal');
   const [drawerOpen, setDrawerOpen] = useState(true);
   const [coordinatorId, setCoordinatorId] = useState<string>('');
 
@@ -46,8 +48,10 @@ const CoordinatorDashboardPage: React.FC = () => {
           <CoordinatorPersonalDetails coordinatorId={coordinatorId} />
         ) : selectedTab === 'classes' ? (
           <CoordinatorClasses coordinatorId={coordinatorId} />
-        ) : (
+        ) : selectedTab === 'workers' ? (
           <CoordinatorWorkers coordinatorId={coordinatorId} />
+        ) : (
+          <CoordinatorAttendanceReports coordinatorId={coordinatorId} />
         )}
       </Box>
 
@@ -93,6 +97,16 @@ const CoordinatorDashboardPage: React.FC = () => {
             >
               <PeopleIcon sx={{ mr: 1 }} color={selectedTab === 'workers' ? 'primary' : 'action'} />
               <ListItemText primary="עובדים" />
+            </ListItemButton>
+          </ListItem>
+          <ListItem disablePadding>
+            <ListItemButton 
+              selected={selectedTab === 'attendanceReports'} 
+              onClick={() => setSelectedTab('attendanceReports')} 
+              sx={selectedTab === 'attendanceReports' ? { bgcolor: '#e3f2fd', color: 'primary.main', borderRight: '4px solid #1976d2' } : {}}
+            >
+              <AssignmentIcon sx={{ mr: 1 }} color={selectedTab === 'attendanceReports' ? 'primary' : 'action'} />
+              <ListItemText primary="דוחות נוכחות" />
             </ListItemButton>
           </ListItem>
         </List>
