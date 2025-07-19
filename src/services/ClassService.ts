@@ -41,4 +41,9 @@ export const fetchWorkerClasses = async (workerId: string) => {
 export const bulkAddWorkersToClasses = (classToWorkersMap: Record<string, any[]>): Promise<AxiosResponse<any>> => {
   return axios.post(`${API_URL}/bulk-add-workers`, { classToWorkersMap });
 };
+
+export const getCoordinatorClasses = async (coordinatorId: string) => {
+  const response = await axios.get(`${API_URL}/coordinator/${coordinatorId}`);
+  return response.data;
+};
   
