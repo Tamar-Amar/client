@@ -25,7 +25,10 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
-  IconButton
+  IconButton,
+  Card,
+  CardContent,
+  Autocomplete
 } from '@mui/material';
 import {
   People as PeopleIcon,
@@ -39,11 +42,15 @@ import {
   Person as PersonIcon,
   Work as WorkIcon,
   Phone as PhoneIcon,
-  Email as EmailIcon
+  Email as EmailIcon,
+  FilterList as FilterIcon,
+  Clear as ClearIcon,
+  AccountBalance as AccountIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useFetchAllWorkersAfterNoon } from '../queries/workerAfterNoonQueries';
 import { useFetchClasses } from '../queries/classQueries';
+import { useFetchAllUsers } from '../queries/useUsers';
 import { Class, WorkerAfterNoon } from '../types';
 import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { jwtDecode } from 'jwt-decode';
@@ -67,11 +74,19 @@ const MatsevetPage: React.FC = () => {
   const navigate = useNavigate();
   const { data: workers = [], isLoading: workersLoading } = useFetchAllWorkersAfterNoon();
   const { data: classes = [], isLoading: classesLoading } = useFetchClasses();
+  const { data: allUsers = [], isLoading: usersLoading } = useFetchAllUsers();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProject, setSelectedProject] = useState<number | ''>('');
   const [sortField, setSortField] = useState<SortField>('uniqueSymbol');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [selectedClassDialog, setSelectedClassDialog] = useState<ClassWithWorkers | null>(null);
+  
+  // פילטרים מתקדמים
+  const [filterInstitutionCode, setFilterInstitutionCode] = useState<string>('');
+  const [filterClassCode, setFilterClassCode] = useState<string>('');
+  const [filterClassType, setFilterClassType] = useState<string>('');
+  const [filterGender, setFilterGender] = useState<string>('');
+  const [filterSalaryAccount, setFilterSalaryAccount] = useState<string>('');
 
   let isAdmin = false;
   try {
@@ -93,6 +108,79 @@ const MatsevetPage: React.FC = () => {
   const handleCloseDialog = () => {
     setSelectedClassDialog(null);
   };
+
+  // אפשרויות פילטרים
+  const institutionCodeOptions = useMemo(() => {
+    const codes = new Set<string>();
+    classes.forEach((cls: Class) => {
+      if (cls.institutionCode) {
+        codes.add(cls.institutionCode);
+      }
+    });
+    return [
+      { value: '', label: 'הכל' },
+      ...Array.from(codes).sort().map(code => ({ value: code, label: code }))
+    ];
+  }, [classes]);
+
+  const classCodeOptions = useMemo(() => {
+    const classMap = new Map<string, { symbol: string; name: string }>();
+    classes.forEach((cls: Class) => {
+      if (cls.uniqueSymbol && cls.name) {
+        classMap.set(cls.uniqueSymbol, { 
+          symbol: cls.uniqueSymbol, 
+          name: cls.name 
+        });
+      }
+    });
+    return [
+      { value: '', label: 'הכל' },
+      ...Array.from(classMap.values())
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(classItem => ({ 
+          value: classItem.symbol, 
+          label: `${classItem.symbol} - ${classItem.name}` 
+        }))
+    ];
+  }, [classes]);
+
+  const classTypeOptions = useMemo(() => {
+    const types = new Set<string>();
+    classes.forEach((cls: Class) => {
+      if (cls.type) {
+        types.add(cls.type);
+      }
+    });
+    return [
+      { value: '', label: 'הכל' },
+      ...Array.from(types).sort().map(type => ({ value: type, label: type }))
+    ];
+  }, [classes]);
+
+  const genderOptions = useMemo(() => {
+    const genders = new Set<string>();
+    classes.forEach((cls: Class) => {
+      if (cls.gender) {
+        genders.add(cls.gender);
+      }
+    });
+    return [
+      { value: '', label: 'הכל' },
+      ...Array.from(genders).sort().map(gender => ({ value: gender, label: gender }))
+    ];
+  }, [classes]);
+
+  // אפשרויות חשבי שכר
+  const salaryAccountOptions = useMemo(() => {
+    const accountants = allUsers.filter((user: any) => user.role === 'accountant');
+    return [
+      { value: '', label: 'הכל' },
+      ...accountants.map((accountant: any) => ({
+        value: accountant._id,
+        label: `${accountant.firstName} ${accountant.lastName}`
+      }))
+    ];
+  }, [allUsers]);
 
   const classesWithWorkers = useMemo(() => {
     const result: ClassWithWorkers[] = [];
@@ -176,21 +264,81 @@ const MatsevetPage: React.FC = () => {
   }, [classes, workers, selectedProject]);
 
   const filteredClasses = useMemo(() => {
-    if (!searchTerm) return classesWithWorkers;
+    let filtered = classesWithWorkers;
     
-    const searchLower = searchTerm;
-    return classesWithWorkers.filter(classData => 
-      (classData.class.name && classData.class.name.includes(searchLower)) ||
-      (classData.class.uniqueSymbol && classData.class.uniqueSymbol.includes(searchLower)) ||
-      (classData.class.institutionName && classData.class.institutionName.includes(searchLower)) ||
-      (classData.class.address && classData.class.address.includes(searchLower)) ||
-      classData.workers.some(worker => 
-        (worker.firstName && worker.firstName.includes(searchLower)) ||
-        (worker.lastName && worker.lastName.includes(searchLower)) ||
-        (worker.roleName && worker.roleName.includes(searchLower))
-      )
-    );
-  }, [classesWithWorkers, searchTerm]);
+    // סינון לפי חיפוש חופשי
+    if (searchTerm) {
+      const searchLower = searchTerm;
+      filtered = filtered.filter(classData => 
+        (classData.class.name && classData.class.name.includes(searchLower)) ||
+        (classData.class.uniqueSymbol && classData.class.uniqueSymbol.includes(searchLower)) ||
+        (classData.class.institutionName && classData.class.institutionName.includes(searchLower)) ||
+        (classData.class.address && classData.class.address.includes(searchLower)) ||
+        classData.workers.some(worker => 
+          (worker.firstName && worker.firstName.includes(searchLower)) ||
+          (worker.lastName && worker.lastName.includes(searchLower)) ||
+          (worker.roleName && worker.roleName.includes(searchLower))
+        )
+      );
+    }
+    
+    // סינון לפי פרויקט
+    if (selectedProject !== '') {
+      filtered = filtered.filter(classData => {
+        if (classData.class._id === 'no-class') {
+          // עבור עובדים ללא מסגרת, בדוק אם יש להם את הפרויקט
+          return classData.workers.some(worker => 
+            worker.projectCodes?.includes(selectedProject as number)
+          );
+        } else {
+          // עבור כיתות, בדוק אם יש להן את הפרויקט
+          return classData.class.projectCodes?.includes(selectedProject as number);
+        }
+      });
+    }
+    
+    // סינון לפי קוד מוסד
+    if (filterInstitutionCode) {
+      filtered = filtered.filter(classData => 
+        classData.class.institutionCode === filterInstitutionCode
+      );
+    }
+    
+    // סינון לפי סמל כיתה
+    if (filterClassCode) {
+      filtered = filtered.filter(classData => 
+        classData.class.uniqueSymbol === filterClassCode
+      );
+    }
+    
+    // סינון לפי סוג כיתה
+    if (filterClassType) {
+      filtered = filtered.filter(classData => 
+        classData.class.type === filterClassType
+      );
+    }
+    
+    // סינון לפי מגדר
+    if (filterGender) {
+      filtered = filtered.filter(classData => 
+        classData.class.gender === filterGender
+      );
+    }
+    
+    // סינון לפי חשב שכר
+    if (filterSalaryAccount) {
+      const accountant = allUsers.find((u: any) => u._id === filterSalaryAccount && u.role === 'accountant');
+      if (accountant && Array.isArray(accountant.accountantInstitutionCodes)) {
+        filtered = filtered.filter(classData => 
+          accountant.accountantInstitutionCodes.includes(classData.class.institutionCode)
+        );
+      } else {
+        filtered = [];
+      }
+    }
+    
+    return filtered;
+  }, [classesWithWorkers, searchTerm, selectedProject, filterInstitutionCode, filterClassCode, filterClassType, filterGender, filterSalaryAccount, allUsers]);
 
   const sortedClasses = useMemo(() => {
     return [...filteredClasses].sort((a, b) => {
@@ -243,7 +391,40 @@ const MatsevetPage: React.FC = () => {
     return sortDirection === 'asc' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />;
   };
 
-  if (workersLoading || classesLoading) {
+
+
+  const getActiveFilters = () => {
+    const filters = [];
+    if (selectedProject) {
+      const project = projectTypes.find(p => p.value === selectedProject);
+      filters.push({ key: 'project', label: `פרויקט: ${project?.label}`, onDelete: () => setSelectedProject('') });
+    }
+    if (searchTerm) {
+      filters.push({ key: 'search', label: `חיפוש: ${searchTerm}`, onDelete: () => setSearchTerm('') });
+    }
+    if (filterInstitutionCode) {
+      filters.push({ key: 'institution', label: `קוד מוסד: ${filterInstitutionCode}`, onDelete: () => setFilterInstitutionCode('') });
+    }
+    if (filterClassCode) {
+      const classOption = classCodeOptions.find(opt => opt.value === filterClassCode);
+      filters.push({ key: 'class', label: `סמל כיתה: ${classOption?.label}`, onDelete: () => setFilterClassCode('') });
+    }
+    if (filterClassType) {
+      filters.push({ key: 'type', label: `סוג: ${filterClassType}`, onDelete: () => setFilterClassType('') });
+    }
+    if (filterGender) {
+      filters.push({ key: 'gender', label: `מגדר: ${filterGender}`, onDelete: () => setFilterGender('') });
+    }
+    if (filterSalaryAccount) {
+      const accountant = salaryAccountOptions.find(opt => opt.value === filterSalaryAccount);
+      filters.push({ key: 'accountant', label: `חשב שכר: ${accountant?.label}`, onDelete: () => setFilterSalaryAccount('') });
+    }
+    return filters;
+  };
+
+  const activeFilters = getActiveFilters();
+
+  if (workersLoading || classesLoading || usersLoading) {
     return (
       <Container maxWidth="xl" sx={{ mt: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
@@ -254,74 +435,167 @@ const MatsevetPage: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 , p:4}}>
-      <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="body1" color="text.secondary">
-            סך הכל: {sortedClasses.length} כיתות
-            {selectedProject !== '' && (
-              <span>
-                {' '}(מסונן לפי {projectTypes.find(p => p.value === selectedProject)?.label})
-              </span>
-            )}
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            {isAdmin && (
-              <Button
-                variant="outlined"
-                color="secondary"
-                onClick={() => navigate('/matsevet/import')}
-              >
-                העלאת מצבת והשוואה
-              </Button>
-            )}
-            <FormControl size="small" sx={{ minWidth: 200, bgcolor: 'white' }}>
-              <InputLabel>סינון לפי פרויקט</InputLabel>
-              <Select
-                value={selectedProject}
-                label="סינון לפי פרויקט"
-                onChange={(e) => setSelectedProject(e.target.value as number | '')}
-              >
-                <MenuItem value="">
-                  <em>כל הפרויקטים</em>
-                </MenuItem>
-                {projectTypes.map((project) => (
-                  <MenuItem key={project.value} value={project.value}>
-                    {project.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            {(selectedProject !== '' || searchTerm) && (
-              <Button
-                variant="outlined"
+    <Container maxWidth="xl" sx={{ mt: 1, mb: 4 , p:4}}>
+
+      {/* סרגל סינון מתקדם */}
+      <Card sx={{ mb: 3, bgcolor: '#f5f5f5', border: '1px solid #e0e0e0' }}>
+        <CardContent sx={{ p: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+            <FilterIcon sx={{ mr: 1, color: 'primary.main' }} />
+            <Typography variant="h6" color="primary.main" fontWeight="bold">
+              סינון מתקדם
+            </Typography>
+            
+            <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+              ({sortedClasses.length} כיתות)
+            </Typography>
+            
+            {/* צ'יפים לפילטרים פעילים */}
+            {activeFilters.map((filter) => (
+              <Chip
+                key={filter.key}
+                label={filter.label}
+                onDelete={filter.onDelete}
+                deleteIcon={<ClearIcon />}
+                color="primary"
+                variant="filled"
                 size="small"
-                onClick={() => {
-                  setSelectedProject('');
-                  setSearchTerm('');
+                sx={{ 
+                  bgcolor: 'primary.main',
+                  color: 'white',
+                  '& .MuiChip-deleteIcon': {
+                    color: 'white'
+                  }
                 }}
-                sx={{ bgcolor: 'white' }}
-              >
-                נקה סינון
-              </Button>
-            )}
-            <TextField
-              size="small"
-              placeholder="חיפוש בכיתה, סמל, מוסד, כתובת או עובד..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon color="action" />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ width: 350, bgcolor: 'white' }}
-            />
+              />
+            ))}
           </Box>
-        </Box>
-      </Box>
+          
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6} md={2}>
+              <TextField
+                size="small"
+                placeholder="חיפוש בכיתה, סמל, מוסד, כתובת או עובד..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon color="action" />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{ bgcolor: 'white', width: '100%' }}
+              />
+            </Grid>
+            
+            <Grid item xs={12} sm={6} md={2}>
+              <FormControl size="small" sx={{ width: '100%', bgcolor: 'white' }}>
+                <InputLabel>סינון לפי פרויקט</InputLabel>
+                <Select
+                  value={selectedProject}
+                  label="סינון לפי פרויקט"
+                  onChange={(e) => setSelectedProject(e.target.value as number | '')}
+                >
+                  <MenuItem value="">
+                    <em>כל הפרויקטים</em>
+                  </MenuItem>
+                  {projectTypes.map((project) => (
+                    <MenuItem key={project.value} value={project.value}>
+                      {project.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} sm={6} md={2}>
+              <Autocomplete
+                size="small"
+                options={institutionCodeOptions}
+                value={institutionCodeOptions.find(opt => opt.value === filterInstitutionCode) || null}
+                onChange={(_, newValue) => setFilterInstitutionCode(newValue?.value || '')}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="קוד מוסד"
+                    placeholder="בחר קוד מוסד"
+                  />
+                )}
+                sx={{ bgcolor: 'white' }}
+              />
+            </Grid>
+            
+            <Grid item xs={12} sm={6} md={2}>
+              <Autocomplete
+                size="small"
+                options={salaryAccountOptions}
+                value={salaryAccountOptions.find(opt => opt.value === filterSalaryAccount) || null}
+                onChange={(_, newValue) => setFilterSalaryAccount(newValue?.value || '')}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="חשב שכר"
+                    placeholder="בחר חשב שכר"
+                  />
+                )}
+                sx={{ bgcolor: 'white' }}
+              />
+            </Grid>
+            
+            <Grid item xs={12} sm={6} md={2}>
+              <Autocomplete
+                size="small"
+                options={classCodeOptions}
+                value={classCodeOptions.find(opt => opt.value === filterClassCode) || null}
+                onChange={(_, newValue) => setFilterClassCode(newValue?.value || '')}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="סמל כיתה"
+                    placeholder="בחר סמל כיתה"
+                  />
+                )}
+                sx={{ bgcolor: 'white' }}
+              />
+            </Grid>
+            
+            <Grid item xs={12} sm={6} md={1}>
+              <Autocomplete
+                size="small"
+                options={classTypeOptions}
+                value={classTypeOptions.find(opt => opt.value === filterClassType) || null}
+                onChange={(_, newValue) => setFilterClassType(newValue?.value || '')}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="סוג"
+                    placeholder="בחר סוג"
+                  />
+                )}
+                sx={{ bgcolor: 'white' }}
+              />
+            </Grid>
+            
+            <Grid item xs={12} sm={6} md={1}>
+              <Autocomplete
+                size="small"
+                options={genderOptions}
+                value={genderOptions.find(opt => opt.value === filterGender) || null}
+                onChange={(_, newValue) => setFilterGender(newValue?.value || '')}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="מגדר"
+                    placeholder="בחר מגדר"
+                  />
+                )}
+                sx={{ bgcolor: 'white' }}
+              />
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
 
       <Divider sx={{ mb: 2 }} />
 
@@ -524,6 +798,24 @@ const MatsevetPage: React.FC = () => {
           </Typography>
         </Box>
       )}
+<Divider sx={{ mb: 2 }} />
+<Box sx={{ mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            {isAdmin && (
+              <Button
+                variant="outlined"
+                color="secondary"
+                onClick={() => navigate('/matsevet/import')}
+              >
+                העלאת מצבת והשוואה
+              </Button>
+            )}
+
+          </Box>
+        </Box>
+      </Box>
 
       {/* דיאלוג פרטי כיתה */}
       <Dialog 
