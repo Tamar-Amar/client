@@ -55,6 +55,7 @@ const MainNav: React.FC = () => {
    // { label: 'ניהול קבוצות', path: '/classes', icon: <GroupWorkIcon fontSize="small" /> },
     { label: ' מסמכים אישיים', path: '/documents', },
     { label: 'דיווחי נוכחות', path: '/worker-attendance' },
+    { label: 'דוחות קייטנת קיץ', path: '/camp-attendance' },
     { label: 'מיילים', path: '/workers-after-noon-email' },
     { label: 'התראות', path: '/workers-after-noon-notifications' },
   ];

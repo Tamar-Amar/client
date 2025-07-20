@@ -12,6 +12,16 @@ export const useCampAttendanceReports = (coordinatorId: string) => {
   });
 };
 
+// הוק לקבלת כל דוחות הנוכחות של קייטנות
+export const useAllCampAttendanceReports = () => {
+  return useQuery({
+    queryKey: ['allCampAttendanceReports'],
+    queryFn: () => attendanceService.getAllCampAttendanceReports(),
+    staleTime: 5 * 60 * 1000, // 5 דקות
+    gcTime: 10 * 60 * 1000, // 10 דקות
+  });
+};
+
 // הוק לקבלת דוח נוכחות ספציפי של קייטנה
 export const useCampAttendanceReport = (id: string) => {
   return useQuery({
@@ -120,6 +130,19 @@ export const useCreateCampAttendanceWithFiles = () => {
   
   return useMutation({
     mutationFn: attendanceService.createCampAttendanceWithFiles,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['campAttendanceReports'] });
+    },
+  });
+}; 
+
+// הוק לעדכון סטטוס מסמך נוכחות קייטנה
+export const useUpdateCampAttendanceDocumentStatus = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ documentId, newStatus }: { documentId: string; newStatus: string }) => 
+      attendanceService.updateCampAttendanceDocumentStatus(documentId, newStatus),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['campAttendanceReports'] });
     },

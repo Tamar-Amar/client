@@ -177,6 +177,7 @@ export const attendanceService = {
     const response = await axios.get(`${API_URL}/camp`, {
       headers: getAuthHeaders()
     });
+    console.log("response.data",response.data);
     return response.data;
   },
   updateCampAttendanceDoc: async (campAttendanceId: string, docType: string, documentId: string) => {
@@ -191,13 +192,24 @@ export const attendanceService = {
     const response = await axios.get(`${API_URL}/camp`, {
       headers: getAuthHeaders()
     });
+    console.log("response.data",response.data);
     return response.data;
   },
 
+  // פונקציה לקבלת דוחות נוכחות קייטנה לפי רכז
   getCampAttendanceReportsByCoordinator: async (coordinatorId: string) => {
     const response = await axios.get(`${API_URL}/camp/coordinator/${coordinatorId}`, {
       headers: getAuthHeaders()
     });
+    return response.data;
+  },
+
+  // פונקציה לקבלת כל דוחות הנוכחות של קייטנות
+  getAllCampAttendanceReports: async () => {
+    const response = await axios.get(`${API_URL}/camp`, {
+      headers: getAuthHeaders()
+    });
+    console.log("response.data",response.data);
     return response.data;
   },
 
@@ -278,6 +290,17 @@ export const attendanceService = {
 
   deletePersonalAttendance: async (id: string) => {
     const response = await axios.delete(`${API_URL}/personal/${id}`, {
+      headers: getAuthHeaders()
+    });
+    return response.data;
+  },
+
+  // פונקציה לעדכון סטטוס מסמך נוכחות קייטנה
+  updateCampAttendanceDocumentStatus: async (documentId: string, newStatus: string) => {
+    const response = await axios.patch(`${API_URL}/camp/document-status`, {
+      documentId,
+      newStatus
+    }, {
       headers: getAuthHeaders()
     });
     return response.data;

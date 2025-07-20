@@ -3,6 +3,7 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
   Tooltip, IconButton, Typography, TextField, Box, Stack, Chip, MenuItem, TablePagination, Button, Checkbox,
 } from '@mui/material';
+import { Link } from 'react-router-dom';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import WarningIcon from '@mui/icons-material/Warning';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -18,6 +19,8 @@ import ConfirmationDialog from '../../components/other/ConfirmationDialog';
 import { useFetchAllWorkersAfterNoon } from '../../queries/workerAfterNoonQueries';
 import { WorkerAfterNoon, Class as ClassType } from '../../types';
 import UploadAttendanceDialog from '../../components/workers/UploadAttendanceDialog';
+import { useAllCampAttendanceReports, useUpdateCampAttendanceDocumentStatus } from '../../queries/useCampAttendance';
+import { useFetchAllUsers } from '../../queries/useUsers';
 
 interface AttendanceDocument {
   _id: string;
@@ -96,11 +99,7 @@ const WorkerAttendancePage: React.FC = () => {
   });
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedWorker, setSelectedWorker] = useState<WorkerAfterNoon | null>(null);
-  const [selectedClass, setSelectedClass] = useState<ClassType | null>(null);
-  const [selectedMonth, setSelectedMonth] = useState<Date | null>(null);
-  const [studentAttendanceFile, setStudentAttendanceFile] = useState<File | null>(null);
-  const [workerAttendanceFile, setWorkerAttendanceFile] = useState<File | null>(null);
-  const [controlFile, setControlFile] = useState<File | null>(null);
+
 
   const grouped: { [month: string]: { [symbol: string]: AttendanceRecord[] } } = {};
   attendanceData.forEach((record: AttendanceRecord) => {
@@ -251,12 +250,7 @@ const WorkerAttendancePage: React.FC = () => {
 
   const handleCloseUploadDialog = () => {
     setUploadDialogOpen(false);
-    setSelectedWorker(null);
-    setSelectedClass(null);
-    setSelectedMonth(null);
-    setStudentAttendanceFile(null);
-    setWorkerAttendanceFile(null);
-    setControlFile(null);
+
   };
 
 
@@ -282,9 +276,9 @@ const WorkerAttendancePage: React.FC = () => {
 
       <Stack spacing={2} direction="row" sx={{ mb: 2 }} justifyContent="space-between">
         <Stack spacing={2} direction="row">
-          <TextField
-            label="חיפוש לפי סמל"
-            variant="outlined"
+                      <TextField
+              label="חיפוש לפי סמל"
+              variant="outlined"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             size="small"
@@ -471,3 +465,391 @@ const WorkerAttendancePage: React.FC = () => {
 };
 
 export default WorkerAttendancePage;
+
+// דף חדש לדוחות נוכחות קייטנת קיץ
+export const CampAttendancePage: React.FC = () => {
+  const { data: allUsers = [] } = useFetchAllUsers();
+  const { data: campAttendanceData = [] } = useAllCampAttendanceReports();
+  console.log("campAttendanceData",campAttendanceData);
+  console.log("First record:", campAttendanceData[0]);
+  console.log("First record workerAttendanceDoc:", campAttendanceData[0]?.workerAttendanceDoc);
+  const { data: workerClasses = [] } = useFetchClasses();
+  const { data: allWorkers = [] } = useFetchAllWorkersAfterNoon();
+  const { mutate: updateDocumentStatus, isPending: isUpdatingStatus } = useUpdateCampAttendanceDocumentStatus();
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(0);
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [confirmationDialog, setConfirmationDialog] = useState({
+    isOpen: false,
+    title: '',
+    content: '',
+    onConfirm: () => {},
+  });
+
+  const ROWS_PER_PAGE = 15;
+
+  // פונקציה לקבלת סטטוס מסמך
+  const getDocumentStatus = (doc: any) => {
+    if (!doc) return { text: 'חסר', color: 'error' as const, icon: <WarningIcon fontSize="small" /> };
+    
+    switch (doc.status) {
+      case 'PENDING':
+        return { text: 'ממתין', color: 'warning' as const, icon: <HourglassEmptyIcon fontSize="small" /> };
+      case 'REJECTED':
+        return { text: 'נדחה', color: 'error' as const, icon: <CancelIcon fontSize="small" /> };
+      case 'APPROVED':
+        return { text: 'מאושר', color: 'success' as const, icon: <CheckCircleIcon fontSize="small" /> };
+      default:
+        return { text: 'לא ידוע', color: 'default' as const, icon: <WarningIcon fontSize="small" /> };
+    }
+  };
+
+  // פונקציה לקבלת שם המוביל או הרכז
+  const getLeaderOrCoordinatorName = (record: any) => {
+    if (record.classId?.type === 'גן') {
+      // לגן - שם המוביל (לחיץ)
+      return record.leaderId ? 
+        `${record.leaderId.firstName || ''} ${record.leaderId.lastName || ''} (${record.leaderId.id || ''})` : 
+        'לא נמצא';
+    } else {
+      // לכיתה - שם הרכז (לא לחיץ, בלי סוגריים)
+      return record.coordinatorId ? 
+        `${record.coordinatorId.firstName || ''} ${record.coordinatorId.lastName || ''}` : 
+        'לא נמצא';
+    }
+  };
+
+  // פונקציה לבדיקה אם זה מוביל (לחיץ) או רכז (לא לחיץ)
+  const isLeader = (record: any) => {
+    return record.classId?.type === 'גן';
+  };
+
+  // פונקציה לקבלת סמל המסגרת
+  const getClassSymbol = (record: any) => {
+    if (record.classId) {
+      return `${record.classId.uniqueSymbol || ''} ${record.classId.name || ''}`;
+    }
+    return 'לא נמצא';
+  };
+
+  // פונקציה לבדיקה אם יש מסמכים
+  const hasAnyDocuments = (record: any) => {
+    return record.workerAttendanceDoc || record.studentAttendanceDoc || 
+           (record.controlDocs && record.controlDocs.length > 0);
+  };
+
+  // פונקציה לעדכון סטטוס מסמך
+  const handleUpdateDocumentStatus = async (documentId: string, newStatus: string) => {
+    try {
+      updateDocumentStatus({ documentId, newStatus });
+    } catch (error) {
+      console.error('שגיאה בעדכון סטטוס:', error);
+    }
+  };
+
+  // סינון הנתונים
+  const filteredData = useMemo(() => {
+    return campAttendanceData
+      .filter((record: any) => record.projectCode === 4) // רק קייטנת קיץ 2025
+      .filter((record: any) => {
+        const classSymbol = getClassSymbol(record);
+        return classSymbol.toLowerCase().includes(searchTerm.toLowerCase());
+      });
+  }, [campAttendanceData, searchTerm]);
+
+  // Pagination
+  const paginatedData = useMemo(() => {
+    return filteredData.slice(page * ROWS_PER_PAGE, page * ROWS_PER_PAGE + ROWS_PER_PAGE);
+  }, [filteredData, page]);
+
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleSelectRow = (rowKey: string) => {
+    const newSelected = new Set(selectedRows);
+    if (newSelected.has(rowKey)) {
+      newSelected.delete(rowKey);
+    } else {
+      newSelected.add(rowKey);
+    }
+    setSelectedRows(newSelected);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedRows.size === paginatedData.length) {
+      setSelectedRows(new Set());
+    } else {
+      const allRowKeys = paginatedData.map((record: any) => record._id);
+      setSelectedRows(new Set(allRowKeys));
+    }
+  };
+
+  return (
+    <Box sx={{ p: 10 }}>
+      <ConfirmationDialog
+        open={confirmationDialog.isOpen}
+        onClose={() => setConfirmationDialog({ ...confirmationDialog, isOpen: false })}
+        onConfirm={confirmationDialog.onConfirm}
+        title={confirmationDialog.title}
+        contentText={confirmationDialog.content}
+      />
+
+      <Stack spacing={2} direction="row" sx={{ mb: 2 }} justifyContent="space-between">
+        <Stack spacing={2} direction="row">
+          <TextField
+            label="חיפוש לפי סמל"
+            variant="outlined"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            size="small"
+          />
+        </Stack>
+        
+        <Stack direction="row" spacing={2} alignItems="center">
+          <Typography variant="body2" color="text.secondary">
+            נבחרו: {selectedRows.size} שורות
+          </Typography>
+        </Stack>
+      </Stack>
+
+      <TableContainer component={Paper} sx={{ maxHeight: 600, minHeight: 600, overflowY: 'auto' }}>
+        <Table stickyHeader size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell padding="checkbox">
+                <Checkbox
+                  indeterminate={selectedRows.size > 0 && selectedRows.size < paginatedData.length}
+                  checked={selectedRows.size > 0 && selectedRows.size === paginatedData.length}
+                  onChange={handleSelectAll}
+                />
+              </TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>סמל מסגרת</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>מוביל/רכז</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>חודש</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>נוכחות עובדים</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>נוכחות תלמידים</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>דוחות בקרה</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {paginatedData.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
+                  <Typography color="text.secondary">
+                    לא נמצאו דוחות נוכחות קייטנה
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            ) : (
+              paginatedData.map((record: any) => {
+                const hasDocuments = hasAnyDocuments(record);
+                const classSymbol = getClassSymbol(record);
+                const leaderOrCoordinatorName = getLeaderOrCoordinatorName(record);
+                const month = new Date(record.month + '-01').toLocaleString('he-IL', { year: 'numeric', month: 'long' });
+                const isSelected = selectedRows.has(record._id);
+                
+                return (
+                  <TableRow 
+                    key={record._id} 
+                    selected={isSelected}
+                    sx={{ backgroundColor: !hasDocuments ? 'grey.100' : 'inherit' }}
+                  >
+                    <TableCell padding="checkbox">
+                      <Checkbox
+                        checked={isSelected}
+                        onChange={() => handleSelectRow(record._id)}
+                      />
+                    </TableCell>
+                    <TableCell>{classSymbol}</TableCell>
+                    <TableCell>
+                      {isLeader(record) ? (
+                        <Link 
+                          to={`/worker/${record.leaderId._id}`}
+                          style={{ 
+                            textDecoration: 'none', 
+                            color: 'inherit',
+                            fontWeight: 'bold'
+                          }}
+                        >
+                          {leaderOrCoordinatorName}
+                        </Link>
+                      ) : (
+                        <Typography>{leaderOrCoordinatorName}</Typography>
+                      )}
+                    </TableCell>
+                    <TableCell>{month}</TableCell>
+                    <TableCell>
+                      {record.workerAttendanceDoc ? (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Tooltip title="צפייה במסמך">
+                            <IconButton 
+                              size="small"
+                              onClick={() => window.open(record.workerAttendanceDoc.url, '_blank')}
+                            >
+                              <VisibilityIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          {record.workerAttendanceDoc.status === 'PENDING' && (
+                            <>
+                              <Tooltip title="אשר מסמך">
+                                <IconButton 
+                                  size="small" 
+                                  color="success"
+                                  onClick={() => handleUpdateDocumentStatus(record.workerAttendanceDoc._id, 'APPROVED')}
+                                  disabled={isUpdatingStatus}
+                                >
+                                  <CheckIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="דחה מסמך">
+                                <IconButton 
+                                  size="small" 
+                                  color="error"
+                                  onClick={() => handleUpdateDocumentStatus(record.workerAttendanceDoc._id, 'REJECTED')}
+                                  disabled={isUpdatingStatus}
+                                >
+                                  <CancelIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </>
+                          )}
+                          {record.workerAttendanceDoc.status !== 'PENDING' && (
+                            <Chip 
+                              icon={getDocumentStatus(record.workerAttendanceDoc).icon}
+                              label={getDocumentStatus(record.workerAttendanceDoc).text} 
+                              color={getDocumentStatus(record.workerAttendanceDoc).color}
+                              size="small"
+                              variant="outlined"
+                            />
+                          )}
+                        </Box>
+                      ) : (
+                        <Typography variant="caption" color="error.main">חסר</Typography>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {record.studentAttendanceDoc ? (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Tooltip title="צפייה במסמך">
+                            <IconButton 
+                              size="small"
+                              onClick={() => window.open(record.studentAttendanceDoc.url, '_blank')}
+                            >
+                              <VisibilityIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          {record.studentAttendanceDoc.status === 'PENDING' && (
+                            <>
+                              <Tooltip title="אשר מסמך">
+                                <IconButton 
+                                  size="small" 
+                                  color="success"
+                                  onClick={() => handleUpdateDocumentStatus(record.studentAttendanceDoc._id, 'APPROVED')}
+                                  disabled={isUpdatingStatus}
+                                >
+                                  <CheckIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="דחה מסמך">
+                                <IconButton 
+                                  size="small" 
+                                  color="error"
+                                  onClick={() => handleUpdateDocumentStatus(record.studentAttendanceDoc._id, 'REJECTED')}
+                                  disabled={isUpdatingStatus}
+                                >
+                                  <CancelIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </>
+                          )}
+                          {record.studentAttendanceDoc.status !== 'PENDING' && (
+                            <Chip 
+                              icon={getDocumentStatus(record.studentAttendanceDoc).icon}
+                              label={getDocumentStatus(record.studentAttendanceDoc).text} 
+                              color={getDocumentStatus(record.studentAttendanceDoc).color}
+                              size="small"
+                              variant="outlined"
+                            />
+                          )}
+                        </Box>
+                      ) : (
+                        <Typography variant="caption" color="error.main">חסר</Typography>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {record.controlDocs && record.controlDocs.length > 0 ? (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                          {record.controlDocs.map((doc: any, index: number) => (
+                            <Box key={doc._id} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Typography variant="caption">דוח {index + 1}:</Typography>
+                              <Tooltip title="צפייה במסמך">
+                                <IconButton 
+                                  size="small"
+                                  onClick={() => window.open(doc.url, '_blank')}
+                                >
+                                  <VisibilityIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              {doc.status === 'PENDING' && (
+                                <>
+                                  <Tooltip title="אשר מסמך">
+                                    <IconButton 
+                                      size="small" 
+                                      color="success"
+                                      onClick={() => handleUpdateDocumentStatus(doc._id, 'APPROVED')}
+                                      disabled={isUpdatingStatus}
+                                    >
+                                      <CheckIcon fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
+                                  <Tooltip title="דחה מסמך">
+                                    <IconButton 
+                                      size="small" 
+                                      color="error"
+                                      onClick={() => handleUpdateDocumentStatus(doc._id, 'REJECTED')}
+                                      disabled={isUpdatingStatus}
+                                    >
+                                      <CancelIcon fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
+                                </>
+                              )}
+                              {doc.status !== 'PENDING' && (
+                                <Chip 
+                                  icon={getDocumentStatus(doc).icon}
+                                  label={getDocumentStatus(doc).text} 
+                                  color={getDocumentStatus(doc).color}
+                                  size="small"
+                                  variant="outlined"
+                                />
+                              )}
+                            </Box>
+                          ))}
+                        </Box>
+                      ) : (
+                        <Typography variant="caption" color="error.main">חסר</Typography>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+      
+      <TablePagination
+        component="div"
+        count={filteredData.length}
+        page={page}
+        onPageChange={handleChangePage}
+        rowsPerPage={ROWS_PER_PAGE}
+        rowsPerPageOptions={[ROWS_PER_PAGE]}
+        labelRowsPerPage="שורות בעמוד:"
+        labelDisplayedRows={({ from, to, count }) => `${from}-${to} מתוך ${count}`}
+      />
+    </Box>
+  );
+};

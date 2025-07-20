@@ -22,6 +22,7 @@ import WorkersPage from '../pages/manager/WorkersPage';
 import WorkerDocumentsApprovalPage from '../pages/manager/ManagerOneWorkerAfterNoonPage';
 import WorkersDocumentsEmailPage from '../pages/manager/WorkersEmailPage';
 import WorkerAttendancePage from '../pages/manager/WorkerAllAttendancesPage';
+import { CampAttendancePage } from '../pages/manager/WorkerAllAttendancesPage';
 import WorkersAfterNoonEmailPage from '../pages/manager/WorkersEmailPage';
 import WorkersAfterNoonNotificationsPage from '../pages/manager/WorkersAfterNoonNotificationsPage';
 import MatsevetPage from '../pages/MatsevetPage';
@@ -60,6 +61,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/workers/update" element={<WorkersUpdatePage />} />
         <Route path="/workers-email" element={<WorkersDocumentsEmailPage />} />
         <Route path="/worker-attendance" element={<WorkerAttendancePage />} />
+        <Route path="/camp-attendance" element={<CampAttendancePage />} />
         <Route path="/workers-after-noon-email" element={<WorkersAfterNoonEmailPage />} />
         <Route path="/workers-after-noon-notifications" element={<WorkersAfterNoonNotificationsPage />} />
         <Route path="/classes" element={<ClassesPage />} />
@@ -98,6 +100,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/workers" element={<WorkersPage />} />
         <Route path="/workers/update" element={<WorkersUpdatePage />} />
         <Route path="/worker-attendance" element={<WorkerAttendancePage />} />
+        <Route path="/camp-attendance" element={<CampAttendancePage />} />
         <Route path="/users" element={<UsersManagementPage />} />
       </Route>
 
