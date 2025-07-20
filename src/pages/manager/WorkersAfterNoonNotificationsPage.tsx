@@ -27,14 +27,20 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Tabs,
+  Tab,
 } from "@mui/material";
 import { useFetchAllWorkersAfterNoon } from "../../queries/workerAfterNoonQueries";
 import { useFetchAllDocuments } from "../../queries/useDocuments";
 import { useFetchClasses } from "../../queries/classQueries";
+import { useFetchAllUsers } from "../../queries/useUsers";
 import { useNavigate } from "react-router-dom";
 import { Class } from '../../types';
 import { WorkerAfterNoon } from '../../types';
 import { DocumentStatus } from '../../types/Document';
+import * as XLSX from 'xlsx';
+import { useQuery } from '@tanstack/react-query';
+import { attendanceService } from '../../services/attendanceService';
 
 // אייקונים
 import PersonIcon from '@mui/icons-material/Person';
@@ -45,6 +51,9 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import InfoIcon from '@mui/icons-material/Info';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import DownloadIcon from '@mui/icons-material/Download';
+import TableChartIcon from '@mui/icons-material/TableChart';
+import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 
 const REQUIRED_DOCUMENTS = ["אישור משטרה", "תעודת השכלה", "חוזה", "תעודת זהות"];
 
@@ -55,6 +64,271 @@ const PROJECT_OPTIONS = [
   { value: '3', label: 'קייטנת פסח 2025' },
   { value: '4', label: 'קייטנת קיץ 2025' },
 ];
+
+// קומפוננטה חדשה להורדות דוחות
+interface ReportsDownloadProps {
+  workers: WorkerAfterNoon[];
+  documents: any[];
+  classes: Class[];
+  selectedProject: string;
+}
+
+const ReportsDownload: React.FC<ReportsDownloadProps> = ({ workers, documents, classes, selectedProject }) => {
+  // קבלת נתוני נוכחות קייטנה
+  const { data: campAttendanceData = [] } = useQuery({
+    queryKey: ['campAttendanceData'],
+    queryFn: () => attendanceService.getCampAttendanceReports(),
+    enabled: true
+  });
+
+  // קבלת נתוני משתמשים (לרכזים)
+  const { data: allUsers = [] } = useFetchAllUsers();
+
+  const filteredWorkers = useMemo(() => {
+    if (!selectedProject) return workers;
+    return workers.filter(worker => 
+      worker.projectCodes && worker.projectCodes.includes(parseInt(selectedProject))
+    );
+  }, [workers, selectedProject]);
+
+  const filteredClasses = useMemo(() => {
+    if (!selectedProject) return classes;
+    return classes.filter((classItem: Class) => 
+      classItem.projectCodes && classItem.projectCodes.includes(parseInt(selectedProject))
+    );
+  }, [classes, selectedProject]);
+
+  const getRequiredDocumentsForWorker = (worker: WorkerAfterNoon) => {
+    return REQUIRED_DOCUMENTS;
+  };
+
+  const handleDownloadClassesReport = () => {
+    if (!selectedProject) {
+      alert('נא לבחור פרויקט');
+      return;
+    }
+
+    const projectName = PROJECT_OPTIONS.find(p => p.value === selectedProject)?.label || '';
+    
+    const rows = filteredClasses.map(classItem => {
+      // מצא עובדים לכיתה זו
+      const classWorkers = filteredWorkers.filter(worker => 
+        classItem.workers?.some(w => w.workerId === worker._id)
+      );
+      
+      // מצא רכז לפי קוד מוסד
+      const coordinator = allUsers.find((user: any) => 
+        user.role === 'coordinator' && 
+        user.projectCodes?.some((pc: any) => pc.institutionCode === classItem.institutionCode)
+      );
+
+      // מצא דוח נוכחות קייטנה לכיתה זו
+      const campAttendanceRecord = campAttendanceData.find((record: any) => 
+        record.classId?._id === classItem._id
+      );
+      
+      // יצירת עמודות דינמיות לעובדים - רק שם ותז
+      const workerColumns: any = {};
+      classWorkers.forEach((worker, index) => {
+        workerColumns[`עובד ${index + 1} - שם`] = `${worker.firstName} ${worker.lastName}`;
+        workerColumns[`עובד ${index + 1} - תעודת זהות`] = worker.id;
+        workerColumns[`עובד ${index + 1} - תפקיד`] = worker.roleName;
+      });
+
+      return {
+        'קוד מוסד': classItem.institutionCode,
+        'שם מוסד': classItem.institutionName,
+        'סמל מסגרת': classItem.uniqueSymbol,
+        'שם כיתה': classItem.name,
+        'כתובת': classItem.address,
+        'מגדר': classItem.gender || 'לא מוגדר',
+        'סוג מסגרת': classItem.type || 'לא מוגדר',
+        'רכז': coordinator ? `${coordinator.firstName} ${coordinator.lastName}` : 'לא נמצא',
+        'סהכ עובדים למסגרת': classWorkers.length,
+        'פרויקט': projectName,
+        'דוח נוכחות עובדים': campAttendanceRecord?.workerAttendanceDoc ? '✓' : '✗',
+        'דוח נוכחות תלמידים': campAttendanceRecord?.studentAttendanceDoc ? '✓' : '✗',
+        'דוחות בקרה': campAttendanceRecord?.controlDocs?.length || '0',
+        ...workerColumns
+      };
+    });
+    
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'דוח מסגרות');
+    XLSX.writeFile(wb, `classes_report_${selectedProject}.xlsx`);
+  };
+
+  const handleDownloadDocumentsReport = () => {
+    if (!selectedProject) {
+      alert('נא לבחור פרויקט');
+      return;
+    }
+
+    const rows = filteredWorkers.map(worker => {
+      const requiredDocs = getRequiredDocumentsForWorker(worker);
+      const workerDocs = documents.filter(doc => doc.operatorId === worker._id);
+      const projectName = PROJECT_OPTIONS.find(p => p.value === selectedProject)?.label || '';
+      
+      // מצא כיתה של העובד
+      const workerClass = filteredClasses.find(cls => 
+        cls.workers?.some(w => w.workerId === worker._id)
+      );
+      
+      const getDocStatus = (tag: string) => {
+        const doc = workerDocs.find(d => d.tag === tag);
+        if (!requiredDocs.includes(tag)) return '-----';
+        return doc && doc.url ? '✓' : '✗';
+      };
+
+      // לוגיקה מיוחדת לוותק - רק לרכזים
+      const getVeteranStatus = () => {
+        if (worker.roleName === 'רכז') {
+          const doc = workerDocs.find(d => d.tag === 'אישור וותק');
+          return doc && doc.url ? '✓' : '✗';
+        }
+        return '-----';
+      };
+
+      // לוגיקה מיוחדת לתעודת השכלה - לא נדרש לסייע/סייע משלים/מד״צ
+      const getEducationStatus = () => {
+        const rolesNotRequiringEducation = ['סייע', 'סייע משלים', 'מד״צ'];
+        if (rolesNotRequiringEducation.includes(worker.roleName)) {
+          return '-----';
+        }
+        const doc = workerDocs.find(d => d.tag === 'תעודת השכלה');
+        return doc && doc.url ? '✓' : '✗';
+      };
+
+      // בדיקת נוכחות למובילים
+      const getWorkerAttendanceStatus = () => {
+        if (worker.roleName !== 'מוביל') return '-----';
+        
+        // מצא דוח נוכחות של המוביל הזה
+        const attendanceRecord = campAttendanceData.find((record: any) => 
+          record.leaderId?._id === worker._id && record.workerAttendanceDoc
+        );
+        
+        return attendanceRecord ? '✓' : '✗';
+      };
+
+      const getStudentAttendanceStatus = () => {
+        if (worker.roleName !== 'מוביל') return '-----';
+        
+        // מצא דוח נוכחות של המוביל הזה
+        const attendanceRecord = campAttendanceData.find((record: any) => 
+          record.leaderId?._id === worker._id && record.studentAttendanceDoc
+        );
+        
+        return attendanceRecord ? '✓' : '✗';
+      };
+
+      const getControlReportsCount = () => {
+        if (worker.roleName !== 'מוביל') return '-----';
+        
+        // מצא דוח נוכחות של המוביל הזה
+        const attendanceRecord = campAttendanceData.find((record: any) => 
+          record.leaderId?._id === worker._id
+        );
+        
+        return attendanceRecord?.controlDocs?.length || '0';
+      };
+      
+      return {
+        'תעודת זהות עובד': worker.id,
+        'שם משפחה': worker.lastName,
+        'שם פרטי': worker.firstName,
+        'כתובת מייל': worker.email || '',
+        'תפקיד': worker.roleName,
+        'שם פרויקט': projectName,
+        'קוד מוסד': workerClass?.institutionCode || '',
+        'סמל כיתה': workerClass?.uniqueSymbol || '',
+        'שם מסגרת': workerClass?.name || '',
+        'סטטוס מסמך 101': worker.is101 ? 'כן' : 'לא',
+        'סטטוס תעודת זהות': getDocStatus('תעודת זהות'),
+        'חוזה': getDocStatus('חוזה'),
+        'אישור משטרה': getDocStatus('אישור משטרה'),
+        'תעודת השכלה': getEducationStatus(),
+        'אישור וותק': getVeteranStatus(),
+      };
+    });
+    
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'דוח מסמכים');
+    XLSX.writeFile(wb, `documents_report_${selectedProject}.xlsx`);
+  };
+
+  return (
+    <Card sx={{ mb: 3 }}>
+      <CardContent>
+        <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+          הורדות דוחות
+        </Typography>
+        
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={6}>
+            <Button
+              variant="outlined"
+              fullWidth
+              startIcon={<InsertDriveFileIcon sx={{ color: 'green' }} />}
+              onClick={handleDownloadClassesReport}
+              disabled={!selectedProject}
+              sx={{ 
+                py: 2, 
+                fontWeight: 'bold',
+                borderColor: 'green.main',
+                color: 'green.main',
+                '&:hover': {
+                  borderColor: 'green.dark',
+                  backgroundColor: 'green.50'
+                }
+              }}
+            >
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="subtitle1" fontWeight="bold">
+                  דוח מסגרות
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {selectedProject ? `${filteredClasses.length} מסגרות` : 'בחר פרויקט'}
+                </Typography>
+              </Box>
+            </Button>
+          </Grid>
+          
+          <Grid item xs={12} md={6}>
+            <Button
+              variant="outlined"
+              fullWidth
+              startIcon={<InsertDriveFileIcon sx={{ color: 'green' }} />}
+              onClick={handleDownloadDocumentsReport}
+              disabled={!selectedProject}
+              sx={{ 
+                py: 2, 
+                fontWeight: 'bold',
+                borderColor: 'green.main',
+                color: 'green.main',
+                '&:hover': {
+                  borderColor: 'green.dark',
+                  backgroundColor: 'green.50'
+                }
+              }}
+            >
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="subtitle1" fontWeight="bold">
+                  דוח מסמכים לעובד
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {selectedProject ? `${filteredWorkers.length} עובדים` : 'בחר פרויקט'}
+                </Typography>
+              </Box>
+            </Button>
+          </Grid>
+        </Grid>
+      </CardContent>
+    </Card>
+  );
+};
 
 interface ClassDetailsDialogProps {
   open: boolean;
@@ -303,30 +577,28 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
 
   return (
     <Box sx={{ p: 3, mt:5 }}>
-      {/* סינון לפי פרויקט */}
-      <Box sx={{ mb: 3 }}>
-        <FormControl sx={{ minWidth: 200 }}>
-          <InputLabel>סינון לפי פרויקט</InputLabel>
-          <Select
-            value={selectedProject}
-            onChange={(e) => setSelectedProject(e.target.value)}
-            label="סינון לפי פרויקט"
-          >
-            {PROJECT_OPTIONS.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Box>
-
       {/* התראות חשובות */}
       {importantAlerts.length > 0 && (
         <Box sx={{ mb: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
-            התראות חשובות
-          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h6" fontWeight="bold">
+              התראות חשובות
+            </Typography>
+            <FormControl sx={{ minWidth: 200 }}>
+              <InputLabel>סינון לפי פרויקט</InputLabel>
+              <Select
+                value={selectedProject}
+                onChange={(e) => setSelectedProject(e.target.value)}
+                label="סינון לפי פרויקט"
+              >
+                {PROJECT_OPTIONS.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
           <Grid container spacing={2}>
             {importantAlerts.map((alert, index) => (
               <Grid item xs={12} md={4} key={index}>
@@ -359,6 +631,26 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
               </Grid>
             ))}
           </Grid>
+        </Box>
+      )}
+
+      {/* אם אין התראות, הצג את הסינון בנפרד */}
+      {importantAlerts.length === 0 && (
+        <Box sx={{ mb: 3 }}>
+          <FormControl sx={{ minWidth: 200 }}>
+            <InputLabel>סינון לפי פרויקט</InputLabel>
+            <Select
+              value={selectedProject}
+              onChange={(e) => setSelectedProject(e.target.value)}
+              label="סינון לפי פרויקט"
+            >
+              {PROJECT_OPTIONS.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Box>
       )}
 
@@ -464,6 +756,13 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
         </Grid>
       </Grid>
 
+      {/* הורדות דוחות */}
+      <ReportsDownload 
+        workers={workers} 
+        documents={documents} 
+        classes={classes} 
+        selectedProject={selectedProject} 
+      />
   
       <ClassDetailsDialog 
         open={!!selectedClass} 
