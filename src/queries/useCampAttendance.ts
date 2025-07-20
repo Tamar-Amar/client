@@ -12,6 +12,17 @@ export const useCampAttendanceReports = (coordinatorId: string) => {
   });
 };
 
+// הוק לקבלת דוחות נוכחות של קייטנות לפי כיתה
+export const useCampAttendanceReportsByClass = (classId: string) => {
+  return useQuery({
+    queryKey: ['campAttendanceReportsByClass', classId],
+    queryFn: () => attendanceService.getCampAttendanceReportsByClass(classId),
+    enabled: !!classId,
+    staleTime: 5 * 60 * 1000, // 5 דקות
+    gcTime: 10 * 60 * 1000, // 10 דקות
+  });
+};
+
 // הוק לקבלת דוח נוכחות ספציפי של קייטנה
 export const useCampAttendanceReport = (id: string) => {
   return useQuery({

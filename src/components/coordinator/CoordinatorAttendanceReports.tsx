@@ -104,12 +104,23 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
     // יצירת רשימה של כל הכיתות עם או בלי דוחות
     const allClassesWithReports = allClasses.map((cls: any) => {
       const existingReport = reportsByClassId.get(cls._id);
+      
+      // מציאת המוביל או המדריך של הפרויקט
+      const leader = cls.workers?.find((worker: any) => 
+        worker.workerId?.roleName === 'מוביל' && worker.project === 4
+      );
+      
+      // אם אין מוביל, נחפש מדריך
+      const instructor = !leader ? cls.workers?.find((worker: any) => 
+        worker.workerId?.roleName === 'מדריך' && worker.project === 4
+      ) : null;
+      
+      const responsibleWorker = leader || instructor;
+      
       return existingReport || {
         _id: `no-report-${cls._id}`,
         classId: cls,
-        leaderId: cls.workers?.find((worker: any) => 
-          worker.workerId?.roleName === 'מוביל' && worker.project === 4
-        )?.workerId || null,
+        leaderId: responsibleWorker?.workerId || null,
         workerAttendanceDoc: null,
         studentAttendanceDoc: null,
         controlDocs: [],
@@ -151,17 +162,25 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
   const uniqueClasses = useMemo(() => {
     if (!allClasses) return [];
     return allClasses.map((cls: any) => {
-      // מציאת המוביל של הפרויקט לפי roleName של העובד
+      // מציאת המוביל או המדריך של הפרויקט
       const leader = cls.workers?.find((worker: any) => 
         worker.workerId?.roleName === 'מוביל' && worker.project === 4
       );
+      
+      // אם אין מוביל, נחפש מדריך
+      const instructor = !leader ? cls.workers?.find((worker: any) => 
+        worker.workerId?.roleName === 'מד״צ' && worker.project === 4
+      ) : null;
+      
+      const responsibleWorker = leader || instructor;
+      const roleName = leader ? 'מוביל' : (instructor ? 'מד״צ' : 'לא מוגדר');
       
       return {
         id: cls._id,
         symbol: cls.uniqueSymbol,
         name: cls.name,
         institutionCode: cls.institutionCode,
-        leaderName: leader ? `${leader.workerId?.firstName} ${leader.workerId?.lastName}` : 'לא מוגדר מוביל'
+        leaderName: responsibleWorker ? `${responsibleWorker.workerId?.firstName} ${responsibleWorker.workerId?.lastName} (${roleName})` : 'לא מוגדר מוביל/מדריך'
       };
     });
   }, [allClasses]);
@@ -242,13 +261,20 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
       return;
     }
 
-    // מציאת המוביל מתוך העובדים של הכיתה לפי roleName
+    // מציאת המוביל או המדריך מתוך העובדים של הכיתה
     const leader = selectedClassData.workers?.find((worker: any) => 
       worker.workerId?.roleName === 'מוביל' && worker.project === 4
     );
 
-    if (!leader) {
-      setUploadError('למסגרת זו לא מוגדר מוביל לפרויקט קייטנת קיץ, על מנת להעלות נוכחות יש להגדיר מוביל');
+    // אם אין מוביל, נחפש מדריך
+    const instructor = !leader ? selectedClassData.workers?.find((worker: any) => 
+      worker.workerId?.roleName === 'מד״צ' && worker.project === 4
+    ) : null;
+
+    const responsibleWorker = leader || instructor;
+
+    if (!responsibleWorker) {
+      setUploadError('למסגרת זו לא מוגדר מוביל או מדריך לפרויקט קייטנת קיץ, על מנת להעלות נוכחות יש להגדיר מוביל או מדריך');
       return;
     }
 
@@ -264,7 +290,7 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
         projectCode: 4, // קייטנת קיץ
         classId: selectedClass,
         coordinatorId,
-        leaderId: leader.workerId._id,
+        leaderId: responsibleWorker.workerId._id,
         month: currentMonth,
         workerFile: workerFile || undefined,
         studentFile: studentFile || undefined,
@@ -438,10 +464,10 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
               <TextField
                 fullWidth
                 size="small"
-                label="שם מוביל"
+                label="שם מוביל/מדריך"
                 value={filterLeaderName}
                 onChange={(e) => setFilterLeaderName(e.target.value)}
-                placeholder="הקלד שם מוביל..."
+                placeholder="הקלד שם מוביל או מדריך..."
               />
             </Grid>
             <Grid item xs={12} md={3}>
@@ -473,7 +499,7 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
               <TableHead>
                 <TableRow>
                   <TableCell sx={{ py: 1 }}>סמל מסגרת</TableCell>
-                  <TableCell sx={{ py: 1 }}>שם המוביל</TableCell>
+                  <TableCell sx={{ py: 1 }}>שם המוביל/מדריך</TableCell>
                   <TableCell sx={{ py: 1 }}>דוח עובדים</TableCell>
                   <TableCell sx={{ py: 1 }}>דוח תלמידים</TableCell>
                   <TableCell sx={{ py: 1 }}>דוחות בקרה</TableCell>
@@ -497,7 +523,7 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
                       )}
                     </TableCell>
                     <TableCell sx={{ py: 1 }}>
-                      {rec.leaderId ? `${rec.leaderId.firstName} ${rec.leaderId.lastName}` : 'לא מוגדר מוביל'}
+                      {rec.leaderId ? `${rec.leaderId.firstName} ${rec.leaderId.lastName}` : 'לא מוגדר מוביל/מדריך'}
                     </TableCell>
                     <TableCell sx={{ py: 1 }}>
                       {rec.hasNoReport ? (
@@ -696,7 +722,7 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
                 מסגרת: {selectedRecord.classId?.uniqueSymbol}
               </Typography>
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                מוביל: {selectedRecord.leaderId?.firstName} {selectedRecord.leaderId?.lastName}
+                מוביל/מדריך: {selectedRecord.leaderId?.firstName} {selectedRecord.leaderId?.lastName}
               </Typography>
               
               <input
@@ -797,7 +823,7 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
               <TextField
                 fullWidth
                 size="small"
-                label="מוביל"
+                label="מוביל/מדריך"
                 value={selectedClass ? (() => {
                   const cls = uniqueClasses.find((c: any) => c.id === selectedClass);
                   return cls ? `${cls.leaderName}` : '';

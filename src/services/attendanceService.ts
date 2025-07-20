@@ -201,6 +201,13 @@ export const attendanceService = {
     return response.data;
   },
 
+  getCampAttendanceReportsByClass: async (classId: string) => {
+    const response = await axios.get(`${API_URL}/camp/class/${classId}`, {
+      headers: getAuthHeaders()
+    });
+    return response.data;
+  },
+
   getCampAttendanceReport: async (id: string) => {
     const response = await axios.get(`${API_URL}/camp/${id}`, {
       headers: getAuthHeaders()

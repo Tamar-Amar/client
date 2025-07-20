@@ -2,10 +2,20 @@ import { WorkerAfterNoon } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL+ '/api/worker-after-noon' || "https://server-manage.onrender.com" + '/api/worker-after-noon';
 
+// פונקציה לקבלת headers עם token
+const getHeaders = () => {
+  const token = localStorage.getItem('token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  };
+};
 
 export const fetchWorkers = async (): Promise<WorkerAfterNoon[]> => {
   try {
-    const response = await fetch(`${API_BASE_URL}`);
+    const response = await fetch(`${API_BASE_URL}`, {
+      headers: getHeaders()
+    });
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }
@@ -17,7 +27,9 @@ export const fetchWorkers = async (): Promise<WorkerAfterNoon[]> => {
 };
 
 export const fetchWorkerById = async (id: string): Promise<WorkerAfterNoon> => {
-  const response = await fetch(`${API_BASE_URL}/${id}`);
+  const response = await fetch(`${API_BASE_URL}/${id}`, {
+    headers: getHeaders()
+  });
   if (!response.ok) {
     throw new Error('Network response was not ok');
   }
@@ -27,9 +39,7 @@ export const fetchWorkerById = async (id: string): Promise<WorkerAfterNoon> => {
 export const createWorker = async (workerData: Omit<WorkerAfterNoon, '_id'>): Promise<WorkerAfterNoon> => {
   const response = await fetch(`${API_BASE_URL}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getHeaders(),
     body: JSON.stringify(workerData),
   });
   if (!response.ok) {
@@ -41,9 +51,7 @@ export const createWorker = async (workerData: Omit<WorkerAfterNoon, '_id'>): Pr
 export const updateWorker = async (id: string, data: Partial<WorkerAfterNoon>): Promise<WorkerAfterNoon > => {
   const response = await fetch(`${API_BASE_URL}/${id}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getHeaders(),
     body: JSON.stringify(data),
   });
   if (!response.ok) {
@@ -55,6 +63,7 @@ export const updateWorker = async (id: string, data: Partial<WorkerAfterNoon>): 
 export const deleteWorker = async (id: string): Promise<void> => {
   const response = await fetch(`${API_BASE_URL}/${id}`, {
     method: 'DELETE',
+    headers: getHeaders()
   });
   if (!response.ok) {
     throw new Error('Network response was not ok');
@@ -64,6 +73,7 @@ export const deleteWorker = async (id: string): Promise<void> => {
 export const deleteAllWorkers = async (): Promise<void> => {
   const response = await fetch(`${API_BASE_URL}`, {
     method: 'DELETE',
+    headers: getHeaders()
   });
   if (!response.ok) {
     throw new Error('Network response was not ok');
@@ -73,9 +83,7 @@ export const deleteAllWorkers = async (): Promise<void> => {
 export const deleteMultipleWorkers = async (workerIds: string[]): Promise<void> => {
   const response = await fetch(`${API_BASE_URL}/delete-multiple`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getHeaders(),
     body: JSON.stringify({ workerIds }),
   });
   if (!response.ok) {
@@ -86,9 +94,7 @@ export const deleteMultipleWorkers = async (workerIds: string[]): Promise<void> 
 export const createMultipleWorkers = async (workersData: Omit<WorkerAfterNoon, '_id'>[]): Promise<WorkerAfterNoon[]> => {
   const response = await fetch(`${API_BASE_URL}/multiple`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getHeaders(),
     body: JSON.stringify({ workers: workersData }),
   });
   if (!response.ok) {

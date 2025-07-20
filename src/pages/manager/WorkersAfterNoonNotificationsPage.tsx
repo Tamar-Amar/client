@@ -122,6 +122,12 @@ const ReportsDownload: React.FC<ReportsDownloadProps> = ({ workers, documents, c
         user.projectCodes?.some((pc: any) => pc.institutionCode === classItem.institutionCode)
       );
 
+      // מצא חשב שכר לפי קוד מוסד
+      const salaryAccount = allUsers.find((user: any) => 
+        user.role === 'accountant' && 
+        user.accountantInstitutionCodes?.includes(classItem.institutionCode)
+      );
+
       // מצא דוח נוכחות קייטנה לכיתה זו
       const campAttendanceRecord = campAttendanceData.find((record: any) => 
         record.classId?._id === classItem._id
@@ -144,6 +150,7 @@ const ReportsDownload: React.FC<ReportsDownloadProps> = ({ workers, documents, c
         'מגדר': classItem.gender || 'לא מוגדר',
         'סוג מסגרת': classItem.type || 'לא מוגדר',
         'רכז': coordinator ? `${coordinator.firstName} ${coordinator.lastName}` : 'לא נמצא',
+        'חשב שכר': salaryAccount ? `${salaryAccount.firstName} ${salaryAccount.lastName}` : 'לא נמצא',
         'סהכ עובדים למסגרת': classWorkers.length,
         'פרויקט': projectName,
         'דוח נוכחות עובדים': campAttendanceRecord?.workerAttendanceDoc ? '✓' : '✗',
@@ -174,6 +181,12 @@ const ReportsDownload: React.FC<ReportsDownloadProps> = ({ workers, documents, c
       const workerClass = filteredClasses.find(cls => 
         cls.workers?.some(w => w.workerId === worker._id)
       );
+      
+      // מצא חשב שכר לפי קוד מוסד של הכיתה
+      const salaryAccount = workerClass ? allUsers.find((user: any) => 
+        user.role === 'accountant' && 
+        user.accountantInstitutionCodes?.includes(workerClass.institutionCode)
+      ) : null;
       
       const getDocStatus = (tag: string) => {
         const doc = workerDocs.find(d => d.tag === tag);
@@ -250,6 +263,7 @@ const ReportsDownload: React.FC<ReportsDownloadProps> = ({ workers, documents, c
         'אישור משטרה': getDocStatus('אישור משטרה'),
         'תעודת השכלה': getEducationStatus(),
         'אישור וותק': getVeteranStatus(),
+        'חשב שכר': salaryAccount ? `${salaryAccount.firstName} ${salaryAccount.lastName}` : 'לא נמצא',
       };
     });
     
@@ -263,8 +277,22 @@ const ReportsDownload: React.FC<ReportsDownloadProps> = ({ workers, documents, c
     <Card sx={{ mb: 3 }}>
       <CardContent>
         <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
-          הורדות דוחות
+          הורדות דוחות Excel
         </Typography>
+        
+        {!selectedProject && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            <AlertTitle>בחירת פרויקט נדרשת</AlertTitle>
+            יש לבחור פרויקט מהרשימה למעלה כדי להוריד דוחות Excel
+          </Alert>
+        )}
+        
+        {selectedProject && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            <AlertTitle>פרויקט נבחר: {PROJECT_OPTIONS.find(p => p.value === selectedProject)?.label}</AlertTitle>
+            ניתן להוריד דוחות Excel עבור הפרויקט הנבחר
+          </Alert>
+        )}
         
         <Grid container spacing={2}>
           <Grid item xs={12} md={6}>
@@ -290,7 +318,7 @@ const ReportsDownload: React.FC<ReportsDownloadProps> = ({ workers, documents, c
                   דוח מסגרות
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  {selectedProject ? `${filteredClasses.length} מסגרות` : 'בחר פרויקט'}
+                  {selectedProject ? `${filteredClasses.length} מסגרות` : 'בחר פרויקט תחילה'}
                 </Typography>
               </Box>
             </Button>
@@ -319,7 +347,7 @@ const ReportsDownload: React.FC<ReportsDownloadProps> = ({ workers, documents, c
                   דוח מסמכים לעובד
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  {selectedProject ? `${filteredWorkers.length} עובדים` : 'בחר פרויקט'}
+                  {selectedProject ? `${filteredWorkers.length} עובדים` : 'בחר פרויקט תחילה'}
                 </Typography>
               </Box>
             </Button>
@@ -577,28 +605,58 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
 
   return (
     <Box sx={{ p: 3, mt:5 }}>
-      {/* התראות חשובות */}
-      {importantAlerts.length > 0 && (
-        <Box sx={{ mb: 3 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6" fontWeight="bold">
-              התראות חשובות
-            </Typography>
-            <FormControl sx={{ minWidth: 200 }}>
-              <InputLabel>סינון לפי פרויקט</InputLabel>
+      {/* סינון לפי פרויקט - מובלט יותר */}
+      <Card sx={{ 
+        mb: 3, 
+        bgcolor: 'primary.50', 
+        border: '2px solid', 
+        borderColor: 'primary.main',
+        boxShadow: '0 4px 20px rgba(25, 118, 210, 0.15)',
+        '&:hover': {
+          boxShadow: '0 6px 25px rgba(25, 118, 210, 0.25)',
+          transform: 'translateY(-2px)',
+          transition: 'all 0.3s ease'
+        }
+      }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
+            <Box>
+              <Typography variant="h6" fontWeight="bold" color="primary.main" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <TableChartIcon />
+                בחירת פרויקט להורדת דוחות
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                בחר פרויקט מהרשימה כדי להוריד דוחות Excel מפורטים
+              </Typography>
+            </Box>
+            <FormControl sx={{ minWidth: 300 }}>
+              <InputLabel sx={{ fontWeight: 'bold' }}>בחר פרויקט</InputLabel>
               <Select
                 value={selectedProject}
                 onChange={(e) => setSelectedProject(e.target.value)}
-                label="סינון לפי פרויקט"
+                label="בחר פרויקט"
+                sx={{ 
+                  fontWeight: 'bold',
+                  bgcolor: 'white',
+                  '& .MuiSelect-select': {
+                    fontWeight: 'bold'
+                  }
+                }}
               >
                 {PROJECT_OPTIONS.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
+                  <MenuItem key={option.value} value={option.value} sx={{ fontWeight: 'bold' }}>
                     {option.label}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
           </Box>
+        </CardContent>
+      </Card>
+
+      {/* התראות חשובות */}
+      {importantAlerts.length > 0 && (
+        <Box sx={{ mb: 3 }}>
           <Grid container spacing={2}>
             {importantAlerts.map((alert, index) => (
               <Grid item xs={12} md={4} key={index}>
@@ -631,26 +689,6 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
               </Grid>
             ))}
           </Grid>
-        </Box>
-      )}
-
-      {/* אם אין התראות, הצג את הסינון בנפרד */}
-      {importantAlerts.length === 0 && (
-        <Box sx={{ mb: 3 }}>
-          <FormControl sx={{ minWidth: 200 }}>
-            <InputLabel>סינון לפי פרויקט</InputLabel>
-            <Select
-              value={selectedProject}
-              onChange={(e) => setSelectedProject(e.target.value)}
-              label="סינון לפי פרויקט"
-            >
-              {PROJECT_OPTIONS.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
         </Box>
       )}
 
