@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Container,
   Box,
@@ -101,6 +101,7 @@ const getCurrentSymbolsForWorker = (workerId: string, classes: Class[]) =>
   classes.filter(c => (c.workers || []).some(w => w.workerId === workerId)).map(c => c.uniqueSymbol);
 
 const WorkersImportPage: React.FC = () => {
+  const isMountedRef = useRef(true);
   const [activeStep, setActiveStep] = useState(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedProjects, setSelectedProjects] = useState<number[]>([]);
@@ -124,6 +125,12 @@ const WorkersImportPage: React.FC = () => {
   const { data: classes = [], isLoading: isLoadingClasses } = useFetchClasses();
   const { data: existingWorkers = [] } = useFetchAllWorkersAfterNoon();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const steps = [
     'בחירת פרויקטים',
@@ -719,16 +726,19 @@ const WorkersImportPage: React.FC = () => {
         alert('הייבוא הושלם בהצלחה! שגיאה ביצירת הדוח');
       }
       
-      setActiveStep(0);
-      setAllWorkers([]);
-      setOriginalExcelData([]);
-      setSelectedProjects([]);
-      setSelectedFile(null);
-      setImportDecisions({
-        unrecognizedSymbols: [],
-        invalidWorkers: [],
-        existingWorkers: []
-      });
+      // בדיקה אם הקומפוננטה עדיין מונטת לפני עדכון state
+      if (isMountedRef.current) {
+        setActiveStep(0);
+        setAllWorkers([]);
+        setOriginalExcelData([]);
+        setSelectedProjects([]);
+        setSelectedFile(null);
+        setImportDecisions({
+          unrecognizedSymbols: [],
+          invalidWorkers: [],
+          existingWorkers: []
+        });
+      }
     } catch (error) {
       console.error('Error importing workers:', error);
       
@@ -740,7 +750,9 @@ const WorkersImportPage: React.FC = () => {
         alert('שגיאה בייבוא העובדים! שגיאה ביצירת הדוח');
       }
     } finally {
-      setIsImporting(false);
+      if (isMountedRef.current) {
+        setIsImporting(false);
+      }
     }
   };
 
@@ -1120,7 +1132,7 @@ const WorkersImportPage: React.FC = () => {
                   • עובדים חדשים ללא סמל: {categorizedWorkers.newWorkersWithoutSymbol.length}
                 </Typography>
                 <Typography variant="body1">
-                  • עובדים לא תקינים: {categorizedWorkers.invalidWorkers.filter(w => 
+                  • עובדים לא תקינים: {categorizedWorkers.invalidWorkers.filter((w: PreviewWorker) => 
                     importDecisions.invalidWorkers.includes(w.id)
                   ).length}
                 </Typography>
