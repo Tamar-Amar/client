@@ -30,7 +30,8 @@ import {
   ListItemSecondaryAction,
   Divider,
   FormControlLabel,
-  Checkbox
+  Checkbox,
+  Autocomplete
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -168,6 +169,8 @@ const UsersManagementPage: React.FC = () => {
   // סינון לפי תפקיד
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  // הוסף סטייט חדש לסינון לפי קוד מוסד
+  const [institutionCodeFilter, setInstitutionCodeFilter] = useState<string>('');
 
   useEffect(() => {
     fetchUsers();
@@ -176,14 +179,22 @@ const UsersManagementPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // סינון המשתמשים לפי התפקיד שנבחר וחיפוש חופשי
+    // סינון המשתמשים לפי התפקיד שנבחר, חיפוש חופשי, וסינון לפי קוד מוסד
     let filtered = users;
-    
+
     // סינון לפי תפקיד
     if (roleFilter !== 'all') {
       filtered = filtered.filter(user => user.role === roleFilter);
     }
-    
+
+    // סינון לפי קוד מוסד - רק לרכזים
+    if (institutionCodeFilter) {
+      filtered = filtered.filter(user => {
+        // בדוק רק ברשימת projectCodes (רכזים)
+        return user.role === 'coordinator' && user.projectCodes && user.projectCodes.some(pc => pc.institutionCode === institutionCodeFilter);
+      });
+    }
+
     // סינון לפי חיפוש חופשי
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
@@ -195,9 +206,9 @@ const UsersManagementPage: React.FC = () => {
         (user.phone && user.phone.includes(searchTerm))
       );
     }
-    
+
     setFilteredUsers(filtered);
-  }, [users, roleFilter, searchTerm]);
+  }, [users, roleFilter, searchTerm, institutionCodeFilter]);
 
   const getCurrentUserRole = () => {
     try {
@@ -543,7 +554,27 @@ const UsersManagementPage: React.FC = () => {
               },
             }}
           />
-          
+          {/* חיפוש לפי קוד מוסד */}
+          <Autocomplete
+            size="small"
+            options={institutionCodes.map((code, idx) => ({
+              code,
+              label: `${code} - ${institutionNames[idx]}`
+            }))}
+            getOptionLabel={(option) => option.label}
+            value={
+              institutionCodeFilter
+                ? institutionCodes.map((code, idx) => ({ code, label: `${code} - ${institutionNames[idx]}` })).find(opt => opt.code === institutionCodeFilter) || null
+                : null
+            }
+            onChange={(_, newValue) => setInstitutionCodeFilter(newValue ? newValue.code : '')}
+            renderInput={(params) => (
+              <TextField {...params} label="חיפוש לפי קוד מוסד" variant="outlined" sx={{ backgroundColor: 'white', minWidth: 200 }} />
+            )}
+            isOptionEqualToValue={(option, value) => option.code === value.code}
+            clearOnEscape
+          />
+          {/* סינון לפי תפקיד */}
           <FormControl size="small" sx={{ minWidth: 200 }}>
             <InputLabel>סינון לפי תפקיד</InputLabel>
             <Select
@@ -560,7 +591,7 @@ const UsersManagementPage: React.FC = () => {
             </Select>
           </FormControl>
           
-          {(roleFilter !== 'all' || searchTerm.trim()) && (
+          {(roleFilter !== 'all' || searchTerm.trim() || institutionCodeFilter) && (
             <Typography 
               variant="body2" 
               color="text.secondary"
