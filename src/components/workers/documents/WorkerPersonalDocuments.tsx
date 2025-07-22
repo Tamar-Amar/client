@@ -46,6 +46,8 @@ import { CloudUpload as CloudUploadIcon } from '@mui/icons-material';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import { REQUIRED_DOC_TAGS } from '../../../types';
+import UploadWorkerDocumentDialog from '../../coordinator/UploadWorkerDocumentDialog';
+import axios from 'axios';
 
 interface WorkerPersonalDocumentsProps {
   documents: any[];
@@ -72,6 +74,9 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
     'תעודת השכלה', 
     'חוזה',
     'תעודת זהות',
+    'נוכחות קייטנה רכז',
+    'אישור רפואי',
+    'אישור וותק',
   ].includes(doc.tag));
 
   const requiredDocuments = [
@@ -79,20 +84,36 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
     { tag: 'תעודת השכלה', label: 'תעודת השכלה', description: 'תעודת השכלה או תעודת השכלה' },
     { tag: 'חוזה', label: 'חוזה', description: 'חוזה עבודה חתום' },
     { tag: 'תעודת זהות', label: 'תעודת זהות', description: 'תעודת זהות' },
+    { tag: 'נוכחות קייטנה רכז', label: 'נוכחות קייטנה רכז', description: 'נוכחות קייטנה רכז' },
+    { tag: 'אישור רפואי', label: 'אישור רפואי', description: 'אישור רפואי' },
+    { tag: 'אישור וותק', label: 'אישור וותק', description: 'אישור וותק' },
   ];
 
   const getMissingDocuments = () => {
     // נרמול התפקיד לצורך קביעת מסמכים נדרשים
     const normalizedRole = workerRoleName?.trim().replace(/\s+/g, ' ');
-    
-    // תעודת השכלה נדרשת רק עבור מובילים ורכזים
     let filteredRequiredDocuments = requiredDocuments;
-    if (normalizedRole && (normalizedRole.includes('מוביל') || normalizedRole.includes('רכז'))) {
-      // תעודת השכלה כבר נכללת ב-requiredDocuments
-    } else {
-      filteredRequiredDocuments = requiredDocuments.filter(doc => doc.tag !== 'תעודת השכלה');
+
+    // תעודת השכלה רק למוביל/רכז/סגן רכז
+    if (!(normalizedRole && (normalizedRole.includes('מוביל') || normalizedRole.includes('רכז') || normalizedRole.includes('סגן רכז')))) {
+      filteredRequiredDocuments = filteredRequiredDocuments.filter(doc => doc.tag !== 'תעודת השכלה');
     }
-    
+
+    // אישור רפואי רק למד"צ
+    if (!(normalizedRole && normalizedRole.includes('מד"צ'))) {
+      filteredRequiredDocuments = filteredRequiredDocuments.filter(doc => doc.tag !== 'אישור רפואי');
+    }
+
+    // נוכחות קייטנה רכז רק לרכז/סגן רכז
+    if (!(normalizedRole && (normalizedRole.includes('רכז') || normalizedRole.includes('סגן רכז')))) {
+      filteredRequiredDocuments = filteredRequiredDocuments.filter(doc => doc.tag !== 'נוכחות קייטנה רכז');
+    }
+
+    // אישור וותק רק לרכז
+    if (!(normalizedRole && normalizedRole.includes('רכז'))) {
+      filteredRequiredDocuments = filteredRequiredDocuments.filter(doc => doc.tag !== 'אישור וותק');
+    }
+
     return filteredRequiredDocuments.filter(reqDoc => {
       const hasDoc = personalDocs.some(doc => doc.tag === reqDoc.tag && doc.status === 'מאושר');
       return !hasDoc;
@@ -151,6 +172,34 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
     });
   };
 
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [docToDelete, setDocToDelete] = useState<any>(null);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+
+  // שליפת העובד מה-localStorage
+  const currentWorker = JSON.parse(localStorage.getItem("user") || "{}");
+
+  const refetchDocuments = async () => {
+    window.location.reload();
+  };
+
+  const handleDeleteClick = (doc: any) => {
+    setDocToDelete(doc);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!docToDelete) return;
+    try {
+      await axios.delete(`${process.env.REACT_APP_API_URL}/api/documents/${docToDelete._id}`);
+      setDeleteDialogOpen(false);
+      setDocToDelete(null);
+      refetchDocuments();
+    } catch (err) {
+      alert('שגיאה במחיקת המסמך');
+    }
+  };
+
   // summary values
   const approvedCount = personalDocs.filter(doc => doc.status === 'מאושר').length;
   const pendingCount = personalDocs.filter(doc => doc.status === 'ממתין').length;
@@ -159,65 +208,25 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Dialog open={isPersonalDocDialogOpen} onClose={() => setIsPersonalDocDialogOpen(false)}>
-        <DialogTitle>העלאת מסמך אישי לעובד</DialogTitle>
+      {/* דיאלוג העלאת מסמך חדש */}
+      <UploadWorkerDocumentDialog
+        open={uploadDialogOpen}
+        onClose={() => setUploadDialogOpen(false)}
+        worker={currentWorker}
+        allWorkerDocuments={documents}
+        refetchDocuments={refetchDocuments}
+        setDialogOpen={setUploadDialogOpen}
+      />
+
+      {/* דיאלוג אישור מחיקת מסמך */}
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>אישור מחיקת מסמך</DialogTitle>
         <DialogContent>
-          <Stack spacing={2} mt={1}>
-            <TextField
-              select
-              size="small"
-              label="סוג מסמך"
-              value={documentType}
-              onChange={(e) => setDocumentType(e.target.value as string)}
-              sx={{ minWidth: 150 }}
-            >
-              {(() => {
-                if (availableDocTypes.length === 0) {
-                  return (
-                    <MenuItem disabled>
-                      כל סוגי המסמכים כבר הועלו
-                    </MenuItem>
-                  );
-                }
-                
-                return availableDocTypes.map((tag: string) => (
-                  <MenuItem key={tag} value={tag}>{tag}</MenuItem>
-                ));
-              })()}
-            </TextField>
-            <input
-              type="file"
-              hidden
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-            />
-            <Button
-              variant="outlined"
-              onClick={() => fileInputRef.current?.click()}
-              startIcon={<CloudUploadIcon />}
-            >
-              {selectedFile ? selectedFile.name : 'בחר קובץ'}
-            </Button>
-            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={he}>
-              <DatePicker
-                label="תוקף (אופציונלי)"
-                value={expirationDate}
-                onChange={(newValue) => setExpirationDate(newValue)}
-                slotProps={{ textField: { fullWidth: true, size: 'small' } }}
-              />
-            </LocalizationProvider>
-          </Stack>
+          <Typography>האם אתה בטוח שברצונך למחוק את המסמך <b>{docToDelete?.tag}</b>?</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIsPersonalDocDialogOpen(false)}>ביטול</Button>
-          <Button
-            variant="contained"
-            onClick={handleUpload}
-            disabled={!selectedFile || !documentType || availableDocTypes.length === 0}
-          >
-            העלה
-          </Button>
+          <Button onClick={() => setDeleteDialogOpen(false)} color="secondary">ביטול</Button>
+          <Button onClick={handleConfirmDelete} color="error" variant="contained">מחק</Button>
         </DialogActions>
       </Dialog>
       
@@ -322,7 +331,7 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
               <Button
                 variant="contained"
                 color="primary"
-                onClick={() => setIsPersonalDocDialogOpen(true)}
+                onClick={() => setUploadDialogOpen(true)}
                 startIcon={<CloudUploadIcon />}
                 size={isMobile ? 'small' : 'medium'}
               >
@@ -446,7 +455,7 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
                             <Tooltip title="מחק מסמך">
                               <IconButton
                                 color="error"
-                                onClick={() => handleDelete(doc._id)}
+                                onClick={() => handleDeleteClick(doc)}
                                 disabled={doc.status === DocumentStatus.APPROVED}
                                 sx={{ 
                                   bgcolor: '#ffebee',
