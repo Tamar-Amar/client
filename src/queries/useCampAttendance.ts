@@ -1,6 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { attendanceService } from '../services/attendanceService';
 
+export const useAllCampAttendanceReports = () => {
+  return useQuery({
+    queryKey: ['campAttendanceReports'],
+    queryFn: () => attendanceService.getCampAttendanceReports(),
+  });
+};
+
 // הוק לקבלת כל דוחות הנוכחות של קייטנות לפי רכז
 export const useCampAttendanceReports = (coordinatorId: string) => {
   return useQuery({

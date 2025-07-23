@@ -55,6 +55,7 @@ const MainNav: React.FC = () => {
    // { label: 'ניהול קבוצות', path: '/classes', icon: <GroupWorkIcon fontSize="small" /> },
     { label: ' מסמכים אישיים', path: '/documents', },
     { label: 'דיווחי נוכחות', path: '/worker-attendance' },
+    { label: 'דיווחי קיץ', path: '/summer-camp-attendance' },
     { label: 'מיילים', path: '/workers-after-noon-email' },
     { label: 'התראות', path: '/workers-after-noon-notifications' },
   ];
@@ -71,6 +72,7 @@ const MainNav: React.FC = () => {
     { label: 'מצבת', path: '/matsevet' },
     { label: 'ניהול עובדים', path: '/workers' },
     { label: 'דיווחי נוכחות', path: '/worker-attendance' },
+    { label: 'דיווחי קיץ', path: '/summer-camp-attendance' },
     { label: 'מסמכים אישיים', path: '/documents' },
     { label: 'מיילים', path: '/workers-after-noon-email' },
     { label: 'התראות', path: '/workers-after-noon-notifications' }, 
@@ -80,7 +82,9 @@ const MainNav: React.FC = () => {
     { label: ' מסמכים אישיים', path: '/documents', icon: <FolderIcon fontSize="small" /> },
     { label: 'מצבת', path: '/matsevet', icon: <AssessmentIcon fontSize="small" /> },
     { label: 'עובדים', path: '/workers', icon: <PeopleIcon fontSize="small" /> },
-    { label: 'דוחות נוכחות', path: '/worker-attendance' },
+    { label: 'דיווחי קיץ', path: '/summer-camp-attendance' },
+    { label: 'התראות', path: '/workers-after-noon-notifications' }, 
+
   ];
 
   const usersTabs: TabInfo[] = [

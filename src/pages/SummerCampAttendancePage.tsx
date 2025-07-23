@@ -1,0 +1,578 @@
+import React, { useMemo, useState, useEffect } from 'react';
+import {
+  Box,
+  Typography,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Tabs,
+  Tab,
+  Button,
+  Stack,
+  Tooltip,
+  IconButton,
+  CircularProgress,
+  Autocomplete,
+  Divider,
+  Card,
+  CardContent,
+  Grid
+} from '@mui/material';
+import CheckIcon from '@mui/icons-material/CheckCircle';
+import CloseIcon from '@mui/icons-material/Cancel';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import { useAllCampAttendanceReports, useCampAttendanceReports } from '../queries/useCampAttendance';
+import { useFetchClasses } from '../queries/classQueries';
+import { useFetchAllWorkersAfterNoon } from '../queries/workerAfterNoonQueries';
+import { useFetchAllUsers } from '../queries/useUsers';
+import { Class, WorkerAfterNoon } from '../types';
+import { DocumentStatus } from '../types/Document';
+
+// TODO: להוסיף hook לעדכון סטטוס מסמך
+// import { useUpdateAttendanceStatus } from '../queries/useDocuments';
+
+const PROJECT_CODE = 4; // קייטנת קיץ
+
+const statusTabs = [
+  { value: '', label: 'הכל' },
+  { value: 'ממתין', label: 'ממתינים' },
+  { value: 'מאושר', label: 'מאושרים' },
+  { value: 'נדחה', label: 'נדחו' }
+];
+
+const SummerCampAttendancePage: React.FC = () => {
+  // סינונים
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterInstitutionCode, setFilterInstitutionCode] = useState('');
+  const [filterClassCode, setFilterClassCode] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [tabStatus, setTabStatus] = useState('');
+
+  // שליפת נתונים
+  const { data: campAttendance = [], isLoading: loadingAttendance } = useAllCampAttendanceReports(); // TODO: אפשר להוסיף סינון לפי רכז
+  const { data: classes = [], isLoading: loadingClasses } = useFetchClasses();
+  const { data: workers = [], isLoading: loadingWorkers } = useFetchAllWorkersAfterNoon();
+  const { data: users = [], isLoading: loadingUsers } = useFetchAllUsers();
+
+  // סינון כיתות שרק בקייטנת קיץ
+  const summerClasses = useMemo(() => classes.filter((cls: Class) => Array.isArray(cls.projectCodes) && cls.projectCodes.includes(PROJECT_CODE)), [classes]);
+
+  // אפשרויות סינון - רק מתוך summerClasses
+  const institutionOptions = useMemo(() => {
+    const codes = new Set<string>();
+    summerClasses.forEach((cls: Class) => {
+      if (cls.institutionCode) codes.add(cls.institutionCode);
+    });
+    return [
+      { value: '', label: 'הכל' },
+      ...Array.from(codes).sort().map(code => ({ value: code, label: code }))
+    ];
+  }, [summerClasses]);
+
+  const classCodeOptions = useMemo(() => {
+    const classMap = new Map<string, { symbol: string; name: string }>();
+    summerClasses.forEach((cls: Class) => {
+      if (cls.uniqueSymbol && cls.name) {
+        classMap.set(cls.uniqueSymbol, { symbol: cls.uniqueSymbol, name: cls.name });
+      }
+    });
+    return [
+      { value: '', label: 'הכל' },
+      ...Array.from(classMap.values()).sort((a, b) => a.name.localeCompare(b.name)).map(classItem => ({ value: classItem.symbol, label: `${classItem.symbol} - ${classItem.name}` }))
+    ];
+  }, [summerClasses]);
+
+  // אפשרויות חשבי שכר מתוך המשתמשים
+  const accountantUserOptions = useMemo(() => {
+    return [
+      { value: '', label: 'כל חשבי השכר', accountant: null },
+      ...users
+        .filter((u: any) => u.role === 'accountant')
+        .map((u: any) => ({
+          value: u._id,
+          label: `${u.firstName} ${u.lastName}`,
+          accountant: u
+        }))
+    ];
+  }, [users]);
+  const [filterAccountant, setFilterAccountant] = useState('');
+
+  // עיבוד נתונים לטבלה
+  const tableData = useMemo(() => {
+    return campAttendance
+      .filter((row: any) => row.projectCode === PROJECT_CODE)
+      .filter((row: any) => {
+        // סינון חופשי
+        if (searchTerm) {
+          const cls = classes.find((c: Class) => c._id === row.classId?._id || c._id === row.classId);
+          const leader = workers.find((w: WorkerAfterNoon) => w._id === row.leaderId?._id || w._id === row.leaderId);
+          return (
+            (cls?.name?.includes(searchTerm) || cls?.uniqueSymbol?.includes(searchTerm) || cls?.institutionName?.includes(searchTerm) || leader?.firstName?.includes(searchTerm) || leader?.lastName?.includes(searchTerm))
+          );
+        }
+        return true;
+      })
+      .filter((row: any) => {
+        // סינון לפי קוד מוסד
+        if (filterInstitutionCode) {
+          const cls = classes.find((c: Class) => c._id === row.classId?._id || c._id === row.classId);
+          return cls?.institutionCode === filterInstitutionCode;
+        }
+        return true;
+      })
+      .filter((row: any) => {
+        // סינון לפי סמל כיתה
+        if (filterClassCode) {
+          const cls = classes.find((c: Class) => c._id === row.classId?._id || c._id === row.classId);
+          return cls?.uniqueSymbol === filterClassCode;
+        }
+        return true;
+      })
+      .filter((row: any) => {
+        // סינון לפי סטטוס (טאב או סינון)
+        const statusToCheck = tabStatus || filterStatus;
+        if (statusToCheck) {
+          // בדוק סטטוס של מסמך עובדים (workerAttendanceDoc)
+          const status = row.workerAttendanceDoc?.status;
+          return status === statusToCheck;
+        }
+        return true;
+      });
+  }, [campAttendance, classes, workers, searchTerm, filterInstitutionCode, filterClassCode, filterStatus, tabStatus]);
+
+  // הוספת סינון לפי חשב שכר (קודי מוסד)
+  const filteredTableData = useMemo(() => {
+    return tableData.filter((row: any) => {
+      if (!filterAccountant) return true;
+      // מצא את חשב השכר
+      const accountant = users.find((u: any) => u._id === filterAccountant && u.role === 'accountant');
+      if (!accountant || !Array.isArray(accountant.accountantInstitutionCodes)) return false;
+      // בדוק אם קוד המוסד של הכיתה נמצא ברשימת קודי המוסד של החשב
+      const cls = classes.find((c: Class) => c._id === row.classId?._id || c._id === row.classId);
+      return cls && accountant.accountantInstitutionCodes.includes(cls.institutionCode);
+    });
+  }, [tableData, filterAccountant, users, classes]);
+
+  // חישוב סמלים (כיתות) ללא דיווח כלל (רק כיתות קיץ)
+  const classIdsWithAttendance = useMemo(() => new Set(campAttendance.map((row: any) => (row.classId?._id || row.classId))), [campAttendance]);
+
+  // סינון מתקדם: קוד מוסד/סמל משפיע גם על missing
+  const filteredSummerClasses = useMemo(() => {
+    return summerClasses.filter((cls: Class) => {
+      // סינון לפי קוד מוסד
+      if (filterInstitutionCode && cls.institutionCode !== filterInstitutionCode) return false;
+      // סינון לפי סמל
+      if (filterClassCode && cls.uniqueSymbol !== filterClassCode) return false;
+      // חיפוש חופשי
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        // שם מוביל
+        let leaderName = '';
+        const leaderUser = users.find((u: any) => u.role === 'worker' && cls.workers?.some((w: any) => w.workerId === u._id && w.roleType?.includes('מוביל')));
+        if (leaderUser) leaderName = `${leaderUser.firstName} ${leaderUser.lastName}`;
+        if (!(
+          cls.name?.toLowerCase().includes(searchLower) ||
+          cls.uniqueSymbol?.toLowerCase().includes(searchLower) ||
+          cls.institutionCode?.toLowerCase().includes(searchLower) ||
+          leaderName.toLowerCase().includes(searchLower)
+        )) return false;
+      }
+      return true;
+    });
+  }, [summerClasses, filterInstitutionCode, filterClassCode, searchTerm, users]);
+
+  // סמלים ללא דיווח (רק כאלה שתואמים לסינון ולחשב שכר)
+  const classesWithoutAttendance = useMemo(() => {
+    return filteredSummerClasses.filter((cls: Class) => {
+      if (!classIdsWithAttendance.has(cls._id)) {
+        if (!filterAccountant) return true;
+        // בדוק אם קוד המוסד של הכיתה נמצא ברשימת קודי המוסד של החשב
+        const accountant = users.find((u: any) => u._id === filterAccountant && u.role === 'accountant');
+        if (!accountant || !Array.isArray(accountant.accountantInstitutionCodes)) return false;
+        return accountant.accountantInstitutionCodes.includes(cls.institutionCode);
+      }
+      return false;
+    });
+  }, [filteredSummerClasses, classIdsWithAttendance, filterAccountant, users]);
+
+  // סמלים עם דיווח (רק כאלה שתואמים לסינון)
+  const reported = useMemo(() => {
+    return filteredTableData
+      .map((row: any) => {
+        const cls = filteredSummerClasses.find((c: Class) => c._id === row.classId?._id || c._id === row.classId);
+        return cls ? { ...row, _class: cls } : null;
+      })
+      .filter(Boolean);
+  }, [filteredTableData, filteredSummerClasses]);
+
+  // טבלת נתונים מלאה: גם סמלים ללא דיווח (רק כיתות קיץ שתואמות לסינון)
+  const fullTableData = useMemo(() => {
+    const missing = classesWithoutAttendance.map((cls: Class) => ({
+      _id: 'missing-' + cls._id,
+      classId: cls._id,
+      _class: cls,
+      leaderId: null,
+      workerAttendanceDoc: null,
+      studentAttendanceDoc: null,
+      controlDocs: [],
+      missing: true
+    }));
+    let allRows = [...reported, ...missing];
+    // סינון לפי סטטוס
+    if (filterStatus === 'חסר') {
+      allRows = allRows.filter(row => row.missing);
+    } else if (filterStatus) {
+      allRows = allRows.filter(row => {
+        if (row.missing) return false;
+        // בדוק אם יש מסמך מתאים לסטטוס
+        const docs = [row.workerAttendanceDoc, row.studentAttendanceDoc, ...(row.controlDocs || [])];
+        return docs.some(doc => doc && doc.status === filterStatus);
+      });
+    }
+    return allRows.sort((a, b) => {
+      const aSymbol = a._class?.uniqueSymbol || '';
+      const bSymbol = b._class?.uniqueSymbol || '';
+      return aSymbol.localeCompare(bSymbol, 'he');
+    });
+  }, [reported, classesWithoutAttendance, filterStatus]);
+
+  // סטטיסטיקות מסמכים מכל הסוגים (עובדים, תלמידים, בקרה)
+  const stats = useMemo(() => {
+    let total = 0, pending = 0, approved = 0, rejected = 0;
+    campAttendance.forEach((row: any) => {
+      if (row.projectCode !== PROJECT_CODE) return;
+      // עובדים
+      if (row.workerAttendanceDoc) {
+        total++;
+        if (row.workerAttendanceDoc.status === 'ממתין') pending++;
+        else if (row.workerAttendanceDoc.status === 'מאושר') approved++;
+        else if (row.workerAttendanceDoc.status === 'נדחה') rejected++;
+      }
+      // תלמידים
+      if (row.studentAttendanceDoc) {
+        total++;
+        if (row.studentAttendanceDoc.status === 'ממתין') pending++;
+        else if (row.studentAttendanceDoc.status === 'מאושר') approved++;
+        else if (row.studentAttendanceDoc.status === 'נדחה') rejected++;
+      }
+      // בקרה (יכול להיות מערך)
+      if (Array.isArray(row.controlDocs)) {
+        row.controlDocs.forEach((doc: any) => {
+          total++;
+          if (doc.status === 'ממתין') pending++;
+          else if (doc.status === 'מאושר') approved++;
+          else if (doc.status === 'נדחה') rejected++;
+        });
+      }
+    });
+    return { total, pending, approved, rejected };
+  }, [campAttendance]);
+
+  // עמודים (pagination)
+  const [page, setPage] = useState(0);
+  const rowsPerPage = 18;
+  const paginatedData = useMemo(() => fullTableData.slice(page * rowsPerPage, (page + 1) * rowsPerPage), [fullTableData, page, rowsPerPage]);
+
+  // איפוס עמוד בכל שינוי סינון/חיפוש
+  useEffect(() => {
+    setPage(0);
+  }, [searchTerm, filterInstitutionCode, filterClassCode, filterStatus, filterAccountant]);
+
+  // שינוי סטטוס מסמך (דמה)
+  const handleApprove = (row: any) => {
+    // TODO: לממש קריאה לשרת לעדכון סטטוס
+    alert("אישור מסמך יתעדכן בהקדם");
+  };
+  const handleReject = (row: any) => {
+    // TODO: לממש קריאה לשרת לעדכון סטטוס
+    alert("דחיית מסמך יתעדכן בהקדם");
+  };
+
+  if (loadingAttendance || loadingClasses || loadingWorkers || loadingUsers) {
+    return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 400 }}><CircularProgress /></Box>;
+  }
+
+  return (
+    <Box sx={{ p: 4 }}>
+
+      {/* סרגל סינון מתקדם */}
+      <Paper sx={{ p: 4, mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+        <TextField
+          size="small"
+          label="חיפוש חופשי"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          sx={{ minWidth: 180 }}
+        />
+        <Autocomplete
+          size="small"
+          options={institutionOptions}
+          getOptionLabel={(option) => option.label}
+          value={institutionOptions.find(opt => opt.value === filterInstitutionCode) || null}
+          onChange={(_, newValue) => setFilterInstitutionCode(newValue?.value || '')}
+          renderInput={(params) => <TextField {...params} label="קוד מוסד" />}
+          sx={{ minWidth: 180 }}
+        />
+        <Autocomplete
+          size="small"
+          options={classCodeOptions}
+          getOptionLabel={(option) => option.label}
+          value={classCodeOptions.find(opt => opt.value === filterClassCode) || null}
+          onChange={(_, newValue) => setFilterClassCode(newValue?.value || '')}
+          renderInput={(params) => <TextField {...params} label="סמל כיתה" />}
+          sx={{ minWidth: 180 }}
+        />
+        <FormControl size="small" sx={{ minWidth: 140 }}>
+          <InputLabel>סטטוס</InputLabel>
+          <Select value={filterStatus} label="סטטוס" onChange={e => setFilterStatus(e.target.value)}>
+            <MenuItem value="">הכל</MenuItem>
+            <MenuItem value="ממתין">ממתין</MenuItem>
+            <MenuItem value="מאושר">מאושר</MenuItem>
+            <MenuItem value="נדחה">נדחה</MenuItem>
+            <MenuItem value="חסר">חסר</MenuItem>
+          </Select>
+        </FormControl>
+        <FormControl size="small" sx={{ minWidth: 180 }}>
+          <InputLabel>חשב שכר</InputLabel>
+          <Select
+            value={filterAccountant}
+            label="חשב שכר"
+            onChange={e => setFilterAccountant(e.target.value)}
+          >
+            {accountantUserOptions.map(opt => (
+              <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Paper>
+
+      <Grid container spacing={2}>
+        {/* קופסאות מידע קטנות בעמודה מימין */}
+        <Grid item xs={12} md={2} lg={1} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', pr: 1 }}>
+          <Stack spacing={1} sx={{ width: '100%' }}>
+            <Card sx={{ minWidth: 60, p: 0.5, boxShadow: 1, borderRight: 3, borderColor: 'primary.main' }}>
+              <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
+                <Typography variant="caption" color="text.secondary">סה"כ מסמכים</Typography>
+                <Typography variant="subtitle1" color="primary.main" fontWeight="bold">{stats.total}</Typography>
+              </CardContent>
+            </Card>
+            <Card sx={{ minWidth: 60, p: 0.5, boxShadow: 1, borderRight: 3, borderColor: 'warning.main' }}>
+              <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
+                <Typography variant="caption" color="text.secondary">ממתינים</Typography>
+                <Typography variant="subtitle1" color="warning.main" fontWeight="bold">{stats.pending}</Typography>
+              </CardContent>
+            </Card>
+            <Card sx={{ minWidth: 60, p: 0.5, boxShadow: 1, borderRight: 3, borderColor: 'success.main' }}>
+              <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
+                <Typography variant="caption" color="text.secondary">מאושרים</Typography>
+                <Typography variant="subtitle1" color="success.main" fontWeight="bold">{stats.approved}</Typography>
+              </CardContent>
+            </Card>
+            <Card sx={{ minWidth: 60, p: 0.5, boxShadow: 1, borderRight: 3, borderColor: 'error.main' }}>
+              <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
+                <Typography variant="caption" color="text.secondary">נדחו</Typography>
+                <Typography variant="subtitle1" color="error.main" fontWeight="bold">{stats.rejected}</Typography>
+              </CardContent>
+            </Card>
+          </Stack>
+        </Grid>
+        {/* טבלה */}
+        <Grid item xs={12} md={10} lg={11}>
+          <TableContainer component={Paper} sx={{ boxShadow: 3, borderRadius: 2,minHeight: 600 }}>
+            <Table size="small" stickyHeader>
+              <TableHead>
+                <TableRow sx={{ height: 34 }}>
+                  <TableCell sx={{ fontWeight: 'bold', py: 0.5, width: 60, minWidth: 60, maxWidth: 60 }}>קוד מוסד</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', py: 0.5, width: 80, minWidth: 80, maxWidth: 80 }}>סמל</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', py: 0.5, width: 140, minWidth: 80, maxWidth: 180 }}>שם</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', py: 0.5, width: 180, minWidth: 120, maxWidth: 220 }}>רכז</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', py: 0.5, width: 120, minWidth: 100, maxWidth: 160 }}>מוביל</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', py: 0.5, width: 100, minWidth: 80, maxWidth: 120 }}>עובדים</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', py: 0.5, width: 100, minWidth: 80, maxWidth: 120 }}>תלמידים</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', py: 0.5, width: 140, minWidth: 120, maxWidth: 160 }}>בקרה</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {paginatedData.map((row: any) => {
+                  const cls = row._class || classes.find((c: Class) => c._id === row.classId?._id || c._id === row.classId);
+                  const leader = row.leaderId ? workers.find((w: WorkerAfterNoon) => w._id === row.leaderId?._id || w._id === row.leaderId) : null;
+                  // עובדים
+                  const workerDoc = row.workerAttendanceDoc;
+                  // תלמידים
+                  const studentDoc = row.studentAttendanceDoc;
+                  // בקרה
+                  const controlDocs = row.controlDocs || [];
+                  return (
+                    <TableRow key={row._id} sx={{ height: 32 }}>
+                      {/* קוד מוסד */}
+                      <TableCell sx={{ py: 0.2, minHeight: 28, maxHeight: 28, width: 60, minWidth: 60, maxWidth: 60 }}>{cls?.institutionCode || '-'}</TableCell>
+                      {/* סמל */}
+                      <TableCell sx={{ py: 0.2, minHeight: 28, maxHeight: 28, width: 80, minWidth: 80, maxWidth: 80 }}>{cls?.uniqueSymbol || '-'}</TableCell>
+                      {/* שם */}
+                      <TableCell sx={{ py: 0.2, minHeight: 28, maxHeight: 28, width: 180, minWidth: 120, maxWidth: 220 }}>{cls?.name || '-'}</TableCell>
+                      {/* רכז */}
+                      <TableCell sx={{ py: 0.2, minHeight: 28, maxHeight: 28, width: 180, minWidth: 120, maxWidth: 220 }}>
+                        {(() => {
+                          // מצא רכזים של קוד המוסד
+                          const coordinators = users.filter((u: any) => u.role === 'coordinator' && Array.isArray(u.projectCodes) && u.projectCodes.some((pc: any) => pc.institutionCode === cls?.institutionCode));
+                          if (coordinators.length === 0) return '-';
+                          return coordinators.map((c: any) => `${c.firstName} ${c.lastName}`).join(', ');
+                        })()}
+                      </TableCell>
+                      {/* מוביל */}
+                      <TableCell sx={{ py: 0.2, minHeight: 28, maxHeight: 28, width: 120, minWidth: 100, maxWidth: 160 }}>{leader ? `${leader.firstName} ${leader.lastName}` : '-'}</TableCell>
+                      {/* עובדים */}
+                      <TableCell sx={{ py: 0.2, minHeight: 28, maxHeight: 28, width: 100, minWidth: 80, maxWidth: 120 }}>
+                        {workerDoc && workerDoc.url ? (
+                          <Stack direction="row" spacing={0.25} alignItems="center">
+                            <Tooltip title="צפה במסמך">
+                              <IconButton size="small" onClick={() => window.open(workerDoc.url, '_blank')} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
+                                <PictureAsPdfIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            </Tooltip>
+                            {workerDoc.status === 'ממתין' ? (
+                              <Stack direction="row" spacing={0.1} alignItems="center">
+                                <Tooltip title="אשר">
+                                  <IconButton size="small" color="success" onClick={() => handleApprove({ ...row, docType: 'workerAttendanceDoc' })} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
+                                    <CheckIcon fontSize="inherit" sx={{ fontSize: 16 }} />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title="דחה">
+                                  <IconButton size="small" color="error" onClick={() => handleReject({ ...row, docType: 'workerAttendanceDoc' })} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
+                                    <CloseIcon fontSize="inherit" sx={{ fontSize: 16 }} />
+                                  </IconButton>
+                                </Tooltip>
+                              </Stack>
+                            ) : workerDoc.status === 'מאושר' ? (
+                              <Chip label="מאושר" color="success" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
+                            ) : workerDoc.status === 'נדחה' ? (
+                              <Chip label="נדחה" color="error" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
+                            ) : null}
+                          </Stack>
+                        ) : row.missing ? (
+                          <Typography variant="body2" color="error">חסר</Typography>
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">-</Typography>
+                        )}
+                      </TableCell>
+                      {/* תלמידים */}
+                      <TableCell sx={{ py: 0.2, minHeight: 28, maxHeight: 28, width: 100, minWidth: 80, maxWidth: 120 }}>
+                        {studentDoc && studentDoc.url ? (
+                          <Stack direction="row" spacing={0.25} alignItems="center">
+                            <Tooltip title="צפה במסמך">
+                              <IconButton size="small" onClick={() => window.open(studentDoc.url, '_blank')} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
+                                <PictureAsPdfIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            </Tooltip>
+                            {studentDoc.status === 'ממתין' ? (
+                              <Stack direction="row" spacing={0.1} alignItems="center">
+                                <Tooltip title="אשר">
+                                  <IconButton size="small" color="success" onClick={() => handleApprove({ ...row, docType: 'studentAttendanceDoc' })} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
+                                    <CheckIcon fontSize="inherit" sx={{ fontSize: 16 }} />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title="דחה">
+                                  <IconButton size="small" color="error" onClick={() => handleReject({ ...row, docType: 'studentAttendanceDoc' })} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
+                                    <CloseIcon fontSize="inherit" sx={{ fontSize: 16 }} />
+                                  </IconButton>
+                                </Tooltip>
+                              </Stack>
+                            ) : studentDoc.status === 'מאושר' ? (
+                              <Chip label="מאושר" color="success" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
+                            ) : studentDoc.status === 'נדחה' ? (
+                              <Chip label="נדחה" color="error" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
+                            ) : null}
+                          </Stack>
+                        ) : row.missing ? (
+                          <Typography variant="body2" color="error">חסר</Typography>
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">-</Typography>
+                        )}
+                      </TableCell>
+                      {/* בקרה */}
+                      <TableCell sx={{ py: 0.2, minHeight: 28, maxHeight: 28, width: 100, minWidth: 80, maxWidth: 120 }}>
+                        {controlDocs.length > 0 ? (
+                          <Box>
+                            {controlDocs.length > 1 && (
+                              <Typography variant="caption" color="primary" sx={{ fontWeight: 'bold', display: 'block', mb: 0.2 }}>{controlDocs.length} מסמכים</Typography>
+                            )}
+                            <Stack direction="row" spacing={0.25} alignItems="center" flexWrap="wrap">
+                              {controlDocs.map((doc: any, idx: number) => (
+                                <Box key={doc._id || idx} display="flex" alignItems="center" gap={0.1} mb={0.2}>
+                                  {doc.url && (
+                                    <Tooltip title="צפה במסמך">
+                                      <IconButton size="small" onClick={() => window.open(doc.url, '_blank')} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
+                                        <PictureAsPdfIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                                      </IconButton>
+                                    </Tooltip>
+                                  )}
+                                  {doc.status === 'ממתין' ? (
+                                    <Stack direction="row" spacing={0.1} alignItems="center">
+                                      <Tooltip title="אשר">
+                                        <IconButton size="small" color="success" onClick={() => handleApprove({ ...row, docType: 'controlDocs', docIndex: idx })} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
+                                          <CheckIcon fontSize="inherit" sx={{ fontSize: 16 }} />
+                                        </IconButton>
+                                      </Tooltip>
+                                      <Tooltip title="דחה">
+                                        <IconButton size="small" color="error" onClick={() => handleReject({ ...row, docType: 'controlDocs', docIndex: idx })} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
+                                          <CloseIcon fontSize="inherit" sx={{ fontSize: 16 }} />
+                                        </IconButton>
+                                      </Tooltip>
+                                    </Stack>
+                                  ) : doc.status === 'מאושר' ? (
+                                    <Chip label="מאושר" color="success" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
+                                  ) : doc.status === 'נדחה' ? (
+                                    <Chip label="נדחה" color="error" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
+                                  ) : null}
+                                </Box>
+                              ))}
+                            </Stack>
+                          </Box>
+                        ) : row.missing ? (
+                          <Typography variant="body2" color="error">חסר</Typography>
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">-</Typography>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <Box display="flex" justifyContent="center" mt={2}>
+            <Button
+              variant="outlined"
+              disabled={page === 0}
+              onClick={() => setPage(page - 1)}
+              sx={{ mx: 1 }}
+            >
+              הקודם
+            </Button>
+            <Typography variant="body2" sx={{ mx: 2, mt: 1 }}>{page + 1} / {Math.ceil(fullTableData.length / rowsPerPage)}</Typography>
+            <Button
+              variant="outlined"
+              disabled={(page + 1) * rowsPerPage >= fullTableData.length}
+              onClick={() => setPage(page + 1)}
+              sx={{ mx: 1 }}
+            >
+              הבא
+            </Button>
+          </Box>
+        </Grid>
+      </Grid>
+    </Box>
+  );
+};
+
+export default SummerCampAttendancePage; 

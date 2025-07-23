@@ -213,39 +213,6 @@ const ReportsDownload: React.FC<ReportsDownloadProps> = ({ workers, documents, c
         return doc && doc.url ? '✓' : '✗';
       };
 
-      // בדיקת נוכחות למובילים
-      const getWorkerAttendanceStatus = () => {
-        if (worker.roleName !== 'מוביל') return '-----';
-        
-        // מצא דוח נוכחות של המוביל הזה
-        const attendanceRecord = campAttendanceData.find((record: any) => 
-          record.leaderId?._id === worker._id && record.workerAttendanceDoc
-        );
-        
-        return attendanceRecord ? '✓' : '✗';
-      };
-
-      const getStudentAttendanceStatus = () => {
-        if (worker.roleName !== 'מוביל') return '-----';
-        
-        // מצא דוח נוכחות של המוביל הזה
-        const attendanceRecord = campAttendanceData.find((record: any) => 
-          record.leaderId?._id === worker._id && record.studentAttendanceDoc
-        );
-        
-        return attendanceRecord ? '✓' : '✗';
-      };
-
-      const getControlReportsCount = () => {
-        if (worker.roleName !== 'מוביל') return '-----';
-        
-        // מצא דוח נוכחות של המוביל הזה
-        const attendanceRecord = campAttendanceData.find((record: any) => 
-          record.leaderId?._id === worker._id
-        );
-        
-        return attendanceRecord?.controlDocs?.length || '0';
-      };
       
       return {
         'תעודת זהות עובד': worker.id,

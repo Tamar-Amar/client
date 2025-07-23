@@ -32,6 +32,7 @@ import MatsevetEditPage from '../pages/MatsevetEditPage';
 import MatsevetImportPage from '../pages/MatsevetImportPage';
 import WorkersImportPage from '../pages/WorkersImportPage';
 import WorkersUpdatePage from '../pages/manager/WorkersUpdatePage';
+import SummerCampAttendancePage from '../pages/SummerCampAttendancePage';
 
 const OperatorDocumentsWrapper = () => {
   const token = localStorage.getItem('token');
@@ -68,6 +69,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/matsevet/edit" element={<MatsevetEditPage />} />
         <Route path="/matsevet/import" element={<MatsevetImportPage />} />
         <Route path="/workers/import" element={<WorkersImportPage />} />
+        <Route path="/summer-camp-attendance" element={<SummerCampAttendancePage />} />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={['admin']} />}>

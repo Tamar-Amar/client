@@ -16,7 +16,7 @@ export const useAttendance = (workerId: string) => {
   
   const attendance = useQuery({
     queryKey: ['attendance'],
-    queryFn: () => attendanceService.geAllAttendance()
+    queryFn: () => attendanceService.getAllAttendance()
   });
 
   const workerAttendance = useQuery({

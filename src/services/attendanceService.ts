@@ -16,10 +16,10 @@ const API_URL = process.env.REACT_APP_API_URL+ "/api/attendance";
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token');
   return token ? { 'Authorization': `Bearer ${token}` } : {};
-};
+};  
 
 export const attendanceService = {
-  geAllAttendance: async () => {
+  getAllAttendance: async () => {
     const response = await axios.get(`${API_URL}/`, { 
       params: { projectCode: 4 },
       headers: getAuthHeaders()
