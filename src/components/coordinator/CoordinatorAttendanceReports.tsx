@@ -263,12 +263,12 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
 
     // מציאת המוביל או המדריך מתוך העובדים של הכיתה
     const leader = selectedClassData.workers?.find((worker: any) => 
-      worker.workerId?.roleName === 'מוביל' && worker.project === 4
+      worker.project === 4 && worker.workerId?.roleName === 'מוביל'
     );
 
     // אם אין מוביל, נחפש מדריך
     const instructor = !leader ? selectedClassData.workers?.find((worker: any) => 
-      worker.workerId?.roleName === 'מד״צ' && worker.project === 4
+      worker.project === 4 && worker.workerId?.roleName === 'מדריך'
     ) : null;
 
     const responsibleWorker = leader || instructor;
