@@ -30,11 +30,12 @@ import {
 } from '@mui/material';
 import CheckIcon from '@mui/icons-material/CheckCircle';
 import CloseIcon from '@mui/icons-material/Cancel';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useAllCampAttendanceReports, useCampAttendanceReports } from '../queries/useCampAttendance';
 import { useFetchClasses } from '../queries/classQueries';
 import { useFetchAllWorkersAfterNoon } from '../queries/workerAfterNoonQueries';
 import { useFetchAllUsers } from '../queries/useUsers';
+import { useUpdateAttendanceDocumentStatus } from '../queries/useAttendanceDocumentStatus';
 import { Class, WorkerAfterNoon } from '../types';
 import { DocumentStatus } from '../types/Document';
 
@@ -288,14 +289,24 @@ const SummerCampAttendancePage: React.FC = () => {
     setPage(0);
   }, [searchTerm, filterInstitutionCode, filterClassCode, filterStatus, filterAccountant]);
 
-  // שינוי סטטוס מסמך (דמה)
+  // הוק לעדכון סטטוס מסמך נוכחות
+  const { mutate: updateStatus, isPending: isUpdatingStatus } = useUpdateAttendanceDocumentStatus();
+
+  // שינוי סטטוס מסמך בפועל
   const handleApprove = (row: any) => {
-    // TODO: לממש קריאה לשרת לעדכון סטטוס
-    alert("אישור מסמך יתעדכן בהקדם");
+    // קבע איזה מסמך לאשר
+    let docId = null;
+    if (row.docType === 'workerAttendanceDoc' && row.workerAttendanceDoc?._id) docId = row.workerAttendanceDoc._id;
+    else if (row.docType === 'studentAttendanceDoc' && row.studentAttendanceDoc?._id) docId = row.studentAttendanceDoc._id;
+    else if (row.docType === 'controlDocs' && row.controlDocs && typeof row.docIndex === 'number' && row.controlDocs[row.docIndex]?._id) docId = row.controlDocs[row.docIndex]._id;
+    if (docId) updateStatus({ documentId: docId, status: 'מאושר' });
   };
   const handleReject = (row: any) => {
-    // TODO: לממש קריאה לשרת לעדכון סטטוס
-    alert("דחיית מסמך יתעדכן בהקדם");
+    let docId = null;
+    if (row.docType === 'workerAttendanceDoc' && row.workerAttendanceDoc?._id) docId = row.workerAttendanceDoc._id;
+    else if (row.docType === 'studentAttendanceDoc' && row.studentAttendanceDoc?._id) docId = row.studentAttendanceDoc._id;
+    else if (row.docType === 'controlDocs' && row.controlDocs && typeof row.docIndex === 'number' && row.controlDocs[row.docIndex]?._id) docId = row.controlDocs[row.docIndex]._id;
+    if (docId) updateStatus({ documentId: docId, status: 'נדחה' });
   };
 
   if (loadingAttendance || loadingClasses || loadingWorkers || loadingUsers) {
@@ -437,7 +448,7 @@ const SummerCampAttendancePage: React.FC = () => {
                           <Stack direction="row" spacing={0.25} alignItems="center">
                             <Tooltip title="צפה במסמך">
                               <IconButton size="small" onClick={() => window.open(workerDoc.url, '_blank')} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
-                                <PictureAsPdfIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                                <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
                               </IconButton>
                             </Tooltip>
                             {workerDoc.status === 'ממתין' ? (
@@ -471,7 +482,7 @@ const SummerCampAttendancePage: React.FC = () => {
                           <Stack direction="row" spacing={0.25} alignItems="center">
                             <Tooltip title="צפה במסמך">
                               <IconButton size="small" onClick={() => window.open(studentDoc.url, '_blank')} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
-                                <PictureAsPdfIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                                <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
                               </IconButton>
                             </Tooltip>
                             {studentDoc.status === 'ממתין' ? (
@@ -512,7 +523,7 @@ const SummerCampAttendancePage: React.FC = () => {
                                   {doc.url && (
                                     <Tooltip title="צפה במסמך">
                                       <IconButton size="small" onClick={() => window.open(doc.url, '_blank')} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
-                                        <PictureAsPdfIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                                        <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
                                       </IconButton>
                                     </Tooltip>
                                   )}
@@ -550,25 +561,31 @@ const SummerCampAttendancePage: React.FC = () => {
               </TableBody>
             </Table>
           </TableContainer>
-          <Box display="flex" justifyContent="center" mt={2}>
-            <Button
-              variant="outlined"
-              disabled={page === 0}
-              onClick={() => setPage(page - 1)}
-              sx={{ mx: 1 }}
-            >
-              הקודם
-            </Button>
-            <Typography variant="body2" sx={{ mx: 2, mt: 1 }}>{page + 1} / {Math.ceil(fullTableData.length / rowsPerPage)}</Typography>
-            <Button
-              variant="outlined"
-              disabled={(page + 1) * rowsPerPage >= fullTableData.length}
-              onClick={() => setPage(page + 1)}
-              sx={{ mx: 1 }}
-            >
-              הבא
-            </Button>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mt={2}>
+            <Box display="flex" alignItems="center">
+              <Button
+                variant="outlined"
+                disabled={page === 0}
+                onClick={() => setPage(page - 1)}
+                sx={{ mx: 1 }}
+              >
+                הקודם
+              </Button>
+              <Typography variant="body2" sx={{ mx: 2 }}>{page + 1} / {Math.ceil(fullTableData.length / rowsPerPage)}</Typography>
+              <Button
+                variant="outlined"
+                disabled={(page + 1) * rowsPerPage >= fullTableData.length}
+                onClick={() => setPage(page + 1)}
+                sx={{ mx: 1 }}
+              >
+                הבא
+              </Button>
+            </Box>
+            <Typography variant="caption" color="text.secondary">
+              סה"כ שורות: {fullTableData.length} | מוצגות: {paginatedData.length}
+            </Typography>
           </Box>
+          
         </Grid>
       </Grid>
     </Box>

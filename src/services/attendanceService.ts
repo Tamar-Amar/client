@@ -290,6 +290,15 @@ export const attendanceService = {
     return response.data;
   },
 
+  updateAttendanceDocumentStatus: async (documentId: string, status: string) => {
+    const response = await axios.patch(
+      `${process.env.REACT_APP_API_URL}/api/attendance/attendance-document/${documentId}/status`,
+      { status },
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
+  },
+
   getClassesByCoordinatorInstitutionCodes: async (coordinatorId: string) => {
     const token = localStorage.getItem('token');
     const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/classes/coordinator-institution-codes/${coordinatorId}`, {
