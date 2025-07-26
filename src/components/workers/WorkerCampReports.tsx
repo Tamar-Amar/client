@@ -89,21 +89,16 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
     if (!leaderClass || !allUsers) return null;
     
     const institutionCode = leaderClass.institutionCode;
-    console.log('Looking for coordinator for institution code:', institutionCode);
-    console.log('Available users:', allUsers);
     
     const coordinator = allUsers.find((user: User) => {
       const isCoordinator = user.role === 'coordinator';
       const hasInstitutionCode = user.projectCodes?.some((pc: { institutionCode: string }) => pc.institutionCode === institutionCode);
-      console.log(`User ${user.firstName} ${user.lastName}: role=${user.role}, hasInstitutionCode=${hasInstitutionCode}`);
       return isCoordinator && hasInstitutionCode;
     });
     
-    console.log('Found coordinator:', coordinator);
     
     // אם לא נמצא רכז, נשתמש ב-ID של המוביל
     if (!coordinator) {
-      console.log('No coordinator found, using leader ID instead:', workerId);
       return workerId;
     }
     
@@ -256,13 +251,7 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
           return;
         }
         
-        console.log('Creating new report with:', {
-          projectCode: 4,
-          classId: leaderClass._id,
-          coordinatorId,
-          leaderId: workerId,
-          month: currentMonth
-        });
+
         
         const newReport = await createCampAttendanceSimpleMutation.mutateAsync({
           projectCode: 4,
@@ -271,12 +260,12 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
           leaderId: workerId,
           month: currentMonth
         });
-        console.log('Created new report:', newReport);
+
         recordId = newReport._id;
         await refetch(); // רענון הנתונים
       }
       
-      console.log('Uploading worker document to record:', recordId);
+
       await uploadDocumentMutation.mutateAsync({
         recordId,
         docType: 'workerAttendanceDoc',
@@ -309,13 +298,7 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
           return;
         }
         
-        console.log('Creating new report with:', {
-          projectCode: 4,
-          classId: leaderClass._id,
-          coordinatorId,
-          leaderId: workerId,
-          month: currentMonth
-        });
+
         
         const newReport = await createCampAttendanceSimpleMutation.mutateAsync({
           projectCode: 4,
@@ -324,12 +307,12 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
           leaderId: workerId,
           month: currentMonth
         });
-        console.log('Created new report:', newReport);
+
         recordId = newReport._id;
         await refetch(); // רענון הנתונים
       }
       
-      console.log('Uploading student document to record:', recordId);
+
       await uploadDocumentMutation.mutateAsync({
         recordId,
         docType: 'studentAttendanceDoc',
@@ -362,13 +345,7 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
           return;
         }
         
-        console.log('Creating new report with:', {
-          projectCode: 4,
-          classId: leaderClass._id,
-          coordinatorId,
-          leaderId: workerId,
-          month: currentMonth
-        });
+
         
         const newReport = await createCampAttendanceSimpleMutation.mutateAsync({
           projectCode: 4,
@@ -377,12 +354,12 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
           leaderId: workerId,
           month: currentMonth
         });
-        console.log('Created new report:', newReport);
+
         recordId = newReport._id;
         await refetch(); // רענון הנתונים
       }
       
-      console.log('Uploading control document to record:', recordId);
+
       await uploadDocumentMutation.mutateAsync({
         recordId,
         docType: 'controlDocs',
@@ -517,8 +494,7 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
                         style={{ display: 'none' }}
                         id="worker-file-input"
                         onChange={(e) => {
-                          console.log('Worker file selected:', e.target.files?.[0]);
-                          setWorkerFileInput(e.target.files?.[0] || null);
+                            setWorkerFileInput(e.target.files?.[0] || null);
                         }}
                       />
                       <label htmlFor="worker-file-input">

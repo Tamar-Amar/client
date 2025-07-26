@@ -12,7 +12,11 @@ import {
   Alert,
   CircularProgress,
   Divider,
-
+  Tabs,
+  Tab,
+  Card,
+  CardContent,
+  Grid,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -24,6 +28,7 @@ import {
   TableHead,
   TableRow,
   Checkbox,
+  Chip,
 } from '@mui/material';
 import {
   CloudUpload as UploadIcon,
@@ -31,6 +36,8 @@ import {
   Error as ErrorIcon,
   ArrowBack as BackIcon,
   Download as DownloadIcon,
+  Edit as EditIcon,
+  Update as UpdateIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
@@ -47,13 +54,40 @@ const UPDATEABLE_FIELDS = [
   { value: 'is101', label: 'סטטוס 101' },
 ];
 
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`update-tabpanel-${index}`}
+      aria-labelledby={`update-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ p: 3 }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+}
+
 const WorkersUpdatePage: React.FC = () => {
   const navigate = useNavigate();
+  const [tabValue, setTabValue] = useState(0);
   const [selectedField, setSelectedField] = useState<string>('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [results, setResults] = useState<{
-    success: Array<{ id: string; oldValue: any; newValue: any }>;
+    success: Array<{ id: string; oldValue?: any; newValue?: any; changes?: string[] }>;
     failed: Array<{ id: string; error: string }>;
   }>({ success: [], failed: [] });
   const [previewData, setPreviewData] = useState<Array<{ id: string; newValue: any; status?: string }>>([]);
@@ -62,6 +96,21 @@ const WorkersUpdatePage: React.FC = () => {
   const [showUpdateDetails, setShowUpdateDetails] = useState(false);
   const [selectedToUpdate, setSelectedToUpdate] = useState<string[]>([]);
 
+  // מצב לעדכון כללי
+  const [generalUpdateData, setGeneralUpdateData] = useState<Array<{
+    id: string;
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    email?: string;
+    roleName?: string;
+    classSymbol?: string;
+    oldClassSymbol?: string;
+    changes: string[];
+    existingData?: any; // שדה חדש לאחסון נתונים קיימים
+  }>>([]);
+  const [showGeneralUpdatePreview, setShowGeneralUpdatePreview] = useState(false);
+
   useEffect(() => {
     if (updatePreview.length > 0) {
       const workersToUpdate = updatePreview.filter(w => w.needsUpdate).map(w => w.id);
@@ -69,11 +118,26 @@ const WorkersUpdatePage: React.FC = () => {
     }
   }, [updatePreview]);
 
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+    // איפוס מצב כאשר עוברים בין טאבים
+    setUploadedFile(null);
+    setPreviewData([]);
+    setValidationResults([]);
+    setUpdatePreview([]);
+    setGeneralUpdateData([]);
+    setSelectedField('');
+  };
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       setUploadedFile(file);
-      processExcelFile(file);
+      if (tabValue === 0) {
+        processExcelFile(file);
+      } else {
+        processGeneralUpdateFile(file);
+      }
     }
   };
 
@@ -102,23 +166,18 @@ const WorkersUpdatePage: React.FC = () => {
               newValue = newValue.trim().replace(/\s+/g, ' ');
             }
             return {
-              id: String(row[0]),
+              id: String(row[0]).trim(),
               newValue: newValue,
-              row: index + 2 // מספר שורה בקובץ המקורי (החל מ-2 כי שורה 1 היא כותרות)
+              row: index + 2
             };
           })
-          .filter(item => {
-            // בדוק שהתז תקין (מעל 7 ספרות) ולא ריק
-            const id = String(item.id).trim();
-            return id.length >= 7 && id !== '' && id !== 'undefined' && id !== 'null';
-          });
+          .filter((item: any) => item.id && item.id.length >= 7);
 
         setPreviewData(processedData);
-        // בדיקת קיום תעודות זהות במערכת
+        
+        // בדיקת קיום עובדים
         if (processedData.length > 0) {
           validateWorkersExist(processedData);
-        } else {
-          alert('לא נמצאו תעודות זהות תקינות בקובץ (נדרש מעל 7 ספרות)');
         }
       } catch (error) {
         console.error('Error processing Excel file:', error);
@@ -127,6 +186,160 @@ const WorkersUpdatePage: React.FC = () => {
     };
     reader.readAsArrayBuffer(file);
   };
+
+  const processGeneralUpdateFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+        // בדיקה שיש לפחות עמודות בסיסיות (כמו בייבוא מתקדם)
+        if (jsonData.length < 2 || (jsonData[0] as any[]).length < 14) {
+          alert('הקובץ חייב להכיל את כל העמודות הנדרשות כמו בייבוא מתקדם');
+          return;
+        }
+
+        const processedData = jsonData.slice(1)
+          .map((row: any, index: number) => {
+            let id = row[5]?.toString()?.trim() || '';
+            if (id.includes('E') || id.includes('e')) {
+              const originalValue = row[5];
+              id = Number(originalValue).toString();
+            }
+            
+            if (!id || id.length < 7) return null;
+
+            const changes: string[] = [];
+            const workerData: any = { id, changes };
+
+            // בדיקת שינויים בשדות השונים - באותו סדר כמו ייבוא מתקדם
+            // row[0] - סמל מוסד (לא משתנה בעדכון כללי)
+            // row[1] - חשב שכר (לא משתנה בעדכון כללי)
+            // row[2] - מודל (לא משתנה בעדכון כללי)
+            // row[3] - סוג תפקיד (לא משתנה בעדכון כללי)
+            
+            // row[4] - שם תפקיד
+            if (row[4] && row[4] !== '') {
+              workerData.roleName = row[4].trim().replace(/\s+/g, ' ');
+              // נבדוק אם יש שינוי אמיתי אחרי קבלת הנתונים הקיימים
+            }
+            
+            // row[5] - תעודת זהות (לא משתנה)
+            // row[6] - שם משפחה
+            if (row[6] && row[6] !== '') {
+              workerData.lastName = row[6].trim();
+              // נבדוק אם יש שינוי אמיתי אחרי קבלת הנתונים הקיימים
+            }
+            
+            // row[7] - שם פרטי
+            if (row[7] && row[7] !== '') {
+              workerData.firstName = row[7].trim();
+            }
+            
+            if (row[8] && row[8] !== '') {
+              workerData.phone = row[8].toString();
+            }
+            
+            if (row[9] && row[9] !== '') {
+              workerData.email = row[9].toString();
+            }
+
+            if (row[0] && row[0] !== '') {
+              workerData.classSymbol = row[0].toString().trim();
+              }
+
+            return workerData;
+          })
+          .filter(Boolean);
+
+        const workerIds = processedData.map((w: any) => w.id);
+        try {
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/worker-after-noon/get-for-general-update`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              workerIds: workerIds
+            }),
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            
+            const enrichedData = processedData.map((worker: any) => {
+              const existingWorker = result.workers.find((w: any) => w.id === worker.id);
+              
+              
+              if (existingWorker) {
+                const realChanges: string[] = [];
+                
+                if (worker.firstName && worker.firstName !== existingWorker.firstName) {
+                  realChanges.push('שם פרטי');
+                }
+                if (worker.lastName && worker.lastName !== existingWorker.lastName) {
+                  realChanges.push('שם משפחה');
+                }
+                if (worker.phone && worker.phone !== existingWorker.phone) {
+                  realChanges.push('טלפון');
+                }
+                if (worker.email && worker.email !== existingWorker.email) {
+                  realChanges.push('אימייל');
+                }
+                if (worker.roleName && worker.roleName !== existingWorker.roleName) {
+                  realChanges.push('תפקיד');
+                }
+                
+                // בדיקת שינוי בסמל כיתה - נחפש את הכיתה שבה העובד משויך לפרויקט 4
+                if (worker.classSymbol && existingWorker.classSymbol && worker.classSymbol !== existingWorker.classSymbol) {
+                  realChanges.push('סמל כיתה');
+                }
+                
+                // בדיקה נוספת - אם יש סמל באקסל אבל לא במערכת
+                if (worker.classSymbol && !existingWorker.classSymbol) {
+                  realChanges.push('סמל כיתה');
+                }
+                
+                // בדיקה נוספת - אם אין סמל באקסל אבל היה במערכת
+                if (!worker.classSymbol && existingWorker.classSymbol) {
+                  realChanges.push('סמל כיתה');
+                }
+                
+                return {
+                  ...worker,
+                  oldClassSymbol: existingWorker.classSymbol,
+                  existingData: existingWorker,
+                  changes: realChanges
+                };
+              } else {  
+              }
+              return worker;
+            });
+
+            setGeneralUpdateData(enrichedData);
+          } else {
+            setGeneralUpdateData(processedData);
+          }
+        } catch (error) {
+          console.error('Error fetching existing data:', error);
+          setGeneralUpdateData(processedData);
+        }
+      } catch (error) {
+        console.error('Error processing general update file:', error);
+        alert('שגיאה בעיבוד קובץ האקסל');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  // פונקציה לסינון עובדים עם שינויים אמיתיים
+  const workersWithRealChanges = generalUpdateData.filter(worker => 
+    worker.changes && worker.changes.length > 0
+  );
 
   const handleUpdateWorkers = async () => {
     if (!selectedField || !uploadedFile || previewData.length === 0) {
@@ -153,7 +366,6 @@ const WorkersUpdatePage: React.FC = () => {
         const trueValues = ['יש', 'true', 'כן', '1', 'תקין'];
         processedNewValue = trueValues.includes(String(worker.newValue).toLowerCase());
       }
-      // נרמול התפקיד אם זה השדה שמתעדכן
       if (selectedField === 'roleName' && typeof processedNewValue === 'string') {
         processedNewValue = processedNewValue.trim().replace(/\s+/g, ' ');
       }
@@ -162,7 +374,6 @@ const WorkersUpdatePage: React.FC = () => {
         newValue: processedNewValue
       };
     });
-    // לוג: מה נשלח לשרת
 
     setIsProcessing(true);
     setResults({ success: [], failed: [] });
@@ -197,6 +408,50 @@ const WorkersUpdatePage: React.FC = () => {
     } catch (error) {
       console.error('Error updating workers:', error);
       alert('שגיאה בעדכון העובדים');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleGeneralUpdate = async () => {
+    if (!uploadedFile || generalUpdateData.length === 0) {
+      alert('נא להעלות קובץ אקסל');
+      return;
+    }
+
+    setIsProcessing(true);
+    setResults({ success: [], failed: [] });
+
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/worker-after-noon/update-general`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          projectCode: 4, // קייטנת קיץ
+          updates: generalUpdateData
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('שגיאה בעדכון הכללי');
+      }
+
+      const result = await response.json();
+      setResults(result);
+      
+      if (result.success.length > 0) {
+        alert(`עודכנו בהצלחה ${result.success.length} עובדים`);
+      }
+      
+      if (result.failed.length > 0) {
+        alert(`נכשלו ${result.failed.length} עדכונים`);
+      }
+
+    } catch (error) {
+      console.error('Error in general update:', error);
+      alert('שגיאה בעדכון הכללי');
     } finally {
       setIsProcessing(false);
     }
@@ -240,52 +495,21 @@ const WorkersUpdatePage: React.FC = () => {
 
       setValidationResults(validationResults);
       
-              // יצירת תצוגה מקדימה לעדכון
-        if (selectedField) {
-          const updatePreview = validationResults
-            .filter(w => w.status === 'קיים במערכת')
-            .map(worker => {
-              const oldValue = worker.oldValue;
-              const newValue = worker.newValue;
-              
-              // ניקוי רווחים והשוואה מדויקת
-              let cleanOldValue = String(oldValue || '').trim();
-              let cleanNewValue = String(newValue || '').trim();
-              
-              // נרמול התפקיד אם זה השדה שמתעדכן
-              if (selectedField === 'roleName') {
-                cleanOldValue = cleanOldValue.replace(/\s+/g, ' ');
-                cleanNewValue = cleanNewValue.replace(/\s+/g, ' ');
-              }
-              
-              // טיפול מיוחד בשדות בוליאניים
-              if (selectedField === 'is101' || selectedField === 'isActive') {
-                const trueValues = ['יש', 'true', 'כן', '1', 'תקין'];
-                const newBool = trueValues.includes(String(cleanNewValue).toLowerCase());
-                const oldBool = !!oldValue; // oldValue תמיד בוליאני
-                cleanOldValue = oldBool ? 'true' : 'false';
-                cleanNewValue = newBool ? 'true' : 'false';
-              }
-              
-              const needsUpdate = cleanOldValue !== cleanNewValue;
-              
-              return {
-                id: worker.id,
-                oldValue,
-                newValue,
-                needsUpdate
-              };
-            })
-            .filter(worker => worker.needsUpdate); // רק עובדים שצריכים עדכון
-          
-          setUpdatePreview(updatePreview);
-        }
+      // יצירת תצוגה מקדימה של עדכונים
+      const updatePreview = validationResults
+        .filter(w => w.status === 'קיים במערכת')
+        .map(worker => {
+          const needsUpdate = worker.oldValue !== worker.newValue;
+          return {
+            id: worker.id,
+            oldValue: worker.oldValue,
+            newValue: worker.newValue,
+            needsUpdate
+          };
+        });
       
-      // הצגת התראה על עובדים חסרים
-      const missingWorkers = validationResults.filter(w => w.status === 'עובד חסר');
-      if (missingWorkers.length > 0) {
-        alert(`נמצאו ${missingWorkers.length} עובדים חסרים במערכת. תוכל להוריד קובץ אקסל עם התוצאות המלאות.`);
-      }
+      setUpdatePreview(updatePreview);
+      
     } catch (error) {
       console.error('Error validating workers:', error);
       alert('שגיאה בבדיקת קיום עובדים');
@@ -295,37 +519,69 @@ const WorkersUpdatePage: React.FC = () => {
   const downloadValidationResults = () => {
     if (validationResults.length === 0) return;
 
-    // יצירת קובץ אקסל עם התוצאות
-    const workbook = XLSX.utils.book_new();
-    
-    // הוספת כותרות
-    const headers = ['תעודת זהות', 'ערך חדש', 'סטטוס', 'מספר שורה בקובץ המקורי', 'ערך קודם'];
-    const data = [headers, ...validationResults.map(w => {
-      let newValue = w.newValue;
-      let oldValue = w.oldValue;
-      
-      // נרמול התפקיד אם זה השדה שמתעדכן
-      if (selectedField === 'roleName') {
-        newValue = typeof newValue === 'string' ? newValue.trim().replace(/\s+/g, ' ') : newValue;
-        oldValue = typeof oldValue === 'string' ? oldValue.trim().replace(/\s+/g, ' ') : oldValue;
+    const ws = XLSX.utils.json_to_sheet(validationResults.map(w => ({
+      'תעודת זהות': w.id,
+      'ערך חדש': w.newValue,
+      'סטטוס': w.status,
+      'שורה בקובץ': w.row,
+      'ערך קיים': w.oldValue || 'לא קיים'
+    })));
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'תוצאות בדיקה');
+    XLSX.writeFile(wb, 'תוצאות_בדיקת_עובדים.xlsx');
+  };
+
+  const downloadGeneralUpdateResults = () => {
+    if (results.success.length === 0 && results.failed.length === 0) return;
+
+    const ws = XLSX.utils.json_to_sheet([
+      ...results.success.map(w => ({
+        'תעודת זהות': w.id,
+        'סטטוס': 'הצלחה',
+        'שדות שעודכנו': Array.isArray(w.changes) ? w.changes.join(', ') : w.changes
+      })),
+      ...results.failed.map(w => ({
+        'תעודת זהות': w.id,
+        'סטטוס': 'כישלון',
+        'שגיאה': w.error
+      }))
+    ]);
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'תוצאות עדכון כללי');
+    XLSX.writeFile(wb, 'תוצאות_עדכון_כללי.xlsx');
+  };
+
+  const downloadGeneralUpdateTemplate = () => {
+    const template = [
+      {
+        'סמל מוסד': '',
+        'חשב שכר': '',
+        'מודל': '',
+        'סוג תפקיד': '',
+        'שם תפקיד': '',
+        'תעודת זהות': '',
+        'שם משפחה': '',
+        'שם פרטי': '',
+        'טלפון': '',
+        'אימייל': '',
+        'תאריך התחלה': '',
+        'תאריך סיום': '',
+        'סטטוס': '',
+        'טופס 101': ''
       }
-      
-      return [w.id, newValue, w.status, w.row, oldValue];
-    })];
-    
-    const worksheet = XLSX.utils.aoa_to_sheet(data);
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'תוצאות בדיקה');
-    
-    // הורדת הקובץ
-    XLSX.writeFile(workbook, `תוצאות_בדיקה_עובדים_${new Date().toISOString().split('T')[0]}.xlsx`);
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(template);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'תבנית עדכון כללי');
+    XLSX.writeFile(wb, 'תבנית_עדכון_כללי.xlsx');
   };
 
   const getFieldLabel = (fieldValue: string) => {
-    const field = UPDATEABLE_FIELDS.find(field => field.value === fieldValue);
-    if (field?.value === 'roleName') {
-      return `${field.label} (מנורמל)`;
-    }
-    return field?.label || fieldValue;
+    const field = UPDATEABLE_FIELDS.find(f => f.value === fieldValue);
+    return field ? field.label : fieldValue;
   };
 
   return (
@@ -347,197 +603,355 @@ const WorkersUpdatePage: React.FC = () => {
 
         <Divider sx={{ mb: 3 }} />
 
-        {/* Instructions */}
-        <Alert severity="info" sx={{ mb: 3 }}>
-          <Typography variant="body1" fontWeight="bold">
-            הוראות לעדכון עובדים:
-          </Typography>
-          <Typography variant="body2">
-            1. בחר את השדה שברצונך לעדכן
-          </Typography>
-          <Typography variant="body2">
-            2. העלה קובץ אקסל עם 2 עמודות: תעודת זהות (מינימום 7 ספרות) וערך חדש
-          </Typography>
-          <Typography variant="body2">
-            3. שורות עם תעודת זהות קצרה מ-7 ספרות או ריקות יועברו
-          </Typography>
-          <Typography variant="body2">
-            4. שמות תפקידים ינורמלו אוטומטית (רווחים מיותרים יוסרו)
-          </Typography>
-          <Typography variant="body2">
-            5. המערכת תבדוק אוטומטית את קיום תעודות הזהות במערכת
-          </Typography>
-          <Typography variant="body2">
-            6. תוכל להוריד קובץ אקסל עם תוצאות הבדיקה (כולל עובדים חסרים)
-          </Typography>
-          <Typography variant="body2">
-            7. רק עובדים קיימים יועדכנו במערכת
-          </Typography>
-        </Alert>
+        {/* Tabs */}
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+          <Tabs value={tabValue} onChange={handleTabChange} aria-label="עדכון עובדים">
+            <Tab 
+              icon={<EditIcon />} 
+              label="עדכון שדה בודד" 
+              iconPosition="start"
+            />
+            <Tab 
+              icon={<UpdateIcon />} 
+              label="עדכון כללי" 
+              iconPosition="start"
+            />
+          </Tabs>
+        </Box>
 
-        <Box sx={{ display: 'flex', gap: 3 }}>
-          {/* Left Column - Selection */}
-          <Box sx={{ flex: 1 }}>
-            <Paper sx={{ p: 3, mb: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                בחירת שדה לעדכון
-              </Typography>
-              
-              <FormControl fullWidth sx={{ mb: 3 }}>
-                <InputLabel>שדה לעדכון</InputLabel>
-                <Select
-                  value={selectedField}
-                  label="שדה לעדכון"
-                  onChange={(e) => setSelectedField(e.target.value)}
-                >
-                  {UPDATEABLE_FIELDS.map((field) => (
-                    <MenuItem key={field.value} value={field.value}>
-                      {field.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+        {/* Tab Panels */}
+        <TabPanel value={tabValue} index={0}>
+          {/* עדכון שדה בודד */}
+          <Alert severity="info" sx={{ mb: 3 }}>
+            <Typography variant="body1" fontWeight="bold">
+              הוראות לעדכון שדה בודד:
+            </Typography>
+            <Typography variant="body2">
+              1. בחר את השדה שברצונך לעדכן
+            </Typography>
+            <Typography variant="body2">
+              2. העלה קובץ אקסל עם 2 עמודות: תעודת זהות (מינימום 7 ספרות) וערך חדש
+            </Typography>
+            <Typography variant="body2">
+              3. שורות עם תעודת זהות קצרה מ-7 ספרות או ריקות יועברו
+            </Typography>
+            <Typography variant="body2">
+              4. שמות תפקידים ינורמלו אוטומטית (רווחים מיותרים יוסרו)
+            </Typography>
+            <Typography variant="body2">
+              5. המערכת תבדוק אוטומטית את קיום תעודות הזהות במערכת
+            </Typography>
+            <Typography variant="body2">
+              6. תוכל להוריד קובץ אקסל עם תוצאות הבדיקה (כולל עובדים חסרים)
+            </Typography>
+            <Typography variant="body2">
+              7. רק עובדים קיימים יועדכנו במערכת
+            </Typography>
+          </Alert>
 
-              <Divider sx={{ my: 2 }} />
+          <Grid container spacing={3}>
+            {/* Left Column - Controls */}
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 3 }}>
+                <Typography variant="h6" gutterBottom>
+                  הגדרות עדכון
+                </Typography>
+                
+                <FormControl fullWidth sx={{ mb: 3 }}>
+                  <InputLabel>בחר שדה לעדכון</InputLabel>
+                  <Select
+                    value={selectedField}
+                    onChange={(e) => setSelectedField(e.target.value)}
+                    label="בחר שדה לעדכון"
+                  >
+                    {UPDATEABLE_FIELDS.map((field) => (
+                      <MenuItem key={field.value} value={field.value}>
+                        {field.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
 
-              <Typography variant="h6" gutterBottom>
-                העלאת קובץ אקסל
-              </Typography>
-              
-              <Button
-                variant="outlined"
-                component="label"
-                startIcon={<UploadIcon />}
-                fullWidth
-                sx={{ mb: 2 }}
-              >
-                בחר קובץ אקסל
-                <input
-                  type="file"
-                  hidden
-                  accept=".xlsx,.xls"
-                  onChange={handleFileUpload}
-                />
-              </Button>
+                <Box sx={{ mb: 3 }}>
+                  <input
+                    accept=".xlsx,.xls"
+                    style={{ display: 'none' }}
+                    id="excel-file-upload"
+                    type="file"
+                    onChange={handleFileUpload}
+                  />
+                  <label htmlFor="excel-file-upload">
+                    <Button
+                      variant="outlined"
+                      component="span"
+                      fullWidth
+                      startIcon={<UploadIcon />}
+                      disabled={!selectedField}
+                    >
+                      העלה קובץ אקסל
+                    </Button>
+                  </label>
+                  {uploadedFile && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                      קובץ נבחר: {uploadedFile.name}
+                    </Typography>
+                  )}
+                </Box>
 
-              {uploadedFile && (
-                <Alert severity="success" sx={{ mb: 2 }}>
-                  הקובץ הועלה בהצלחה: {uploadedFile.name}
-                </Alert>
-              )}
+                {selectedField && uploadedFile && previewData.length > 0 && (
+                  <>
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      onClick={handleUpdateWorkers}
+                      disabled={isProcessing}
+                      startIcon={isProcessing ? <CircularProgress size={20} /> : <CheckIcon />}
+                      sx={{ mb: 2 }}
+                    >
+                      {isProcessing ? 'מעדכן...' : `עדכן עובדים${selectedField === 'roleName' ? ' (שמות תפקידים ינורמלו)' : ''}`}
+                    </Button>
+                    
+                    {validationResults.length > 0 && (
+                      <Button
+                        variant="outlined"
+                        fullWidth
+                        onClick={downloadValidationResults}
+                        startIcon={<DownloadIcon />}
+                        color="error"
+                      >
+                        הורד תוצאות בדיקה
+                      </Button>
+                    )}
+                  </>
+                )}
+              </Paper>
+            </Grid>
 
-              {selectedField && uploadedFile && previewData.length > 0 && (
-                <>
+            {/* Right Column - Preview */}
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 3 }}>
+                <Typography variant="h6" gutterBottom>
+                  תצוגה מקדימה
+                </Typography>
+                
+                {previewData.length > 0 && selectedField && (
+                  <>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      עומדים לעדכן {previewData.length} עובדים בשדה "{getFieldLabel(selectedField)}"
+                    </Typography>
+                    
+                    {validationResults.length > 0 && (
+                      <>
+                        <Alert 
+                          severity={validationResults.some(w => w.status === 'עובד חסר') ? 'warning' : 'success'} 
+                          sx={{ mb: 2 }}
+                        >
+                          {validationResults.filter(w => w.status === 'עובד חסר').length} עובדים חסרים במערכת
+                        </Alert>
+                        
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="body2" fontWeight="bold">
+                            סה"כ עובדים קיימים לעדכון: {selectedToUpdate.length}
+                          </Typography>
+                        </Box>
+                        
+                        {selectedToUpdate.length > 0 && (
+                          <Button
+                            variant="outlined"
+                            fullWidth
+                            onClick={() => setShowUpdateDetails(true)}
+                            sx={{ mb: 2 }}
+                          >
+                            פירוט עובדים לעדכון
+                          </Button>
+                        )}
+                      </>
+                    )}
+                  </>
+                )}
+              </Paper>
+            </Grid>
+          </Grid>
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={1}>
+          {/* עדכון כללי */}
+          <Alert severity="info" sx={{ mb: 3 }}>
+            <Typography variant="body1" fontWeight="bold">
+              הוראות לעדכון כללי (קייטנת קיץ):
+            </Typography>
+            <Typography variant="body2">
+              1. העלה קובץ אקסל באותו פורמט בדיוק כמו ייבוא מתקדם
+            </Typography>
+            <Typography variant="body2">
+              2. העמודות הנדרשות: סמל מוסד, חשב שכר, מודל, סוג תפקיד, שם תפקיד, תעודת זהות, שם משפחה, שם פרטי, טלפון, אימייל, תאריך התחלה, תאריך סיום, סטטוס, טופס 101
+            </Typography>
+            <Typography variant="body2">
+              3. המערכת תעדכן רק עובדים שמופיעים בפרויקט קייטנת קיץ (קוד 4)
+            </Typography>
+            <Typography variant="body2">
+              4. רק שדות עם ערכים יועדכנו (שדות ריקים יישמרו כפי שהם)
+            </Typography>
+            <Typography variant="body2">
+              5. שינויים בסמלי כיתה יוצגו בטבלת השוואה
+            </Typography>
+          </Alert>
+
+          <Alert severity="warning" sx={{ mb: 3 }}>
+            <Typography variant="body2" fontWeight="bold">
+              ⚠️ חשוב: עדכון כללי זמין רק לפרויקט קייטנת קיץ (קוד 4)
+            </Typography>
+            <Typography variant="body2">
+              עובדים שלא מופיעים בפרויקט קייטנת קיץ לא יועדכנו
+            </Typography>
+          </Alert>
+
+          <Grid container spacing={3}>
+            {/* Left Column - Controls */}
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 3 }}>
+                <Typography variant="h6" gutterBottom>
+                  העלאת קובץ עדכון כללי
+                </Typography>
+                
+                <Box sx={{ mb: 3 }}>
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    onClick={downloadGeneralUpdateTemplate}
+                    startIcon={<DownloadIcon />}
+                    sx={{ mb: 2 }}
+                  >
+                    הורד תבנית אקסל
+                  </Button>
+                  
+                  <input
+                    accept=".xlsx,.xls"
+                    style={{ display: 'none' }}
+                    id="general-excel-file-upload"
+                    type="file"
+                    onChange={handleFileUpload}
+                  />
+                  <label htmlFor="general-excel-file-upload">
+                    <Button
+                      variant="outlined"
+                      component="span"
+                      fullWidth
+                      startIcon={<UploadIcon />}
+                    >
+                      העלה קובץ אקסל
+                    </Button>
+                  </label>
+                  {uploadedFile && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                      קובץ נבחר: {uploadedFile.name}
+                    </Typography>
+                  )}
+                </Box>
+
+                {uploadedFile && generalUpdateData.length > 0 && (
                   <Button
                     variant="contained"
                     fullWidth
-                    onClick={handleUpdateWorkers}
-                    disabled={isProcessing}
-                    startIcon={isProcessing ? <CircularProgress size={20} /> : <CheckIcon />}
+                    onClick={() => setShowGeneralUpdatePreview(true)}
+                    startIcon={<CheckIcon />}
                     sx={{ mb: 2 }}
                   >
-                    {isProcessing ? 'מעדכן...' : `עדכן עובדים${selectedField === 'roleName' ? ' (שמות תפקידים ינורמלו)' : ''}`}
+                    הצג תצוגה מקדימה
                   </Button>
-                  
-                  {validationResults.length > 0 && (
-                    <Button
-                      variant="outlined"
-                      fullWidth
-                      onClick={downloadValidationResults}
-                      startIcon={<DownloadIcon />}
-                      color="error"
-                    >
-                      הורד תוצאות בדיקה
-                    </Button>
-                  )}
-                </>
-              )}
-            </Paper>
-          </Box>
+                )}
 
-          {/* Right Column - Preview */}
-          <Box sx={{ flex: 1 }}>
-            <Paper sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                תצוגה מקדימה
-              </Typography>
-              
-                             {previewData.length > 0 && selectedField && (
-                 <>
-                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                     עומדים לעדכן {previewData.length} עובדים בשדה "{getFieldLabel(selectedField)}"
-                   </Typography>
-                   
-                   {validationResults.length > 0 && (
-                     <>
-                       <Alert 
-                         severity={validationResults.some(w => w.status === 'עובד חסר') ? 'warning' : 'success'} 
-                         sx={{ mb: 2 }}
-                       >
-                         {validationResults.filter(w => w.status === 'עובד חסר').length} עובדים חסרים במערכת
-                       </Alert>
-                       
-                       <Box sx={{ mb: 2 }}>
-                         <Typography variant="body2" fontWeight="bold">
-                           סה"כ עובדים קיימים לעדכון: {selectedToUpdate.length}
-                         </Typography>
-                       </Box>
-                       
-                       {selectedToUpdate.length > 0 && (
-                         <Button
-                           variant="outlined"
-                           fullWidth
-                           onClick={() => setShowUpdateDetails(true)}
-                           sx={{ mb: 2 }}
-                         >
-                           פירוט עובדים לעדכון
-                         </Button>
-                       )}
-                     </>
-                   )}
-                   
-                                      <Alert severity="info" sx={{ mb: 2 }}>
-                     <Typography variant="body2">
-                       הקובץ מכיל {previewData.length} עובדים. לחץ על "פירוט עובדים לעדכון" כדי לראות את העובדים שיעודכנו.
-                     </Typography>
-                     {selectedField === 'roleName' && (
-                       <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
-                         הערה: שמות תפקידים ינורמלו אוטומטית (רווחים מיותרים יוסרו)
-                       </Typography>
-                     )}
-                   </Alert>
-                   
-                  
-                 </>
-               )}
+                {uploadedFile && generalUpdateData.length > 0 && (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    fullWidth
+                    onClick={handleGeneralUpdate}
+                    disabled={isProcessing}
+                    startIcon={isProcessing ? <CircularProgress size={20} /> : <UpdateIcon />}
+                    sx={{ mb: 2 }}
+                  >
+                    {isProcessing ? 'מעדכן...' : 'בצע עדכון כללי'}
+                  </Button>
+                )}
 
-              {/* Results */}
-              {(results.success.length > 0 || results.failed.length > 0) && (
-                <>
-                  <Divider sx={{ my: 2 }} />
-                  <Typography variant="h6" gutterBottom>
-                    תוצאות העדכון
-                  </Typography>
-                  
-                  {results.success.length > 0 && (
-                    <Alert severity="success" sx={{ mb: 2 }}>
-                      עודכנו בהצלחה {results.success.length} עובדים
-                    </Alert>
-                  )}
-                  
-                  {results.failed.length > 0 && (
-                    <Alert severity="error" sx={{ mb: 2 }}>
-                      נכשלו {results.failed.length} עדכונים
-                    </Alert>
-                  )}
-                </>
-              )}
-            </Paper>
-          </Box>
-        </Box>
+                {(results.success.length > 0 || results.failed.length > 0) && (
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    onClick={downloadGeneralUpdateResults}
+                    startIcon={<DownloadIcon />}
+                    color="info"
+                  >
+                    הורד תוצאות עדכון
+                  </Button>
+                )}
+              </Paper>
+            </Grid>
+
+            {/* Right Column - Summary */}
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 3 }}>
+                <Typography variant="h6" gutterBottom>
+                  סיכום עדכון כללי
+                </Typography>
+                
+                {generalUpdateData.length > 0 && (
+                  <>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      נמצאו {generalUpdateData.length} עובדים בקובץ
+                    </Typography>
+                    
+                    <Typography variant="body2" color="primary" fontWeight="bold" sx={{ mb: 2 }}>
+                      עובדים עם שינויים אמיתיים: {workersWithRealChanges.length}
+                    </Typography>
+                    
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" fontWeight="bold">
+                        סוגי שינויים:
+                      </Typography>
+                      {['שם פרטי', 'שם משפחה', 'טלפון', 'אימייל', 'תפקיד', 'סמל כיתה'].map(field => {
+                        const count = workersWithRealChanges.filter(w => w.changes.includes(field)).length;
+                        return count > 0 ? (
+                          <Chip 
+                            key={field} 
+                            label={`${field}: ${count}`} 
+                            size="small" 
+                            sx={{ mr: 1, mb: 1 }} 
+                          />
+                        ) : null;
+                      })}
+                    </Box>
+                  </>
+                )}
+
+                {(results.success.length > 0 || results.failed.length > 0) && (
+                  <>
+                    <Divider sx={{ my: 2 }} />
+                    <Typography variant="h6" gutterBottom>
+                      תוצאות עדכון
+                    </Typography>
+                    
+                    {results.success.length > 0 && (
+                      <Alert severity="success" sx={{ mb: 2 }}>
+                        עודכנו בהצלחה {results.success.length} עובדים
+                      </Alert>
+                    )}
+                    
+                    {results.failed.length > 0 && (
+                      <Alert severity="error" sx={{ mb: 2 }}>
+                        נכשלו {results.failed.length} עדכונים
+                      </Alert>
+                    )}
+                  </>
+                )}
+              </Paper>
+            </Grid>
+          </Grid>
+        </TabPanel>
       </Box>
 
-      {/* Dialog for update details */}
+      {/* Dialog for single field update details */}
       <Dialog
         open={showUpdateDetails}
         onClose={() => setShowUpdateDetails(false)}
@@ -609,6 +1023,193 @@ const WorkersUpdatePage: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowUpdateDetails(false)}>
+            סגור
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog for general update preview */}
+      <Dialog
+        open={showGeneralUpdatePreview}
+        onClose={() => setShowGeneralUpdatePreview(false)}
+        maxWidth="xl"
+        fullWidth
+      >
+        <DialogTitle>
+          תצוגה מקדימה - עדכון כללי (קייטנת קיץ)
+        </DialogTitle>
+        <DialogContent>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>תעודת זהות</TableCell>
+                  <TableCell>שם פרטי</TableCell>
+                  <TableCell>שם משפחה</TableCell>
+                  <TableCell>טלפון</TableCell>
+                  <TableCell>אימייל</TableCell>
+                  <TableCell>תפקיד</TableCell>
+                  <TableCell>סמל כיתה</TableCell>
+                  <TableCell>שינויים</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {workersWithRealChanges.map((worker, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{worker.id}</TableCell>
+                    <TableCell>
+                      {worker.firstName && worker.existingData && worker.firstName !== worker.existingData.firstName ? (
+                        <Box>
+                          <Typography variant="body2" color="primary" fontWeight="bold">
+                            {worker.firstName}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            היה: {worker.existingData.firstName || 'לא מוגדר'}
+                          </Typography>
+                        </Box>
+                      ) : (
+                        <Box>
+                          <Typography variant="body2" color="text.secondary">
+                            לא משתנה
+                          </Typography>
+                          {worker.existingData && (
+                            <Typography variant="caption" color="text.secondary">
+                              נוכחי: {worker.existingData.firstName || 'לא מוגדר'}
+                            </Typography>
+                          )}
+                        </Box>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {worker.lastName && worker.existingData && worker.lastName !== worker.existingData.lastName ? (
+                        <Box>
+                          <Typography variant="body2" color="primary" fontWeight="bold">
+                            {worker.lastName}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            היה: {worker.existingData.lastName || 'לא מוגדר'}
+                          </Typography>
+                        </Box>
+                      ) : (
+                        <Box>
+                          <Typography variant="body2" color="text.secondary">
+                            לא משתנה
+                          </Typography>
+                          {worker.existingData && (
+                            <Typography variant="caption" color="text.secondary">
+                              נוכחי: {worker.existingData.lastName || 'לא מוגדר'}
+                            </Typography>
+                          )}
+                        </Box>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {worker.phone && worker.existingData && worker.phone !== worker.existingData.phone ? (
+                        <Box>
+                          <Typography variant="body2" color="primary" fontWeight="bold">
+                            {worker.phone}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            היה: {worker.existingData.phone || 'לא מוגדר'}
+                          </Typography>
+                        </Box>
+                      ) : (
+                        <Box>
+                          <Typography variant="body2" color="text.secondary">
+                            לא משתנה
+                          </Typography>
+                          {worker.existingData && (
+                            <Typography variant="caption" color="text.secondary">
+                              נוכחי: {worker.existingData.phone || 'לא מוגדר'}
+                            </Typography>
+                          )}
+                        </Box>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {worker.email && worker.existingData && worker.email !== worker.existingData.email ? (
+                        <Box>
+                          <Typography variant="body2" color="primary" fontWeight="bold">
+                            {worker.email}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            היה: {worker.existingData.email || 'לא מוגדר'}
+                          </Typography>
+                        </Box>
+                      ) : (
+                        <Box>
+                          <Typography variant="body2" color="text.secondary">
+                            לא משתנה
+                          </Typography>
+                          {worker.existingData && (
+                            <Typography variant="caption" color="text.secondary">
+                              נוכחי: {worker.existingData.email || 'לא מוגדר'}
+                            </Typography>
+                          )}
+                        </Box>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {worker.roleName && worker.existingData && worker.roleName !== worker.existingData.roleName ? (
+                        <Box>
+                          <Typography variant="body2" color="primary" fontWeight="bold">
+                            {worker.roleName}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            היה: {worker.existingData.roleName || 'לא מוגדר'}
+                          </Typography>
+                        </Box>
+                      ) : (
+                        <Box>
+                          <Typography variant="body2" color="text.secondary">
+                            לא משתנה
+                          </Typography>
+                          {worker.existingData && (
+                            <Typography variant="caption" color="text.secondary">
+                              נוכחי: {worker.existingData.roleName || 'לא מוגדר'}
+                            </Typography>
+                          )}
+                        </Box>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {worker.classSymbol && worker.oldClassSymbol && worker.classSymbol !== worker.oldClassSymbol ? (
+                        <Box>
+                          <Typography variant="body2" color="primary" fontWeight="bold">
+                            {worker.classSymbol}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            היה: {worker.oldClassSymbol}
+                          </Typography>
+                        </Box>
+                      ) : (
+                        <Box>
+                          <Typography variant="body2" color="text.secondary">
+                            לא משתנה
+                          </Typography>
+                          {worker.oldClassSymbol && (
+                            <Typography variant="caption" color="text.secondary">
+                              נוכחי: {worker.oldClassSymbol}
+                            </Typography>
+                          )}
+                        </Box>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {worker.changes.map((change, idx) => (
+                          <Chip key={idx} label={change} size="small" color="primary" />
+                        ))}
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowGeneralUpdatePreview(false)}>
             סגור
           </Button>
         </DialogActions>

@@ -218,6 +218,7 @@ const ReportsDownload: React.FC<ReportsDownloadProps> = ({ workers, documents, c
         'תעודת זהות עובד': worker.id,
         'שם משפחה': worker.lastName,
         'שם פרטי': worker.firstName,
+        'מספר טלפון': worker.phone || '',
         'כתובת מייל': worker.email || '',
         'תפקיד': worker.roleName,
         'שם פרויקט': projectName,
@@ -437,7 +438,10 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
   const filteredClasses = useMemo(() => {
     if (!selectedProject) return classes;
     return classes.filter((classItem: Class) => 
-      classItem.projectCodes && classItem.projectCodes.includes(parseInt(selectedProject))
+      // בדוק אם יש עובדים בכיתה עם הפרויקט הנבחר
+      classItem.workers?.some(w => w.project === parseInt(selectedProject)) ||
+      // או אם הכיתה עצמה מוגדרת לפרויקט
+      (classItem.projectCodes && classItem.projectCodes.includes(parseInt(selectedProject)))
     );
   }, [classes, selectedProject]);
 
@@ -510,10 +514,10 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
   const workersWithoutClass = useMemo(() => {
     return filteredWorkers.filter(worker => {
       return !filteredClasses.some((c: Class) => 
-        c.workers?.some(w => w.workerId === worker._id)
+        c.workers?.some(w => w.workerId === worker._id && w.project === parseInt(selectedProject))
       );
     });
-  }, [filteredWorkers, filteredClasses]);
+  }, [filteredWorkers, filteredClasses, selectedProject]);
 
   // התראות חשובות
   const importantAlerts = useMemo(() => {
