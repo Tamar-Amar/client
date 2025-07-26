@@ -1,25 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { AppBar, Toolbar, Button, Box, Typography, Stack, Menu, MenuItem, Avatar, IconButton, Tabs, Tab, Dialog } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import EventIcon from '@mui/icons-material/Event';
-import GroupsIcon from '@mui/icons-material/Groups';
 import LoginIcon from '@mui/icons-material/Login';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import AssessmentIcon from '@mui/icons-material/Assessment';
-import PeopleIcon from '@mui/icons-material/People';
-import EmailIcon from '@mui/icons-material/Email';
-import FolderIcon from '@mui/icons-material/Folder';
-import CampIcon from '@mui/icons-material/OutdoorGrill';
 import { useRecoilValue } from 'recoil';
 import { userRoleState } from '../../recoil/storeAtom';
 import { jwtDecode } from 'jwt-decode';
 import { fetchOperatorById } from '../../services/OperatorService';
 import { Operator, WorkerAfterNoon } from '../../types';
 import { fetchWorkerById } from '../../services/WorkerAfterNoonService';
-import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 import ImpersonateDialog from './ImpersonateDialog';
-
+import PersonSearchIcon from '@mui/icons-material/PersonSearch';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
 interface TabInfo {
   label: string;
@@ -40,13 +31,8 @@ const MainNav: React.FC = () => {
   const [isLeader, setIsLeader] = useState(false);
 
   const sections = [
-    { key: 'general', label: 'כללי', icon: <AssessmentIcon fontSize="small" /> },
-    { key: 'activity', label: 'חוגים', icon: <EventIcon fontSize="small" /> },
-    { key: 'users', label: 'משתמשים', icon: <GroupsIcon fontSize="small" /> }
-  ];
-
-  const accountantSections = [
-    { key: 'users', label: 'משתמשים', icon: <GroupsIcon fontSize="small" /> }
+    { key: 'general', label: 'כללי' },
+    { key: 'activity', label: 'חוגים' },
   ];
 
   const adminGeneralTabs: TabInfo[] = [
@@ -54,54 +40,53 @@ const MainNav: React.FC = () => {
     { label: 'מצבת', path: '/matsevet' },
    // { label: 'ניהול קבוצות', path: '/classes', icon: <GroupWorkIcon fontSize="small" /> },
     { label: ' מסמכים אישיים', path: '/documents', },
-    { label: 'דיווחי נוכחות', path: '/worker-attendance' },
     { label: 'דיווחי קיץ', path: '/summer-camp-attendance' },
     { label: 'מיילים', path: '/workers-after-noon-email' },
     { label: 'התראות', path: '/workers-after-noon-notifications' },
+    { label: 'משתמשים', path: '/users' },
   ];
 
   const adminActivityTabs: TabInfo[] = [
-    { label: 'דוח הפעלות', path: '/activities', icon: <AssessmentIcon fontSize="small" /> },
-    { label: 'ניהול מפעילים', path: '/operators', icon: <PeopleIcon fontSize="small" /> },
+    { label: 'דוח הפעלות', path: '/activities' },
+    { label: 'ניהול מפעילים', path: '/operators' },
     //{ label: 'ניהול קבוצות', path: '/classes', icon: <GroupWorkIcon fontSize="small" /> },
-    { label: ' מסמכים אישיים', path: '/documents', icon: <FolderIcon fontSize="small" /> },
-    { label: 'מיילים', path: '/emails', icon: <EmailIcon fontSize="small" /> },
+    { label: ' מסמכים אישיים', path: '/documents' },
+    { label: 'מיילים', path: '/emails' },
   ];
 
   const managerTabs: TabInfo[] = [    
     { label: 'מצבת', path: '/matsevet' },
     { label: 'ניהול עובדים', path: '/workers' },
-    { label: 'דיווחי נוכחות', path: '/worker-attendance' },
     { label: 'דיווחי קיץ', path: '/summer-camp-attendance' },
     { label: 'מסמכים אישיים', path: '/documents' },
     { label: 'מיילים', path: '/workers-after-noon-email' },
     { label: 'התראות', path: '/workers-after-noon-notifications' }, 
+    { label: 'משתמשים', path: '/users' },
   ];
 
   const accountantTabs: TabInfo[] = [
-    { label: ' מסמכים אישיים', path: '/documents', icon: <FolderIcon fontSize="small" /> },
-    { label: 'מצבת', path: '/matsevet', icon: <AssessmentIcon fontSize="small" /> },
-    { label: 'עובדים', path: '/workers', icon: <PeopleIcon fontSize="small" /> },
+    { label: ' מסמכים אישיים', path: '/documents' },
+    { label: 'מצבת', path: '/matsevet' },
+    { label: 'עובדים', path: '/workers' },
     { label: 'דיווחי קיץ', path: '/summer-camp-attendance' },
     { label: 'התראות', path: '/workers-after-noon-notifications' }, 
 
   ];
 
   const usersTabs: TabInfo[] = [
-    { label: 'משתמשים', path: '/users', icon: <PeopleIcon fontSize="small" /> },
+    { label: 'משתמשים', path: '/users' },
   ];
 
   const leaderTabs: TabInfo[] = [
-    { label: 'דוחות קייטנת קיץ', path: '/leader/camp-reports', icon: <CampIcon fontSize="small" /> },
+    { label: 'דוחות קייטנת קיץ', path: '/leader/camp-reports' },
   ];
 
   const getTabsBySection = () => {
     if (!selectedSection) return [];
-    if (role === 'manager_project' && selectedSection === 'general') return managerTabs;
+    if (role === 'manager_project') return managerTabs;
     if (role === 'admin' && selectedSection === 'general') return adminGeneralTabs;
     if (role === 'admin' && selectedSection === 'activity') return adminActivityTabs;
     if (role === 'accountant') return accountantTabs;
-    if ((role === 'admin' || role === 'manager_project' || role === 'accountant') && selectedSection === 'users') return usersTabs;
     if (role === 'worker' && isLeader) return leaderTabs;
     if (role === 'worker') return [];
     return [];
@@ -167,9 +152,7 @@ const MainNav: React.FC = () => {
     handleMenuClose();
   };
 
-  const selectedSectionObject = role === 'accountant' 
-    ? accountantSections.find(s => s.key === selectedSection)
-    : sections.find(s => s.key === selectedSection);
+  const selectedSectionObject = sections.find(s => s.key === selectedSection);
 
   const handleImpersonate = (user: any, type: any) => {
     if (!localStorage.getItem('original_admin_token')) {
@@ -259,7 +242,7 @@ const MainNav: React.FC = () => {
               </>
             ) : null}
 
-            {role && (role !== 'worker' && role !== 'accountant' && role !== 'coordinator') && (
+            {role === 'admin' && (
              <Box>
               <Button
                 id="section-button"
@@ -267,8 +250,6 @@ const MainNav: React.FC = () => {
                 aria-haspopup="true"
                 aria-expanded={open ? 'true' : undefined}
                 onClick={handleMenuClick}
-                startIcon={selectedSectionObject?.icon}
-                endIcon={<KeyboardArrowDownIcon />}
                 sx={{
                   color: '#1976d2',
                   fontSize: '1.1rem',
@@ -289,14 +270,13 @@ const MainNav: React.FC = () => {
                   'aria-labelledby': 'section-button',
                 }}
               >
-                {(role === 'accountant' ? accountantSections : sections).map((section) => (
+                {sections.map((section) => (
                   <MenuItem
                     key={section.key}
                     selected={section.key === selectedSection}
                     onClick={() => handleMenuItemClick(section.key)}
                   >
                     <Stack direction="row" alignItems="center" spacing={1}>
-                      {section.icon}
                       <Typography>{section.label}</Typography>
                     </Stack>
                   </MenuItem>
@@ -373,7 +353,6 @@ const MainNav: React.FC = () => {
             <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
               <Button
                 variant="contained"
-                startIcon={<CampIcon />}
                 onClick={() => navigate('/leader/camp-reports')}
                 sx={{
                   backgroundColor: '#c58a00',
@@ -392,7 +371,7 @@ const MainNav: React.FC = () => {
              {(role === 'admin' || role === 'manager_project' || role === 'accountant' || role === 'coordinator') && (
                 <Typography variant="h6" sx={{ color: '#1976d2', fontWeight: 'bold' }}>
 
-                   {role === 'manager_project' ? 'מנהל פרויקט' : 
+                   {
                    role === 'accountant' ? 'חשב שכר' : 
                    role === 'coordinator' ? 'רכז' : ''}
                 </Typography>

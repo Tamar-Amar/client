@@ -60,7 +60,8 @@ const SummerCampAttendancePage: React.FC = () => {
   const [tabStatus, setTabStatus] = useState('');
 
   // שליפת נתונים
-  const { data: campAttendance = [], isLoading: loadingAttendance } = useAllCampAttendanceReports(); // TODO: אפשר להוסיף סינון לפי רכז
+  const { data: campAttendance = [], isLoading: loadingAttendance } = useAllCampAttendanceReports(); 
+  console.log("campAttendance",campAttendance);
   const { data: classes = [], isLoading: loadingClasses } = useFetchClasses();
   const { data: workers = [], isLoading: loadingWorkers } = useFetchAllWorkersAfterNoon();
   const { data: users = [], isLoading: loadingUsers } = useFetchAllUsers();
@@ -292,6 +293,27 @@ const SummerCampAttendancePage: React.FC = () => {
   // הוק לעדכון סטטוס מסמך נוכחות
   const { mutate: updateStatus, isPending: isUpdatingStatus } = useUpdateAttendanceDocumentStatus();
 
+  // פונקציה לצפייה במסמך (יצירת URL בלחיצה)
+  const handleViewDocument = async (docId: string) => {
+    console.log("docId",docId);
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/attendance/document/${docId}/url`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.ok) {
+        const { url } = await response.json();
+        window.open(url, '_blank');
+      } else {
+        console.error('שגיאה ביצירת URL למסמך');
+      }
+    } catch (error) {
+      console.error('שגיאה ביצירת URL למסמך:', error);
+    }
+  };
+
   // שינוי סטטוס מסמך בפועל
   const handleApprove = (row: any) => {
     // קבע איזה מסמך לאשר
@@ -444,31 +466,43 @@ const SummerCampAttendancePage: React.FC = () => {
                       <TableCell sx={{ py: 0.2, minHeight: 28, maxHeight: 28, width: 120, minWidth: 100, maxWidth: 160 }}>{leader ? `${leader.firstName} ${leader.lastName}` : '-'}</TableCell>
                       {/* עובדים */}
                       <TableCell sx={{ py: 0.2, minHeight: 28, maxHeight: 28, width: 100, minWidth: 80, maxWidth: 120 }}>
-                        {workerDoc && workerDoc.url ? (
+                        {workerDoc && workerDoc.status === 'ממתין' ? (
                           <Stack direction="row" spacing={0.25} alignItems="center">
                             <Tooltip title="צפה במסמך">
                               <IconButton size="small" onClick={() => window.open(workerDoc.url, '_blank')} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
                                 <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
                               </IconButton>
                             </Tooltip>
-                            {workerDoc.status === 'ממתין' ? (
-                              <Stack direction="row" spacing={0.1} alignItems="center">
-                                <Tooltip title="אשר">
-                                  <IconButton size="small" color="success" onClick={() => handleApprove({ ...row, docType: 'workerAttendanceDoc' })} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
-                                    <CheckIcon fontSize="inherit" sx={{ fontSize: 16 }} />
-                                  </IconButton>
-                                </Tooltip>
-                                <Tooltip title="דחה">
-                                  <IconButton size="small" color="error" onClick={() => handleReject({ ...row, docType: 'workerAttendanceDoc' })} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
-                                    <CloseIcon fontSize="inherit" sx={{ fontSize: 16 }} />
-                                  </IconButton>
-                                </Tooltip>
-                              </Stack>
-                            ) : workerDoc.status === 'מאושר' ? (
-                              <Chip label="מאושר" color="success" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
-                            ) : workerDoc.status === 'נדחה' ? (
-                              <Chip label="נדחה" color="error" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
-                            ) : null}
+                            <Stack direction="row" spacing={0.1} alignItems="center">
+                              <Tooltip title="אשר">
+                                <IconButton size="small" color="success" onClick={() => handleApprove({ ...row, docType: 'workerAttendanceDoc' })} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
+                                  <CheckIcon fontSize="inherit" sx={{ fontSize: 16 }} />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="דחה">
+                                <IconButton size="small" color="error" onClick={() => handleReject({ ...row, docType: 'workerAttendanceDoc' })} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
+                                  <CloseIcon fontSize="inherit" sx={{ fontSize: 16 }} />
+                                </IconButton>
+                              </Tooltip>
+                            </Stack>
+                          </Stack>
+                        ) : workerDoc && workerDoc.status === 'מאושר' ? (
+                          <Stack direction="row" spacing={0.25} alignItems="center">
+                            <Chip label="מאושר" color="success" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
+                            <Tooltip title="צפה במסמך">
+                              <IconButton size="small" onClick={() => handleViewDocument(workerDoc._id)} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
+                                <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            </Tooltip>
+                          </Stack>
+                        ) : workerDoc && workerDoc.status === 'נדחה' ? (
+                          <Stack direction="row" spacing={0.25} alignItems="center">
+                            <Chip label="נדחה" color="error" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
+                            <Tooltip title="צפה במסמך">
+                              <IconButton size="small" onClick={() => handleViewDocument(workerDoc._id)} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
+                                <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            </Tooltip>
                           </Stack>
                         ) : row.missing ? (
                           <Typography variant="body2" color="error">חסר</Typography>
@@ -478,31 +512,43 @@ const SummerCampAttendancePage: React.FC = () => {
                       </TableCell>
                       {/* תלמידים */}
                       <TableCell sx={{ py: 0.2, minHeight: 28, maxHeight: 28, width: 100, minWidth: 80, maxWidth: 120 }}>
-                        {studentDoc && studentDoc.url ? (
+                        {studentDoc && studentDoc.status === 'ממתין' ? (
                           <Stack direction="row" spacing={0.25} alignItems="center">
                             <Tooltip title="צפה במסמך">
                               <IconButton size="small" onClick={() => window.open(studentDoc.url, '_blank')} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
                                 <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
                               </IconButton>
                             </Tooltip>
-                            {studentDoc.status === 'ממתין' ? (
-                              <Stack direction="row" spacing={0.1} alignItems="center">
-                                <Tooltip title="אשר">
-                                  <IconButton size="small" color="success" onClick={() => handleApprove({ ...row, docType: 'studentAttendanceDoc' })} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
-                                    <CheckIcon fontSize="inherit" sx={{ fontSize: 16 }} />
-                                  </IconButton>
-                                </Tooltip>
-                                <Tooltip title="דחה">
-                                  <IconButton size="small" color="error" onClick={() => handleReject({ ...row, docType: 'studentAttendanceDoc' })} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
-                                    <CloseIcon fontSize="inherit" sx={{ fontSize: 16 }} />
-                                  </IconButton>
-                                </Tooltip>
-                              </Stack>
-                            ) : studentDoc.status === 'מאושר' ? (
-                              <Chip label="מאושר" color="success" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
-                            ) : studentDoc.status === 'נדחה' ? (
-                              <Chip label="נדחה" color="error" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
-                            ) : null}
+                            <Stack direction="row" spacing={0.1} alignItems="center">
+                              <Tooltip title="אשר">
+                                <IconButton size="small" color="success" onClick={() => handleApprove({ ...row, docType: 'studentAttendanceDoc' })} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
+                                  <CheckIcon fontSize="inherit" sx={{ fontSize: 16 }} />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="דחה">
+                                <IconButton size="small" color="error" onClick={() => handleReject({ ...row, docType: 'studentAttendanceDoc' })} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
+                                  <CloseIcon fontSize="inherit" sx={{ fontSize: 16 }} />
+                                </IconButton>
+                              </Tooltip>
+                            </Stack>
+                          </Stack>
+                        ) : studentDoc && studentDoc.status === 'מאושר' ? (
+                          <Stack direction="row" spacing={0.25} alignItems="center">
+                            <Chip label="מאושר" color="success" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
+                            <Tooltip title="צפה במסמך">
+                              <IconButton size="small" onClick={() => handleViewDocument(studentDoc._id)} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
+                                <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            </Tooltip>
+                          </Stack>
+                        ) : studentDoc && studentDoc.status === 'נדחה' ? (
+                          <Stack direction="row" spacing={0.25} alignItems="center">
+                            <Chip label="נדחה" color="error" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
+                            <Tooltip title="צפה במסמך">
+                              <IconButton size="small" onClick={() => handleViewDocument(studentDoc._id)} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
+                                <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            </Tooltip>
                           </Stack>
                         ) : row.missing ? (
                           <Typography variant="body2" color="error">חסר</Typography>
@@ -520,30 +566,44 @@ const SummerCampAttendancePage: React.FC = () => {
                             <Stack direction="row" spacing={0.25} alignItems="center" flexWrap="wrap">
                               {controlDocs.map((doc: any, idx: number) => (
                                 <Box key={doc._id || idx} display="flex" alignItems="center" gap={0.1} mb={0.2}>
-                                  {doc.url && (
-                                    <Tooltip title="צפה במסמך">
-                                      <IconButton size="small" onClick={() => window.open(doc.url, '_blank')} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
-                                        <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
-                                      </IconButton>
-                                    </Tooltip>
-                                  )}
                                   {doc.status === 'ממתין' ? (
-                                    <Stack direction="row" spacing={0.1} alignItems="center">
-                                      <Tooltip title="אשר">
-                                        <IconButton size="small" color="success" onClick={() => handleApprove({ ...row, docType: 'controlDocs', docIndex: idx })} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
-                                          <CheckIcon fontSize="inherit" sx={{ fontSize: 16 }} />
+                                    <>
+                                      <Tooltip title="צפה במסמך">
+                                        <IconButton size="small" onClick={() => window.open(doc.url, '_blank')} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
+                                          <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
                                         </IconButton>
                                       </Tooltip>
-                                      <Tooltip title="דחה">
-                                        <IconButton size="small" color="error" onClick={() => handleReject({ ...row, docType: 'controlDocs', docIndex: idx })} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
-                                          <CloseIcon fontSize="inherit" sx={{ fontSize: 16 }} />
+                                      <Stack direction="row" spacing={0.1} alignItems="center">
+                                        <Tooltip title="אשר">
+                                          <IconButton size="small" color="success" onClick={() => handleApprove({ ...row, docType: 'controlDocs', docIndex: idx })} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
+                                            <CheckIcon fontSize="inherit" sx={{ fontSize: 16 }} />
+                                          </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="דחה">
+                                          <IconButton size="small" color="error" onClick={() => handleReject({ ...row, docType: 'controlDocs', docIndex: idx })} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
+                                            <CloseIcon fontSize="inherit" sx={{ fontSize: 16 }} />
+                                          </IconButton>
+                                        </Tooltip>
+                                      </Stack>
+                                    </>
+                                  ) : doc.status === 'מאושר' ? (
+                                    <Stack direction="row" spacing={0.25} alignItems="center">
+                                      <Chip label="מאושר" color="success" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
+                                      <Tooltip title="צפה במסמך">
+                                        <IconButton size="small" onClick={() => handleViewDocument(doc._id)} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
+                                          <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
                                         </IconButton>
                                       </Tooltip>
                                     </Stack>
-                                  ) : doc.status === 'מאושר' ? (
-                                    <Chip label="מאושר" color="success" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
                                   ) : doc.status === 'נדחה' ? (
-                                    <Chip label="נדחה" color="error" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
+                                    <Stack direction="row" spacing={0.25} alignItems="center">
+                                      <Chip label="נדחה" color="error" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
+                                      <Tooltip title="צפה במסמך">
+                                        <IconButton size="small" onClick={() => handleViewDocument(doc._id)} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
+                                          <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                                        </IconButton>
+                                      </Tooltip>
+                                    </Stack>
                                   ) : null}
                                 </Box>
                               ))}
