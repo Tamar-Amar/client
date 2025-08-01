@@ -69,6 +69,17 @@ const SummerCampAttendancePage: React.FC = () => {
   const [filterClassCode, setFilterClassCode] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [tabStatus, setTabStatus] = useState('');
+  
+  // דיאלוג מסמכי בקרה
+  const [controlDocsDialog, setControlDocsDialog] = useState<{
+    open: boolean;
+    documents: any[];
+    row: any;
+  }>({
+    open: false,
+    documents: [],
+    row: null
+  });
 
   // שליפת נתונים
   const { data: campAttendance = [], isLoading: loadingAttendance } = useAllCampAttendanceReports(); 
@@ -342,51 +353,32 @@ const SummerCampAttendancePage: React.FC = () => {
     if (docId) updateStatus({ documentId: docId, status: 'נדחה' });
   };
 
-  // פונקציה לצפייה במסמכי בקרה בודדים או כולם
+  // פונקציה לצפייה במסמכי בקרה
   const handleViewControlDocuments = (controlDocs: any[], row: any) => {
-    const docUrls = controlDocs.map(doc => doc.url);
-    if (docUrls.length === 1) {
-      window.open(docUrls[0], '_blank');
-    } else {
-      // יצירת דיאלוג עם כפתור לכל מסמך
-      const handleViewSingleDoc = (url: string) => {
-        window.open(url, '_blank');
-      };
-      const handleApproveSingleDoc = (doc: any) => {
-        updateStatus({ documentId: doc._id, status: 'מאושר' });
-      };
-      const handleRejectSingleDoc = (doc: any) => {
-        updateStatus({ documentId: doc._id, status: 'נדחה' });
-      };
+    setControlDocsDialog({
+      open: true,
+      documents: controlDocs,
+      row: row
+    });
+  };
 
-      const docDialog = window.confirm(`האם ברצונך לצפות בכל המסמכים הבאים? יש לך אפשרות לאשר או לדחות כל אחד בנפרד.`);
-      if (docDialog) {
-        const allApproved = controlDocs.every(doc => doc.status === 'מאושר');
-        const allRejected = controlDocs.every(doc => doc.status === 'נדחה');
-        const allPending = controlDocs.some(doc => doc.status === 'ממתין');
+  // פונקציה לסגירת הדיאלוג
+  const handleCloseControlDocsDialog = () => {
+    setControlDocsDialog({
+      open: false,
+      documents: [],
+      row: null
+    });
+  };
 
-        if (allApproved) {
-          alert('כל המסמכים כבר מאושרים.');
-        } else if (allRejected) {
-          alert('כל המסמכים כבר נדחו.');
-        } else if (allPending) {
-          alert('כל המסמכים כבר ממתינים לאישור.');
-        } else {
-          alert('אנא בחר מסמך בודד כדי לאשר או לדחות.');
-          return;
-        }
+  // פונקציה לאישור מסמך בודד
+  const handleApproveSingleDoc = (doc: any) => {
+    updateStatus({ documentId: doc._id, status: 'מאושר' });
+  };
 
-        const action = window.confirm(`אתה מנסה לאשר או לדחות כל המסמכים בבקשה. האם אתה בטוח?`);
-        if (action) {
-          controlDocs.forEach(doc => {
-            updateStatus({ documentId: doc._id, status: 'מאושר' });
-          });
-          alert('כל המסמכים נאשרו בהצלחה!');
-        } else {
-          alert('ביטול בקשה לאשר/דחות כל המסמכים.');
-        }
-      }
-    }
+  // פונקציה לדחיית מסמך בודד
+  const handleRejectSingleDoc = (doc: any) => {
+    updateStatus({ documentId: doc._id, status: 'נדחה' });
   };
 
   if (loadingAttendance || loadingClasses || loadingWorkers || loadingUsers) {
@@ -630,7 +622,7 @@ const SummerCampAttendancePage: React.FC = () => {
                                   </IconButton>
                                 </Tooltip>
                                 <Typography variant="caption" color="primary" sx={{ fontWeight: 'bold' }}>
-                                  {controlDocs.length} מסמכים
+                                  {controlDocs.length} 
                                 </Typography>
                                 {/* הצגת סטטוס כללי */}
                                 {controlDocs.every((doc: any) => doc.status === 'מאושר') && (
@@ -727,6 +719,90 @@ const SummerCampAttendancePage: React.FC = () => {
           
         </Grid>
       </Grid>
+      
+      {/* דיאלוג מסמכי בקרה */}
+      <Dialog 
+        open={controlDocsDialog.open} 
+        onClose={handleCloseControlDocsDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          מסמכי בקרה - {controlDocsDialog.row?.coordinatorName || 'לא ידוע'}
+        </DialogTitle>
+        <DialogContent>
+          <List>
+            {controlDocsDialog.documents.map((doc: any, index: number) => (
+              <React.Fragment key={doc._id || index}>
+                <ListItem>
+                  <ListItemText
+                    primary={`מסמך ${index + 1}`}
+                    secondary={
+                      <Box>
+                        <Typography variant="body2" color="text.secondary">
+                          סטטוס: {doc.status}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          תאריך העלאה: {new Date(doc.uploadDate || doc.createdAt).toLocaleDateString('he-IL')}
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                  <ListItemSecondaryAction>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Tooltip title="צפה במסמך">
+                        <IconButton 
+                          size="small" 
+                          onClick={() => window.open(doc.url, '_blank')}
+                        >
+                          <VisibilityIcon />
+                        </IconButton>
+                      </Tooltip>
+                      
+                      {doc.status === 'ממתין' && (
+                        <>
+                          <Tooltip title="אשר">
+                            <IconButton 
+                              size="small" 
+                              color="success"
+                              onClick={() => handleApproveSingleDoc(doc)}
+                            >
+                              <CheckIcon />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="דחה">
+                            <IconButton 
+                              size="small" 
+                              color="error"
+                              onClick={() => handleRejectSingleDoc(doc)}
+                            >
+                              <CloseIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      )}
+                      
+                      {doc.status === 'מאושר' && (
+                        <Chip label="מאושר" color="success" size="small" />
+                      )}
+                      
+                      {doc.status === 'נדחה' && (
+                        <Chip label="נדחה" color="error" size="small" />
+                      )}
+                    </Stack>
+                  </ListItemSecondaryAction>
+                </ListItem>
+                {index < controlDocsDialog.documents.length - 1 && <Divider />}
+              </React.Fragment>
+            ))}
+          </List>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseControlDocsDialog}>
+            סגור
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
