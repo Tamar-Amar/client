@@ -7,6 +7,7 @@ import { jwtDecode } from 'jwt-decode';
 import { useSetRecoilState } from 'recoil';
 import { userRoleState, userTokenState } from './recoil/storeAtom';
 import { Box } from '@mui/material';
+import { clearUserState } from './services/axiosConfig';
 
 interface DecodedToken {
   id: string;
@@ -24,9 +25,23 @@ const AppContent = () => {
     const role = localStorage.getItem('role') as "admin" | "operator" | null;
 
     if (token && role) {
-      const decoded: DecodedToken = jwtDecode(token);
-      setUserToken(token);
-      setUserRole(role);
+      try {
+        const decoded: DecodedToken = jwtDecode(token);
+        
+        // בדיקה אם הטוקן פג תוקף
+        const currentTime = Math.floor(Date.now() / 1000);
+        if (decoded.exp < currentTime) {
+          console.log('Token expired, clearing user state');
+          clearUserState();
+          return;
+        }
+        
+        setUserToken(token);
+        setUserRole(role);
+      } catch (error) {
+        console.error('Error decoding token:', error);
+        clearUserState();
+      }
     }
   }, [setUserRole, setUserToken]);
 

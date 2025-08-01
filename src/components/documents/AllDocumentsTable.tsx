@@ -965,7 +965,7 @@ const AllDocumentsTable: React.FC = () => {
                         {(() => {
                           // הצגה רק אם התפקיד הוא רכז או סגן רכז
                           if (worker.roleName && (worker.roleName.includes('רכז') || worker.roleName.includes('סגן רכז'))) {
-                            const doc = docs['נוכחות קייטנת קיץ'];
+                            const doc = docs['נוכחות קייטנה רכז'];
                             return doc ? (
                               <Stack direction="row" spacing={0.5} alignItems="center">
                                 <Tooltip title="צפה במסמך">

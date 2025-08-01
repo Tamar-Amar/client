@@ -26,11 +26,22 @@ import {
   Divider,
   Card,
   CardContent,
-  Grid
+  Grid,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction
 } from '@mui/material';
-import CheckIcon from '@mui/icons-material/CheckCircle';
-import CloseIcon from '@mui/icons-material/Cancel';
-import VisibilityIcon from '@mui/icons-material/Visibility';
+import {
+  CheckCircle as CheckIcon,
+  Cancel as CloseIcon,
+  Visibility as VisibilityIcon,
+  Download as DownloadIcon
+} from '@mui/icons-material';
 import { useAllCampAttendanceReports, useCampAttendanceReports } from '../queries/useCampAttendance';
 import { useFetchClasses } from '../queries/classQueries';
 import { useFetchAllWorkersAfterNoon } from '../queries/workerAfterNoonQueries';
@@ -331,6 +342,53 @@ const SummerCampAttendancePage: React.FC = () => {
     if (docId) updateStatus({ documentId: docId, status: 'נדחה' });
   };
 
+  // פונקציה לצפייה במסמכי בקרה בודדים או כולם
+  const handleViewControlDocuments = (controlDocs: any[], row: any) => {
+    const docUrls = controlDocs.map(doc => doc.url);
+    if (docUrls.length === 1) {
+      window.open(docUrls[0], '_blank');
+    } else {
+      // יצירת דיאלוג עם כפתור לכל מסמך
+      const handleViewSingleDoc = (url: string) => {
+        window.open(url, '_blank');
+      };
+      const handleApproveSingleDoc = (doc: any) => {
+        updateStatus({ documentId: doc._id, status: 'מאושר' });
+      };
+      const handleRejectSingleDoc = (doc: any) => {
+        updateStatus({ documentId: doc._id, status: 'נדחה' });
+      };
+
+      const docDialog = window.confirm(`האם ברצונך לצפות בכל המסמכים הבאים? יש לך אפשרות לאשר או לדחות כל אחד בנפרד.`);
+      if (docDialog) {
+        const allApproved = controlDocs.every(doc => doc.status === 'מאושר');
+        const allRejected = controlDocs.every(doc => doc.status === 'נדחה');
+        const allPending = controlDocs.some(doc => doc.status === 'ממתין');
+
+        if (allApproved) {
+          alert('כל המסמכים כבר מאושרים.');
+        } else if (allRejected) {
+          alert('כל המסמכים כבר נדחו.');
+        } else if (allPending) {
+          alert('כל המסמכים כבר ממתינים לאישור.');
+        } else {
+          alert('אנא בחר מסמך בודד כדי לאשר או לדחות.');
+          return;
+        }
+
+        const action = window.confirm(`אתה מנסה לאשר או לדחות כל המסמכים בבקשה. האם אתה בטוח?`);
+        if (action) {
+          controlDocs.forEach(doc => {
+            updateStatus({ documentId: doc._id, status: 'מאושר' });
+          });
+          alert('כל המסמכים נאשרו בהצלחה!');
+        } else {
+          alert('ביטול בקשה לאשר/דחות כל המסמכים.');
+        }
+      }
+    }
+  };
+
   if (loadingAttendance || loadingClasses || loadingWorkers || loadingUsers) {
     return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 400 }}><CircularProgress /></Box>;
   }
@@ -560,54 +618,75 @@ const SummerCampAttendancePage: React.FC = () => {
                       <TableCell sx={{ py: 0.2, minHeight: 28, maxHeight: 28, width: 100, minWidth: 80, maxWidth: 120 }}>
                         {controlDocs.length > 0 ? (
                           <Box>
-                            {controlDocs.length > 1 && (
-                              <Typography variant="caption" color="primary" sx={{ fontWeight: 'bold', display: 'block', mb: 0.2 }}>{controlDocs.length} מסמכים</Typography>
+                            {controlDocs.length > 1 ? (
+                              <Stack direction="row" spacing={0.25} alignItems="center">
+                                <Tooltip title="צפה בכל מסמכי הבקרה">
+                                  <IconButton 
+                                    size="small" 
+                                    onClick={() => handleViewControlDocuments(controlDocs, row)} 
+                                    sx={{ p: 0.2, minWidth: 24, height: 24 }}
+                                  >
+                                    <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                                  </IconButton>
+                                </Tooltip>
+                                <Typography variant="caption" color="primary" sx={{ fontWeight: 'bold' }}>
+                                  {controlDocs.length} מסמכים
+                                </Typography>
+                                {/* הצגת סטטוס כללי */}
+                                {controlDocs.every((doc: any) => doc.status === 'מאושר') && (
+                                  <Chip label="כולם מאושרים" color="success" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
+                                )}
+                                {controlDocs.every((doc: any) => doc.status === 'נדחה') && (
+                                  <Chip label="כולם נדחו" color="error" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
+                                )}
+                                {controlDocs.some((doc: any) => doc.status === 'ממתין') && (
+                                  <Chip label="ממתין לאישור" color="warning" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
+                                )}
+                              </Stack>
+                            ) : (
+                              // מסמך בודד - הצגה רגילה
+                              <Box display="flex" alignItems="center" gap={0.1}>
+                                {controlDocs[0].status === 'ממתין' ? (
+                                  <>
+                                    <Tooltip title="צפה במסמך">
+                                      <IconButton size="small" onClick={() => window.open(controlDocs[0].url, '_blank')} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
+                                        <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                                      </IconButton>
+                                    </Tooltip>
+                                    <Stack direction="row" spacing={0.1} alignItems="center">
+                                      <Tooltip title="אשר">
+                                        <IconButton size="small" color="success" onClick={() => handleApprove({ ...row, docType: 'controlDocs', docIndex: 0 })} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
+                                          <CheckIcon fontSize="inherit" sx={{ fontSize: 16 }} />
+                                        </IconButton>
+                                      </Tooltip>
+                                      <Tooltip title="דחה">
+                                        <IconButton size="small" color="error" onClick={() => handleReject({ ...row, docType: 'controlDocs', docIndex: 0 })} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
+                                          <CloseIcon fontSize="inherit" sx={{ fontSize: 16 }} />
+                                        </IconButton>
+                                      </Tooltip>
+                                    </Stack>
+                                  </>
+                                ) : controlDocs[0].status === 'מאושר' ? (
+                                  <Stack direction="row" spacing={0.25} alignItems="center">
+                                    <Chip label="מאושר" color="success" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
+                                    <Tooltip title="צפה במסמך">
+                                      <IconButton size="small" onClick={() => handleViewDocument(controlDocs[0]._id)} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
+                                        <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                                      </IconButton>
+                                    </Tooltip>
+                                  </Stack>
+                                ) : controlDocs[0].status === 'נדחה' ? (
+                                  <Stack direction="row" spacing={0.25} alignItems="center">
+                                    <Chip label="נדחה" color="error" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
+                                    <Tooltip title="צפה במסמך">
+                                      <IconButton size="small" onClick={() => handleViewDocument(controlDocs[0]._id)} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
+                                        <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                                      </IconButton>
+                                    </Tooltip>
+                                  </Stack>
+                                ) : null}
+                              </Box>
                             )}
-                            <Stack direction="row" spacing={0.25} alignItems="center" flexWrap="wrap">
-                              {controlDocs.map((doc: any, idx: number) => (
-                                <Box key={doc._id || idx} display="flex" alignItems="center" gap={0.1} mb={0.2}>
-                                  {doc.status === 'ממתין' ? (
-                                    <>
-                                      <Tooltip title="צפה במסמך">
-                                        <IconButton size="small" onClick={() => window.open(doc.url, '_blank')} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
-                                          <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
-                                        </IconButton>
-                                      </Tooltip>
-                                      <Stack direction="row" spacing={0.1} alignItems="center">
-                                        <Tooltip title="אשר">
-                                          <IconButton size="small" color="success" onClick={() => handleApprove({ ...row, docType: 'controlDocs', docIndex: idx })} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
-                                            <CheckIcon fontSize="inherit" sx={{ fontSize: 16 }} />
-                                          </IconButton>
-                                        </Tooltip>
-                                        <Tooltip title="דחה">
-                                          <IconButton size="small" color="error" onClick={() => handleReject({ ...row, docType: 'controlDocs', docIndex: idx })} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
-                                            <CloseIcon fontSize="inherit" sx={{ fontSize: 16 }} />
-                                          </IconButton>
-                                        </Tooltip>
-                                      </Stack>
-                                    </>
-                                  ) : doc.status === 'מאושר' ? (
-                                    <Stack direction="row" spacing={0.25} alignItems="center">
-                                      <Chip label="מאושר" color="success" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
-                                      <Tooltip title="צפה במסמך">
-                                        <IconButton size="small" onClick={() => handleViewDocument(doc._id)} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
-                                          <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
-                                        </IconButton>
-                                      </Tooltip>
-                                    </Stack>
-                                  ) : doc.status === 'נדחה' ? (
-                                    <Stack direction="row" spacing={0.25} alignItems="center">
-                                      <Chip label="נדחה" color="error" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
-                                      <Tooltip title="צפה במסמך">
-                                        <IconButton size="small" onClick={() => handleViewDocument(doc._id)} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
-                                          <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
-                                        </IconButton>
-                                      </Tooltip>
-                                    </Stack>
-                                  ) : null}
-                                </Box>
-                              ))}
-                            </Stack>
                           </Box>
                         ) : row.missing ? (
                           <Typography variant="body2" color="error">חסר</Typography>

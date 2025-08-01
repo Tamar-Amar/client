@@ -144,33 +144,6 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
     return filteredDocTags.filter(tag => !existingDocTags.includes(tag));
   };
 
-  const availableDocTypes = getAvailableDocumentTypes();
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) setSelectedFile(file);
-  };
-
-  const handleUpload = () => {
-    if (!selectedFile || !workerId || !documentType) return;
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-    formData.append('workerId', workerId);
-    formData.append('documentType', documentType as string);
-    formData.append('tz', workerTz);
-    if (expirationDate) {
-      formData.append('expiryDate', expirationDate.toISOString());
-    }
-    uploadDocument(formData, {
-      onSuccess: () => {
-        setSelectedFile(null);
-        setDocumentType("");
-        setExpirationDate(null);
-        setIsPersonalDocDialogOpen(false);
-        if (fileInputRef.current) fileInputRef.current.value = '';
-      }
-    });
-  };
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [docToDelete, setDocToDelete] = useState<any>(null);

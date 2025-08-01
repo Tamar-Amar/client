@@ -137,20 +137,6 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
     }
   }, []);
 
-  // פונקציה לקבלת טקסט סוג מסמך
-  const getDocumentTypeText = useCallback((docType: string) => {
-    switch (docType) {
-      case 'workerAttendanceDoc':
-        return 'דוח נוכחות עובדים';
-      case 'studentAttendanceDoc':
-        return 'דוח נוכחות תלמידים';
-      case 'controlDocs':
-        return 'דוח בקרה';
-      default:
-        return 'מסמך';
-    }
-  }, []);
-
   // פונקציה לבדיקה אם ניתן למחוק מסמך
   const canDeleteDocument = useCallback((status: string) => {
     return status === 'ממתין' || status === 'נדחה';
