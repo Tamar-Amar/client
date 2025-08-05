@@ -83,7 +83,6 @@ const SummerCampAttendancePage: React.FC = () => {
 
   // שליפת נתונים
   const { data: campAttendance = [], isLoading: loadingAttendance } = useAllCampAttendanceReports(); 
-  console.log("campAttendance",campAttendance);
   const { data: classes = [], isLoading: loadingClasses } = useFetchClasses();
   const { data: workers = [], isLoading: loadingWorkers } = useFetchAllWorkersAfterNoon();
   const { data: users = [], isLoading: loadingUsers } = useFetchAllUsers();
@@ -317,7 +316,6 @@ const SummerCampAttendancePage: React.FC = () => {
 
   // פונקציה לצפייה במסמך (יצירת URL בלחיצה)
   const handleViewDocument = async (docId: string) => {
-    console.log("docId",docId);
     try {
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/attendance/document/${docId}/url`, {
         headers: {

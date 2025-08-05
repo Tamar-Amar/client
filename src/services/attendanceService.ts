@@ -250,19 +250,21 @@ export const attendanceService = {
   },
 
   updateAttendanceDocumentStatus: async (documentId: string, status: string) => {
-    const response = await axiosInstance.patch(
-      `${process.env.REACT_APP_API_URL}/api/attendance/attendance-document/${documentId}/status`,
-      { status },
-      { headers: { 
-        'Content-Type': 'multipart/form-data'
-      } }
-    );
-    return response.data;
+    try {
+      const response = await axiosInstance.patch(
+        `/api/attendance/attendance-document/${documentId}/status`,
+        { status }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("updateAttendanceDocumentStatus - CLIENT ERROR", error);
+      throw error;
+    }
   },
 
   getClassesByCoordinatorInstitutionCodes: async (coordinatorId: string) => {
     const token = localStorage.getItem('token');
-    const response = await axiosInstance.get(`${process.env.REACT_APP_API_URL}/api/classes/coordinator-institution-codes/${coordinatorId}`, {
+    const response = await axiosInstance.get(`/api/classes/coordinator-institution-codes/${coordinatorId}`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
