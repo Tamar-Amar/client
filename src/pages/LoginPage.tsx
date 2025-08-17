@@ -158,17 +158,9 @@ const LoginPage: React.FC = () => {
       flexDirection="column"
       alignItems="center"
       justifyContent="center"
-      minHeight="100vh"
+      height="100vh"
       bgcolor="background.default"
-      sx={{
-        transform: 'scale(0.9)',
-        transformOrigin: 'top center',
-        overflow: 'auto',
-        '@media (max-width: 600px)': {
-          transform: 'none',
-          p: 0,
-        }
-      }}
+      sx={{ transform: 'scale(0.9)', transformOrigin: 'top center' }}
       p={3}
     >
       <Paper
@@ -179,12 +171,7 @@ const LoginPage: React.FC = () => {
           boxShadow: 3,
           bgcolor: 'background.paper',
           mb: 32,
-          '@media (max-width: 600px)': {
-            mb: 2,
-            minHeight: 'unset',
-            maxHeight: '90vh',
-            overflowY: 'auto',
-          }
+          overflow: 'hidden'
         }}
       >
         <Tabs

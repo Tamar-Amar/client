@@ -42,8 +42,7 @@ const UPDATEABLE_FIELDS = [
   { value: 'phone', label: 'טלפון' },
   { value: 'email', label: 'אימייל' },
   { value: 'accountantCode', label: 'חשב שכר' },
-  { value: 'roleType', label: 'סוג תפקיד' },
-  { value: 'roleName', label: 'שם תפקיד (מנורמל)' },
+  { value: 'roleName', label: 'שם תפקיד' },
   { value: 'is101', label: 'סטטוס 101' },
 ];
 

@@ -134,22 +134,11 @@ const WorkerDocuments: React.FC<Props> = ({ workerId }) => {
               value={documentType}
               onChange={(e) => setDocumentType(e.target.value as DocumentType)}
             >
-              {(() => {
-                // נרמול התפקיד לצורך קביעת מסמכים נדרשים
-                const normalizedRole = workerData?.roleName?.trim().replace(/\s+/g, ' ');
-                
-                // אם התפקיד הוא סייע, סייע משלים או מד"צ - לא צריך תעודת השכלה
-                let filteredDocumentTypes = DOCUMENT_TYPES;
-                if (normalizedRole && (normalizedRole.includes('סייע') || normalizedRole.includes('משלים') || normalizedRole.includes('מד"צ'))) {
-                  filteredDocumentTypes = DOCUMENT_TYPES.filter(type => type.value !== DocumentType.TEACHING_CERTIFICATE);
-                }
-                
-                return filteredDocumentTypes.map((type) => (
-                  <MenuItem key={type.value} value={type.value}>
-                    {type.label}
-                  </MenuItem>
-                ));
-              })()}
+              {DOCUMENT_TYPES.map((type) => (
+                <MenuItem key={type.value} value={type.value}>
+                  {type.label}
+                </MenuItem>
+              ))}
             </TextField>
           </Grid>
 

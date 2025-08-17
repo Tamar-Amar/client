@@ -57,7 +57,7 @@ const projectTypes = [
   { label: 'קייטנת חנוכה 2025', value: 2 },
   { label: 'קייטנת פסח 2025', value: 3 },
   { label: 'קייטנת קיץ 2025', value: 4 },
-  //{ label: 'צהרון שוטף 2026', value: 5 },
+  { label: 'צהרון שוטף 2026', value: 5 },
   //{ label: 'קייטנת חנוכה 2026', value: 6 },
   //{ label: 'קייטנת פסח 2026', value: 7 },
   //{ label: 'קייטנת קיץ 2026', value: 8 },
@@ -187,7 +187,7 @@ const WorkersImportPage: React.FC = () => {
       updateDate: new Date(now),
       updateBy: 'מערכת',
       status: row[12] || 'לא נבחר',
-      roleName: (row[4] || 'לא נבחר').trim().replace(/\s+/g, ' '), // נרמול התפקיד
+      roleName: row[4] || 'לא נבחר',
       notes: 'לא נבחר',     
       workingSymbol: symbol || '',
       is101: is101,
@@ -612,7 +612,6 @@ const WorkersImportPage: React.FC = () => {
         return {
           ...cleanData,
           phone: normalizePhone(worker.phone),
-          roleName: worker.roleName?.trim().replace(/\s+/g, ' '), // נרמול התפקיד
           projectCodes: selectedProjects,
           isAfterNoon: false,
           isBaseWorker: false,
@@ -679,7 +678,7 @@ const WorkersImportPage: React.FC = () => {
               for (const projectCode of selectedProjects) {
                 const workerAssignment = {
                   workerId: savedWorker._id,
-                  roleName: originalWorker?.roleName?.trim().replace(/\s+/g, ' '), // נרמול התפקיד
+                  roleName: originalWorker?.roleName,
                   project: projectCode
                 };
                 if (!classToWorkersMap[classObj._id]) {
@@ -701,8 +700,7 @@ const WorkersImportPage: React.FC = () => {
             id: worker.existingWorker!._id,
             data: {
               projectCodes: worker.changes.after.projectCodes,
-              phone: normalizePhone(worker.phone),
-              roleName: worker.roleName?.trim().replace(/\s+/g, ' ') // נרמול התפקיד
+              phone: normalizePhone(worker.phone)
             }
           });
         }

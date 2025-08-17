@@ -30,7 +30,10 @@ import {
   ListItemSecondaryAction,
   Divider,
   FormControlLabel,
-  Checkbox
+  Checkbox,
+  Autocomplete,
+  Card,
+  CardContent
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -41,7 +44,8 @@ import {
   AddCircle as AddCircleIcon,
   RemoveCircle as RemoveCircleIcon,
   Upload as UploadIcon,
-  FilterList as FilterListIcon
+  FilterList as FilterListIcon,
+  Info as InfoIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 
@@ -168,6 +172,10 @@ const UsersManagementPage: React.FC = () => {
   // סינון לפי תפקיד
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
+
+  // דיאלוג פרטים מלאים
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedUserForDetails, setSelectedUserForDetails] = useState<User | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -473,6 +481,25 @@ const UsersManagementPage: React.FC = () => {
     }
   };
 
+  // פונקציות לטיפול בדיאלוג פרטים מלאים
+  const handleOpenDetailsDialog = (user: User) => {
+    setSelectedUserForDetails(user);
+    setDetailsDialogOpen(true);
+  };
+
+  const handleCloseDetailsDialog = () => {
+    setDetailsDialogOpen(false);
+    setSelectedUserForDetails(null);
+  };
+
+  // פונקציה להצגת מספר מוגבל של פריטים
+  const renderLimitedItems = (items: any[], maxItems: number = 2) => {
+    if (items.length <= maxItems) {
+      return items;
+    }
+    return items.slice(0, maxItems);
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
@@ -655,24 +682,87 @@ const UsersManagementPage: React.FC = () => {
                   <TableCell>{user.email}</TableCell>
                   <TableCell>{user.phone || '-'}</TableCell>
 
-                  <TableCell>
+                  <TableCell sx={{ height: 80, verticalAlign: 'top' }}>
                     {user.role === 'coordinator' && user.projectCodes && user.projectCodes.length > 0 ? (
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                        {user.projectCodes.map((assignment, index) => {
-                          const project = projectTypes.find(p => p.value === assignment.projectCode);
-                          return (
-                            <Typography 
-                              key={index}
-                              variant="caption" 
-                              sx={{ 
-                                color: '#666',
-                                fontSize: '0.75rem'
-                              }}
-                            >
-                              {project?.label || `פרויקט ${assignment.projectCode}`} - {assignment.institutionCode}
-                            </Typography>
-                          );
-                        })}
+                        {(() => {
+                          // קיבוץ לפי פרויקט
+                          const groupedByProject = user.projectCodes.reduce((acc, assignment) => {
+                            const projectCode = assignment.projectCode;
+                            if (!acc[projectCode]) {
+                              acc[projectCode] = [];
+                            }
+                            acc[projectCode].push(assignment);
+                            return acc;
+                          }, {} as Record<number, typeof user.projectCodes>);
+
+                          const projectEntries = Object.entries(groupedByProject);
+                          const limitedProjects = renderLimitedItems(projectEntries, 2);
+
+                          return limitedProjects.map(([projectCode, assignments]) => {
+                            const project = projectTypes.find(p => p.value === parseInt(projectCode));
+                            const institutionsText = assignments.map((a: any) => a.institutionCode).join(', ');
+                            return (
+                              <Typography 
+                                key={projectCode}
+                                variant="caption" 
+                                sx={{ 
+                                  color: '#666',
+                                  fontSize: '0.75rem'
+                                }}
+                              >
+                                {project?.label || `פרויקט ${projectCode}`} - {institutionsText}
+                              </Typography>
+                            );
+                          });
+                        })()}
+                        {(() => {
+                          const groupedByProject = user.projectCodes.reduce((acc, assignment) => {
+                            const projectCode = assignment.projectCode;
+                            if (!acc[projectCode]) {
+                              acc[projectCode] = [];
+                            }
+                            acc[projectCode].push(assignment);
+                            return acc;
+                          }, {} as Record<number, typeof user.projectCodes>);
+
+                          const projectEntries = Object.entries(groupedByProject);
+                          
+                          if (projectEntries.length > 2) {
+                            return (
+                              <Button
+                                size="small"
+                                startIcon={<InfoIcon />}
+                                onClick={() => handleOpenDetailsDialog(user)}
+                                sx={{ 
+                                  mt: 0.5,
+                                  fontSize: '0.7rem',
+                                  minWidth: 'auto',
+                                  p: 0.5
+                                }}
+                              >
+                                הצג עוד {projectEntries.length - 2} פרויקטים
+                              </Button>
+                            );
+                          } else if (projectEntries.length > 0) {
+                            return (
+                              <Button
+                                size="small"
+                                startIcon={<InfoIcon />}
+                                onClick={() => handleOpenDetailsDialog(user)}
+                                sx={{ 
+                                  mt: 0.5,
+                                  fontSize: '0.7rem',
+                                  minWidth: 'auto',
+                                  p: 0.5
+                                }}
+                              >
+                                הצג פרטים
+                              </Button>
+                            );
+                          }
+                          return null;
+                        })()}
                       </Box>
                     ) : user.role === 'coordinator' ? (
                       <Typography variant="body2" color="text.secondary" fontStyle="italic">
@@ -684,22 +774,54 @@ const UsersManagementPage: React.FC = () => {
                       </Typography>
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ height: 80, verticalAlign: 'top' }}>
                     {user.role === 'accountant' && user.accountantInstitutionCodes && user.accountantInstitutionCodes.length > 0 ? (
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {user.accountantInstitutionCodes.map((code, index) => {
-                          const codeIndex = institutionCodes.indexOf(code);
-                          const name = codeIndex !== -1 ? institutionNames[codeIndex] : code;
-                          return (
-                            <Chip 
-                              key={index} 
-                              label={`${code} - ${name}`} 
-                              size="small" 
-                              color="secondary" 
-                              variant="outlined"
-                            />
-                          );
-                        })}
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                          {renderLimitedItems(user.accountantInstitutionCodes, 2).map((code, index) => {
+                            const codeIndex = institutionCodes.indexOf(code);
+                            const name = codeIndex !== -1 ? institutionNames[codeIndex] : code;
+                            return (
+                              <Chip 
+                                key={index} 
+                                label={`${code} - ${name}`} 
+                                size="small" 
+                                color="secondary" 
+                                variant="outlined"
+                              />
+                            );
+                          })}
+                        </Box>
+                        {user.accountantInstitutionCodes.length > 2 && (
+                          <Button
+                            size="small"
+                            startIcon={<InfoIcon />}
+                            onClick={() => handleOpenDetailsDialog(user)}
+                            sx={{ 
+                              mt: 0.5,
+                              fontSize: '0.7rem',
+                              minWidth: 'auto',
+                              p: 0.5
+                            }}
+                          >
+                            הצג עוד {user.accountantInstitutionCodes.length - 2} קודים
+                          </Button>
+                        )}
+                        {user.accountantInstitutionCodes.length <= 2 && user.accountantInstitutionCodes.length > 0 && (
+                          <Button
+                            size="small"
+                            startIcon={<InfoIcon />}
+                            onClick={() => handleOpenDetailsDialog(user)}
+                            sx={{ 
+                              mt: 0.5,
+                              fontSize: '0.7rem',
+                              minWidth: 'auto',
+                              p: 0.5
+                            }}
+                          >
+                            הצג פרטים
+                          </Button>
+                        )}
                       </Box>
                     ) : (
                       <Typography variant="body2" color="text.secondary">
@@ -1064,6 +1186,133 @@ const UsersManagementPage: React.FC = () => {
           >
             {importLoading ? 'מייבא...' : 'ייבא רכזים'}
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* דיאלוג פרטים מלאים */}
+      <Dialog open={detailsDialogOpen} onClose={handleCloseDetailsDialog} maxWidth="md" fullWidth>
+        <DialogTitle>
+          פרטים מלאים - {selectedUserForDetails ? `${selectedUserForDetails.firstName} ${selectedUserForDetails.lastName}` : ''}
+        </DialogTitle>
+        <DialogContent>
+          {selectedUserForDetails && (
+            <Box sx={{ pt: 1 }}>
+              <Grid container spacing={3}>
+                {/* פרטי משתמש בסיסיים */}
+                <Grid item xs={12} md={6}>
+                  <Card variant="outlined">
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom>
+                        פרטי משתמש
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        <Typography variant="body2">
+                          <strong>שם משתמש:</strong> {selectedUserForDetails.username}
+                        </Typography>
+                        <Typography variant="body2">
+                          <strong>תפקיד:</strong> {roleLabels[selectedUserForDetails.role]}
+                        </Typography>
+                        <Typography variant="body2">
+                          <strong>שם מלא:</strong> {selectedUserForDetails.firstName} {selectedUserForDetails.lastName}
+                        </Typography>
+                        <Typography variant="body2">
+                          <strong>אימייל:</strong> {selectedUserForDetails.email}
+                        </Typography>
+                        <Typography variant="body2">
+                          <strong>טלפון:</strong> {selectedUserForDetails.phone || '-'}
+                        </Typography>
+                        <Typography variant="body2">
+                          <strong>סטטוס:</strong> {selectedUserForDetails.isActive ? 'פעיל' : 'לא פעיל'}
+                        </Typography>
+                        <Typography variant="body2">
+                          <strong>תאריך יצירה:</strong> {formatDate(selectedUserForDetails.createDate)}
+                        </Typography>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+
+                {/* שיוכי פרויקטים */}
+                {selectedUserForDetails.role === 'coordinator' && selectedUserForDetails.projectCodes && selectedUserForDetails.projectCodes.length > 0 && (
+                  <Grid item xs={12} md={6}>
+                    <Card variant="outlined">
+                      <CardContent>
+                        <Typography variant="h6" gutterBottom>
+                          שיוכי פרויקטים ({selectedUserForDetails.projectCodes.length})
+                        </Typography>
+                        <List dense>
+                          {(() => {
+                            // קיבוץ לפי פרויקט
+                            const groupedByProject = selectedUserForDetails.projectCodes.reduce((acc, assignment) => {
+                              const projectCode = assignment.projectCode;
+                              if (!acc[projectCode]) {
+                                acc[projectCode] = [];
+                              }
+                              acc[projectCode].push(assignment);
+                              return acc;
+                            }, {} as Record<number, typeof selectedUserForDetails.projectCodes>);
+
+                            return Object.entries(groupedByProject).map(([projectCode, assignments]) => {
+                              const project = projectTypes.find(p => p.value === parseInt(projectCode));
+                              return (
+                                <ListItem key={projectCode} sx={{ px: 0, flexDirection: 'column', alignItems: 'flex-start' }}>
+                                  <Typography variant="body2" sx={{ fontWeight: 'medium', mb: 1 }}>
+                                    {project?.label || `פרויקט ${projectCode}`}
+                                  </Typography>
+                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, ml: 2 }}>
+                                    {assignments.map((assignment, index) => (
+                                      <Chip
+                                        key={index}
+                                        label={`${assignment.institutionCode}${assignment.institutionName ? ` - ${assignment.institutionName}` : ''}`}
+                                        size="small"
+                                        color="primary"
+                                        variant="outlined"
+                                      />
+                                    ))}
+                                  </Box>
+                                </ListItem>
+                              );
+                            });
+                          })()}
+                        </List>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                )}
+
+                {/* קודי מוסד לחשבי שכר */}
+                {selectedUserForDetails.role === 'accountant' && selectedUserForDetails.accountantInstitutionCodes && selectedUserForDetails.accountantInstitutionCodes.length > 0 && (
+                  <Grid item xs={12} md={6}>
+                    <Card variant="outlined">
+                      <CardContent>
+                        <Typography variant="h6" gutterBottom>
+                          קודי מוסד לחשב שכר ({selectedUserForDetails.accountantInstitutionCodes.length})
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                          {selectedUserForDetails.accountantInstitutionCodes.map((code, index) => {
+                            const codeIndex = institutionCodes.indexOf(code);
+                            const name = codeIndex !== -1 ? institutionNames[codeIndex] : code;
+                            return (
+                              <Chip 
+                                key={index} 
+                                label={`${code} - ${name}`} 
+                                size="medium" 
+                                color="secondary" 
+                                variant="outlined"
+                              />
+                            );
+                          })}
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                )}
+              </Grid>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDetailsDialog}>סגור</Button>
         </DialogActions>
       </Dialog>
     </Box>

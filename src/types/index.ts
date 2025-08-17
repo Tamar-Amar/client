@@ -170,6 +170,26 @@ export interface Activity {
     institutionCode?: string;
     documentsCount?: number;
   }
+
+  export interface WorkerAssignment {
+    _id?: string;
+    workerId: string;
+    classId: string;
+    projectCode: number;
+    roleName: string;
+    startDate: Date;
+    endDate?: Date;
+    isActive: boolean;
+    createDate: Date;
+    updateDate: Date;
+    updateBy: string;
+    notes?: string;
+  }
+
+  export interface WorkerAssignmentWithDetails extends WorkerAssignment {
+    worker?: WorkerAfterNoon;
+    class?: Class;
+  }
   
 
   export interface Coordinator {

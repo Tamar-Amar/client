@@ -104,6 +104,19 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
     // יצירת רשימה של כל הכיתות עם או בלי דוחות
     const allClassesWithReports = allClasses.map((cls: any) => {
       const existingReport = reportsByClassId.get(cls._id);
+      
+      // מציאת המוביל או המדריך של הפרויקט
+      const leader = cls.workers?.find((worker: any) => 
+        worker.workerId?.roleName === 'מוביל' && worker.project === 4
+      );
+      
+      // אם אין מוביל, נחפש מדריך
+      const instructor = !leader ? cls.workers?.find((worker: any) => 
+        worker.workerId?.roleName === 'מדריך' && worker.project === 4
+      ) : null;
+      
+      const responsibleWorker = leader || instructor;
+      
       return existingReport || {
         _id: `no-report-${cls._id}`,
         classId: cls,
@@ -153,8 +166,16 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
     return allClasses.map((cls: any) => {
       // מציאת המוביל של הפרויקט לפי roleName של העובד
       const leader = cls.workers?.find((worker: any) => 
-        worker.workerId?.roleName === 'מוביל' && worker.project === 4
+        worker.roleName === 'מוביל' && worker.project === 4
       );
+      
+      // אם אין מוביל, נחפש מדריך
+      const instructor = !leader ? cls.workers?.find((worker: any) => 
+        worker.workerId?.roleName === 'מד״צ' && worker.project === 4
+      ) : null;
+      
+      const responsibleWorker = leader || instructor;
+      const roleName = leader ? 'מוביל' : (instructor ? 'מד״צ' : 'לא מוגדר');
       
       return {
         id: cls._id,
@@ -244,8 +265,15 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
 
     // מציאת המוביל מתוך העובדים של הכיתה לפי roleName
     const leader = selectedClassData.workers?.find((worker: any) => 
-      worker.workerId?.roleName === 'מוביל' && worker.project === 4
+      worker.project === 4 && worker.workerId?.roleName === 'מוביל'
     );
+
+    // אם אין מוביל, נחפש מדריך
+    const instructor = !leader ? selectedClassData.workers?.find((worker: any) => 
+      worker.project === 4 && worker.workerId?.roleName === 'מדריך'
+    ) : null;
+
+    const responsibleWorker = leader || instructor;
 
     if (!leader) {
       setUploadError('למסגרת זו לא מוגדר מוביל לפרויקט קייטנת קיץ, על מנת להעלות נוכחות יש להגדיר מוביל');

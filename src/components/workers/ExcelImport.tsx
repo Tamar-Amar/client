@@ -303,7 +303,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
           const normalizedWorker = {
             ...worker,
             phone: normalizePhone(worker.phone),
-            roleName: worker.roleName?.trim().replace(/\s+/g, ' '), // נרמול התפקיד
             projectCodes: projectSelection.selectedProjects,
             isAfterNoon: false,
             isBaseWorker: false,
@@ -320,7 +319,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
             for (const projectCode of projectSelection.selectedProjects) {
               const workerAssignment = {
                 workerId: savedWorker._id,
-                roleName: worker.roleName?.trim().replace(/\s+/g, ' '), // נרמול התפקיד
+                roleName: worker.roleName,
                 project: projectCode
               };
               await updateClassWithWorker(classObj._id, {
@@ -366,7 +365,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
           for (const projectCode of projectSelection.selectedProjects) {
             const workerAssignment = {
               workerId: savedWorker._id,
-              roleName: worker.roleName?.trim().replace(/\s+/g, ' '), // נרמול התפקיד
+              roleName: worker.roleName,
               project: projectCode
             };
             const isAlreadyAssigned = classObj.workers?.some((w: any) =>
