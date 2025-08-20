@@ -19,7 +19,8 @@ import ConfirmationDialog from '../../components/other/ConfirmationDialog';
 import { useFetchAllWorkersAfterNoon } from '../../queries/workerAfterNoonQueries';
 import { WorkerAfterNoon, Class as ClassType } from '../../types';
 import UploadAttendanceDialog from '../../components/workers/UploadAttendanceDialog';
-import { useAllCampAttendanceReports, useUpdateCampAttendanceDocumentStatus } from '../../queries/useCampAttendance';
+import { useAllCampAttendanceReports } from '../../queries/useCampAttendance';
+import { useUpdateAttendanceDocumentStatus } from '../../queries/useAttendanceDocumentStatus';
 import { useFetchAllUsers } from '../../queries/useUsers';
 
 interface AttendanceDocument {
@@ -475,7 +476,7 @@ export const CampAttendancePage: React.FC = () => {
   console.log("First record workerAttendanceDoc:", campAttendanceData[0]?.workerAttendanceDoc);
   const { data: workerClasses = [] } = useFetchClasses();
   const { data: allWorkers = [] } = useFetchAllWorkersAfterNoon();
-  const { mutate: updateDocumentStatus, isPending: isUpdatingStatus } = useUpdateCampAttendanceDocumentStatus();
+  const { mutate: updateDocumentStatus, isPending: isUpdatingStatus } = useUpdateAttendanceDocumentStatus();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(0);
@@ -542,7 +543,7 @@ export const CampAttendancePage: React.FC = () => {
   // פונקציה לעדכון סטטוס מסמך
   const handleUpdateDocumentStatus = async (documentId: string, newStatus: string) => {
     try {
-      updateDocumentStatus({ documentId, newStatus });
+      updateDocumentStatus({ documentId, status: newStatus });
     } catch (error) {
       console.error('שגיאה בעדכון סטטוס:', error);
     }

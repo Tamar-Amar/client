@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchDocumentsByWorker, uploadDocument, updateOperatorDocuments, deleteDocument, fetchAllDocuments, updateDocumentStatus, fetchAllPersonalDocuments } from '../services/documentService';
 import { DocumentStatus } from '../types/Document';
+import axiosInstance from '../services/axiosConfig';
 
 export const useUploadDocument = () => {
   const queryClient = useQueryClient();
@@ -128,4 +129,127 @@ export const useWorkerDocuments = (workerId: string) => {
     updateStatus: updateStatusMutation.mutate,
     isUpdatingStatus: updateStatusMutation.isPending
   };
+};
+
+// הוקים חדשים לניהול מסמכים מתקדם
+
+export const useDocumentStats = () => {
+  return useQuery({
+    queryKey: ['documentStats'],
+    queryFn: async () => {
+      const response = await axiosInstance.get('/api/documents/stats');
+      return response.data;
+    },
+    staleTime: 5 * 60 * 1000, // 5 דקות
+  });
+};
+
+export const useDocumentTypes = () => {
+  return useQuery({
+    queryKey: ['documentTypes'],
+    queryFn: async () => {
+      const response = await axiosInstance.get('/api/documents/types');
+      return response.data;
+    },
+    staleTime: 10 * 60 * 1000, // 10 דקות
+  });
+};
+
+export const useDocumentsWithFilters = (filters: {
+  documentType?: string;
+  status?: string;
+  workerId?: string;
+  project?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}) => {
+  return useQuery({
+    queryKey: ['documentsWithFilters', filters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== '') {
+          params.append(key, value.toString());
+        }
+      });
+      
+      const response = await axiosInstance.get(`/api/documents/filters/search?${params.toString()}`);
+      return response.data;
+    },
+    staleTime: 2 * 60 * 1000, // 2 דקות
+  });
+};
+
+// מוטציות לניהול מסמכים מתקדם
+
+export const useDownloadMultipleDocuments = () => {
+  return useMutation({
+    mutationFn: async (filters: {
+      documentIds?: string[];
+      documentType?: string;
+      status?: string;
+      workerId?: string;
+      project?: string;
+      dateFrom?: string;
+      dateTo?: string;
+    }) => {
+      const response = await axiosInstance.post('/api/documents/download-multiple', filters);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      // הורדת כל המסמכים
+      data.documents.forEach((doc: any) => {
+        const link = document.createElement('a');
+        link.href = doc.downloadUrl;
+        link.download = doc.fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
+    },
+  });
+};
+
+export const useBulkUpdateDocumentStatus = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (data: {
+      documentIds: string[];
+      status: string;
+      comments?: string;
+    }) => {
+      const response = await axiosInstance.patch('/api/documents/bulk-update-status', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      // רענון כל הקוויריז הקשורים למסמכים
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      queryClient.invalidateQueries({ queryKey: ['documentStats'] });
+      queryClient.invalidateQueries({ queryKey: ['documentsWithFilters'] });
+    },
+  });
+};
+
+export const useBulkDeleteDocuments = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (documentIds: string[]) => {
+      const response = await axiosInstance.delete('/api/documents/bulk-delete', {
+        data: { documentIds }
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      // רענון כל הקוויריז הקשורים למסמכים
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      queryClient.invalidateQueries({ queryKey: ['documentStats'] });
+      queryClient.invalidateQueries({ queryKey: ['documentsWithFilters'] });
+    },
+  });
 };

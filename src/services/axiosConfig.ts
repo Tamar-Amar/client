@@ -13,7 +13,7 @@ export const clearUserState = () => {
 
 // יצירת instance של axios עם הגדרות בסיסיות
 const axiosInstance = axios.create({
-  baseURL: process.env.REACT_APP_API_URL,
+  baseURL: process.env.REACT_APP_API_URL || '',
   timeout: 60000, // דקה במקום 10 שניות
 });
 

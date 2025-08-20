@@ -149,13 +149,10 @@ export const attendanceService = {
       return response.data;
     },
 
-  // פונקציות חדשות לתמיכה בהוקים
-  // getCampAttendanceReports: async () => {
-  //   const response = await axios.get(`${API_URL}/camp`, {
-  //     headers: getAuthHeaders()
-  //   });
-  //   return response.data;
-  // },
+  getCampAttendanceReports: async () => {
+    const response = await axiosInstance.get(`${API_URL}/camp`);
+    return response.data;
+  },
 
   // getCampAttendanceReportsByCoordinator: async (coordinatorId: string) => {
   //   const response = await axios.get(`${API_URL}/camp/coordinator/${coordinatorId}`, {

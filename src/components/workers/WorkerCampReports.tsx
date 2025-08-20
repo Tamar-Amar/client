@@ -29,7 +29,7 @@ import {
   Visibility as VisibilityIcon
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCreateCampAttendanceWithFiles, useCreateCampAttendance, useDeleteCampAttendanceRecord, useDeleteAttendanceDocument, useCampAttendanceReportsByClass, useUploadAttendanceDocument } from '../../queries/useCampAttendance';
+import { useCreateCampAttendanceWithFiles, useCreateCampAttendance, useDeleteCampAttendanceRecord, useDeleteAttendanceDocument, useUploadAttendanceDocument, useAllCampAttendanceReports } from '../../queries/useCampAttendance';
 import { fetchClasses } from '../../services/ClassService';
 import { Class, User, WorkerAfterNoon } from '../../types';
 import { useFetchWorkerAfterNoon } from '../../queries/workerAfterNoonQueries';
@@ -105,7 +105,13 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
     return coordinator._id;
   }, [leaderClass, allUsers, workerId]);
 
-  const { data: attendanceData, isLoading: dataLoading, refetch } = useCampAttendanceReportsByClass(leaderClass?._id || '');
+  const { data: allAttendanceData, isLoading: dataLoading, refetch } = useAllCampAttendanceReports();
+  
+  // סינון הדוחות לפי הכיתה הספציפית
+  const attendanceData = useMemo(() => {
+    if (!allAttendanceData || !leaderClass?._id) return [];
+    return allAttendanceData.filter((record: any) => record.classId?._id === leaderClass._id);
+  }, [allAttendanceData, leaderClass?._id]);
 
   // Mutations
   const createCampAttendanceMutation = useCreateCampAttendanceWithFiles();

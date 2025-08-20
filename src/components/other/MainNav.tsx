@@ -40,6 +40,7 @@ const MainNav: React.FC = () => {
     { label: 'מצבת', path: '/matsevet' },
    // { label: 'ניהול קבוצות', path: '/classes', icon: <GroupWorkIcon fontSize="small" /> },
     { label: ' מסמכים אישיים', path: '/documents', },
+    { label: 'DOWNLOAD DOC', path: '/download-doc' },
     { label: 'דיווחי קיץ', path: '/summer-camp-attendance' },
     { label: 'מיילים', path: '/workers-after-noon-email' },
     { label: 'התראות', path: '/workers-after-noon-notifications' },
@@ -51,6 +52,7 @@ const MainNav: React.FC = () => {
     { label: 'ניהול מפעילים', path: '/operators' },
     //{ label: 'ניהול קבוצות', path: '/classes', icon: <GroupWorkIcon fontSize="small" /> },
     { label: ' מסמכים אישיים', path: '/documents' },
+    { label: 'DOWNLOAD DOC', path: '/download-doc' },
     { label: 'מיילים', path: '/emails' },
   ];
 
@@ -59,6 +61,7 @@ const MainNav: React.FC = () => {
     { label: 'ניהול עובדים', path: '/workers' },
     { label: 'דיווחי קיץ', path: '/summer-camp-attendance' },
     { label: 'מסמכים אישיים', path: '/documents' },
+    { label: 'DOWNLOAD DOC', path: '/download-doc' },
     { label: 'מיילים', path: '/workers-after-noon-email' },
     { label: 'התראות', path: '/workers-after-noon-notifications' }, 
     { label: 'משתמשים', path: '/users' },
@@ -66,6 +69,7 @@ const MainNav: React.FC = () => {
 
   const accountantTabs: TabInfo[] = [
     { label: ' מסמכים אישיים', path: '/documents' },
+    { label: 'DOWNLOAD DOC', path: '/download-doc' },
     { label: 'מצבת', path: '/matsevet' },
     { label: 'עובדים', path: '/workers' },
     { label: 'דיווחי קיץ', path: '/summer-camp-attendance' },

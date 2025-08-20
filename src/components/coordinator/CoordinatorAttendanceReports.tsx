@@ -40,7 +40,7 @@ import {
   Close as CloseIcon
 } from '@mui/icons-material';
 import { 
-  useCampAttendanceReports, 
+  useCampAttendanceReport, 
   useUploadAttendanceDocument, 
   useDeleteAttendanceDocument,
   useClassesByCoordinatorInstitutionCodes,
@@ -84,7 +84,7 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
   const [rowsPerPage, setRowsPerPage] = useState(8);
 
   // הוקים
-  const { data, isLoading, refetch } = useCampAttendanceReports(coordinatorId);
+  const { data, isLoading, refetch } = useCampAttendanceReport(coordinatorId);
   const { data: allClasses, isLoading: classesLoading } = useClassesByCoordinatorInstitutionCodes(coordinatorId);
   const uploadMutation = useUploadAttendanceDocument();
   const deleteMutation = useDeleteAttendanceDocument();
@@ -104,19 +104,6 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
     // יצירת רשימה של כל הכיתות עם או בלי דוחות
     const allClassesWithReports = allClasses.map((cls: any) => {
       const existingReport = reportsByClassId.get(cls._id);
-      
-      // מציאת המוביל או המדריך של הפרויקט
-      const leader = cls.workers?.find((worker: any) => 
-        worker.workerId?.roleName === 'מוביל' && worker.project === 4
-      );
-      
-      // אם אין מוביל, נחפש מדריך
-      const instructor = !leader ? cls.workers?.find((worker: any) => 
-        worker.workerId?.roleName === 'מדריך' && worker.project === 4
-      ) : null;
-      
-      const responsibleWorker = leader || instructor;
-      
       
       // מציאת המוביל או המדריך של הפרויקט
       const leader = cls.workers?.find((worker: any) => 
@@ -179,14 +166,6 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
       const leader = cls.workers?.find((worker: any) => 
         worker.roleName === 'מוביל' && worker.project === 4
       );
-      
-      // אם אין מוביל, נחפש מדריך
-      const instructor = !leader ? cls.workers?.find((worker: any) => 
-        worker.workerId?.roleName === 'מד״צ' && worker.project === 4
-      ) : null;
-      
-      const responsibleWorker = leader || instructor;
-      const roleName = leader ? 'מוביל' : (instructor ? 'מד״צ' : 'לא מוגדר');
       
       // אם אין מוביל, נחפש מדריך
       const instructor = !leader ? cls.workers?.find((worker: any) => 
@@ -284,15 +263,6 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
 
     // מציאת המוביל או המדריך מתוך העובדים של הכיתה
     const leader = selectedClassData.workers?.find((worker: any) => 
-      worker.project === 4 && worker.workerId?.roleName === 'מוביל'
-    );
-
-    // אם אין מוביל, נחפש מדריך
-    const instructor = !leader ? selectedClassData.workers?.find((worker: any) => 
-      worker.project === 4 && worker.workerId?.roleName === 'מדריך'
-    ) : null;
-
-    const responsibleWorker = leader || instructor;
       worker.project === 4 && worker.workerId?.roleName === 'מוביל'
     );
 
