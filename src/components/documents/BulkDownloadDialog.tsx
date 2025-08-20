@@ -73,7 +73,6 @@ const BulkDownloadDialog: React.FC<BulkDownloadDialogProps> = ({
 
     downloadMutation.mutate(downloadData, {
       onSuccess: () => {
-        console.log('המסמכים יורדים כקובץ ZIP');
         onClose();
       },
       onError: (error) => {

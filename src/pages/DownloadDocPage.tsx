@@ -68,7 +68,6 @@ interface DocumentFilters {
 }
 
 const DownloadDocPage: React.FC = () => {
-  console.log('🚀 DownloadDocPage - הקומפוננטה נטענה');
   
   const [filters, setFilters] = useState<DocumentFilters>({
     page: 1,
@@ -97,14 +96,10 @@ const DownloadDocPage: React.FC = () => {
     severity: 'success' | 'error' | 'info' | 'warning';
   }>({ open: false, message: '', severity: 'info' });
 
-  console.log('🔧 DownloadDocPage - לפני הוקים');
-  
   // הוקים
   const { data: documentsData, isLoading: documentsLoading } = useDocumentsWithFilters(filters);
   const { data: statsData, isLoading: statsLoading } = useDocumentStats();
   const { data: documentTypes, isLoading: typesLoading } = useDocumentTypes();
-  
-  console.log('🔧 DownloadDocPage - אחרי הוקים');
   
   const downloadMultipleMutation = useDownloadMultipleDocuments();
   
@@ -272,11 +267,9 @@ const DownloadDocPage: React.FC = () => {
 
   const loadPersonalDocuments = async () => {
     try {
-      console.log('🚀 מתחיל לטעון מסמכים אישיים...');
       
       // בדיקה שהפונקציה נקראת
       if (typeof setSnackbar !== 'function') {
-        console.error('❌ setSnackbar לא פונקציה');
         return;
       }
       
@@ -286,26 +279,20 @@ const DownloadDocPage: React.FC = () => {
         severity: 'info'
       });
 
-      console.log('📡 שולח בקשה ל-API...');
       const response = await axiosInstance.get('/api/documents/all-personal');
-      console.log('✅ קיבלתי תשובה מהשרת:', response.status);
       
       const data = response.data;
-      console.log('📄 נתונים שהתקבלו:', data);
       
       if (!data || !data.documents) {
-        console.error('❌ נתונים לא תקינים:', data);
+        
         throw new Error('נתונים לא תקינים מהשרת');
       }
       
-      console.log('💾 שומר מסמכים...');
       setAllDocuments(data.documents);
       setFilteredDocuments(data.documents);
       
-      console.log('📊 מעדכן סיכום...');
       updateDocumentSummary(data.documents);
       
-      console.log('✅ סיים לטעון מסמכים אישיים');
     } catch (error: any) {
       console.error('❌ שגיאה בטעינת מסמכים אישיים:', error);
       console.error('❌ פרטי השגיאה:', {
@@ -324,28 +311,22 @@ const DownloadDocPage: React.FC = () => {
 
   const loadAttendanceDocuments = async (projectCode: string) => {
     try {
-      console.log('🚀 מתחיל לטעון מסמכי נוכחות עבור פרויקט:', projectCode);
+
       setSnackbar({
         open: true,
         message: 'טוען מסמכי נוכחות...',
         severity: 'info'
       });
 
-      console.log('📡 שולח בקשה ל-API...');
       const response = await axiosInstance.get(`/api/documents/attendance/${projectCode}`);
-      console.log('✅ קיבלתי תשובה מהשרת:', response.status);
       
       const data = response.data;
-      console.log('📄 נתונים שהתקבלו:', data);
       
-      console.log('💾 שומר מסמכים...');
       setAllDocuments(data.documents);
       setFilteredDocuments(data.documents);
       
-      console.log('📊 מעדכן סיכום...');
       updateDocumentSummary(data.documents);
       
-      console.log('✅ סיים לטעון מסמכי נוכחות');
     } catch (error) {
       console.error('❌ שגיאה בטעינת מסמכי נוכחות:', error);
       setSnackbar({
@@ -357,13 +338,11 @@ const DownloadDocPage: React.FC = () => {
   };
 
   const updateDocumentSummary = (documents: any[]) => {
-    console.log('📊 מתחיל לעדכן סיכום עבור', documents.length, 'מסמכים');
     
     const byType: { [key: string]: number } = {};
     const byWorker: { [key: string]: number } = {};
 
     documents.forEach((doc: any, index: number) => {
-      console.log(`📄 מסמך ${index + 1}:`, doc);
       
       // לפי סוג מסמך
       const docType = doc.tag || doc.type;
@@ -376,8 +355,6 @@ const DownloadDocPage: React.FC = () => {
       byWorker[workerName] = (byWorker[workerName] || 0) + 1;
     });
 
-    console.log('📈 סיכום לפי סוג:', byType);
-    console.log('👥 סיכום לפי עובד:', byWorker);
 
     setDocumentSummary({
       total: documents.length,
@@ -385,7 +362,6 @@ const DownloadDocPage: React.FC = () => {
       byWorker
     });
     
-    console.log('✅ סיים לעדכן סיכום');
   };
 
   const handleOrganizationDownload = (organizationType: 'byType' | 'byWorker', fileNameFormat: 'simple' | 'detailed') => {
@@ -442,7 +418,6 @@ const DownloadDocPage: React.FC = () => {
     handleFilterChange('page', 1);
   };
 
-  console.log('🎨 DownloadDocPage - מתחיל render');
   
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={he}>
@@ -470,7 +445,6 @@ const DownloadDocPage: React.FC = () => {
             <Button
               variant={documentType === 'personal' ? 'contained' : 'outlined'}
               onClick={() => {
-                console.log('🖱️ לחצו על "מסמכים אישיים"');
                 setDocumentType('personal');
                 setSelectedProject('');
                 setAllDocuments([]);
@@ -484,7 +458,6 @@ const DownloadDocPage: React.FC = () => {
             <Button
               variant={documentType === 'project' ? 'contained' : 'outlined'}
               onClick={() => {
-                console.log('🖱️ לחצו על "מסמכי נוכחות פרויקט"');
                 setDocumentType('project');
                 setSelectedProject('');
                 setAllDocuments([]);
@@ -848,14 +821,7 @@ const DownloadDocPage: React.FC = () => {
                 variant="contained"
                 size="large"
                 startIcon={isDownloading ? <CircularProgress size={20} color="inherit" /> : <DownloadIcon />}
-                onClick={() => {
-                  console.log('🖱️ לחצו על "הורד ZIP מאורגן"');
-                  console.log('📊 סיכום לפני הורדה:', {
-                    total: allDocuments.length,
-                    byType: documentSummary.byType,
-                    byWorker: documentSummary.byWorker
-                  });
-                  
+                onClick={() => {                  
                   const summary = {
                     total: allDocuments.length,
                     byType: documentSummary.byType,
@@ -920,7 +886,7 @@ const DownloadDocPage: React.FC = () => {
     </LocalizationProvider>
   );
   
-  console.log('🎨 DownloadDocPage - סיים render');
+
 };
 
 export default DownloadDocPage;

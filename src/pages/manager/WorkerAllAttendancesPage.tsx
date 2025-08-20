@@ -469,13 +469,7 @@ export default WorkerAttendancePage;
 
 // דף חדש לדוחות נוכחות קייטנת קיץ
 export const CampAttendancePage: React.FC = () => {
-  const { data: allUsers = [] } = useFetchAllUsers();
   const { data: campAttendanceData = [] } = useAllCampAttendanceReports();
-  console.log("campAttendanceData",campAttendanceData);
-  console.log("First record:", campAttendanceData[0]);
-  console.log("First record workerAttendanceDoc:", campAttendanceData[0]?.workerAttendanceDoc);
-  const { data: workerClasses = [] } = useFetchClasses();
-  const { data: allWorkers = [] } = useFetchAllWorkersAfterNoon();
   const { mutate: updateDocumentStatus, isPending: isUpdatingStatus } = useUpdateAttendanceDocumentStatus();
   
   const [searchTerm, setSearchTerm] = useState('');
