@@ -49,7 +49,7 @@ const WorkerDocumentsApprovalPage: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(true);
 
   const isAfterNoonWorker = workerData?.projectCodes?.includes(1);
-  const isSummerCampLeader = workerData?.roleName === 'מוביל' && workerData?.projectCodes?.includes(4);
+  const isSummerCampLeader = workerData?.roleName === 'מוביל' && workerData?.projectCodes?.includes(4) || workerData?.roleName === 'מדריך' && workerData?.projectCodes?.includes(4);
 
   React.useEffect(() => {
     if (!isAfterNoonWorker && selectedTab === 'afternoon-documents') {

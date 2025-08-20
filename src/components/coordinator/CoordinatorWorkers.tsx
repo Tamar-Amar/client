@@ -60,6 +60,8 @@ import axios from 'axios';
 import { Document, DocumentStatus, DocumentType } from '../../types/Document';
 import { validateDocumentFile } from '../../utils/fileValidation';
 import { useCoordinatorWorkers } from '../../queries/useCoordinatorWorkers';
+import UploadWorkerDocumentDialog from './UploadWorkerDocumentDialog';
+
 
 interface CoordinatorWorkersProps {
   coordinatorId: string;
@@ -351,7 +353,7 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
     
     // תעודת השכלה נדרשת רק עבור מובילים ורכזים
     let requiredDocuments = [...baseDocuments];
-    if (worker.roleName && (worker.roleName.includes('מוביל') || worker.roleName.includes('רכז'))) {
+    if (worker.roleName && !(worker.roleName.includes('סייע') || worker.roleName.includes('משלים') || worker.roleName.includes('מד"צ'))) {
       requiredDocuments.push(DocumentType.TEACHING_CERTIFICATE);
     }
     
@@ -386,6 +388,11 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
         linkText: "למילוי הטופס לחצו כאן"
       });
     }
+
+    // הוספת מידע על קישור נוכחות קייטנה אם חסר
+    if (normalizedRole && (normalizedRole.includes('רכז') || normalizedRole.includes('סגן רכז'))) {
+      requiredDocuments.push(DocumentType.CAMP_ATTENDANCE_COORDINATOR);
+    }
     
     return result;
   };
@@ -417,7 +424,7 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
   return (
     <Container>
       <Paper sx={{
-        p: { xs: 2, md: 3 },
+        p: { xs: 1, md: 1 },
         borderRadius: 2,
         bgcolor: '#f7f7fa',
         border: '1px solid #e0e0e0',
@@ -598,6 +605,7 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
                       <TableCell sx={{ py: 1, px: 1, fontSize: '0.875rem', fontWeight: 'bold', width: '10%' }}>חוזה</TableCell>
                       <TableCell sx={{ py: 1, px: 1, fontSize: '0.875rem', fontWeight: 'bold', width: '12%' }}>תעודת זהות</TableCell>
                       <TableCell sx={{ py: 1, px: 1, fontSize: '0.875rem', fontWeight: 'bold', width: '7%' }}>אישור וותק</TableCell>
+                      <TableCell sx={{ py: 1, px: 1, fontSize: '0.875rem', fontWeight: 'bold', width: '10%' }}>נוכחות קייטנה</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -1045,6 +1053,87 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
                               );
                             })()}
                           </TableCell>
+                          {/* נוכחות קייטנה */}
+                          <TableCell sx={{ py: 1, px: 1, width: '10%' }}>
+                            {(() => {
+                              const normalizedRole = worker.roleName?.trim().replace(/\s+/g, ' ');
+                              const needsCampAttendance = normalizedRole && (normalizedRole.includes('רכז') || normalizedRole.includes('סגן רכז'));
+                              if (!needsCampAttendance) {
+                                return (
+                                  <Typography variant="body2" noWrap>
+                                    ------
+                                  </Typography>
+                                );
+                              }
+                              const doc = workerDocs.find(d => d.tag === DocumentType.CAMP_ATTENDANCE_COORDINATOR);
+                              if (doc) {
+                                return (
+                                  <Stack direction="row" spacing={0.5} alignItems="center">
+                                    <Tooltip title="צפה במסמך">
+                                      <IconButton 
+                                        size="small" 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          window.open(doc.url, '_blank');
+                                        }} 
+                                        disabled={!doc.url}
+                                      >
+                                        <VisibilityIcon fontSize="small" />
+                                      </IconButton>
+                                    </Tooltip>
+                                    {doc.status === DocumentStatus.APPROVED && (
+                                      <Typography variant="body2" sx={{ color: 'success.main', fontWeight: 'bold' }} noWrap>
+                                        מאושר
+                                      </Typography>
+                                    )}
+                                    {doc.status === DocumentStatus.PENDING && (
+                                      <>
+                                        <Typography variant="body2" sx={{ color: 'warning.main', fontWeight: 'bold' }} noWrap>
+                                          ממתין
+                                        </Typography>
+                                      </>
+                                    )}
+                                    {doc.status === DocumentStatus.REJECTED && (
+                                      <>
+                                        <Typography variant="body2" sx={{ color: 'error.main', fontWeight: 'bold' }} noWrap>
+                                          נדחה
+                                        </Typography>
+                                        <Tooltip title="מחק מסמך נדחה והעלה חדש">
+                                          <IconButton 
+                                            size="small" 
+                                            color="error"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              openDeleteConfirmDialog(doc._id!, 'נוכחות קייטנה', `${worker.firstName} ${worker.lastName}`);
+                                            }}
+                                          >
+                                            <DeleteIcon fontSize="small" />
+                                          </IconButton>
+                                        </Tooltip>
+                                      </>
+                                    )}
+                                  </Stack>
+                                );
+                              }
+                              // אם אין בכלל מסמך כזה - אפשר להעלות
+                              return (
+                                <Tooltip title="העלה נוכחות קייטנה">
+                                  <IconButton 
+                                    size="small" 
+                                    color="primary" 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleUploadDocumentForWorker(worker, DocumentType.CAMP_ATTENDANCE_COORDINATOR);
+                                    }}
+                                    sx={{ fontSize: '13px' }}
+                                  >
+                                    <UploadFileIcon fontSize="small" sx={{ mr: 0.5 }}/>
+                                    העלה
+                                  </IconButton>
+                                </Tooltip>
+                              );
+                            })()}
+                          </TableCell>
                         </TableRow>
                       );
                     })}
@@ -1108,7 +1197,7 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
                   </Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     {/* טופס 101 - מוצג בנפרד ומיוחד */}
-                    {getMissingDocuments(selectedWorker).filter(doc => doc.tag === 'טופס 101').map((doc, index) => (
+                    {getMissingDocuments(selectedWorker).filter((doc: {tag: string}) => doc.tag === 'טופס 101').map((doc, index) => (
                       <Alert 
                         key={index} 
                         severity="warning" 
@@ -1138,11 +1227,11 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
                     ))}
                     
                     {/* שאר הטפסים החסרים */}
-                    {getMissingDocuments(selectedWorker).filter(doc => doc.tag !== 'טופס 101').length > 0 && (
+                    {getMissingDocuments(selectedWorker).filter((doc: {tag: string}) => doc.tag !== 'טופס 101').length > 0 && (
                       <Box>
 
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                          {getMissingDocuments(selectedWorker).filter(doc => doc.tag !== 'טופס 101').map((doc, index) => (
+                          {getMissingDocuments(selectedWorker).filter((doc: {tag: string}) => doc.tag !== 'טופס 101').map((doc, index) => (
                             <Chip 
                               key={index}
                               label={doc.tag}
@@ -1246,135 +1335,14 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
       </Dialog>
 
       {/* דיאלוג העלאת טפס */}
-      <Dialog 
-        open={uploadDialogOpen} 
+      <UploadWorkerDocumentDialog
+        open={uploadDialogOpen}
         onClose={handleCloseUploadDialog}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          <Stack direction="row" alignItems="center" spacing={2}>
-            <DescriptionIcon color="primary" />
-            <Typography variant="h6">
-              העלאת טופס ל{selectedWorker?.firstName} {selectedWorker?.lastName}
-            </Typography>
-          </Stack>
-        </DialogTitle>
-        <DialogContent>
-          {/* חישוב isDocExists בתוך הדיאלוג */}
-          {/* const isDocExists = React.useMemo(() => {
-            if (!selectedWorker || !selectedDocumentType) return false;
-            const workerDocs = allWorkerDocuments.filter(doc => doc.operatorId === selectedWorker._id);
-            return workerDocs.some(doc => doc.tag === selectedDocumentType);
-          }, [selectedWorker, selectedDocumentType, allWorkerDocuments]); */}
-
-          <Stack spacing={3} sx={{ mt: 1 }}>
-            <FormControl fullWidth>
-              <InputLabel>סוג טופס</InputLabel>
-              <Select
-                value={selectedDocumentType}
-                onChange={(e) => setSelectedDocumentType(e.target.value)}
-                label="סוג טופס"
-              >
-                {/* הצג רק סוגי מסמכים רלוונטיים */}
-                {(() => {
-                  if (!selectedWorker) return null;
-                  // לוגיקה כמו getMissingDocuments
-                  const baseDocuments = [
-                    DocumentType.ID,
-                    DocumentType.POLICE_APPROVAL,
-                    DocumentType.CONTRACT
-                  ];
-                  let requiredDocuments = [...baseDocuments];
-                  if (selectedWorker.roleName && (selectedWorker.roleName.includes('מוביל') || selectedWorker.roleName.includes('רכז'))) {
-                    requiredDocuments.push(DocumentType.TEACHING_CERTIFICATE);
-                  }
-                  if (selectedWorker.roleName && selectedWorker.roleName.includes('רכז')) {
-                    requiredDocuments.push('אישור וותק' as any);
-                  }
-                  // הצג רק מסמכים שעוד לא קיימים לעובד
-                  const workerDocs = allWorkerDocuments.filter(doc => doc.operatorId === selectedWorker._id);
-                  const existingTags = workerDocs.map(doc => doc.tag);
-                  return requiredDocuments.map(tag => (
-                    <MenuItem key={tag} value={tag}>{tag}</MenuItem>
-                  ));
-                })()}
-              </Select>
-            </FormControl>
-
-            {/* הודעה אם נבחר מסמך שכבר קיים */}
-            {(() => {
-              if (!selectedWorker || !selectedDocumentType) return null;
-              const workerDocs = allWorkerDocuments.filter(doc => doc.operatorId === selectedWorker._id);
-              const exists = workerDocs.some(doc => doc.tag === selectedDocumentType);
-              if (exists) {
-                return (
-                  <Typography variant="body2" color="error" sx={{ mt: 1 }}>
-                    לא ניתן להעלות מסמך מסוג זה מפני שקיים לעובד קובץ זהה במערכת.
-                  </Typography>
-                );
-              }
-              return null;
-            })()}
-
-            <Box>
-              <input
-                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                style={{ display: 'none' }}
-                id="document-file"
-                type="file"
-                onChange={handleFileChange}
-              />
-              <label htmlFor="document-file">
-                <Button
-                  variant="outlined"
-                  component="span"
-                  fullWidth
-                  startIcon={<DescriptionIcon />}
-                  disabled={isDocExists}
-                >
-                  {selectedFile ? selectedFile.name : 'בחר קובץ'}
-                </Button>
-              </label>
-              {selectedFile && (
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  נבחר: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
-                </Typography>
-              )}
-            </Box>
-
-            <TextField
-              fullWidth
-              label="תאריך תפוגה (אופציונלי)"
-              type="date"
-              value={expiryDate}
-              onChange={(e) => setExpiryDate(e.target.value)}
-              InputLabelProps={{
-                shrink: true,
-              }}
-              disabled={isDocExists}
-            />
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseUploadDialog} color="secondary">
-            ביטול
-          </Button>
-          <Button 
-            onClick={handleUploadDocument}
-            variant="contained"
-            color="primary"
-            disabled={!selectedFile || !selectedDocumentType || uploadLoading || (() => {
-              if (!selectedWorker || !selectedDocumentType) return false;
-              const workerDocs = allWorkerDocuments.filter(doc => doc.operatorId === selectedWorker._id);
-              return workerDocs.some(doc => doc.tag === selectedDocumentType);
-            })()}
-            startIcon={uploadLoading ? <CircularProgress size={16} /> : <DescriptionIcon />}
-          >
-            {uploadLoading ? 'מעלה...' : 'העלה טופס'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        worker={selectedWorker}
+        allWorkerDocuments={allWorkerDocuments}
+        refetchDocuments={refetchDocuments}
+        setDialogOpen={setUploadDialogOpen}
+      />
 
       {/* דיאלוג טופס 101 */}
       <Dialog

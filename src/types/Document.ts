@@ -4,6 +4,8 @@ export enum DocumentType {
   TEACHING_CERTIFICATE = 'תעודת השכלה',
   CONTRACT = 'חוזה',
   VETTING_CERTIFICATE = 'אישור וותק',
+  CAMP_ATTENDANCE_COORDINATOR = 'נוכחות קייטנה רכז',
+  MEDICAL_APPROVAL = 'אישור רפואי',
 }
 
 export const REQUIRED_DOCUMENTS: DocumentType[] = [

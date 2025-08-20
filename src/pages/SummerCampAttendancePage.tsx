@@ -42,13 +42,12 @@ import {
   Visibility as VisibilityIcon,
   Download as DownloadIcon
 } from '@mui/icons-material';
-import { useAllCampAttendanceReports, useCampAttendanceReports } from '../queries/useCampAttendance';
 import { useFetchClasses } from '../queries/classQueries';
 import { useFetchAllWorkersAfterNoon } from '../queries/workerAfterNoonQueries';
 import { useFetchAllUsers } from '../queries/useUsers';
 import { useUpdateAttendanceDocumentStatus } from '../queries/useAttendanceDocumentStatus';
 import { Class, WorkerAfterNoon } from '../types';
-import { DocumentStatus } from '../types/Document';
+import { useAllCampAttendanceReports } from '../queries/useCampAttendance';
 
 // TODO: להוסיף hook לעדכון סטטוס מסמך
 // import { useUpdateAttendanceStatus } from '../queries/useDocuments';
@@ -201,7 +200,7 @@ const SummerCampAttendancePage: React.FC = () => {
         const searchLower = searchTerm.toLowerCase();
         // שם מוביל
         let leaderName = '';
-        const leaderUser = users.find((u: any) => u.role === 'worker' && cls.workers?.some((w: any) => w.workerId === u._id && w.roleName?.includes('מוביל')));
+        const leaderUser = users.find((u: any) => u.role === 'worker' && cls.workers?.some((w: any) => w.workerId === u._id && w.roleType?.includes('מוביל')));
         if (leaderUser) leaderName = `${leaderUser.firstName} ${leaderUser.lastName}`;
         if (!(
           cls.name?.toLowerCase().includes(searchLower) ||

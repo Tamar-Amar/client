@@ -43,98 +43,7 @@ const WorkersPage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4 }}>
-      <Box sx={{ p: 2 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h4" fontWeight="bold">
-            {isCreating ? 'הוספת עובד חדש' : 'ניהול עובדים '}
-          </Typography>
-          <Box display="flex" gap={1}>
-
-            {!isCreating && (
-              <>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => navigate('/workers/update')}
-                  startIcon={<EditIcon />}
-                  sx={{
-                    color: '#ed6c02',
-                    borderColor: '#ed6c02',
-                    '&:hover': {
-                      borderColor: '#e65100',
-                      color: '#e65100',
-                      backgroundColor: 'rgba(237, 108, 2, 0.04)'
-                    }
-                  }}
-                >
-                  עדכון עובדים
-                </Button>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => navigate('/workers/import')}
-                  startIcon={<ImportExportIcon />}
-                  sx={{
-                    color: '#1976d2',
-                    borderColor: '#1976d2',
-                    '&:hover': {
-                      borderColor: '#1565c0',
-                      color: '#1565c0',
-                      backgroundColor: 'rgba(25, 118, 210, 0.04)'
-                    }
-                  }}
-                >
-                  ייבוא מתקדם
-                </Button>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => setIsImportDialogOpen(true)}
-                  startIcon={<UploadFileIcon />}
-                  sx={{
-                    color: '#2e7d32',
-                    borderColor: '#2e7d32',
-                    '&:hover': {
-                      borderColor: '#1b5e20',
-                      color: '#1b5e20',
-                      backgroundColor: 'rgba(46, 125, 50, 0.04)'
-                    }
-                  }}
-                >
-                  ייבוא מהיר
-                </Button>
-                <Tooltip title="מחק את כל העובדים מהמערכת">
-                  <Button
-                    variant="outlined"
-                    color="error"
-                    size="small"
-                    disabled={isDeleting || workers.length === 0}
-                    onClick={() => setShowDeleteConfirm(true)}
-                    startIcon={<DeleteForeverIcon />}
-                  >
-                    {isDeleting ? (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <CircularProgress size={16} color="error" />
-                        <span>מוחק... {Math.round(deleteProgress)}%</span>
-                      </Box>
-                    ) : (
-                      'מחק הכל'
-                    )}
-                  </Button>
-                </Tooltip>
-              </>
-            )}
-            <IconButton 
-              color="primary" 
-              onClick={() => setIsCreating(!isCreating)}
-              size="large"
-            >
-              {isCreating ? <CloseIcon /> : <AddIcon />}
-              
-            </IconButton>
-          </Box>
-        </Box>
+    <Box sx={{ p: 4, mt: 1}}>
 
         {isDeleting && (
           <Box sx={{ width: '100%', mb: 2 }}>
@@ -166,10 +75,90 @@ const WorkersPage: React.FC = () => {
         {isCreating ? (
           <WorkerAfterNoonForm onSuccess={() => setIsCreating(false)} />
         ) : (
-          <WorkersDocumentsList />
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Box sx={{ flex: 1 }}>
+              <WorkersDocumentsList />
+            </Box>
+            <Box sx={{ width: 200, display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => navigate('/workers/update')}
+                startIcon={<EditIcon />}
+                sx={{
+                  color: '#ed6c02',
+                  borderColor: '#ed6c02',
+                  height: '50px',
+                  '&:hover': {
+                    borderColor: '#e65100',
+                    color: '#e65100',
+                    backgroundColor: 'rgba(237, 108, 2, 0.04)'
+                  }
+                }}
+              >
+                עדכון עובדים
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => navigate('/workers/import')}
+                startIcon={<ImportExportIcon />}
+                sx={{
+                  color: '#1976d2',
+                  borderColor: '#1976d2',
+                  height: '50px',
+                  '&:hover': {
+                    borderColor: '#1565c0',
+                    color: '#1565c0',
+                    backgroundColor: 'rgba(25, 118, 210, 0.04)'
+                  }
+                }}
+              >
+                ייבוא מתקדם
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => setIsImportDialogOpen(true)}
+                startIcon={<UploadFileIcon />}
+                sx={{
+                  color: '#2e7d32',
+                  borderColor: '#2e7d32',
+                  height: '50px',
+                  '&:hover': {
+                    borderColor: '#1b5e20',
+                    color: '#1b5e20',
+                    backgroundColor: 'rgba(46, 125, 50, 0.04)'
+                  }
+                }}
+              >
+                ייבוא מהיר
+              </Button>
+              <Tooltip title="מחק את כל העובדים מהמערכת">
+                <Button
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  disabled={isDeleting || workers.length === 0}
+                  onClick={() => setShowDeleteConfirm(true)}
+                  startIcon={<DeleteForeverIcon />}
+                  sx={{
+                    height: '50px',
+                  }}
+                >
+                  {isDeleting ? (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CircularProgress size={16} color="error" />
+                      <span>מוחק... {Math.round(deleteProgress)}%</span>
+                    </Box>
+                  ) : (
+                    'מחק הכל'
+                  )}
+                </Button>
+              </Tooltip>
+            </Box>
+          </Box>
         )}
-
-      </Box>
 
       {/* Delete confirmation dialog */}
       <Dialog
@@ -213,7 +202,7 @@ const WorkersPage: React.FC = () => {
           <ExcelImport onSuccess={() => setIsImportDialogOpen(false)} />
         </Box>
       </Dialog>
-    </Container>
+    </Box>
   );
 };
 

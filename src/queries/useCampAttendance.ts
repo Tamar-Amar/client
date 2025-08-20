@@ -1,22 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { attendanceService } from '../services/attendanceService';
 
-// הוק לקבלת כל דוחות הנוכחות של קייטנות לפי רכז
-export const useCampAttendanceReports = (coordinatorId: string) => {
-  return useQuery({
-    queryKey: ['campAttendanceReports', coordinatorId],
-    queryFn: () => attendanceService.getCampAttendanceReportsByCoordinator(coordinatorId),
-    enabled: !!coordinatorId,
-    staleTime: 5 * 60 * 1000, // 5 דקות
-    gcTime: 10 * 60 * 1000, // 10 דקות
-  });
-};
+
 
 // הוק לקבלת כל דוחות הנוכחות של קייטנות
 export const useAllCampAttendanceReports = () => {
   return useQuery({
     queryKey: ['allCampAttendanceReports'],
-    queryFn: () => attendanceService.getAllCampAttendanceReports(),
+    queryFn: () => attendanceService.getCampAttendanceReports(),
     staleTime: 5 * 60 * 1000, // 5 דקות
     gcTime: 10 * 60 * 1000, // 10 דקות
   });
@@ -136,15 +127,3 @@ export const useCreateCampAttendanceWithFiles = () => {
   });
 }; 
 
-// הוק לעדכון סטטוס מסמך נוכחות קייטנה
-export const useUpdateCampAttendanceDocumentStatus = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({ documentId, newStatus }: { documentId: string; newStatus: string }) => 
-      attendanceService.updateCampAttendanceDocumentStatus(documentId, newStatus),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['campAttendanceReports'] });
-    },
-  });
-}; 

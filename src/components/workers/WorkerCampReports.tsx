@@ -29,7 +29,7 @@ import {
   Visibility as VisibilityIcon
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCreateCampAttendanceWithFiles, useCreateCampAttendance, useDeleteCampAttendanceRecord, useDeleteAttendanceDocument, useCampAttendanceReports, useUploadAttendanceDocument } from '../../queries/useCampAttendance';
+import { useCreateCampAttendanceWithFiles, useCreateCampAttendance, useDeleteCampAttendanceRecord, useDeleteAttendanceDocument, useCampAttendanceReportsByClass, useUploadAttendanceDocument } from '../../queries/useCampAttendance';
 import { fetchClasses } from '../../services/ClassService';
 import { Class, User, WorkerAfterNoon } from '../../types';
 import { useFetchWorkerAfterNoon } from '../../queries/workerAfterNoonQueries';
@@ -64,7 +64,6 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
   const [workerFileInput, setWorkerFileInput] = useState<File | null>(null);
   const [studentFileInput, setStudentFileInput] = useState<File | null>(null);
   const [controlFileInput, setControlFileInput] = useState<File | null>(null);
-  const { data: workerFullData } = useFetchWorkerAfterNoon(workerId as string);
   const { data: allUsers } = useFetchAllUsers();
 
   // Queries - נקבל את כל הכיתות
@@ -91,15 +90,22 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
     
     const institutionCode = leaderClass.institutionCode;
     
-    const coordinator = allUsers.find((user: User) => 
-      user.role === 'coordinator' && 
-      user.projectCodes?.some((pc: { institutionCode: string }) => pc.institutionCode === institutionCode)
-    );
+    const coordinator = allUsers.find((user: User) => {
+      const isCoordinator = user.role === 'coordinator';
+      const hasInstitutionCode = user.projectCodes?.some((pc: { institutionCode: string }) => pc.institutionCode === institutionCode);
+      return isCoordinator && hasInstitutionCode;
+    });
     
-    return coordinator?._id || null;
-  }, [leaderClass, allUsers]);
+    
+    // אם לא נמצא רכז, נשתמש ב-ID של המוביל
+    if (!coordinator) {
+      return workerId;
+    }
+    
+    return coordinator._id;
+  }, [leaderClass, allUsers, workerId]);
 
-  const { data: attendanceData, isLoading: dataLoading, refetch } = useCampAttendanceReports(coordinatorId || '');
+  const { data: attendanceData, isLoading: dataLoading, refetch } = useCampAttendanceReportsByClass(leaderClass?._id || '');
 
   // Mutations
   const createCampAttendanceMutation = useCreateCampAttendanceWithFiles();
@@ -128,20 +134,6 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
         return <Typography variant="caption" color="success.main">מאושר</Typography>;
       default:
         return <Typography variant="caption" color="text.secondary">{status || 'לא ידוע'}</Typography>;
-    }
-  }, []);
-
-  // פונקציה לקבלת טקסט סוג מסמך
-  const getDocumentTypeText = useCallback((docType: string) => {
-    switch (docType) {
-      case 'workerAttendanceDoc':
-        return 'דוח נוכחות עובדים';
-      case 'studentAttendanceDoc':
-        return 'דוח נוכחות תלמידים';
-      case 'controlDocs':
-        return 'דוח בקרה';
-      default:
-        return 'מסמך';
     }
   }, []);
 
@@ -202,15 +194,10 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
 
   // טיפול בהעלאת דוח חדש
   const handleUploadNewReport = async () => {
-    if (!leaderClass || !coordinatorId) return;
+    if (!leaderClass) return;
 
     setUploadingNewReport(true);
     try {
-      if (!coordinatorId) {
-        setUploadError('לא נמצא רכז למסגרת זו');
-        return;
-      }
-
       await createCampAttendanceMutation.mutateAsync({
         projectCode: 4, // קייטנת קיץ
         classId: leaderClass._id,
@@ -244,10 +231,13 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
       // אם אין דוח קיים, צור דוח חדש
       let recordId = classReport?._id;
       if (!recordId) {
-        if (!leaderClass || !coordinatorId) {
-          console.error('חסרים נתונים ליצירת דוח חדש');
+        if (!leaderClass) {
+          console.error('חסרים נתונים ליצירת דוח חדש:', { leaderClass: leaderClass?._id });
+          setUploadingWorkerDoc(false);
           return;
         }
+        
+
         
         const newReport = await createCampAttendanceSimpleMutation.mutateAsync({
           projectCode: 4,
@@ -256,11 +246,12 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
           leaderId: workerId,
           month: currentMonth
         });
-        console.log('Created new report:', newReport);
+
         recordId = newReport._id;
-        refetch();
+        await refetch(); // רענון הנתונים
       }
       
+
       await uploadDocumentMutation.mutateAsync({
         recordId,
         docType: 'workerAttendanceDoc',
@@ -270,10 +261,12 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
       // ניקוי מידי של ה-state
       setWorkerFileInput(null);
       setUploadingWorkerDoc(false);
-      refetch();
+      await refetch(); // רענון הנתונים
     } catch (error: any) {
       console.error('שגיאה בהעלאת דוח עובדים:', error);
       setUploadingWorkerDoc(false);
+      // הצגת שגיאה למשתמש
+      alert(`שגיאה בהעלאת דוח עובדים: ${error?.response?.data?.error || error.message}`);
     }
   }, [workerFileInput, classReport?._id, leaderClass, coordinatorId, createCampAttendanceSimpleMutation, uploadDocumentMutation, workerId, currentMonth, refetch]);
 
@@ -285,10 +278,13 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
       // אם אין דוח קיים, צור דוח חדש
       let recordId = classReport?._id;
       if (!recordId) {
-        if (!leaderClass || !coordinatorId) {
-          console.error('חסרים נתונים ליצירת דוח חדש');
+        if (!leaderClass) {
+          console.error('חסרים נתונים ליצירת דוח חדש:', { leaderClass: leaderClass?._id });
+          setUploadingStudentDoc(false);
           return;
         }
+        
+
         
         const newReport = await createCampAttendanceSimpleMutation.mutateAsync({
           projectCode: 4,
@@ -297,11 +293,12 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
           leaderId: workerId,
           month: currentMonth
         });
-        console.log('Created new report:', newReport);
+
         recordId = newReport._id;
-        refetch();
+        await refetch(); // רענון הנתונים
       }
       
+
       await uploadDocumentMutation.mutateAsync({
         recordId,
         docType: 'studentAttendanceDoc',
@@ -311,10 +308,12 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
       // ניקוי מידי של ה-state
       setStudentFileInput(null);
       setUploadingStudentDoc(false);
-      refetch();
+      await refetch(); // רענון הנתונים
     } catch (error: any) {
       console.error('שגיאה בהעלאת דוח תלמידים:', error);
       setUploadingStudentDoc(false);
+      // הצגת שגיאה למשתמש
+      alert(`שגיאה בהעלאת דוח תלמידים: ${error?.response?.data?.error || error.message}`);
     }
   }, [studentFileInput, classReport?._id, leaderClass, coordinatorId, createCampAttendanceSimpleMutation, uploadDocumentMutation, workerId, currentMonth, refetch]);
 
@@ -326,10 +325,13 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
       // אם אין דוח קיים, צור דוח חדש
       let recordId = classReport?._id;
       if (!recordId) {
-        if (!leaderClass || !coordinatorId) {
-          console.error('חסרים נתונים ליצירת דוח חדש');
+        if (!leaderClass) {
+          console.error('חסרים נתונים ליצירת דוח חדש:', { leaderClass: leaderClass?._id });
+          setUploadingControlDoc(false);
           return;
         }
+        
+
         
         const newReport = await createCampAttendanceSimpleMutation.mutateAsync({
           projectCode: 4,
@@ -338,11 +340,12 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
           leaderId: workerId,
           month: currentMonth
         });
-        console.log('Created new report:', newReport);
+
         recordId = newReport._id;
-        refetch();
+        await refetch(); // רענון הנתונים
       }
       
+
       await uploadDocumentMutation.mutateAsync({
         recordId,
         docType: 'controlDocs',
@@ -352,10 +355,12 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
       // ניקוי מידי של ה-state
       setControlFileInput(null);
       setUploadingControlDoc(false);
-      refetch();
+      await refetch(); // רענון הנתונים
     } catch (error: any) {
       console.error('שגיאה בהעלאת דוח בקרה:', error);
       setUploadingControlDoc(false);
+      // הצגת שגיאה למשתמש
+      alert(`שגיאה בהעלאת דוח בקרה: ${error?.response?.data?.error || error.message}`);
     }
   }, [controlFileInput, classReport?._id, leaderClass, coordinatorId, createCampAttendanceSimpleMutation, uploadDocumentMutation, workerId, currentMonth, refetch]);
 
@@ -405,7 +410,21 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
               {leaderClass.uniqueSymbol} - {leaderClass.name} - {leaderClass.institutionCode}
             </Typography>
             <Typography variant="body1" color="text.secondary">
-              מוביל: {`${workerData?.firstName} ${workerData?.lastName}`}
+              מוביל/מדריך: {`${workerData?.firstName} ${workerData?.lastName}`}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              {coordinatorId === workerId ? (
+                <>
+                  רכז: {`${workerData?.firstName} ${workerData?.lastName}`} (לא מוגדר רכז, מוביל/מדריך משמש כרכז)
+                </>
+              ) : (
+                <>
+                  רכז: {allUsers?.find((user: User) => user._id === coordinatorId)?.firstName} {allUsers?.find((user: User) => user._id === coordinatorId)?.lastName}
+                </>
+              )}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              חודש: {currentMonth}
             </Typography>
           </Paper>
 
@@ -461,8 +480,7 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
                         style={{ display: 'none' }}
                         id="worker-file-input"
                         onChange={(e) => {
-                          console.log('Worker file selected:', e.target.files?.[0]);
-                          setWorkerFileInput(e.target.files?.[0] || null);
+                            setWorkerFileInput(e.target.files?.[0] || null);
                         }}
                       />
                       <label htmlFor="worker-file-input">
@@ -738,7 +756,7 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
                 מסגרת: {leaderClass.uniqueSymbol} - {leaderClass.name}
               </Typography>
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                מוביל: {workerData?.firstName} {workerData?.lastName}
+                מוביל/מדריך: {workerData?.firstName} {workerData?.lastName}
               </Typography>
             </Grid>
             

@@ -20,13 +20,20 @@ import {
   Checkbox,
   Button,
   Tooltip,
-  LinearProgress
+  LinearProgress,
+  Grid,
+  Card,
+  CardContent,
+  Stack,
+  Chip,
+  Autocomplete
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useFetchAllWorkersAfterNoon, useDeleteWorkerAfterNoon, useUpdateWorkerAfterNoon } from '../../queries/workerAfterNoonQueries';
 import { useFetchClasses } from '../../queries/classQueries';
+import { useFetchAllUsers } from '../../queries/useUsers';
 import { WorkerAfterNoon, Class } from '../../types';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -36,12 +43,16 @@ const ROWS_PER_PAGE = 15;
 const WorkersDocumentsList: React.FC = () => {
   const { data: workers = [], isLoading, error } = useFetchAllWorkersAfterNoon();
   const { data: classes = [] } = useFetchClasses();
+  const { data: allUsers = [] } = useFetchAllUsers();
   const queryClient = useQueryClient();
   const deleteWorkerMutation = useDeleteWorkerAfterNoon();
   const updateWorkerMutation = useUpdateWorkerAfterNoon();
   const [searchQuery, setSearchQuery] = useState('');
   const [salaryAccountFilter, setSalaryAccountFilter] = useState<string>('');
   const [projectFilter, setProjectFilter] = useState<string>('');
+  const [filterInstitutionCode, setFilterInstitutionCode] = useState('');
+  const [filterClassCode, setFilterClassCode] = useState('');
+  const [filterRole, setFilterRole] = useState('');
   const [page, setPage] = useState(0);
   const [selectedWorkers, setSelectedWorkers] = useState<Set<string>>(new Set());
   const [isDeletingSelected, setIsDeletingSelected] = useState(false);
@@ -68,6 +79,81 @@ const WorkersDocumentsList: React.FC = () => {
     { value: '4', label: 'קייטנת קיץ 2025' },
   ];
 
+  // אפשרויות חשבי שכר
+  const accountantOptions = useMemo(() => {
+    return [
+      { value: '', label: 'כל חשבי השכר' },
+      ...allUsers
+        .filter((user: any) => user.role === 'accountant')
+        .map((user: any) => ({
+          value: user._id,
+          label: `${user.firstName} ${user.lastName}`
+        }))
+    ];
+  }, [allUsers]);
+
+  // אפשרויות קודי מוסד עם שמות
+  const institutionOptions = useMemo(() => {
+    const institutionMap = new Map<string, { code: string; name: string }>();
+    classes.forEach((cls: Class) => {
+      if (cls.institutionCode && cls.institutionName) {
+        institutionMap.set(cls.institutionCode, { 
+          code: cls.institutionCode, 
+          name: cls.institutionName 
+        });
+      }
+    });
+    return [
+      { value: '', label: 'הכל' },
+      ...Array.from(institutionMap.values())
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(institution => ({ 
+          value: institution.code, 
+          label: `${institution.code} - ${institution.name}` 
+        }))
+    ];
+  }, [classes]);
+
+  // אפשרויות סמלי כיתה עם שמות
+  const classCodeOptions = useMemo(() => {
+    const classMap = new Map<string, { symbol: string; name: string }>();
+    classes.forEach((cls: Class) => {
+      if (cls.uniqueSymbol && cls.name) {
+        classMap.set(cls.uniqueSymbol, { 
+          symbol: cls.uniqueSymbol, 
+          name: cls.name 
+        });
+      }
+    });
+    return [
+      { value: '', label: 'הכל' },
+      ...Array.from(classMap.values())
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(classItem => ({ 
+          value: classItem.symbol, 
+          label: `${classItem.symbol} - ${classItem.name}` 
+        }))
+    ];
+  }, [classes]);
+
+  // אפשרויות תפקידים
+  const roleOptions = useMemo(() => {
+    const roles = new Set<string>();
+    workers.forEach(worker => {
+      if (worker.roleName) {
+        // נרמול התפקיד - הסרת רווחים מיותרים ותווי בלתי נראים
+        const normalizedRole = worker.roleName.trim();
+        if (normalizedRole) {
+          roles.add(normalizedRole);
+        }
+      }
+    });
+    return [
+      { value: '', label: 'כל התפקידים' },
+      ...Array.from(roles).sort().map(role => ({ value: role, label: role }))
+    ];
+  }, [workers]);
+
 
   // Filter workers based on search query and salary account
   const filteredWorkers = useMemo(() => {
@@ -86,9 +172,54 @@ const WorkersDocumentsList: React.FC = () => {
 
       const matchesProject = !projectFilter || (worker.projectCodes && worker.projectCodes.includes(parseInt(projectFilter)));
 
-      return matchesSearch && matchesProject;
+      // סינון לפי חשב שכר
+      let matchesAccountant = true;
+      if (salaryAccountFilter) {
+        const accountant = allUsers.find((u: any) => u._id === salaryAccountFilter && u.role === 'accountant');
+        if (accountant && Array.isArray(accountant.accountantInstitutionCodes) && classes.length > 0) {
+          const workerClasses = classes.filter((cls: any) =>
+            Array.isArray(cls.workers) && cls.workers.some((w: any) => w.workerId === worker._id)
+          );
+          const workerInstitutionCodes = workerClasses.map((cls: any) => cls.institutionCode);
+          matchesAccountant = workerInstitutionCodes.some((code: string) => accountant.accountantInstitutionCodes.includes(code));
+        } else {
+          matchesAccountant = false;
+        }
+      }
+
+      // סינון לפי קוד מוסד
+      let institutionMatch = true;
+      if (filterInstitutionCode) {
+        // נסה למצוא את קוד המוסד דרך הכיתות
+        const workerClasses = classes.filter((cls: any) =>
+          Array.isArray(cls.workers) && cls.workers.some((w: any) => w.workerId === worker._id)
+        );
+        
+        if (workerClasses.length > 0) {
+          // אם העובד משויך לכיתות, בדוק אם אחת מהן מתאימה לקוד המוסד
+          institutionMatch = workerClasses.some((cls: any) => cls.institutionCode === filterInstitutionCode);
+        } else {
+          // אם העובד לא משויך לכיתות, נציג אותו רק אם לא נבחר פילטר מוסד
+          // או אם יש לו accountantCode שמתאים
+          institutionMatch = !filterInstitutionCode || Boolean(worker.accountantCode && worker.accountantCode === filterInstitutionCode);
+        }
+      }
+
+      // סינון לפי סמל כיתה
+      let classCodeMatch = true;
+      if (filterClassCode) {
+        const workerClasses = classes.filter((cls: any) =>
+          Array.isArray(cls.workers) && cls.workers.some((w: any) => w.workerId === worker._id)
+        );
+        classCodeMatch = workerClasses.some((cls: any) => cls.uniqueSymbol === filterClassCode);
+      }
+
+      // סינון לפי תפקיד
+      const roleMatch = !filterRole || worker.roleName === filterRole;
+
+      return matchesSearch && matchesProject && matchesAccountant && institutionMatch && classCodeMatch && roleMatch;
     });
-  }, [workers, searchQuery, salaryAccountFilter, projectFilter]);
+  }, [workers, searchQuery, salaryAccountFilter, projectFilter, filterInstitutionCode, filterClassCode, filterRole, allUsers, classes]);
 
   // Calculate pagination
   const paginatedWorkers = useMemo(() => {
@@ -181,64 +312,205 @@ const WorkersDocumentsList: React.FC = () => {
   // Check if some current page workers are selected
   const isSomeSelected = filteredWorkers.some(worker => selectedWorkers.has(worker._id));
 
+  // פונקציה ליצירת תגיות סינון פעילות
+  const getActiveFilters = () => {
+    const filters = [];
+    
+    if (searchQuery) {
+      filters.push({
+        key: 'search',
+        label: `חיפוש: "${searchQuery}"`,
+        onDelete: () => setSearchQuery('')
+      });
+    }
+    
+    if (projectFilter) {
+      const project = projectOptions.find(p => p.value === projectFilter);
+      filters.push({
+        key: 'project',
+        label: `פרויקט: ${project?.label}`,
+        onDelete: () => setProjectFilter('')
+      });
+    }
+    
+    if (salaryAccountFilter) {
+      const accountant = accountantOptions.find(a => a.value === salaryAccountFilter);
+      filters.push({
+        key: 'accountant',
+        label: `חשב שכר: ${accountant?.label}`,
+        onDelete: () => setSalaryAccountFilter('')
+      });
+    }
+    
+    if (filterInstitutionCode) {
+      const institution = institutionOptions.find(i => i.value === filterInstitutionCode);
+      filters.push({
+        key: 'institution',
+        label: `מוסד: ${institution?.label}`,
+        onDelete: () => setFilterInstitutionCode('')
+      });
+    }
+    
+    if (filterClassCode) {
+      const classItem = classCodeOptions.find(c => c.value === filterClassCode);
+      filters.push({
+        key: 'class',
+        label: `קבוצה: ${classItem?.label}`,
+        onDelete: () => setFilterClassCode('')
+      });
+    }
+    
+    if (filterRole) {
+      filters.push({
+        key: 'role',
+        label: `תפקיד: ${filterRole}`,
+        onDelete: () => setFilterRole('')
+      });
+    }
+    
+    return filters;
+  };
+
   if (isLoading) return <Typography>טוען...</Typography>;
   if (error) return <Typography>שגיאה בטעינת הנתונים</Typography>;
 
   return (
     <Box>
-      <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
-        <TextField
-          fullWidth
-          size="small"
-          placeholder="חיפוש חופשי..."
-          value={searchQuery}
-          onChange={(e) => {
-            setSearchQuery(e.target.value);
-            setPage(0); 
-          }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-        />
-        <FormControl size="small" sx={{ minWidth: 200 }}>
-          <InputLabel>חשב שכר</InputLabel>
-          <Select
-            value={salaryAccountFilter}
-            label="חשב שכר"
-            onChange={(e) => {
-              setSalaryAccountFilter(e.target.value);
-              setPage(0);
-            }}
-          >
-            <MenuItem value="">הכל</MenuItem>
-            <MenuItem value="מירי">מירי</MenuItem>
-            <MenuItem value="אסתי">אסתי</MenuItem>
-            <MenuItem value="מרים">מרים</MenuItem>
-            <MenuItem value="רוחי">רוחי</MenuItem>
-          </Select>
-        </FormControl>
-        <FormControl size="small" sx={{ minWidth: 200 }}>
-          <InputLabel>פרויקט</InputLabel>
-          <Select
-            value={projectFilter}
-            label="פרויקט"
-            onChange={(e) => {
-              setProjectFilter(e.target.value);
-              setPage(0);
-            }}
-          >
-            {projectOptions.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Box>
+      {/* סרגל סינון מתקדם בראש העמוד */}
+      <Card sx={{ mb: 3, bgcolor: 'primary.50', border: '2px solid', borderColor: 'primary.main' }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Typography variant="h6" fontWeight="bold" color="primary.main" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              🔍 סינון מתקדם
+            </Typography>
+            {getActiveFilters().length > 0 && (
+              <>
+                <Typography variant="body2" color="text.secondary" sx={{ mx: 1 }}>|</Typography>
+                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                  {getActiveFilters().map((filter) => (
+                    <Chip
+                      key={filter.key}
+                      label={filter.label}
+                      onDelete={filter.onDelete}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                    />
+                  ))}
+                </Stack>
+              </>
+            )}
+          </Box>
+          <Grid container spacing={1} alignItems="center">
+            <Grid item xs={12} sm={6} md={1.5}>
+              <TextField
+                size="small"
+                fullWidth
+                placeholder="חיפוש חופשי"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setPage(0);
+                }}
+                InputProps={{
+                  startAdornment: !searchQuery ? <SearchIcon /> : null
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={1.5}>
+              <FormControl fullWidth size="small">
+                <InputLabel>פרויקט</InputLabel>
+                <Select 
+                  value={projectFilter} 
+                  label="פרויקט" 
+                  onChange={(e) => {
+                    setProjectFilter(e.target.value);
+                    setPage(0);
+                  }}
+                >
+                  {projectOptions.map(opt => (
+                    <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={6} md={1.5}>
+              <FormControl fullWidth size="small">
+                <InputLabel>חשב שכר</InputLabel>
+                <Select 
+                  value={salaryAccountFilter} 
+                  label="חשב שכר" 
+                  onChange={(e) => {
+                    setSalaryAccountFilter(e.target.value);
+                    setPage(0);
+                  }}
+                >
+                  {accountantOptions.map(opt => (
+                    <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={6} md={2}>
+              <Autocomplete
+                size="small"
+                options={institutionOptions}
+                getOptionLabel={(option) => option.label}
+                value={institutionOptions.find(opt => opt.value === filterInstitutionCode) || null}
+                onChange={(_, newValue) => {
+                  setFilterInstitutionCode(newValue?.value || '');
+                  setPage(0);
+                }}
+                renderInput={(params) => (
+                  <TextField 
+                    {...params} 
+                    label="קוד מוסד" 
+                    size="small"
+                  />
+                )}
+                isOptionEqualToValue={(option, value) => option.value === value.value}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={2}>
+              <Autocomplete
+                size="small"
+                options={classCodeOptions}
+                getOptionLabel={(option) => option.label}
+                value={classCodeOptions.find(opt => opt.value === filterClassCode) || null}
+                onChange={(_, newValue) => {
+                  setFilterClassCode(newValue?.value || '');
+                  setPage(0);
+                }}
+                renderInput={(params) => (
+                  <TextField 
+                    {...params} 
+                    label="סמל כיתה" 
+                    size="small"
+                  />
+                )}
+                isOptionEqualToValue={(option, value) => option.value === value.value}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={1.5}>
+              <FormControl fullWidth size="small">
+                <InputLabel>תפקיד</InputLabel>
+                <Select 
+                  value={filterRole} 
+                  label="תפקיד" 
+                  onChange={(e) => {
+                    setFilterRole(e.target.value);
+                    setPage(0);
+                  }}
+                >
+                  {roleOptions.map(opt => (
+                    <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
 
       {selectedWorkers.size > 0 && (
         <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -303,6 +575,7 @@ const WorkersDocumentsList: React.FC = () => {
               <TableCell sx={{ fontWeight: 'bold' }}>טלפון</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>אימייל</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>תפקיד</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>קוד מוסד</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>סטטוס</TableCell>
 
 
@@ -343,6 +616,20 @@ const WorkersDocumentsList: React.FC = () => {
                   <TableCell>{worker.phone}</TableCell>
                   <TableCell>{worker.email}</TableCell>
                   <TableCell>{worker.roleName?.trim().replace(/\s+/g, ' ') || 'לא נבחר'}</TableCell>
+                  <TableCell>
+                    {(() => {
+                      const workerClasses = classes.filter((cls: any) =>
+                        Array.isArray(cls.workers) && cls.workers.some((w: any) => w.workerId === worker._id)
+                      );
+                      if (workerClasses.length > 0) {
+                        return workerClasses.map((cls: any) => cls.institutionCode).join(', ');
+                      } else if (worker.accountantCode) {
+                        return worker.accountantCode;
+                      } else {
+                        return 'לא משויך';
+                      }
+                    })()}
+                  </TableCell>
                   <TableCell>{!worker.status || worker.status === "לא נבחר" ? "פעיל" : worker.status}</TableCell>
 
 
@@ -350,7 +637,7 @@ const WorkersDocumentsList: React.FC = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={11} align="center" sx={{ py: 3 }}>
+                <TableCell colSpan={12} align="center" sx={{ py: 3 }}>
                   <Typography variant="body2" color="text.secondary">
                     {searchQuery ? 'לא נמצאו תוצאות לחיפוש' : 'לא קיימים עובדים במערכת'}
                   </Typography>

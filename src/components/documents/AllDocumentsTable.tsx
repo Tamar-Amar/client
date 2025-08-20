@@ -668,7 +668,6 @@ const AllDocumentsTable: React.FC = () => {
               <TableHead>
                 <StyledTableRow>
                   <TableCell>שם עובד</TableCell>
-                  <TableCell>ת"ז</TableCell>
                   <TableCell>תפקיד</TableCell>
                   <TableCell>101</TableCell>
                   <TableCell>אישור משטרה</TableCell>
@@ -676,12 +675,14 @@ const AllDocumentsTable: React.FC = () => {
                   <TableCell>חוזה</TableCell>
                   <TableCell>תעודת זהות</TableCell>
                   <TableCell>אישור וותק</TableCell>
+                  <TableCell>אישור רפואי</TableCell>
+                  <TableCell>נוכחות קייטנת קיץ</TableCell>
                 </StyledTableRow>
               </TableHead>
               <TableBody>
                 {paginatedData.length === 0 ? (
                   <TableRow>
-                    <EmptyTableCell colSpan={9} align="center">
+                    <EmptyTableCell colSpan={12} align="center">
                       <Typography color="text.secondary">לא נמצאו עובדים התואמים את הסינון</Typography>
                     </EmptyTableCell>
                   </TableRow>
@@ -696,14 +697,6 @@ const AllDocumentsTable: React.FC = () => {
                           {`${worker.lastName} ${worker.firstName}`}
                         </ClickableText>
                       </TableCell>
-                                                <TableCell>
-                            <ClickableText 
-                              variant="body2" 
-                              onClick={() => handleWorkerClick(worker._id)}
-                            >
-                              {worker.id}
-                            </ClickableText>
-                          </TableCell>
                       <TableCell>{worker.roleName}</TableCell>
                       <TableCell>
                         {worker.is101 ? (
@@ -917,6 +910,98 @@ const AllDocumentsTable: React.FC = () => {
                                 <UploadFileIcon fontSize="small" sx={{ mr: 0.5 }}/>
                                 העלה
                               </UploadButton>
+                            </Tooltip>
+                          );
+                        })()}
+                      </TableCell>
+                      {/* אישור רפואי */}
+                      <TableCell>
+                        {(() => {
+                          // הצגה רק אם התפקיד הוא מד"צ
+                          if (worker.roleName && worker.roleName.includes('מד"צ')) {
+                            const doc = docs['אישור רפואי'];
+                            return doc ? (
+                              <Stack direction="row" spacing={0.5} alignItems="center">
+                                <Tooltip title="צפה במסמך">
+                                  <IconButton size="small" onClick={() => window.open(doc.url, '_blank')} disabled={!doc.url}>
+                                    <VisibilityIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                                {doc.status !== DocumentStatus.PENDING && getStatusChip(doc.status)}
+                                {doc.status === DocumentStatus.PENDING && (
+                                  <>
+                                    <Tooltip title="אשר">
+                                      <IconButton size="small" onClick={() => handleApprove(doc._id!)} disabled={isUpdatingStatus}>
+                                        <CheckIcon fontSize="small" color="success" />
+                                      </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="דחה">
+                                      <IconButton size="small" onClick={() => handleReject(doc._id!)} disabled={isUpdatingStatus}>
+                                        <CloseIcon fontSize="small" color="error" />
+                                      </IconButton>
+                                    </Tooltip>
+                                  </>
+                                )}
+                              </Stack>
+                            ) : (
+                              <Tooltip title="העלה אישור רפואי">
+                                <UploadButton size="small" color="primary" onClick={() => handleOpenUploadDialog(worker, 'אישור רפואי')}>
+                                  <UploadFileIcon fontSize="small" sx={{ mr: 0.5 }}/>
+                                  העלה
+                                </UploadButton>
+                              </Tooltip>
+                            );
+                          }
+                          // אם לא נדרש
+                          return (
+                            <Tooltip title="לא נדרש">
+                              <UploadButton size="small">-----</UploadButton>
+                            </Tooltip>
+                          );
+                        })()}
+                      </TableCell>
+                      {/* נוכחות קייטנת קיץ */}
+                      <TableCell>
+                        {(() => {
+                          // הצגה רק אם התפקיד הוא רכז או סגן רכז
+                          if (worker.roleName && (worker.roleName.includes('רכז') || worker.roleName.includes('סגן רכז'))) {
+                            const doc = docs['נוכחות קייטנה רכז'];
+                            return doc ? (
+                              <Stack direction="row" spacing={0.5} alignItems="center">
+                                <Tooltip title="צפה במסמך">
+                                  <IconButton size="small" onClick={() => window.open(doc.url, '_blank')} disabled={!doc.url}>
+                                    <VisibilityIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                                {doc.status !== DocumentStatus.PENDING && getStatusChip(doc.status)}
+                                {doc.status === DocumentStatus.PENDING && (
+                                  <>
+                                    <Tooltip title="אשר">
+                                      <IconButton size="small" onClick={() => handleApprove(doc._id!)} disabled={isUpdatingStatus}>
+                                        <CheckIcon fontSize="small" color="success" />
+                                      </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="דחה">
+                                      <IconButton size="small" onClick={() => handleReject(doc._id!)} disabled={isUpdatingStatus}>
+                                        <CloseIcon fontSize="small" color="error" />
+                                      </IconButton>
+                                    </Tooltip>
+                                  </>
+                                )}
+                              </Stack>
+                            ) : (
+                              <Tooltip title="העלה נוכחות קייטנת קיץ">
+                                <UploadButton size="small" color="primary" onClick={() => handleOpenUploadDialog(worker, 'נוכחות קייטנת קיץ')}>
+                                  <UploadFileIcon fontSize="small" sx={{ mr: 0.5 }}/>
+                                  העלה
+                                </UploadButton>
+                              </Tooltip>
+                            );
+                          }
+                          // אם לא נדרש
+                          return (
+                            <Tooltip title="לא נדרש">
+                              <UploadButton size="small">-----</UploadButton>
                             </Tooltip>
                           );
                         })()}

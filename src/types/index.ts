@@ -161,6 +161,7 @@ export interface Activity {
     notes?: string;
     roleName: string;
     is101: boolean;
+    accountantCode?: string;
   }
 
   export interface WorkerWithClassInfo extends WorkerAfterNoon {
