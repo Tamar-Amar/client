@@ -196,20 +196,28 @@ export const useDownloadMultipleDocuments = () => {
       project?: string;
       dateFrom?: string;
       dateTo?: string;
+      organizationType?: 'byType' | 'byWorker';
+      fileNameFormat?: 'simple' | 'detailed';
+      selectedProject?: string;
+      projectOrganization?: 'byClass' | 'byType';
+      maxDocuments?: number;
     }) => {
-      const response = await axiosInstance.post('/api/documents/download-multiple', filters);
+      const response = await axiosInstance.post('/api/documents/download-multiple', filters, {
+        responseType: 'blob',
+        timeout: 300000, // 5 דקות timeout
+      });
       return response.data;
     },
-    onSuccess: (data) => {
-      // הורדת כל המסמכים
-      data.documents.forEach((doc: any) => {
-        const link = document.createElement('a');
-        link.href = doc.downloadUrl;
-        link.download = doc.fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      });
+    onSuccess: (blob) => {
+      // יצירת URL להורדת ה-ZIP
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `documents-${new Date().toISOString().replace(/[:.]/g, '-')}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
     },
   });
 };

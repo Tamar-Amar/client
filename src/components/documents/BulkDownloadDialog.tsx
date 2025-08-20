@@ -72,8 +72,8 @@ const BulkDownloadDialog: React.FC<BulkDownloadDialogProps> = ({
       : filters;
 
     downloadMutation.mutate(downloadData, {
-      onSuccess: (data) => {
-        console.log(`מוכנים ${data.count} מסמכים להורדה`);
+      onSuccess: () => {
+        console.log('המסמכים יורדים כקובץ ZIP');
         onClose();
       },
       onError: (error) => {
@@ -92,6 +92,8 @@ const BulkDownloadDialog: React.FC<BulkDownloadDialogProps> = ({
       dateTo: '',
     });
   };
+
+  const hasActiveFilters = Object.values(filters).some(value => value !== '');
 
   const hasFilters = Object.values(filters).some(value => value !== '');
 
@@ -137,7 +139,7 @@ const BulkDownloadDialog: React.FC<BulkDownloadDialogProps> = ({
                 <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
                   <FilterIcon color="primary" />
                   <Typography variant="subtitle1">פילטרים להורדה</Typography>
-                  {hasFilters && (
+                  {hasActiveFilters && (
                     <Button
                       startIcon={<ClearIcon />}
                       onClick={clearFilters}
@@ -158,9 +160,13 @@ const BulkDownloadDialog: React.FC<BulkDownloadDialogProps> = ({
                         onChange={(e) => handleFilterChange('documentType', e.target.value)}
                       >
                         <MenuItem value="">הכל</MenuItem>
-                        {documentTypes?.map((type: string) => (
-                          <MenuItem key={type} value={type}>{type}</MenuItem>
-                        ))}
+                        <MenuItem value="תעודת זהות">תעודת זהות</MenuItem>
+                        <MenuItem value="אישור משטרה">אישור משטרה</MenuItem>
+                        <MenuItem value="חוזה">חוזה</MenuItem>
+                        <MenuItem value="תעודת השכלה">תעודת השכלה</MenuItem>
+                        <MenuItem value="אישור וותק">אישור וותק</MenuItem>
+                        <MenuItem value="נוכחות קייטנה רכז">נוכחות קייטנה רכז</MenuItem>
+                        <MenuItem value="אישור רפואי">אישור רפואי</MenuItem>
                       </Select>
                     </FormControl>
                   </Grid>
@@ -190,12 +196,19 @@ const BulkDownloadDialog: React.FC<BulkDownloadDialogProps> = ({
                   </Grid>
 
                   <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="פרויקט"
-                      value={filters.project}
-                      onChange={(e) => handleFilterChange('project', e.target.value)}
-                    />
+                    <FormControl fullWidth>
+                      <InputLabel>פרויקט</InputLabel>
+                      <Select
+                        value={filters.project}
+                        onChange={(e) => handleFilterChange('project', e.target.value)}
+                      >
+                        <MenuItem value="">הכל</MenuItem>
+                        <MenuItem value="1">צהרון שוטף 2025</MenuItem>
+                        <MenuItem value="2">קייטנת חנוכה 2025</MenuItem>
+                        <MenuItem value="3">קייטנת פסח 2025</MenuItem>
+                        <MenuItem value="4">קייטנת קיץ 2025</MenuItem>
+                      </Select>
+                    </FormControl>
                   </Grid>
 
                   <Grid item xs={12} md={6}>
@@ -218,7 +231,7 @@ const BulkDownloadDialog: React.FC<BulkDownloadDialogProps> = ({
                 </Grid>
 
                 {/* תצוגת פילטרים פעילים */}
-                {hasFilters && (
+                {hasActiveFilters && (
                   <Box sx={{ mt: 2 }}>
                     <Typography variant="body2" color="textSecondary" gutterBottom>
                       פילטרים פעילים:
@@ -226,10 +239,35 @@ const BulkDownloadDialog: React.FC<BulkDownloadDialogProps> = ({
                     <Stack direction="row" spacing={1} flexWrap="wrap">
                       {Object.entries(filters).map(([key, value]) => {
                         if (value) {
+                          const getFilterLabel = (key: string, value: string) => {
+                            switch (key) {
+                              case 'documentType':
+                                return `סוג מסמך: ${value}`;
+                              case 'status':
+                                return `סטטוס: ${value}`;
+                              case 'workerId':
+                                return `מזהה עובד: ${value}`;
+                              case 'project':
+                                const projectNames: { [key: string]: string } = {
+                                  '1': 'צהרון שוטף 2025',
+                                  '2': 'קייטנת חנוכה 2025',
+                                  '3': 'קייטנת פסח 2025',
+                                  '4': 'קייטנת קיץ 2025'
+                                };
+                                return `פרויקט: ${projectNames[value] || value}`;
+                              case 'dateFrom':
+                                return `מתאריך: ${new Date(value).toLocaleDateString('he-IL')}`;
+                              case 'dateTo':
+                                return `עד תאריך: ${new Date(value).toLocaleDateString('he-IL')}`;
+                              default:
+                                return `${key}: ${value}`;
+                            }
+                          };
+                          
                           return (
                             <Chip
                               key={key}
-                              label={`${key}: ${value}`}
+                              label={getFilterLabel(key, value)}
                               size="small"
                               variant="outlined"
                               onDelete={() => handleFilterChange(key, '')}
@@ -251,11 +289,20 @@ const BulkDownloadDialog: React.FC<BulkDownloadDialogProps> = ({
               </Alert>
             )}
 
-            {downloadMode === 'filtered' && !hasFilters && (
+            {downloadMode === 'filtered' && !hasActiveFilters && (
               <Alert severity="info">
-                לא נבחרו פילטרים - יורדו כל המסמכים
+                לא נבחרו פילטרים - יורדו כל המסמכים כקובץ ZIP
               </Alert>
             )}
+
+            <Alert severity="info">
+              המסמכים יורדים כקובץ ZIP עם שמות מאורגנים:
+              <br />• <strong>מסמכים אישיים:</strong> תז_שם_מלא_סוג_מסמך_שם_קובץ
+              <br />• <strong>נוכחות קייטנה:</strong> תז_שם_מלא_נוכחות_קייטנה_תאריך_שם_קובץ
+              <br />• <strong>מסמכים אחרים:</strong> תז_שם_מלא_סוג_מסמך_תאריך_שם_קובץ
+              <br /><br /><strong>הערה:</strong> התהליך יכול לקחת מספר שניות בהתאם לכמות המסמכים
+              <br />המערכת תחפש את פרטי העובדים לפי מזהה המסמך
+            </Alert>
 
             {downloadMutation.isError && (
               <Alert severity="error">
