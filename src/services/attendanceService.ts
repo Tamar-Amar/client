@@ -161,10 +161,15 @@ export const attendanceService = {
   //   return response.data;
   // },
 
-    getCampAttendanceReport: async (id: string) => {
-      const response = await axiosInstance.get(`${API_URL}/camp/${id}`);
-      return response.data;
-    },
+      getCampAttendanceReport: async (id: string) => {
+    const response = await axiosInstance.get(`${API_URL}/camp/${id}`);
+    return response.data;
+  },
+
+  getCampAttendanceByCoordinator: async (coordinatorId: string) => {
+    const response = await axiosInstance.get(`${API_URL}/camp/coordinator/${coordinatorId}`);
+    return response.data;
+  },
 
     updateCampAttendance: async (id: string, data: any) => {
       const response = await axiosInstance.patch(`${API_URL}/camp/${id}`, data);

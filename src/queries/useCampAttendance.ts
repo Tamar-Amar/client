@@ -22,6 +22,16 @@ export const useCampAttendanceReport = (id: string) => {
   });
 };
 
+export const useCampAttendanceByCoordinator = (coordinatorId: string) => {
+  return useQuery({
+    queryKey: ['campAttendanceByCoordinator', coordinatorId],
+    queryFn: () => attendanceService.getCampAttendanceByCoordinator(coordinatorId),
+    enabled: !!coordinatorId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+};
+
 export const useCreateCampAttendance = () => {
   const queryClient = useQueryClient();
   

@@ -38,7 +38,7 @@ import {
   Close as CloseIcon
 } from '@mui/icons-material';
 import { 
-  useCampAttendanceReport, 
+  useCampAttendanceByCoordinator,
   useUploadAttendanceDocument, 
   useDeleteAttendanceDocument,
   useClassesByCoordinatorInstitutionCodes,
@@ -78,7 +78,7 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(8);
 
-  const { data, isLoading, refetch } = useCampAttendanceReport(coordinatorId);
+  const { data, isLoading, refetch } = useCampAttendanceByCoordinator(coordinatorId);
   const { data: allClasses, isLoading: classesLoading } = useClassesByCoordinatorInstitutionCodes(coordinatorId);
   const uploadMutation = useUploadAttendanceDocument();
   const deleteMutation = useDeleteAttendanceDocument();
