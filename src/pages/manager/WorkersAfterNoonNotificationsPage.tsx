@@ -5,21 +5,18 @@ import {
   Grid, 
   Card, 
   CardContent, 
-  CardHeader,
   Chip,
   Divider,
   List,
   ListItem,
   ListItemText,
   ListItemIcon,
-  Avatar,
   Button,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   LinearProgress,
-  Stack,
   Alert,
   AlertTitle,
   IconButton,
@@ -27,8 +24,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Tabs,
-  Tab,
 } from "@mui/material";
 import { useFetchAllWorkersAfterNoon } from "../../queries/workerAfterNoonQueries";
 import { useFetchAllDocuments } from "../../queries/useDocuments";
@@ -51,7 +46,6 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import InfoIcon from '@mui/icons-material/Info';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import DownloadIcon from '@mui/icons-material/Download';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 

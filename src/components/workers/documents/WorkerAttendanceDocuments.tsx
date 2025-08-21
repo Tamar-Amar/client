@@ -16,11 +16,6 @@ import {
   Button,
   Menu,
   MenuItem,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -46,7 +41,6 @@ import ConfirmationDialog from '../../other/ConfirmationDialog';
 import UploadAttendanceDialog from '../UploadAttendanceDialog';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
-import { format } from 'date-fns';
 
 interface AttendanceDocument {
   _id: string;

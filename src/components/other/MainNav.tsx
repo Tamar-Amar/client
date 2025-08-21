@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AppBar, Toolbar, Button, Box, Typography, Stack, Menu, MenuItem, Avatar, IconButton, Tabs, Tab, Dialog } from '@mui/material';
+import { AppBar, Toolbar, Button, Box, Typography, Stack, Menu, MenuItem,IconButton, Tabs, Tab, Dialog } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import LoginIcon from '@mui/icons-material/Login';
 import { useRecoilValue } from 'recoil';

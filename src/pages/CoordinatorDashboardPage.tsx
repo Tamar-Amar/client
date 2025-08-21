@@ -9,7 +9,6 @@ import {
   ListItemText,
   Divider,
 } from '@mui/material';
-import { jwtDecode } from 'jwt-decode';
 import PersonIcon from '@mui/icons-material/Person';
 import PeopleIcon from '@mui/icons-material/People';
 import AssignmentIcon from '@mui/icons-material/Assignment';
@@ -17,12 +16,6 @@ import CoordinatorPersonalDetails from '../components/coordinator/CoordinatorPer
 import CoordinatorClasses from '../components/coordinator/CoordinatorClasses';
 import CoordinatorWorkers from '../components/coordinator/CoordinatorWorkers';
 import { CoordinatorAttendanceReports } from '../components/coordinator/CoordinatorAttendanceReports';
-
-interface DecodedToken {
-  id: string;
-  role: string;
-  username?: string;
-}
 
 const CoordinatorDashboardPage: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState<'personal' | 'classes' | 'workers' | 'attendanceReports'>('personal');

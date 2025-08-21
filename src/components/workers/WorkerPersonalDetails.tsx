@@ -7,7 +7,6 @@ import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
-import BadgeIcon from '@mui/icons-material/Badge';
 import WorkIcon from '@mui/icons-material/Work';
 import NotesIcon from '@mui/icons-material/Notes';
 import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';

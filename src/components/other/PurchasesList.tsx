@@ -3,9 +3,7 @@ import { AgGridReact } from 'ag-grid-react';
 import { ClientSideRowModelModule } from '@ag-grid-community/client-side-row-model';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
-import { Button } from '@mui/material';
 import { useFetchAllPurchases } from '../../queries/purchaseQueries';
-import { useFetchStores } from '../../queries/storeQueries';
 
 const PurchaseList: React.FC = () => {
   const { data: purchases, isLoading, isError } = useFetchAllPurchases();

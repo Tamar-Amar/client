@@ -15,8 +15,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Tabs,
-  Tab,
   Button,
   Stack,
   Tooltip,
@@ -40,7 +38,6 @@ import {
   CheckCircle as CheckIcon,
   Cancel as CloseIcon,
   Visibility as VisibilityIcon,
-  Download as DownloadIcon
 } from '@mui/icons-material';
 import { useFetchClasses } from '../queries/classQueries';
 import { useFetchAllWorkersAfterNoon } from '../queries/workerAfterNoonQueries';
@@ -49,10 +46,7 @@ import { useUpdateAttendanceDocumentStatus } from '../queries/useAttendanceDocum
 import { Class, WorkerAfterNoon } from '../types';
 import { useAllCampAttendanceReports } from '../queries/useCampAttendance';
 
-// TODO: להוסיף hook לעדכון סטטוס מסמך
-// import { useUpdateAttendanceStatus } from '../queries/useDocuments';
-
-const PROJECT_CODE = 4; // קייטנת קיץ
+const PROJECT_CODE = 4; 
 
 const statusTabs = [
   { value: '', label: 'הכל' },
@@ -69,7 +63,6 @@ const SummerCampAttendancePage: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState('');
   const [tabStatus, setTabStatus] = useState('');
   
-  // דיאלוג מסמכי בקרה
   const [controlDocsDialog, setControlDocsDialog] = useState<{
     open: boolean;
     documents: any[];
@@ -80,16 +73,13 @@ const SummerCampAttendancePage: React.FC = () => {
     row: null
   });
 
-  // שליפת נתונים
   const { data: campAttendance = [], isLoading: loadingAttendance } = useAllCampAttendanceReports(); 
   const { data: classes = [], isLoading: loadingClasses } = useFetchClasses();
   const { data: workers = [], isLoading: loadingWorkers } = useFetchAllWorkersAfterNoon();
   const { data: users = [], isLoading: loadingUsers } = useFetchAllUsers();
 
-  // סינון כיתות שרק בקייטנת קיץ
   const summerClasses = useMemo(() => classes.filter((cls: Class) => Array.isArray(cls.projectCodes) && cls.projectCodes.includes(PROJECT_CODE)), [classes]);
 
-  // אפשרויות סינון - רק מתוך summerClasses
   const institutionOptions = useMemo(() => {
     const codes = new Set<string>();
     summerClasses.forEach((cls: Class) => {
@@ -114,7 +104,6 @@ const SummerCampAttendancePage: React.FC = () => {
     ];
   }, [summerClasses]);
 
-  // אפשרויות חשבי שכר מתוך המשתמשים
   const accountantUserOptions = useMemo(() => {
     return [
       { value: '', label: 'כל חשבי השכר', accountant: null },
@@ -129,12 +118,10 @@ const SummerCampAttendancePage: React.FC = () => {
   }, [users]);
   const [filterAccountant, setFilterAccountant] = useState('');
 
-  // עיבוד נתונים לטבלה
   const tableData = useMemo(() => {
     return campAttendance
       .filter((row: any) => row.projectCode === PROJECT_CODE)
       .filter((row: any) => {
-        // סינון חופשי
         if (searchTerm) {
           const cls = classes.find((c: Class) => c._id === row.classId?._id || c._id === row.classId);
           const leader = workers.find((w: WorkerAfterNoon) => w._id === row.leaderId?._id || w._id === row.leaderId);
@@ -145,7 +132,6 @@ const SummerCampAttendancePage: React.FC = () => {
         return true;
       })
       .filter((row: any) => {
-        // סינון לפי קוד מוסד
         if (filterInstitutionCode) {
           const cls = classes.find((c: Class) => c._id === row.classId?._id || c._id === row.classId);
           return cls?.institutionCode === filterInstitutionCode;
@@ -153,7 +139,6 @@ const SummerCampAttendancePage: React.FC = () => {
         return true;
       })
       .filter((row: any) => {
-        // סינון לפי סמל כיתה
         if (filterClassCode) {
           const cls = classes.find((c: Class) => c._id === row.classId?._id || c._id === row.classId);
           return cls?.uniqueSymbol === filterClassCode;
@@ -161,10 +146,8 @@ const SummerCampAttendancePage: React.FC = () => {
         return true;
       })
       .filter((row: any) => {
-        // סינון לפי סטטוס (טאב או סינון)
         const statusToCheck = tabStatus || filterStatus;
         if (statusToCheck) {
-          // בדוק סטטוס של מסמך עובדים (workerAttendanceDoc)
           const status = row.workerAttendanceDoc?.status;
           return status === statusToCheck;
         }

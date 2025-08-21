@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Box, Button, Typography, CircularProgress, Grid, TextField, Snackbar, Alert, Autocomplete } from '@mui/material';
+import { Box, Button, Typography, CircularProgress, Grid, Snackbar, Alert} from '@mui/material';
 import { useFetchActivities, useAddActivity, useDeleteActivity } from '../../queries/activitiesQueries';
-import { Activity, Operator } from '../../types';
+import { Activity} from '../../types';
 import { getAggregatedData, filterAggregatedData, getDetailInfo, AggregatedRow, DetailInfo } from '../../utils/activitiesUtils';
 import Filters from './Filters';
 import ActivityTable from './ActivityTable';

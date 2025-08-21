@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, CircularProgress, Backdrop, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, FormGroup, FormControlLabel, Checkbox, List, ListItem, ListItemText, ListItemIcon, Divider } from '@mui/material';
+import { Button, Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, CircularProgress, Backdrop,  Dialog, DialogTitle, DialogContent, DialogActions, FormGroup, FormControlLabel, Checkbox, List, ListItem, ListItemText, ListItemIcon } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import * as XLSX from 'xlsx';
@@ -9,23 +9,6 @@ import { useAddWorkerAfterNoon, useFetchAllWorkersAfterNoon, useUpdateWorkerAfte
 import { WorkerAfterNoon, Class } from '../../types';
 import { normalizePhone, isValidPhone, formatDate, validateIsraeliID, parseDate } from './excelImportUtils';
 
-
-interface ExcelRow {
-  __EMPTY: string; 
-  __EMPTY_1: string; 
-  __EMPTY_2: string; 
-  __EMPTY_3: string; 
-  __EMPTY_4: string; 
-  __EMPTY_5: string; 
-  __EMPTY_6: string; 
-  __EMPTY_7: string; 
-  __EMPTY_8: string; 
-  __EMPTY_9: string; 
-  __EMPTY_10: string; 
-  __EMPTY_11: string; 
-  __EMPTY_12: string; 
-  __EMPTY_13: string; 
-}
 
 interface PreviewWorker extends Omit<WorkerAfterNoon, '_id' | 'isAfterNoon' | 'isBaseWorker' | 'isHanukaCamp' | 'isPassoverCamp' | 'isSummerCamp'> {
   _id?: string;

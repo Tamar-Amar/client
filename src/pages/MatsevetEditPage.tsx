@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import {
   Container,
   Box,
-  Typography,
   Paper,
   Table,
   TableBody,
@@ -17,7 +16,6 @@ import {
   TextField
 } from '@mui/material';
 import { Add as AddIcon, MoreVert as MoreVertIcon } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
 import { useFetchAllWorkersAfterNoon } from '../queries/workerAfterNoonQueries';
 import { useFetchClasses, useDeleteClass } from '../queries/classQueries';
 import { Class, WorkerAfterNoon } from '../types';
@@ -29,7 +27,6 @@ interface ClassWithWorkers {
 }
 
 const MatsevetEditPage: React.FC = () => {
-  const navigate = useNavigate();
   const { data: workers = [], isLoading: workersLoading } = useFetchAllWorkersAfterNoon();
   const { data: classes = [], isLoading: classesLoading } = useFetchClasses();
   const [selected, setSelected] = useState<string[]>([]);

@@ -1,14 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import {
-  Container,
   Typography,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Button,
   Dialog,
   DialogTitle,
@@ -17,22 +10,18 @@ import {
   Box,
   Chip,
   IconButton,
-  Tooltip,
   Alert,
   CircularProgress,
   Grid
 } from '@mui/material';
 import {
   Add as AddIcon,
-  Delete as DeleteIcon,
   Upload as UploadIcon,
-  Visibility as VisibilityIcon
 } from '@mui/icons-material';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCreateCampAttendanceWithFiles, useCreateCampAttendance, useDeleteCampAttendanceRecord, useDeleteAttendanceDocument, useUploadAttendanceDocument, useAllCampAttendanceReports } from '../../queries/useCampAttendance';
 import { fetchClasses } from '../../services/ClassService';
-import { Class, User, WorkerAfterNoon } from '../../types';
-import { useFetchWorkerAfterNoon } from '../../queries/workerAfterNoonQueries';
+import { Class, User} from '../../types';
 import { useFetchAllUsers } from '../../queries/useUsers';
 
 interface WorkerCampReportsProps {

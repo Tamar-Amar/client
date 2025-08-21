@@ -1,8 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { useCallback, useMemo } from 'react';
 import { WorkerWithClassInfo } from '../types';
-import { Document, DocumentStatus, DocumentType } from '../types/Document';
+import { Document, DocumentStatus } from '../types/Document';
 
 export function useCoordinatorWorkers(coordinatorId: string) {
   const queryClient = useQueryClient();

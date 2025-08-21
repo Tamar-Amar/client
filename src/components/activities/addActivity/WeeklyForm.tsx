@@ -3,7 +3,6 @@ import {
   Box, Button, FormControl, InputLabel, MenuItem, Select,
   TextField, Autocomplete, Checkbox, FormControlLabel, CircularProgress
 } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { he } from 'date-fns/locale';

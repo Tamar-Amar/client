@@ -3,7 +3,7 @@ import {
   Dialog, DialogTitle, DialogContent, RadioGroup,
   FormControlLabel, Radio, Box, Button, Divider
 } from '@mui/material';
-import { Activity, Operator } from '../../../types';
+import { Activity} from '../../../types';
 import WeeklyForm from './WeeklyForm';
 import SingleForm from './SingleForm';
 import PDFFormActivity from './PDFFormActivity';

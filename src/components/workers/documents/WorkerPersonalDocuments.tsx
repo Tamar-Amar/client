@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useRecoilValue } from 'recoil';
 import { 
   Paper, 
@@ -15,8 +15,6 @@ import {
   Chip, 
   Alert, 
   Link,
-  Card,
-  CardContent,
   Grid,
   AlertTitle,
   Container,
@@ -25,8 +23,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
-  MenuItem,
   Stack
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -37,11 +33,6 @@ import WarningIcon from '@mui/icons-material/Warning';
 import DescriptionIcon from '@mui/icons-material/Description';
 import { DocumentStatus } from '../../../types/Document';
 import { userRoleState } from '../../../recoil/storeAtom';
-import { useWorkerDocuments } from '../../../queries/useDocuments';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { he } from 'date-fns/locale';
 import { CloudUpload as CloudUploadIcon } from '@mui/icons-material';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
@@ -61,12 +52,6 @@ interface WorkerPersonalDocumentsProps {
 
 const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ documents, handleStatusUpdate, handleDelete, is101, workerId, workerTz, workerRoleName }) => {
   const userRole = useRecoilValue(userRoleState);
-  const { uploadDocument } = useWorkerDocuments(workerId);
-  const [isPersonalDocDialogOpen, setIsPersonalDocDialogOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [documentType, setDocumentType] = useState<string>("");
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [expirationDate, setExpirationDate] = useState<Date | null>(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const personalDocs = documents.filter((doc: any) => [

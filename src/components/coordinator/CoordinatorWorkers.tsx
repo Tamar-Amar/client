@@ -37,14 +37,10 @@ import {
   Select,
   MenuItem,
   Divider,
-  Tabs,
-  Tab,
   Link,
-  Autocomplete,
   SelectChangeEvent
 } from '@mui/material';
 import PeopleIcon from '@mui/icons-material/People';
-import BusinessIcon from '@mui/icons-material/Business';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import DescriptionIcon from '@mui/icons-material/Description';
@@ -52,8 +48,6 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningIcon from '@mui/icons-material/Warning';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
-import CheckIcon from '@mui/icons-material/Check';
-import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { WorkerWithClassInfo } from '../../types';
 import axios from 'axios';
@@ -69,18 +63,14 @@ interface CoordinatorWorkersProps {
 
 
 const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }) => {
-  // מחק את כל הסטייטים וה-fetchים של עובדים, מסמכים וסטטיסטיקות, והשתמש בהוק:
   const {
     workers,
     workersLoading: loading,
     workersError: error,
     allWorkerDocuments,
     documentsLoading,
-    documentsError,
     documentsSummary,
-    refetchWorkers,
     refetchDocuments,
-    refetchAll
   } = useCoordinatorWorkers(coordinatorId);
 
   const [searchTerm, setSearchTerm] = useState('');

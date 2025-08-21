@@ -18,19 +18,12 @@ import {
   Card,
   CardContent,
   CardHeader,
-  Divider,
   Alert,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Checkbox,
   FormControlLabel,
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  IconButton,
-  Tooltip,
   CircularProgress,
   Backdrop
 } from '@mui/material';
@@ -40,17 +33,16 @@ import {
   Warning as WarningIcon,
   Error as ErrorIcon,
   ExpandMore as ExpandMoreIcon,
-  Delete as DeleteIcon,
   Refresh as RefreshIcon,
   Save as SaveIcon,
   Update as UpdateIcon
 } from '@mui/icons-material';
 import * as XLSX from 'xlsx';
 import { useQueryClient } from '@tanstack/react-query';
-import { useFetchClasses, updateClassWithWorker, useBulkAddWorkersToClasses } from '../queries/classQueries';
-import { useAddWorkerAfterNoon, useAddMultipleWorkersAfterNoon, useFetchAllWorkersAfterNoon, useUpdateWorkerAfterNoon } from '../queries/workerAfterNoonQueries';
+import { useFetchClasses, useBulkAddWorkersToClasses } from '../queries/classQueries';
+import { useAddMultipleWorkersAfterNoon, useFetchAllWorkersAfterNoon, useUpdateWorkerAfterNoon } from '../queries/workerAfterNoonQueries';
 import { WorkerAfterNoon, Class } from '../types';
-import { normalizePhone, isValidPhone, formatDate, validateIsraeliID, parseDate } from '../components/workers/excelImportUtils';
+import { normalizePhone, isValidPhone,validateIsraeliID, parseDate } from '../components/workers/excelImportUtils';
 
 const projectTypes = [
   { label: 'צהרון שוטף 2025', value: 1 },

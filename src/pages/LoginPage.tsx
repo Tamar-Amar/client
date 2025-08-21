@@ -62,31 +62,9 @@ const LoginPage: React.FC = () => {
     setShowPassword(false);
   };
 
-  const handleOperatorLogin = async () => {
-    try {
-      const response = await axios.post(API_URL, { username: id, password });
-      const { role, token, user } = response.data;
-
-      setUserRole(role);
-      setUserToken(token);
-      localStorage.setItem('token', token);
-      localStorage.setItem('role', role);
-      
-      if (user) {
-        localStorage.setItem('user', JSON.stringify(user));
-      }
-
-      window.location.href = '/';
-    } catch (error: any) {
-      setErrorMessage(error.response?.data?.message || 'שגיאה בהתחברות');
-      console.error('Login failed:', error);
-    }
-  };
-
   const handleCoordinatorLogin = async () => {
     try {
       if (!isCodeSent) {
-        // שלב ראשון - בדיקת פרטי התחברות
         const response = await axios.post(`${API_URL}/coordinator/verify`, { username: id, password });
         const { email } = response.data;
         
@@ -94,7 +72,6 @@ const LoginPage: React.FC = () => {
         setIsCodeSent(true);
         setErrorMessage('');
       } else {
-        // שלב שני - אימות קוד
         const response = await axios.post(`${API_URL}/coordinator/login`, { 
           username: id, 
           password,

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import PDFFormActivity from './PDFFormActivity';
 import { useAddActivity } from '../../../queries/activitiesQueries';
 import { Box, Typography } from '@mui/material';
 import { useSearchParams } from 'react-router-dom';

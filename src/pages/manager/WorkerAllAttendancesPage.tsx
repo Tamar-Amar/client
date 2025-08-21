@@ -17,11 +17,10 @@ import { useWorkerDocuments } from '../../queries/useDocuments';
 import { DocumentStatus } from '../../types/Document';
 import ConfirmationDialog from '../../components/other/ConfirmationDialog';
 import { useFetchAllWorkersAfterNoon } from '../../queries/workerAfterNoonQueries';
-import { WorkerAfterNoon, Class as ClassType } from '../../types';
+import { WorkerAfterNoon} from '../../types';
 import UploadAttendanceDialog from '../../components/workers/UploadAttendanceDialog';
 import { useAllCampAttendanceReports } from '../../queries/useCampAttendance';
 import { useUpdateAttendanceDocumentStatus } from '../../queries/useAttendanceDocumentStatus';
-import { useFetchAllUsers } from '../../queries/useUsers';
 
 interface AttendanceDocument {
   _id: string;

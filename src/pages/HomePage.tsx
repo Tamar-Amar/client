@@ -1,11 +1,9 @@
 import React from 'react';
 import { Button, Typography, Container, Box, Paper, Grid } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import SchoolIcon from '@mui/icons-material/School';
 import GroupsIcon from '@mui/icons-material/Groups';
 import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
 import EventNoteIcon from '@mui/icons-material/EventNote';
-import SecurityIcon from '@mui/icons-material/Security';
 import { useRecoilValue } from 'recoil';
 import { userRoleState } from '../recoil/storeAtom';
 

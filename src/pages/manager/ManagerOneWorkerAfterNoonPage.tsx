@@ -26,7 +26,6 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import BeachAccessIcon from '@mui/icons-material/BeachAccess';
 import WbSunnyIcon from '@mui/icons-material/WbSunny';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
-import CampIcon from '@mui/icons-material/OutdoorGrill';
 
 const WorkerDocumentsApprovalPage: React.FC = () => {
   const { id: workerId } = useParams<{ id: string }>();

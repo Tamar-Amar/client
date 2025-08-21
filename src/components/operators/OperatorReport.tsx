@@ -5,7 +5,6 @@ import { useFetchActivitiesByOperator } from "../../queries/activitiesQueries";
 import { Class, Operator, PaymentMethodChoicesEnum } from "../../types";
 import { useFetchClasses } from "../../queries/classQueries";
 import { useFetchOperators, useUpdateOperatorWeeklySchedule } from "../../queries/operatorQueries";
-import AddActivity from "../activities/addActivity/AddActivity";
 
 
 const getMonthLabel = (date: Date) => {

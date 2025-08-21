@@ -1,13 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import {
-  Box, TableBody, TableCell, 
+  TableBody, TableCell, 
   TableHead, TableRow, Paper, TextField, Select,
   MenuItem, InputLabel, FormControl, Stack, Typography,
-  Chip,
   IconButton,
   Tooltip,
   Autocomplete,
-  Button,
   Grid,
   Card,
   CardContent,
@@ -24,11 +22,8 @@ import { Class, WorkerAfterNoon } from '../../types';
 import { useFetchAllUsers } from '../../queries/useUsers';
 import { useFetchClasses } from '../../queries/classQueries';
 import { useNavigate } from 'react-router-dom';
-import DownloadIcon from '@mui/icons-material/Download';
 import SearchIcon from '@mui/icons-material/Search';
 import BusinessIcon from '@mui/icons-material/Business';
-import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
-import SchoolIcon from '@mui/icons-material/School';
 import WorkIcon from '@mui/icons-material/Work';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import PersonIcon from '@mui/icons-material/Person';
@@ -39,11 +34,9 @@ import {
   StyledTable,
   StatCard,
   DownloadCard,
-  DownloadCardContent,
   SmallTypography,
   TableContainerBox,
   FilterChip,
-  ActionButton,
   StatusApprovedTypography,
   StatusRejectedTypography,
   MainContainer,
@@ -52,7 +45,6 @@ import {
   FilterTitle,
   FilterDivider,
   FilterIcon,
-  UploadIcon,
   StyledTableRow,
   EmptyTableCell,
   UploadButton,

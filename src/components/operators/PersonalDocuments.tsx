@@ -3,7 +3,6 @@ import {
   Box, Button, Typography, TextField, CircularProgress, Table, TableHead,
   TableRow, TableCell, TableBody, Paper, MenuItem
 } from '@mui/material';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import ImageIcon from '@mui/icons-material/Image';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
