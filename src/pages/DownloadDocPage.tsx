@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState} from 'react';
 import {
   Box,
   Typography,
@@ -11,51 +11,39 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Checkbox,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Alert,
   Snackbar,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  IconButton,
-  Tooltip,
   CircularProgress,
   Stack,
+  Autocomplete,
 } from '@mui/material';
 import {
   Download as DownloadIcon,
-  FilterList as FilterIcon,
-  Refresh as RefreshIcon,
-  Visibility as ViewIcon,
 } from '@mui/icons-material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { he } from 'date-fns/locale';
 import {
-  useDocumentsWithFilters,
-  useDocumentStats,
-  useDocumentTypes,
   useDownloadMultipleDocuments,
+  useFetchAllPersonalDocuments,
+  useFetchAttendanceDocuments,
 } from '../queries/useDocuments';
+import { useFetchAllWorkersAfterNoon } from '../queries/workerAfterNoonQueries';
+import { useFetchClasses } from '../queries/classQueries';
 import { DocumentStatus } from '../types/Document';
-import DocumentStats from '../components/documents/DocumentStats';
-import BulkDownloadDialog from '../components/documents/BulkDownloadDialog';
-import DownloadOrganizationDialog from '../components/documents/DownloadOrganizationDialog';
-import axiosInstance from '../services/axiosConfig';
+import {
+  Folder as FolderIcon,
+  Person as PersonIcon,
+  Description as DocumentIcon,
+  Assignment as AttendanceIcon,
+} from '@mui/icons-material';
 
 interface DocumentFilters {
   documentType?: string;
   status?: string;
+  tag?: string;
   workerId?: string;
+  classId?: string;
   project?: string;
   dateFrom?: string;
   dateTo?: string;
@@ -72,14 +60,13 @@ const DownloadDocPage: React.FC = () => {
   const [filters, setFilters] = useState<DocumentFilters>({
     page: 1,
     limit: 1000, // נביא הרבה מסמכים
-    sortBy: 'uploadedAt',
-    sortOrder: 'desc',
+    sortBy: 'fileName',
+    sortOrder: 'asc',
+    tag: '', // ברירת מחדל - הכל
   });
 
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
-  const [showFilters, setShowFilters] = useState(false);
-  const [showBulkDownload, setShowBulkDownload] = useState(false);
-  const [showOrganizationDialog, setShowOrganizationDialog] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
   const [documentSummary, setDocumentSummary] = useState<{
     total: number;
     byType: { [key: string]: number };
@@ -95,298 +82,238 @@ const DownloadDocPage: React.FC = () => {
     message: string;
     severity: 'success' | 'error' | 'info' | 'warning';
   }>({ open: false, message: '', severity: 'info' });
-
-  // הוקים
-  const { data: documentsData, isLoading: documentsLoading } = useDocumentsWithFilters(filters);
-  const { data: statsData, isLoading: statsLoading } = useDocumentStats();
-  const { data: documentTypes, isLoading: typesLoading } = useDocumentTypes();
   
-  const downloadMultipleMutation = useDownloadMultipleDocuments();
-  
-  // הוספת loading state להורדה
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [maxDocumentsToDownload, setMaxDocumentsToDownload] = useState(100);
+  const [organizationType, setOrganizationType] = useState<'byType' | 'byWorker'>('byType');
 
-  // חישוב סטטיסטיקות
-  const stats = useMemo(() => {
-    if (!statsData) return null;
+  const { data: workers = [], isLoading: workersLoading } = useFetchAllWorkersAfterNoon();
+  const { data: classes = [], isLoading: classesLoading } = useFetchClasses();
+
+
+  const { 
+    data: personalDocumentsData, 
+    isLoading: personalDocumentsLoading,
+    error: personalDocumentsError
+  } = useFetchAllPersonalDocuments(documentType === 'personal');
+
+
+  const { 
+    data: attendanceDocumentsData, 
+    isLoading: attendanceDocumentsLoading,
+    error: attendanceDocumentsError
+  } = useFetchAttendanceDocuments(selectedProject);
+
+
+  React.useEffect(() => {
+    console.log('🔄 useEffect - documentType:', documentType);
+    console.log('🔄 useEffect - personalDocumentsData:', personalDocumentsData);
+    console.log('🔄 useEffect - attendanceDocumentsData:', attendanceDocumentsData);
+    console.log('🔄 useEffect - personalDocumentsError:', personalDocumentsError);
+    console.log('🔄 useEffect - attendanceDocumentsError:', attendanceDocumentsError);
     
-    return {
-      total: statsData.total,
-      byType: statsData.byType || [],
-      byStatus: statsData.byStatus || [],
-      byMonth: statsData.byMonth || [],
-    };
-  }, [statsData]);
 
-  // פונקציות עזר
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case DocumentStatus.APPROVED:
-        return 'success';
-      case DocumentStatus.REJECTED:
-        return 'error';
-      case DocumentStatus.PENDING:
-        return 'warning';
-      case DocumentStatus.EXPIRED:
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  // פונקציות פעולה
-  const handleFilterChange = (key: keyof DocumentFilters, value: any) => {
-    setFilters(prev => ({ ...prev, [key]: value, page: 1 }));
-  };
-
-  const handleSelectDocument = (documentId: string) => {
-    setSelectedDocuments(prev => 
-      prev.includes(documentId) 
-        ? prev.filter(id => id !== documentId)
-        : [...prev, documentId]
-    );
-  };
-
-  const handleSelectAll = () => {
-    if (selectedDocuments.length === documentsData?.total) {
-      // אם כל המסמכים נבחרו, נבטל את הבחירה
-      setSelectedDocuments([]);
-    } else {
-      // נבחר את כל המסמכים שעונים לפילטרים
-      // נשתמש ב-API כדי לקבל את כל ה-IDs
-      const allDocumentIds = documentsData?.documents.map((doc: any) => doc._id) || [];
-      setSelectedDocuments(allDocumentIds);
-    }
-  };
-
-  // בדיקה אם כל המסמכים בטבלה הנוכחית נבחרו
-  const isAllSelected = documentsData?.documents && 
-    documentsData.documents.length > 0 && 
-    documentsData.documents.every((doc: any) => selectedDocuments.includes(doc._id)) || false;
-
-  // בדיקה אם חלק מהמסמכים בטבלה הנוכחית נבחרו
-  const isIndeterminate = documentsData?.documents && 
-    documentsData.documents.length > 0 && 
-    documentsData.documents.some((doc: any) => selectedDocuments.includes(doc._id)) &&
-    !isAllSelected || false;
-
-  const handleDownloadSelected = () => {
-    if (selectedDocuments.length === 0) {
+    if (personalDocumentsError) {
+      console.error('❌ שגיאה בטעינת מסמכים אישיים:', personalDocumentsError);
       setSnackbar({
         open: true,
-        message: 'לא נבחרו מסמכים להורדה',
-        severity: 'warning'
-      });
-      return;
-    }
-
-            setSnackbar({
-          open: true,
-          message: `מכין קובץ ZIP עם ${selectedDocuments.length} מסמכים... (מחפש פרטי עובדים)`,
-          severity: 'info'
-        });
-
-    downloadMultipleMutation.mutate({ documentIds: selectedDocuments }, {
-      onSuccess: () => {
-        setSnackbar({
-          open: true,
-          message: `יורד קובץ ZIP עם ${selectedDocuments.length} מסמכים`,
-          severity: 'success'
-        });
-      },
-      onError: () => {
-        setSnackbar({
-          open: true,
-          message: 'שגיאה בהורדת המסמכים',
-          severity: 'error'
-        });
-      }
-    });
-  };
-
-  const handleDownloadByFilters = () => {
-    if (!documentType) {
-      setSnackbar({
-        open: true,
-        message: 'נא לבחור סוג מסמכים להורדה',
-        severity: 'warning'
-      });
-      return;
-    }
-
-    if (documentType === 'project' && !selectedProject) {
-      setSnackbar({
-        open: true,
-        message: 'נא לבחור פרויקט',
-        severity: 'warning'
-      });
-      return;
-    }
-
-    // קבלת סיכום המסמכים לפני ההורדה
-    const summary = calculateDocumentSummary();
-    setDocumentSummary(summary);
-    setShowOrganizationDialog(true);
-  };
-
-  const calculateDocumentSummary = () => {
-    if (!documentsData?.documents) {
-      return { total: 0, byType: {}, byWorker: {} };
-    }
-
-    const byType: { [key: string]: number } = {};
-    const byWorker: { [key: string]: number } = {};
-
-    documentsData.documents.forEach((doc: any) => {
-      // לפי סוג מסמך
-      byType[doc.tag] = (byType[doc.tag] || 0) + 1;
-
-      // לפי עובד
-      const workerName = doc.operatorId && typeof doc.operatorId === 'object' && doc.operatorId.firstName
-        ? `${doc.operatorId.lastName} ${doc.operatorId.firstName}`
-        : 'לא ידוע';
-      byWorker[workerName] = (byWorker[workerName] || 0) + 1;
-    });
-
-    return {
-      total: documentsData.documents.length,
-      byType,
-      byWorker
-    };
-  };
-
-  const loadPersonalDocuments = async () => {
-    try {
-      
-      // בדיקה שהפונקציה נקראת
-      if (typeof setSnackbar !== 'function') {
-        return;
-      }
-      
-      setSnackbar({
-        open: true,
-        message: 'טוען מסמכים אישיים...',
-        severity: 'info'
-      });
-
-      const response = await axiosInstance.get('/api/documents/all-personal');
-      
-      const data = response.data;
-      
-      if (!data || !data.documents) {
-        
-        throw new Error('נתונים לא תקינים מהשרת');
-      }
-      
-      setAllDocuments(data.documents);
-      setFilteredDocuments(data.documents);
-      
-      updateDocumentSummary(data.documents);
-      
-    } catch (error: any) {
-      console.error('❌ שגיאה בטעינת מסמכים אישיים:', error);
-      console.error('❌ פרטי השגיאה:', {
-        message: error.message,
-        stack: error.stack,
-        response: error.response?.data
-      });
-      
-      setSnackbar({
-        open: true,
-        message: `שגיאה בטעינת מסמכים אישיים: ${error.message}`,
+        message: 'שגיאה בטעינת מסמכים אישיים',
         severity: 'error'
       });
     }
-  };
-
-  const loadAttendanceDocuments = async (projectCode: string) => {
-    try {
-
-      setSnackbar({
-        open: true,
-        message: 'טוען מסמכי נוכחות...',
-        severity: 'info'
-      });
-
-      const response = await axiosInstance.get(`/api/documents/attendance/${projectCode}`);
-      
-      const data = response.data;
-      
-      setAllDocuments(data.documents);
-      setFilteredDocuments(data.documents);
-      
-      updateDocumentSummary(data.documents);
-      
-    } catch (error) {
-      console.error('❌ שגיאה בטעינת מסמכי נוכחות:', error);
+    
+    if (attendanceDocumentsError) {
+      console.error('❌ שגיאה בטעינת מסמכי נוכחות:', attendanceDocumentsError);
       setSnackbar({
         open: true,
         message: 'שגיאה בטעינת מסמכי נוכחות',
         severity: 'error'
       });
     }
+    
+    if (documentType === 'personal' && personalDocumentsData) {
+      console.log('📄 טוען מסמכים אישיים:', personalDocumentsData);
+      const documents = Array.isArray(personalDocumentsData) ? personalDocumentsData : [];
+      console.log('📄 מסמכים אישיים אחרי בדיקה:', documents);
+      setAllDocuments(documents);
+      setFilteredDocuments(documents);
+      updateDocumentSummary(documents);
+    } else if (documentType === 'project' && attendanceDocumentsData?.documents) {
+      console.log('📄 טוען מסמכי נוכחות:', attendanceDocumentsData.documents);
+      const documents = Array.isArray(attendanceDocumentsData.documents) ? attendanceDocumentsData.documents : [];
+      console.log('📄 מסמכי נוכחות אחרי בדיקה:', documents);
+      setAllDocuments(documents);
+      setFilteredDocuments(documents);
+      updateDocumentSummary(documents);
+    } else {
+
+      console.log('📄 אין מסמכים, מנקה מצב');
+      setAllDocuments([]);
+      setFilteredDocuments([]);
+      updateDocumentSummary([]);
+    }
+  }, [documentType, personalDocumentsData, attendanceDocumentsData, personalDocumentsError, attendanceDocumentsError]);
+
+
+  React.useEffect(() => {
+    
+    if (allDocuments.length > 0) {
+      applyFiltersWithFilters(filters);
+    }
+  }, [allDocuments, filters.status, filters.tag, filters.workerId, filters.classId]);
+  
+  const downloadMultipleMutation = useDownloadMultipleDocuments();
+  
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [maxDocumentsToDownload, setMaxDocumentsToDownload] = useState(100);
+  const handleFilterChange = (key: keyof DocumentFilters, value: any) => {
+    console.log('🔄 שינוי פילטר:', key, value);
+    console.log('🔄 ערך קודם:', filters[key]);
+    
+    setFilters(prev => {
+      const newFilters = { ...prev, [key]: value, page: 1 };
+      console.log('🔄 פילטרים חדשים:', newFilters);
+      
+      setTimeout(() => {
+        console.log('🔄 מפעיל applyFiltersWithFilters עם:', newFilters);
+        applyFiltersWithFilters(newFilters);
+      }, 0);
+      
+      return newFilters;
+    });
   };
 
-  const updateDocumentSummary = (documents: any[]) => {
+  const applyFiltersWithFilters = (currentFilters: DocumentFilters) => {
+    console.log('🔍 מפעיל פילטרים עם:', currentFilters);
     
+    let filtered = [...allDocuments];
+
+    if (currentFilters.status) {
+      filtered = filtered.filter(doc => doc.status === currentFilters.status);
+      console.log('📊 אחרי פילטר סטטוס:', filtered.length);
+    }
+
+    if (currentFilters.tag) {
+      console.log('🔍 מסנן לפי סוג מסמך:', currentFilters.tag);
+      console.log('🔍 דוגמה למסמך:', filtered[0]);
+      filtered = filtered.filter(doc => {
+        const docTag = doc.tag || doc.type;
+        console.log('🔍 מסמך tag:', docTag, 'מחפש:', currentFilters.tag);
+        return docTag === currentFilters.tag;
+      });
+      console.log('📊 אחרי פילטר סוג מסמך:', filtered.length);
+    }
+
+    if (currentFilters.workerId && documentType === 'personal') {
+      console.log('🔍 מחפש עובד עם ID:', currentFilters.workerId);
+      
+      filtered = filtered.filter(doc => {
+        if (!doc.operatorId) return false;
+        
+        if (typeof doc.operatorId === 'string') {
+          return doc.operatorId === currentFilters.workerId;
+        }
+        
+        if (typeof doc.operatorId === 'object') {
+          return doc.operatorId.idNumber === currentFilters.workerId || 
+                 doc.operatorId._id === currentFilters.workerId ||
+                 doc.operatorId.id === currentFilters.workerId;
+        }
+        
+        return false;
+      });
+      console.log('📊 אחרי פילטר עובד:', filtered.length);
+    }
+
+    if (currentFilters.classId && documentType === 'project') {
+      
+      filtered = filtered.filter(doc => {
+        return doc.classId === currentFilters.classId;
+      });
+    }
+
+    setFilteredDocuments(filtered);
+    updateDocumentSummary(filtered);
+  };
+
+
+
+  const updateDocumentSummary = (documents: any) => {
+    
+    if (!Array.isArray(documents)) {
+      console.error('❌ documents is not an array:', documents);
+      setDocumentSummary({
+        total: 0,
+        byType: {},
+        byWorker: {}
+      });
+      return;
+    }
+
     const byType: { [key: string]: number } = {};
     const byWorker: { [key: string]: number } = {};
 
-    documents.forEach((doc: any, index: number) => {
-      
-      // לפי סוג מסמך
-      const docType = doc.tag || doc.type;
+    documents.forEach((doc: any) => {
+      const docType = doc.tag || doc.type || 'לא ידוע';
       byType[docType] = (byType[docType] || 0) + 1;
 
-      // לפי עובד
-      const workerName = doc.operatorId && typeof doc.operatorId === 'object' && doc.operatorId.firstName
-        ? `${doc.operatorId.lastName} ${doc.operatorId.firstName}`
-        : 'לא ידוע';
+      let workerName = 'לא ידוע';
+      
+      if (doc.operatorId) {
+        if (typeof doc.operatorId === 'string') {
+          const worker = workers.find(w => w._id === doc.operatorId || w.id === doc.operatorId);
+          if (worker) {
+            workerName = `${worker.lastName} ${worker.firstName}`;
+          } else {
+            workerName = `ת.ז: ${doc.operatorId}`;
+          }
+        }
+
+        else if (typeof doc.operatorId === 'object') {
+          if (doc.operatorId.firstName && doc.operatorId.lastName) {
+            workerName = `${doc.operatorId.lastName} ${doc.operatorId.firstName}`;
+          } else if (doc.operatorId.idNumber) {
+            workerName = `ת.ז: ${doc.operatorId.idNumber}`;
+          } else if (doc.operatorId.id) {
+            workerName = `ת.ז: ${doc.operatorId.id}`;
+          }
+        }
+      }
+      
       byWorker[workerName] = (byWorker[workerName] || 0) + 1;
     });
-
 
     setDocumentSummary({
       total: documents.length,
       byType,
       byWorker
     });
-    
   };
 
-  const handleOrganizationDownload = (organizationType: 'byType' | 'byWorker', fileNameFormat: 'simple' | 'detailed') => {
-    setShowOrganizationDialog(false);
+
+  const handleDownload = () => {
     setIsDownloading(true);
     
-    const actualCount = Math.min(allDocuments.length, maxDocumentsToDownload);
+    const documentsToDownload = filteredDocuments.length > 0 ? filteredDocuments : allDocuments;
+    const actualCount = Math.min(documentsToDownload.length, maxDocumentsToDownload);
     
     setSnackbar({
       open: true,
-      message: allDocuments.length > maxDocumentsToDownload 
-        ? `מכין קובץ ZIP עם ${actualCount} מסמכים (מתוך ${allDocuments.length} - מוגבל לביצועים טובים יותר)...`
+      message: documentsToDownload.length > maxDocumentsToDownload 
+        ? `מכין קובץ ZIP עם ${actualCount} מסמכים (מתוך ${documentsToDownload.length} - מוגבל לביצועים טובים יותר)...`
         : `מכין קובץ ZIP עם ${actualCount} מסמכים...`,
       severity: 'info'
     });
 
-    downloadMultipleMutation.mutate({
-      ...filters,
-      documentType: documentType || undefined,
-      selectedProject: selectedProject,
-      projectOrganization: projectOrganization,
-      organizationType,
-      fileNameFormat,
-      maxDocuments: maxDocumentsToDownload
-    }, {
+    const documentIds = documentsToDownload.slice(0, maxDocumentsToDownload).map(doc => doc._id);
+
+                    downloadMultipleMutation.mutate({
+                  documentIds: documentIds, 
+                  documentType: documentType || undefined,
+                  selectedProject: selectedProject,
+                  projectOrganization: organizationType === 'byWorker' ? 'byClass' : 'byType',
+                  organizationType,
+                  fileNameFormat: 'simple',
+                  maxDocuments: maxDocumentsToDownload
+                }, {
       onSuccess: () => {
         setIsDownloading(false);
         setSnackbar({
@@ -409,34 +336,9 @@ const DownloadDocPage: React.FC = () => {
 
 
 
-  const handlePageChange = (event: unknown, newPage: number) => {
-    handleFilterChange('page', newPage + 1);
-  };
-
-  const handleRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    handleFilterChange('limit', parseInt(event.target.value, 10));
-    handleFilterChange('page', 1);
-  };
-
-  
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={he}>
       <Box sx={{ p: 3 }}>
-        <Typography variant="h4" gutterBottom>
-          הורדת מסמכים
-        </Typography>
-        
-        <Alert severity="info" sx={{ mb: 2 }}>
-          <Typography variant="body2">
-            <strong>הורדת מסמכים מאורגנים:</strong>
-            <br />• <strong>מסמכים אישיים:</strong> כל המסמכים האישיים של העובדים
-            <br />• <strong>פרויקט:</strong> רק מסמכי נוכחות עם ארגון לפי כיתה או סוג
-            <br />• <strong>פורמט:</strong> שם_משפחה_שם_פרטי_סוג_מסמך.pdf
-            <br /><br /><strong>הערה:</strong> התהליך יכול לקחת מספר שניות בהתאם לכמות המסמכים
-          </Typography>
-        </Alert>
-
-        {/* בחירה ראשונית */}
         <Paper sx={{ p: 2, mb: 2 }}>
           <Typography variant="h6" gutterBottom>
             בחר סוג מסמכים להורדה
@@ -449,9 +351,8 @@ const DownloadDocPage: React.FC = () => {
                 setSelectedProject('');
                 setAllDocuments([]);
                 setFilteredDocuments([]);
-                // טעינת כל המסמכים האישיים
-                loadPersonalDocuments();
               }}
+              startIcon={<DocumentIcon />}
             >
               מסמכים אישיים
             </Button>
@@ -463,12 +364,12 @@ const DownloadDocPage: React.FC = () => {
                 setAllDocuments([]);
                 setFilteredDocuments([]);
               }}
+              startIcon={<AttendanceIcon />}
             >
               מסמכי נוכחות פרויקט
             </Button>
           </Stack>
 
-          {/* בחירת פרויקט אם נבחר מסמכי נוכחות */}
           {documentType === 'project' && (
             <Box sx={{ mt: 2 }}>
               <Typography variant="subtitle1" gutterBottom>
@@ -481,9 +382,6 @@ const DownloadDocPage: React.FC = () => {
                     value={selectedProject}
                     onChange={(e) => {
                       setSelectedProject(e.target.value);
-                      if (e.target.value) {
-                        loadAttendanceDocuments(e.target.value);
-                      }
                     }}
                   >
                     <MenuItem value="1">צהרון שוטף 2025</MenuItem>
@@ -493,125 +391,21 @@ const DownloadDocPage: React.FC = () => {
                   </Select>
                 </FormControl>
 
-                {selectedProject && (
-                  <>
-                    <Typography variant="body2">ארגון:</Typography>
-                    <FormControl>
-                      <Select
-                        value={projectOrganization}
-                        onChange={(e) => setProjectOrganization(e.target.value as 'byClass' | 'byType')}
-                        size="small"
-                      >
-                        <MenuItem value="byClass">לפי כיתה/מסגרת</MenuItem>
-                        <MenuItem value="byType">לפי סוג נוכחות</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </>
-                )}
+
               </Stack>
             </Box>
           )}
         </Paper>
 
-        {/* סטטיסטיקות */}
-        {!statsLoading && stats && (
-          <DocumentStats stats={stats} />
-        )}
-
-        {/* סרגל כלים */}
-        <Paper sx={{ p: 2, mb: 2 }}>
-          <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
-            <Button
-              variant="outlined"
-              startIcon={<FilterIcon />}
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              פילטרים
-            </Button>
-
-            <Button
-              variant="outlined"
-              startIcon={<DownloadIcon />}
-              onClick={() => setShowBulkDownload(true)}
-              disabled={downloadMultipleMutation.isPending}
-            >
-              הורד מרובה
-            </Button>
-
-            <Button
-              variant="outlined"
-              startIcon={downloadMultipleMutation.isPending ? <CircularProgress size={20} /> : <DownloadIcon />}
-              onClick={handleDownloadByFilters}
-              disabled={downloadMultipleMutation.isPending}
-            >
-              {downloadMultipleMutation.isPending ? 'מכין ZIP...' : 'הורד ZIP לפי פילטרים'}
-            </Button>
-
-            {selectedDocuments.length > 0 && (
-              <>
-                <Button
-                  variant="contained"
-                  startIcon={downloadMultipleMutation.isPending ? <CircularProgress size={20} /> : <DownloadIcon />}
-                  onClick={handleDownloadSelected}
-                  disabled={downloadMultipleMutation.isPending}
-                >
-                  {downloadMultipleMutation.isPending ? 'מכין ZIP...' : `הורד ZIP נבחרים (${selectedDocuments.length})`}
-                </Button>
 
 
-              </>
-            )}
 
-            <Button
-              variant="outlined"
-              startIcon={<RefreshIcon />}
-              onClick={() => window.location.reload()}
-            >
-              רענון
-            </Button>
-          </Stack>
-        </Paper>
 
-        {/* פילטרים */}
-        {showFilters && (
-          <Paper sx={{ p: 2, mb: 2 }}>
-            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-              <Typography variant="h6">פילטרים</Typography>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => {
-                  setFilters({
-                    page: 1,
-                    limit: 20,
-                    sortBy: 'uploadedAt',
-                    sortOrder: 'desc',
-                  });
-                }}
-              >
-                נקה פילטרים
-              </Button>
-            </Stack>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={3}>
-                <FormControl fullWidth>
-                  <InputLabel>סוג מסמך</InputLabel>
-                  <Select
-                    value={filters.documentType || ''}
-                    onChange={(e) => handleFilterChange('documentType', e.target.value)}
-                  >
-                    <MenuItem value="">הכל</MenuItem>
-                    <MenuItem value="תעודת זהות">תעודת זהות</MenuItem>
-                    <MenuItem value="אישור משטרה">אישור משטרה</MenuItem>
-                    <MenuItem value="חוזה">חוזה</MenuItem>
-                    <MenuItem value="תעודת השכלה">תעודת השכלה</MenuItem>
-                    <MenuItem value="אישור וותק">אישור וותק</MenuItem>
-                    <MenuItem value="נוכחות קייטנה רכז">נוכחות קייטנה רכז</MenuItem>
-                    <MenuItem value="אישור רפואי">אישור רפואי</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-
+        {documentType && showFilters && (documentType === 'personal' || (documentType === 'project' && selectedProject)) && (
+          <Paper sx={{ p: 3, mb: 2 }}>
+            <Typography variant="h6" sx={{ mb: 3 }}>פילטרים</Typography>
+            
+            <Grid container spacing={3}>
               <Grid item xs={12} md={3}>
                 <FormControl fullWidth>
                   <InputLabel>סטטוס</InputLabel>
@@ -628,219 +422,225 @@ const DownloadDocPage: React.FC = () => {
               </Grid>
 
               <Grid item xs={12} md={3}>
-                <TextField
-                  fullWidth
-                  label="מזהה עובד"
-                  value={filters.workerId || ''}
-                  onChange={(e) => handleFilterChange('workerId', e.target.value)}
-                  placeholder="הכנס מזהה עובד"
-                />
+                {documentType === 'personal' ? (
+                  <Autocomplete
+                    options={workers}
+                    getOptionLabel={(option) => `${option.id} - ${option.firstName} ${option.lastName}`}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="מזהה עובד"
+                        placeholder="הקלד תעודת זהות או שם..."
+                      />
+                    )}
+                    onChange={(event, newValue) => {
+                      handleFilterChange('workerId', newValue?._id || newValue?.id || '');
+                    }}
+                    filterOptions={(options, { inputValue }) => {
+                      return options.filter(option =>
+                        option.id.includes(inputValue) ||
+                        `${option.firstName} ${option.lastName}`.includes(inputValue)
+                      );
+                    }}
+                  />
+                ) : (
+                  <Autocomplete
+                    options={classes}
+                    getOptionLabel={(option: any) => `${option.uniqueSymbol} - ${option.name}`}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="כיתה"
+                        placeholder="הקלד סמל ייחודי או שם כיתה..."
+                      />
+                    )}
+                    onChange={(event, newValue) => {
+                      handleFilterChange('classId', (newValue as any)?._id || '');
+                    }}
+                    filterOptions={(options, { inputValue }) => {
+                      return options.filter((option: any) =>
+                        option.uniqueSymbol.includes(inputValue) ||
+                        option.name.includes(inputValue)
+                      );
+                    }}
+                  />
+                )}
               </Grid>
 
-              <Grid item xs={12} md={3}>
-                <FormControl fullWidth>
-                  <InputLabel>פרויקט</InputLabel>
-                  <Select
-                    value={filters.project || ''}
-                    onChange={(e) => handleFilterChange('project', e.target.value)}
-                  >
-                    <MenuItem value="">הכל</MenuItem>
-                    <MenuItem value="1">צהרון שוטף 2025</MenuItem>
-                    <MenuItem value="2">קייטנת חנוכה 2025</MenuItem>
-                    <MenuItem value="3">קייטנת פסח 2025</MenuItem>
-                    <MenuItem value="4">קייטנת קיץ 2025</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              <Grid item xs={12} md={3}>
-                <DatePicker
-                  label="מתאריך"
-                  value={filters.dateFrom ? new Date(filters.dateFrom) : null}
-                  onChange={(date) => handleFilterChange('dateFrom', date?.toISOString())}
-                  slotProps={{ textField: { fullWidth: true } }}
-                />
-              </Grid>
-
-              <Grid item xs={12} md={3}>
-                <DatePicker
-                  label="עד תאריך"
-                  value={filters.dateTo ? new Date(filters.dateTo) : null}
-                  onChange={(date) => handleFilterChange('dateTo', date?.toISOString())}
-                  slotProps={{ textField: { fullWidth: true } }}
-                />
-              </Grid>
-
-              <Grid item xs={12} md={3}>
-                <FormControl fullWidth>
-                  <InputLabel>מיון לפי</InputLabel>
-                  <Select
-                    value={filters.sortBy}
-                    onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-                  >
-                    <MenuItem value="uploadedAt">תאריך העלאה</MenuItem>
-                    <MenuItem value="fileName">שם קובץ</MenuItem>
-                    <MenuItem value="tag">סוג מסמך</MenuItem>
-                    <MenuItem value="status">סטטוס</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              <Grid item xs={12} md={3}>
-                <FormControl fullWidth>
-                  <InputLabel>סדר</InputLabel>
-                  <Select
-                    value={filters.sortOrder}
-                    onChange={(e) => handleFilterChange('sortOrder', e.target.value)}
-                  >
-                    <MenuItem value="desc">יורד</MenuItem>
-                    <MenuItem value="asc">עולה</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              
-              {/* תצוגת פילטרים פעילים */}
-              {Object.values(filters).some(value => value && typeof value === 'string' && value !== '') && (
-                <Box sx={{ mt: 2 }}>
+              <Grid item xs={12} md={6}>
+                <Box>
                   <Typography variant="body2" color="textSecondary" gutterBottom>
-                    פילטרים פעילים:
+                    סוג מסמך:
                   </Typography>
                   <Stack direction="row" spacing={1} flexWrap="wrap">
-                    {Object.entries(filters).map(([key, value]) => {
-                      if (value && typeof value === 'string' && value !== '' && key !== 'page' && key !== 'limit' && key !== 'sortBy' && key !== 'sortOrder') {
-                        const getFilterLabel = (key: string, value: string) => {
-                          switch (key) {
-                            case 'documentType':
-                              return `סוג מסמך: ${value}`;
-                            case 'status':
-                              return `סטטוס: ${value}`;
-                            case 'workerId':
-                              return `מזהה עובד: ${value}`;
-                            case 'project':
-                              const projectNames: { [key: string]: string } = {
-                                '1': 'צהרון שוטף 2025',
-                                '2': 'קייטנת חנוכה 2025',
-                                '3': 'קייטנת פסח 2025',
-                                '4': 'קייטנת קיץ 2025'
-                              };
-                              return `פרויקט: ${projectNames[value] || value}`;
-                            case 'dateFrom':
-                              return `מתאריך: ${new Date(value).toLocaleDateString('he-IL')}`;
-                            case 'dateTo':
-                              return `עד תאריך: ${new Date(value).toLocaleDateString('he-IL')}`;
-                            default:
-                              return `${key}: ${value}`;
-                          }
-                        };
-                        
-                        return (
-                          <Chip
-                            key={key}
-                            label={getFilterLabel(key, value)}
-                            size="small"
-                            variant="outlined"
-                            onDelete={() => handleFilterChange(key as keyof DocumentFilters, '')}
-                          />
-                        );
-                      }
-                      return null;
-                    })}
+                    <Button
+                      variant={!filters.tag ? 'contained' : 'outlined'}
+                      size="small"
+                      onClick={() => handleFilterChange('tag', '')}
+                    >
+                      הכל
+                    </Button>
+                    {documentType === 'personal' ? (
+                      <>
+                        <Button
+                          variant={filters.tag === 'תעודת זהות' ? 'contained' : 'outlined'}
+                          size="small"
+                          onClick={() => handleFilterChange('tag', 'תעודת זהות')}
+                        >
+                          תעודת זהות
+                        </Button>
+                        <Button
+                          variant={filters.tag === 'חוזה' ? 'contained' : 'outlined'}
+                          size="small"
+                          onClick={() => handleFilterChange('tag', 'חוזה')}
+                        >
+                          חוזה
+                        </Button>
+                        <Button
+                          variant={filters.tag === 'אישור משטרה' ? 'contained' : 'outlined'}
+                          size="small"
+                          onClick={() => handleFilterChange('tag', 'אישור משטרה')}
+                        >
+                          אישור משטרה
+                        </Button>
+                        <Button
+                          variant={filters.tag === 'אישור וותק' ? 'contained' : 'outlined'}
+                          size="small"
+                          onClick={() => handleFilterChange('tag', 'אישור וותק')}
+                        >
+                          אישור וותק
+                        </Button>
+                        <Button
+                          variant={filters.tag === 'תעודת השכלה' ? 'contained' : 'outlined'}
+                          size="small"
+                          onClick={() => handleFilterChange('tag', 'תעודת השכלה')}
+                        >
+                          תעודת השכלה
+                        </Button>
+                        <Button
+                          variant={filters.tag === 'אישור רפואי' ? 'contained' : 'outlined'}
+                          size="small"
+                          onClick={() => handleFilterChange('tag', 'אישור רפואי')}
+                        >
+                          אישור רפואי
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          variant={filters.tag === 'נוכחות עובדים' ? 'contained' : 'outlined'}
+                          size="small"
+                          onClick={() => handleFilterChange('tag', 'נוכחות עובדים')}
+                        >
+                          נוכחות עובדים
+                        </Button>
+                        <Button
+                          variant={filters.tag === 'נוכחות תלמידים' ? 'contained' : 'outlined'}
+                          size="small"
+                          onClick={() => handleFilterChange('tag', 'נוכחות תלמידים')}
+                        >
+                          נוכחות תלמידים
+                        </Button>
+                        <Button
+                          variant={filters.tag === 'בקרה' ? 'contained' : 'outlined'}
+                          size="small"
+                          onClick={() => handleFilterChange('tag', 'בקרה')}
+                        >
+                          בקרה
+                        </Button>
+                      </>
+                    )}
                   </Stack>
                 </Box>
-              )}
+              </Grid>
             </Grid>
           </Paper>
         )}
 
-                {/* סיכום מסמכים */}
-        {documentType && allDocuments.length > 0 && (
+        {documentType && allDocuments.length > 0 && (documentType === 'personal' || (documentType === 'project' && selectedProject)) && (
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              סיכום מסמכים
+              סיכום מסמכים {filteredDocuments.length !== allDocuments.length ? `(מסוננים: ${filteredDocuments.length} מתוך ${allDocuments.length})` : ''}
+              {filteredDocuments.length !== allDocuments.length && (
+                <Alert severity="info" sx={{ mt: 1 }}>
+                  <Typography variant="body2">
+                    <strong>שים לב:</strong> יורדו רק המסמכים שעונים לפילטרים הפעילים ({filteredDocuments.length} מסמכים)
+                  </Typography>
+                </Alert>
+              )}
             </Typography>
             
             <Grid container spacing={3}>
-              {/* סיכום כללי */}
-              <Grid item xs={12} md={4}>
-                <Paper sx={{ p: 2, bgcolor: 'primary.light', color: 'white' }}>
-                  <Typography variant="h4" align="center">
-                    {allDocuments.length}
-                  </Typography>
-                  <Typography variant="body1" align="center">
-                    סה"כ מסמכים
-                  </Typography>
-                </Paper>
-              </Grid>
 
-              {/* לפי סוג מסמך */}
               <Grid item xs={12} md={8}>
                 <Typography variant="h6" gutterBottom>
                   לפי סוג מסמך:
                 </Typography>
-                <Stack direction="row" spacing={1} flexWrap="wrap">
-                  {Object.entries(documentSummary.byType).map(([type, count]) => (
-                    <Chip
-                      key={type}
-                      label={`${type}: ${count}`}
-                      color="primary"
-                      variant="outlined"
-                      size="medium"
-                    />
-                  ))}
-                </Stack>
+                {Object.keys(documentSummary.byType).length > 0 ? (
+                  <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ gap: 1 }}>
+                    {Object.entries(documentSummary.byType).map(([type, count]) => (
+                      <Chip
+                        key={type}
+                        label={`${type}: ${count}`}
+                        color="primary"
+                        variant="outlined"
+                        size="medium"
+                        sx={{ mb: 1 }}
+                      />
+                    ))}
+                  </Stack>
+                ) : (
+                  <Typography variant="body2" color="textSecondary">
+                    אין מסמכים שעונים לפילטרים הפעילים
+                  </Typography>
+                )}
               </Grid>
 
-              {/* לפי עובד */}
               <Grid item xs={12}>
                 <Typography variant="h6" gutterBottom>
-                  לפי עובד:
+                  {documentType === 'personal' ? 'לפי עובד:' : 'לפי כיתה:'}
                 </Typography>
-                <Stack direction="row" spacing={1} flexWrap="wrap">
-                  {Object.entries(documentSummary.byWorker).slice(0, 20).map(([worker, count]) => (
-                    <Chip
-                      key={worker}
-                      label={`${worker}: ${count}`}
-                      variant="outlined"
-                      size="small"
-                    />
-                  ))}
-                  {Object.keys(documentSummary.byWorker).length > 20 && (
-                    <Chip
-                      label={`+${Object.keys(documentSummary.byWorker).length - 20} עובדים נוספים`}
-                      variant="outlined"
-                      color="secondary"
-                    />
-                  )}
-                </Stack>
+                {Object.keys(documentSummary.byWorker).length > 0 ? (
+                  <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ gap: 1 }}>
+                    {Object.entries(documentSummary.byWorker).slice(0, 20).map(([worker, count]) => (
+                      <Chip
+                        key={worker}
+                        label={`${worker}: ${count}`}
+                        variant="outlined"
+                        size="small"
+                        sx={{ mb: 1 }}
+                      />
+                    ))}
+                    {Object.keys(documentSummary.byWorker).length > 20 && (
+                      <Chip
+                        label={`+${Object.keys(documentSummary.byWorker).length - 20} ${documentType === 'personal' ? 'עובדים' : 'כיתות'} נוספות`}
+                        variant="outlined"
+                        color="secondary"
+                        sx={{ mb: 1 }}
+                      />
+                    )}
+                  </Stack>
+                ) : (
+                  <Typography variant="body2" color="textSecondary">
+                    אין מסמכים שעונים לפילטרים הפעילים
+                  </Typography>
+                )}
               </Grid>
             </Grid>
 
-            {/* כפתורי הורדה */}
-            <Box sx={{ mt: 3, textAlign: 'center' }}>
-              <Button
-                variant="contained"
-                size="large"
-                startIcon={isDownloading ? <CircularProgress size={20} color="inherit" /> : <DownloadIcon />}
-                onClick={() => {                  
-                  const summary = {
-                    total: allDocuments.length,
-                    byType: documentSummary.byType,
-                    byWorker: documentSummary.byWorker
-                  };
-                  setDocumentSummary(summary);
-                  setShowOrganizationDialog(true);
-                }}
-                disabled={isDownloading}
-                sx={{ mr: 2 }}
-              >
-                {isDownloading ? 'מוריד...' : 'הורד ZIP מאורגן'}
-              </Button>
-            </Box>
           </Paper>
         )}
 
-        {/* הודעה כשאין מסמכים */}
-        {documentType && allDocuments.length === 0 && (
+        {documentType && (personalDocumentsLoading || attendanceDocumentsLoading) && (
+          <Paper sx={{ p: 3, textAlign: 'center' }}>
+            <CircularProgress sx={{ mb: 2 }} />
+            <Typography variant="h6" color="textSecondary">
+              טוען מסמכים...
+            </Typography>
+          </Paper>
+        )}
+
+        {documentType && !personalDocumentsLoading && !attendanceDocumentsLoading && allDocuments.length === 0 && (documentType === 'personal' || (documentType === 'project' && selectedProject)) && (
           <Paper sx={{ p: 3, textAlign: 'center' }}>
             <Typography variant="h6" color="textSecondary">
               {documentType === 'personal' 
@@ -851,25 +651,92 @@ const DownloadDocPage: React.FC = () => {
           </Paper>
         )}
 
+        {documentType && filteredDocuments.length > 0 && (documentType === 'personal' || (documentType === 'project' && selectedProject)) && (
+          <Paper sx={{ p: 3, mt: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              הגדרות הורדה
+            </Typography>
+            
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle1" gutterBottom>
+                  ארגון תיקיות
+                </Typography>
+                {documentType === 'personal' ? (
+                  <>
+                    <Stack direction="row" spacing={2}>
+                      <Button
+                        variant={organizationType === 'byType' ? 'contained' : 'outlined'}
+                        startIcon={<FolderIcon />}
+                        onClick={() => setOrganizationType('byType')}
+                        size="small"
+                      >
+                        לפי סוג מסמך
+                      </Button>
+                      <Button
+                        variant={organizationType === 'byWorker' ? 'contained' : 'outlined'}
+                        startIcon={<PersonIcon />}
+                        onClick={() => setOrganizationType('byWorker')}
+                        size="small"
+                      >
+                        לפי עובד
+                      </Button>
+                    </Stack>
+                    <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+                      {organizationType === 'byType' 
+                        ? 'הקבצים יאורגנו בתיקיות לפי סוג מסמך'
+                        : 'הקבצים יאורגנו בתיקיות לפי עובד (כל עובד תיקיה משלה)'
+                      }
+                    </Typography>
+                  </>
+                ) : (
+                  <>
+                    <Stack direction="row" spacing={2}>
+                      <Button
+                        variant={organizationType === 'byType' ? 'contained' : 'outlined'}
+                        startIcon={<FolderIcon />}
+                        onClick={() => setOrganizationType('byType')}
+                        size="small"
+                      >
+                        לפי סוג נוכחות
+                      </Button>
+                      <Button
+                        variant={organizationType === 'byWorker' ? 'contained' : 'outlined'}
+                        startIcon={<PersonIcon />}
+                        onClick={() => setOrganizationType('byWorker')}
+                        size="small"
+                      >
+                        לפי כיתה
+                      </Button>
+                    </Stack>
+                    <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+                      {organizationType === 'byType' 
+                        ? 'הקבצים יאורגנו בתיקיות לפי סוג נוכחות (עובדים, תלמידים, בקרה)'
+                        : 'הקבצים יאורגנו בתיקיות לפי כיתה (כל כיתה תיקיה משלו)'
+                      }
+                    </Typography>
+                  </>
+                )}
+              </Grid>
 
 
-        {/* דיאלוג הורדה מרובה */}
-        <BulkDownloadDialog
-          open={showBulkDownload}
-          onClose={() => setShowBulkDownload(false)}
-          selectedDocumentIds={selectedDocuments}
-        />
+            </Grid>
 
-        {/* דיאלוג בחירת ארגון */}
-        <DownloadOrganizationDialog
-          open={showOrganizationDialog}
-          onClose={() => setShowOrganizationDialog(false)}
-          documentSummary={documentSummary}
-          onDownload={handleOrganizationDownload}
-          isDownloading={downloadMultipleMutation.isPending}
-        />
+            <Box sx={{ mt: 3, textAlign: 'center' }}>
+              <Button
+                variant="contained"
+                size="large"
+                color="success"
+                startIcon={isDownloading ? <CircularProgress size={20} color="inherit" /> : <DownloadIcon />}
+                onClick={handleDownload}
+                disabled={isDownloading}
+              >
+                {isDownloading ? 'מוריד...' : 'הורד ZIP'}
+              </Button>
+            </Box>
+          </Paper>
+        )}
 
-        {/* Snackbar להודעות */}
         <Snackbar
           open={snackbar.open}
           autoHideDuration={6000}

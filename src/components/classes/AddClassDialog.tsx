@@ -18,7 +18,7 @@ const [formData, setFormData] = useState<Partial<Class>>({
     monthlyBudget: 0,
     gender: 'בנים',
     description: '',
-    chosenStore: undefined, // לא נבחר
+    chosenStore: undefined, 
     regularOperatorId: '',
     type: 'גן',
     institutionCode: '',
@@ -55,13 +55,11 @@ useEffect(() => {
   };
 
   const handleSubmit = () => {
-    // ולידציה לשדות חובה
     if (!formData.name || !formData.education || !formData.gender || !formData.uniqueSymbol || !formData.institutionName || !formData.institutionCode || !formData.type) {
       alert('יש למלא את כל שדות החובה: שם, חינוך, מגדר, סמל קבוצה, שם מוסד, קוד מוסד, סוג קבוצה');
       return;
     }
     
-    // הסרת שדות ריקים
     const cleanedFormData = { ...formData };
     if (!cleanedFormData.chosenStore || cleanedFormData.chosenStore === '') {
       delete cleanedFormData.chosenStore;

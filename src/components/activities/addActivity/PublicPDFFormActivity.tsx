@@ -1,4 +1,3 @@
-// components/PDFFormActivity/PDFFormActivity.tsx
 import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Table, TableBody, TableCell, TableHead, TableRow,
@@ -149,7 +148,7 @@ const handleSubmit = () => {
 
     row.symbols.forEach(symbol => {
       const classObj = classes.find((c:Class) => c.uniqueSymbol === symbol);
-      if (!classObj) return; // אם לא נמצאה קבוצה עם הסמל הזה — דלג
+      if (!classObj) return; 
 
       const isExisting = activities.some(a =>
         DateTime.fromJSDate(new Date(a.date)).toFormat('dd/MM/yyyy') === row.date &&
@@ -159,7 +158,7 @@ const handleSubmit = () => {
 
       if (!isExisting) {
         newActivities.push({
-          classId: classObj._id, // 🟢 כאן במקום symbol
+          classId: classObj._id,
           operatorId,
           date: DateTime.fromFormat(row.date, 'dd/MM/yyyy').toJSDate(),
           description: 'הפעלה',

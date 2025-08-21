@@ -5,27 +5,22 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { useFetchClasses, useDeleteClass, useUpdateClass } from "../../queries/classQueries";
-import { useFetchOperators, useUpdateOperator } from "../../queries/operatorQueries";
+import { useUpdateOperator } from "../../queries/operatorQueries";
 import { useFetchStores, useUpdateStore } from "../../queries/storeQueries";
-import {  Operator } from "../../types";
 import EditClassDialog from "./EditClassDialog";
 import AddClassDialog from "./AddClassDialog";
 import CoordinatorAssignmentDialog from "../coordinator/CoordinatorAssignmentDialog";
 
 const ClassList: React.FC = () => {
   const { data: classes, isLoading, isError } = useFetchClasses();
-  const { data: operators } = useFetchOperators();
   const { data: stores } = useFetchStores();
   const deleteMutation = useDeleteClass();
   const [searchText, setSearchText] = useState("");
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [selectedItem, setSelectedItem] = useState<string>("");
   const [editClassData, setEditClassData] = useState<any | null>(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const updateClassMutation = useUpdateClass();
-  const updateOperatorMutation = useUpdateOperator();
-  const updateStoreMutation = useUpdateStore();
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [assignDialogType, setAssignDialogType] = useState<"assignContact" | "assignInstitution" | "assignOperator" | "assignStore" | null>(null);
   const [coordinatorDialogOpen, setCoordinatorDialogOpen] = useState(false);
@@ -70,35 +65,11 @@ const ClassList: React.FC = () => {
           id: selectedClassForCoordinator._id,
           updatedClass: { coordinatorId }
         });
-        // רענון הנתונים
         window.location.reload();
       } catch (error) {
         console.error('Error assigning coordinator:', error);
       }
     }
-  };
-
-  const handleSubmitDialog = async () => {
-    if (!selectedItem || !assignDialogType) return;
-    const fieldToUpdate =
-      assignDialogType === "assignContact" ? "contactsId" :
-      assignDialogType === "assignInstitution" ? "institutionId" :
-      assignDialogType === "assignOperator" ? "operatorId" :
-      assignDialogType === "assignStore" ? "chosenStore" :
-      null;
-    if (!fieldToUpdate) return;
-    selectedRows.forEach((id) => {
-      updateClassMutation.mutate({ id, updatedClass: { [fieldToUpdate]: selectedItem } });
-    });
-    if (assignDialogType === "assignStore") {
-      updateStoreMutation.mutate({ id: selectedItem, updatedStore: { regularClasses: selectedRows } });
-    }
-    else if (assignDialogType === "assignOperator") {
-      updateOperatorMutation.mutate({ id: selectedItem, updatedOperator: { $addToSet: { regularClasses: { $each: selectedRows } } } });
-    }
-    setAssignDialogOpen(false);
-    setAssignDialogType(null);
-    setSelectedItem("");
   };
 
   const columns: GridColDef[] = useMemo(() => [

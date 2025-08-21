@@ -1,4 +1,3 @@
-// components/Activities/AddActivity/WeeklyForm.tsx
 import React, { useState } from 'react';
 import {
   Box, Button, FormControl, InputLabel, MenuItem, Select,
@@ -92,7 +91,7 @@ const WeeklyForm: React.FC<WeeklyFormProps> = ({
         open={showSummary}
         pendingActivities={pendingActivities}
         classes={classes}
-        operators={[]} // ✅ אין צורך ב־operators
+        operators={[]} 
         operatorId={operatorId}
         onClose={() => setShowSummary(false)}
         onConfirm={confirmAdd}

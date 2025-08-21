@@ -16,7 +16,6 @@ const EditClassDialog = ({ classData, onClose }: any) => {
   };
 
   const handleSubmit = () => {
-    // הסרת שדות ריקים
     const cleanedFormData = { ...formData };
     if (!cleanedFormData.chosenStore || cleanedFormData.chosenStore === '') {
       delete cleanedFormData.chosenStore;

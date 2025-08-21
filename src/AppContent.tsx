@@ -1,4 +1,3 @@
-// AppContent.tsx
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import AppRoutes from './routes/AppRoutes';
@@ -28,7 +27,6 @@ const AppContent = () => {
       try {
         const decoded: DecodedToken = jwtDecode(token);
         
-        // בדיקה אם הטוקן פג תוקף
         const currentTime = Math.floor(Date.now() / 1000);
         if (decoded.exp < currentTime) {
           console.log('Token expired, clearing user state');

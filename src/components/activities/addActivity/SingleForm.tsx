@@ -1,4 +1,3 @@
-// components/Activities/AddActivity/SingleForm.tsx
 import React, { useState } from 'react';
 import {
   Box, Button, TextField, Autocomplete, Typography, CircularProgress

@@ -1,4 +1,3 @@
-// ActivationsDashboard.tsx
 import React, { useState, useMemo } from 'react';
 import {
   Box,
@@ -27,14 +26,12 @@ const START_DATE = new Date('2024-10-27');
 const ActivationsDashboard: React.FC<Props> = ({ activities }) => {
   const { data: classes = [] } = useFetchClasses();
 
-  // 1️⃣ Main Dashboard Data
   const actualActivationsCount = useMemo(() => {
     return activities.filter((act) => new Date(act.date) >= START_DATE).length;
   }, [activities]);
 
   const totalPossibleActivations = TOTAL_WEEKS * TOTAL_GROUPS;
 
-  // 2️⃣ Monthly Summary Data
   const monthlyCounts = useMemo(() => {
     const counts: { [key: string]: number } = {};
     activities.forEach((act) => {
@@ -45,7 +42,6 @@ const ActivationsDashboard: React.FC<Props> = ({ activities }) => {
     return counts;
   }, [activities]);
 
-  // 3️⃣ No Activity Groups
   const activeGroupIds = useMemo(() => {
     const ids = new Set<string>();
     activities.forEach((act) => {

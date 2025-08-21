@@ -41,6 +41,11 @@ export const updateDocumentStatus = async (documentId: string, status: DocumentS
 };
 
 export const fetchAllPersonalDocuments = async (): Promise<Document[]> => {
-  const response = await axios.get(`${API_URL}/personal`);
-  return response.data;
+  const token = localStorage.getItem('token');
+  const response = await axios.get(`${API_URL}/all-personal`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  return response.data.documents || response.data;
 };

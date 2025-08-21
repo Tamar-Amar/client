@@ -25,7 +25,6 @@ import {
   Grid,
   Card,
   CardContent,
-  Divider,
   Alert,
   TablePagination,
   Autocomplete
@@ -36,7 +35,6 @@ import {
   Upload as UploadIcon,
   Add as AddIcon,
   FilterList as FilterListIcon,
-  CloudUpload as CloudUploadIcon,
   Close as CloseIcon
 } from '@mui/icons-material';
 import { 
@@ -64,12 +62,10 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
   const [deleteFileName, setDeleteFileName] = useState<string>('');
   const [deletingDocumentId, setDeletingDocumentId] = useState<string | null>(null);
 
-  // פילטרים
   const [filterInstitutionCode, setFilterInstitutionCode] = useState<string>('');
   const [filterClassSymbol, setFilterClassSymbol] = useState<string>('');
   const [filterLeaderName, setFilterLeaderName] = useState<string>('');
 
-  // העלאת דוח חדש
   const [newReportDialogOpen, setNewReportDialogOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [workerFile, setWorkerFile] = useState<File | null>(null);
@@ -79,11 +75,9 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
   const [uploadError, setUploadError] = useState<string>('');
   const [uploadSuccess, setUploadSuccess] = useState<string>('');
 
-  // מעבר עמודים
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(8);
 
-  // הוקים
   const { data, isLoading, refetch } = useCampAttendanceReport(coordinatorId);
   const { data: allClasses, isLoading: classesLoading } = useClassesByCoordinatorInstitutionCodes(coordinatorId);
   const uploadMutation = useUploadAttendanceDocument();
@@ -91,26 +85,21 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
   const deleteRecordMutation = useDeleteCampAttendanceRecord();
   const createCampAttendanceMutation = useCreateCampAttendanceWithFiles();
 
-  // נתונים מסוננים - עכשיו כולל כיתות ללא דוחות
   const filteredData = useMemo(() => {
     if (!data || !allClasses) return [];
     
-    // יצירת מפה של דוחות קיימים לפי classId
     const reportsByClassId = new Map();
     data.forEach((rec: any) => {
       reportsByClassId.set(rec.classId._id, rec);
     });
     
-    // יצירת רשימה של כל הכיתות עם או בלי דוחות
     const allClassesWithReports = allClasses.map((cls: any) => {
       const existingReport = reportsByClassId.get(cls._id);
       
-      // מציאת המוביל או המדריך של הפרויקט
       const leader = cls.workers?.find((worker: any) => 
         worker.workerId?.roleName === 'מוביל' && worker.project === 4
       );
       
-      // אם אין מוביל, נחפש מדריך
       const instructor = !leader ? cls.workers?.find((worker: any) => 
         worker.workerId?.roleName === 'מדריך' && worker.project === 4
       ) : null;
@@ -124,7 +113,7 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
         workerAttendanceDoc: null,
         studentAttendanceDoc: null,
         controlDocs: [],
-        hasNoReport: true // סימון שזה כיתה ללא דוח
+        hasNoReport: true 
       };
     });
     
@@ -136,38 +125,31 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
       const matchesInstitution = !filterInstitutionCode || institutionCode.includes(filterInstitutionCode);
       const matchesClassSymbol = !filterClassSymbol || classSymbol.includes(filterClassSymbol);
       
-      // אם יש פילטר מוביל, נציג רק כיתות עם מוביל שמתאים לפילטר
-      // אם אין פילטר מוביל, נציג הכל (כולל כיתות ללא מוביל)
       const matchesLeaderName = !filterLeaderName || (rec.leaderId && leaderName.includes(filterLeaderName.toLowerCase()));
       
       return matchesInstitution && matchesClassSymbol && matchesLeaderName;
     });
   }, [data, allClasses, filterInstitutionCode, filterClassSymbol, filterLeaderName]);
 
-  // רשימת קודי מוסד ייחודיים - עכשיו מכל הכיתות של הרכז
   const uniqueInstitutionCodes = useMemo(() => {
     if (!allClasses) return [];
     const codes = allClasses.map((cls: any) => cls.institutionCode).filter(Boolean);
     return [...new Set(codes)].sort();
   }, [allClasses]);
 
-  // רשימת סמלי מסגרות ייחודיים - עכשיו מכל הכיתות של הרכז
   const uniqueClassSymbols = useMemo(() => {
     if (!allClasses) return [];
     const symbols = allClasses.map((cls: any) => cls.uniqueSymbol).filter(Boolean);
     return [...new Set(symbols)].sort() as string[];
   }, [allClasses]);
 
-  // רשימת כיתות ייחודיות - עכשיו מכל הכיתות של הרכז
   const uniqueClasses = useMemo(() => {
     if (!allClasses) return [];
     return allClasses.map((cls: any) => {
-      // מציאת המוביל או המדריך של הפרויקט
       const leader = cls.workers?.find((worker: any) => 
         worker.roleName === 'מוביל' && worker.project === 4
       );
       
-      // אם אין מוביל, נחפש מדריך
       const instructor = !leader ? cls.workers?.find((worker: any) => 
         worker.workerId?.roleName === 'מד״צ' && worker.project === 4
       ) : null;
@@ -185,7 +167,6 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
     });
   }, [allClasses]);
 
-  // פונקציה לקבלת טקסט סטטוס פשוט
   const getStatusText = (status: string) => {
     switch (status) {
       case 'ממתין':
@@ -199,7 +180,6 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
     }
   };
 
-  // פונקציה לקבלת טקסט סוג מסמך
   const getDocumentTypeText = (docType: string) => {
     switch (docType) {
       case 'workerAttendanceDoc':
@@ -213,12 +193,10 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
     }
   };
 
-  // פונקציה לבדיקה אם ניתן למחוק מסמך
   const canDeleteDocument = (status: string) => {
     return status === 'ממתין' || status === 'נדחה';
   };
 
-  // טיפול בשינוי קובץ
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -226,7 +204,6 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
     }
   };
 
-  // טיפול בהעלאה
   const handleUpload = async () => {
     if (!selectedFile || !selectedRecord) return;
 
@@ -247,26 +224,22 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
     }
   };
 
-  // טיפול בהעלאת דוח חדש
   const handleUploadNewReport = async () => {
     if (!selectedClass || (!workerFile && !studentFile && controlFiles.length === 0)) {
       setUploadError('יש לבחור מסגרת ולפחות מסמך אחד');
       return;
     }
 
-    // בדיקה שיש מוביל לכיתה
     const selectedClassData = allClasses?.find((cls: any) => cls._id === selectedClass);
     if (!selectedClassData) {
       setUploadError('לא נמצאו נתוני מסגרת');
       return;
     }
 
-    // מציאת המוביל או המדריך מתוך העובדים של הכיתה
     const leader = selectedClassData.workers?.find((worker: any) => 
       worker.project === 4 && worker.workerId?.roleName === 'מוביל'
     );
 
-    // אם אין מוביל, נחפש מדריך
     const instructor = !leader ? selectedClassData.workers?.find((worker: any) => 
       worker.project === 4 && worker.workerId?.roleName === 'מדריך'
     ) : null;
@@ -283,11 +256,10 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
     setUploadSuccess('');
 
     try {
-      // שימוש בחודש נוכחי
       const currentMonth = new Date().toISOString().slice(0, 7);
       
       await createCampAttendanceMutation.mutateAsync({
-        projectCode: 4, // קייטנת קיץ
+        projectCode: 4, 
         classId: selectedClass,
         coordinatorId,
         leaderId: responsibleWorker.workerId._id,
@@ -302,8 +274,7 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
       setWorkerFile(null);
       setStudentFile(null);
       setControlFiles([]);
-      refetch(); // רענון הנתונים
-      // לא סוגרים את הדיאלוג - המשתמש ייסגור בעצמו
+      refetch(); 
     } catch (error: any) {
       console.error('שגיאה בהעלאת דוח חדש:', error);
       setUploadError(error?.response?.data?.error || 'שגיאה בהעלאת הדוח');
@@ -312,7 +283,6 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
     }
   };
 
-  // טיפול בלחיצה על מחיקה
   const handleDeleteClick = (recordId: string, docType: string, docIndex?: number, fileName?: string) => {
     setDeleteRecordId(recordId);
     setDeleteDocType(docType);
@@ -321,7 +291,6 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
     setDeleteDialogOpen(true);
   };
 
-  // טיפול בפתיחת דיאלוג העלאה חדש
   const handleOpenNewReportDialog = (classId: string) => {
     setSelectedClass(classId);
     setUploadError('');
@@ -329,12 +298,10 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
     setNewReportDialogOpen(true);
   };
 
-  // פונקציה לבדיקה אם ניתן למחוק את כל הדוח
   const shouldDeleteEntireReport = (recordId: string, docType: string) => {
     const record = data?.find((rec: any) => rec._id === recordId);
     if (!record) return false;
     
-    // אם זה המסמך האחרון, נמחק את כל הדוח
     const hasWorkerDoc = record.workerAttendanceDoc;
     const hasStudentDoc = record.studentAttendanceDoc;
     const hasControlDocs = record.controlDocs && record.controlDocs.length > 0;
@@ -346,20 +313,16 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
     return false;
   };
 
-  // פונקציה לבדיקה אם מסמך ספציפי נמחק
   const isDeletingDocument = (recordId: string, docType: string, docIndex?: number) => {
     const documentId = `${recordId}-${docType}-${docIndex || 0}`;
     return deletingDocumentId === documentId;
   };
 
-  // טיפול באישור מחיקה
   const handleConfirmDelete = async () => {
     try {
-      // יצירת מזהה ייחודי למסמך
       const documentId = `${deleteRecordId}-${deleteDocType}-${deleteDocIndex || 0}`;
       setDeletingDocumentId(documentId);
       
-      // בדיקה אם צריך למחוק את כל הדוח
       if (shouldDeleteEntireReport(deleteRecordId, deleteDocType)) {
         await deleteRecordMutation.mutateAsync(deleteRecordId);
       } else {
@@ -382,12 +345,10 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
     }
   };
 
-  // איפוס העמוד כשהפילטרים משתנים
   useEffect(() => {
     setPage(0);
   }, [filterInstitutionCode, filterClassSymbol, filterLeaderName]);
 
-  // סגירת הדיאלוג אוטומטית אחרי מחיקה מוצלחת
   useEffect(() => {
     if (deleteMutation.isSuccess && deleteDialogOpen) {
       const timer = setTimeout(() => {
@@ -397,13 +358,12 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
         setDeleteDocIndex(undefined);
         setDeleteFileName('');
         setDeletingDocumentId(null);
-      }, 1500); // סגירה אחרי 1.5 שניות
+      }, 1500); 
 
       return () => clearTimeout(timer);
     }
   }, [deleteMutation.isSuccess, deleteDialogOpen]);
 
-  // סגירת הדיאלוג כשהמחיקה נכשלת
   useEffect(() => {
     if (deleteMutation.isError && deleteDialogOpen) {
       setDeleteDialogOpen(false);
@@ -421,7 +381,6 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
         דוחות נוכחות
       </Typography>
 
-      {/* תיבות סינון */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

@@ -21,10 +21,19 @@ export const useFetchAllDocuments = () => {
   });
 };
 
-export const useFetchAllPersonalDocuments = () => {
+export const useFetchAllPersonalDocuments = (enabled: boolean = true) => {
   return useQuery({
     queryKey: ['personal-documents'],
     queryFn: () => fetchAllPersonalDocuments(),
+    enabled: enabled,
+  });
+};
+
+export const useFetchAttendanceDocuments = (projectCode: string) => {
+  return useQuery({
+    queryKey: ['attendance-documents', projectCode],
+    queryFn: () => axiosInstance.get(`/api/documents/attendance/${projectCode}`).then(res => res.data),
+    enabled: !!projectCode && projectCode !== '',
   });
 };
 
@@ -155,34 +164,7 @@ export const useDocumentTypes = () => {
   });
 };
 
-export const useDocumentsWithFilters = (filters: {
-  documentType?: string;
-  status?: string;
-  workerId?: string;
-  project?: string;
-  dateFrom?: string;
-  dateTo?: string;
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-}) => {
-  return useQuery({
-    queryKey: ['documentsWithFilters', filters],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== '') {
-          params.append(key, value.toString());
-        }
-      });
-      
-      const response = await axiosInstance.get(`/api/documents/filters/search?${params.toString()}`);
-      return response.data;
-    },
-    staleTime: 2 * 60 * 1000, // 2 דקות
-  });
-};
+
 
 // מוטציות לניהול מסמכים מתקדם
 

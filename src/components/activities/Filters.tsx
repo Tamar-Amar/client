@@ -43,7 +43,7 @@ const Filters: React.FC<FiltersProps> = ({
             value={filterOperator} 
             onChange={(e) => {
               setFilterOperator(e.target.value);
-              setFilterGroup("all"); // איפוס הקבוצה
+              setFilterGroup("all");
             }}
           >
             <MenuItem value="all">הכל</MenuItem>
@@ -58,7 +58,7 @@ const Filters: React.FC<FiltersProps> = ({
             value={filterGroup} 
             onChange={(e) => {
               setFilterGroup(e.target.value);
-              setFilterOperator("all"); // איפוס המפעיל
+              setFilterOperator("all"); 
             }}
           >
             <MenuItem value="all">הכל</MenuItem>
