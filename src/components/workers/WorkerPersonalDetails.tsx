@@ -107,7 +107,6 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // נרמול התפקיד אם זה השדה שמתעדכן
     const normalizedValue = name === 'roleName' ? value.trim().replace(/\s+/g, ' ') : value;
     setForm({ ...form, [name]: normalizedValue });
   };

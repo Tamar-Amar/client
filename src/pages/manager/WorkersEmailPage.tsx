@@ -35,7 +35,6 @@ import SearchIcon from '@mui/icons-material/Search';
 const REQUIRED_TAGS = ["אישור משטרה", "תעודת השכלה", "תעודת זהות", "חוזה"];
 const API_URL = process.env.REACT_APP_API_URL;
 
-// פרויקטים זמינים עם קודי הפרויקט
 const PROJECTS = [
   { value: 1, label: "צהרון שוטף 2025" },
   { value: 2, label: "קייטנת חנוכה 2025" },
@@ -56,7 +55,6 @@ const WorkersDocumentsEmailPage: React.FC = () => {
   const [isSending, setIsSending] = useState(false);
   const [isCustomEmail, setIsCustomEmail] = useState(false);
   
-  // סינון וחיפוש
   const [selectedProject, setSelectedProject] = useState<number | "">("");
   const [searchTerm, setSearchTerm] = useState<string>("");
 
@@ -69,7 +67,6 @@ const WorkersDocumentsEmailPage: React.FC = () => {
     return map;
   }, [documents]);
 
-  // פונקציה לקבלת שם הפרויקט לפי קודי הפרויקט
   const getProjectName = (worker: WorkerAfterNoon): string => {
     if (!worker.projectCodes || worker.projectCodes.length === 0) {
       return "לא מוגדר";
@@ -82,27 +79,22 @@ const WorkersDocumentsEmailPage: React.FC = () => {
       4: "קייטנת קיץ 2025"
     };
     
-    // מחזיר את הפרויקט הראשון (אם יש כמה)
     const firstProjectCode = worker.projectCodes[0];
     return projectNames[firstProjectCode] || `פרויקט ${firstProjectCode}`;
   };
 
-  // סינון עובדים לפי פרויקט וחיפוש
   const filteredWorkers = useMemo(() => {
     let filtered = workers.filter((worker: WorkerAfterNoon) => {
-      // סינון לפי פרויקט
       if (selectedProject !== "") {
         if (!worker.projectCodes || !worker.projectCodes.includes(selectedProject as number)) {
           return false;
         }
       }
       
-      // סינון רק עובדים פעילים
       if (!worker.isActive) {
         return false;
       }
       
-      // חיפוש חופשי
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase();
         const fullName = `${worker.firstName} ${worker.lastName}`.toLowerCase();
@@ -265,7 +257,7 @@ const WorkersDocumentsEmailPage: React.FC = () => {
 
   return (
     <Box sx={{ mx: "auto", mt: 4, width: '80%' }}>
-      {/* סינון וחיפוש */}
+
       <Paper sx={{ p: 2, mb: 2 }}>
         <Typography variant="h6" gutterBottom>
           סינון וחיפוש

@@ -3,7 +3,6 @@ import { attendanceService } from '../services/attendanceService';
 
 
 
-// הוק לקבלת כל דוחות הנוכחות של קייטנות
 export const useAllCampAttendanceReports = () => {
   return useQuery({
     queryKey: ['allCampAttendanceReports'],
@@ -13,7 +12,6 @@ export const useAllCampAttendanceReports = () => {
   });
 };
 
-// הוק לקבלת דוח נוכחות ספציפי של קייטנה
 export const useCampAttendanceReport = (id: string) => {
   return useQuery({
     queryKey: ['campAttendanceReport', id],
@@ -24,7 +22,6 @@ export const useCampAttendanceReport = (id: string) => {
   });
 };
 
-// הוק ליצירת דוח נוכחות חדש של קייטנה
 export const useCreateCampAttendance = () => {
   const queryClient = useQueryClient();
   
@@ -36,7 +33,6 @@ export const useCreateCampAttendance = () => {
   });
 };
 
-// הוק לעדכון דוח נוכחות של קייטנה
 export const useUpdateCampAttendance = () => {
   const queryClient = useQueryClient();
   
@@ -50,7 +46,6 @@ export const useUpdateCampAttendance = () => {
   });
 };
 
-// הוק למחיקת דוח נוכחות של קייטנה
 export const useDeleteCampAttendance = () => {
   const queryClient = useQueryClient();
   
@@ -62,7 +57,6 @@ export const useDeleteCampAttendance = () => {
   });
 };
 
-// הוק להעלאת מסמך נוכחות של קייטנה
 export const useUploadAttendanceDocument = () => {
   const queryClient = useQueryClient();
   
@@ -85,7 +79,6 @@ export const useUploadAttendanceDocument = () => {
   });
 };
 
-// הוק למחיקת מסמך נוכחות של קייטנה
 export const useDeleteAttendanceDocument = () => {
   const queryClient = useQueryClient();
   

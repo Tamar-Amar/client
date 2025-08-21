@@ -395,7 +395,6 @@ const OperatorCreate: React.FC<Props> = ({ onSuccess }) => {
     formik.setFieldValue('regularClasses', classIds);
   };
 
-  // מציאת הקבוצות הנבחרות
   const selectedClasses = classes.filter((cls: Class) => 
     formik.values.regularClasses.includes(cls._id)
   );

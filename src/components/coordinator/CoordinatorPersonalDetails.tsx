@@ -183,7 +183,7 @@ const CoordinatorPersonalDetails: React.FC<CoordinatorPersonalDetailsProps> = ({
           </Grid>
         </Grid>
 
-        {/* פירוט הפרויקטים */}
+
         {coordinator.projectCodes && coordinator.projectCodes.length > 0 && (
           <>
             <Divider sx={{ my: 3 }} />

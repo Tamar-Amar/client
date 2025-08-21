@@ -81,7 +81,6 @@ const MatsevetPage: React.FC = () => {
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [selectedClassDialog, setSelectedClassDialog] = useState<ClassWithWorkers | null>(null);
   
-  // פילטרים מתקדמים
   const [filterInstitutionCode, setFilterInstitutionCode] = useState<string>('');
   const [filterClassCode, setFilterClassCode] = useState<string>('');
   const [filterClassType, setFilterClassType] = useState<string>('');
@@ -109,7 +108,6 @@ const MatsevetPage: React.FC = () => {
     setSelectedClassDialog(null);
   };
 
-  // אפשרויות פילטרים
   const institutionCodeOptions = useMemo(() => {
     const codes = new Set<string>();
     classes.forEach((cls: Class) => {
@@ -170,7 +168,6 @@ const MatsevetPage: React.FC = () => {
     ];
   }, [classes]);
 
-  // אפשרויות חשבי שכר
   const salaryAccountOptions = useMemo(() => {
     const accountants = allUsers.filter((user: any) => user.role === 'accountant');
     return [
@@ -266,7 +263,6 @@ const MatsevetPage: React.FC = () => {
   const filteredClasses = useMemo(() => {
     let filtered = classesWithWorkers;
     
-    // סינון לפי חיפוש חופשי
     if (searchTerm) {
       const searchLower = searchTerm;
       filtered = filtered.filter(classData => 
@@ -282,50 +278,42 @@ const MatsevetPage: React.FC = () => {
       );
     }
     
-    // סינון לפי פרויקט
     if (selectedProject !== '') {
       filtered = filtered.filter(classData => {
         if (classData.class._id === 'no-class') {
-          // עבור עובדים ללא מסגרת, בדוק אם יש להם את הפרויקט
           return classData.workers.some(worker => 
             worker.projectCodes?.includes(selectedProject as number)
           );
         } else {
-          // עבור כיתות, בדוק אם יש להן את הפרויקט
           return classData.class.projectCodes?.includes(selectedProject as number);
         }
       });
     }
     
-    // סינון לפי קוד מוסד
     if (filterInstitutionCode) {
       filtered = filtered.filter(classData => 
         classData.class.institutionCode === filterInstitutionCode
       );
     }
     
-    // סינון לפי סמל כיתה
     if (filterClassCode) {
       filtered = filtered.filter(classData => 
         classData.class.uniqueSymbol === filterClassCode
       );
     }
     
-    // סינון לפי סוג כיתה
     if (filterClassType) {
       filtered = filtered.filter(classData => 
         classData.class.type === filterClassType
       );
     }
     
-    // סינון לפי מגדר
     if (filterGender) {
       filtered = filtered.filter(classData => 
         classData.class.gender === filterGender
       );
     }
     
-    // סינון לפי חשב שכר
     if (filterSalaryAccount) {
       const accountant = allUsers.find((u: any) => u._id === filterSalaryAccount && u.role === 'accountant');
       if (accountant && Array.isArray(accountant.accountantInstitutionCodes)) {
@@ -437,7 +425,7 @@ const MatsevetPage: React.FC = () => {
   return (
     <Container maxWidth="xl" sx={{ mt: 1, mb: 4 , p:4}}>
 
-      {/* סרגל סינון מתקדם */}
+
       <Card sx={{ mb: 3, bgcolor: '#f5f5f5', border: '1px solid #e0e0e0' }}>
         <CardContent sx={{ p: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
@@ -450,7 +438,7 @@ const MatsevetPage: React.FC = () => {
               ({sortedClasses.length} כיתות)
             </Typography>
             
-            {/* צ'יפים לפילטרים פעילים */}
+
             {activeFilters.map((filter) => (
               <Chip
                 key={filter.key}
@@ -817,7 +805,7 @@ const MatsevetPage: React.FC = () => {
         </Box>
       </Box>
 
-      {/* דיאלוג פרטי כיתה */}
+
       <Dialog 
         open={!!selectedClassDialog} 
         onClose={handleCloseDialog}
@@ -845,7 +833,7 @@ const MatsevetPage: React.FC = () => {
             </DialogTitle>
             <DialogContent sx={{ p: 3 }}>
               <Grid container spacing={3}>
-                {/* פרטי הכיתה */}
+
                 <Grid item xs={12} md={6}>
                   <Typography variant="h6" gutterBottom color="primary.main">
                     פרטי הכיתה
@@ -948,7 +936,7 @@ const MatsevetPage: React.FC = () => {
                   </List>
                 </Grid>
 
-                {/* קודי פרויקט */}
+
                 <Grid item xs={12} md={6}>
                   <Typography variant="h6" gutterBottom color="primary.main">
                     קודי פרויקט
@@ -975,7 +963,7 @@ const MatsevetPage: React.FC = () => {
                   )}
                 </Grid>
 
-                {/* עובדים משויכים */}
+
                 <Grid item xs={12}>
                   <Typography variant="h6" gutterBottom color="primary.main">
                     עובדים משויכים ({selectedClassDialog.workers.length})

@@ -46,7 +46,6 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
   const [studentFile, setStudentFile] = useState<File | null>(null);
   const [controlFiles, setControlFiles] = useState<File[]>([]);
 
-  // State לניהול העלאת מסמכים נפרדת
   const [uploadingWorkerDoc, setUploadingWorkerDoc] = useState(false);
   const [uploadingStudentDoc, setUploadingStudentDoc] = useState(false);
   const [uploadingControlDoc, setUploadingControlDoc] = useState(false);
@@ -55,14 +54,12 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
   const [controlFileInput, setControlFileInput] = useState<File | null>(null);
   const { data: allUsers } = useFetchAllUsers();
 
-  // Queries - נקבל את כל הכיתות
   const { data: allClasses, isLoading: classesLoading } = useQuery({
     queryKey: ['allClasses'],
     queryFn: () => fetchClasses(), // נקבל את כל הכיתות
     enabled: true
   });
 
-  // מציאת הכיתה שבה המוביל מוביל בקייטנת קיץ
   const leaderClass = useMemo(() => {
     if (!allClasses || !workerId) return null;
     
@@ -73,7 +70,6 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
     });
   }, [allClasses, workerId]);
 
-  // מציאת הרכז לפי קוד המוסד של הכיתה
   const coordinatorId = useMemo(() => {
     if (!leaderClass || !allUsers) return null;
     
@@ -86,7 +82,6 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
     });
     
     
-    // אם לא נמצא רכז, נשתמש ב-ID של המוביל
     if (!coordinator) {
       return workerId;
     }
@@ -96,7 +91,6 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
 
   const { data: allAttendanceData, isLoading: dataLoading, refetch } = useAllCampAttendanceReports();
   
-  // סינון הדוחות לפי הכיתה הספציפית
   const attendanceData = useMemo(() => {
     if (!allAttendanceData || !leaderClass?._id) return [];
     return allAttendanceData.filter((record: any) => record.classId?._id === leaderClass._id);
@@ -111,14 +105,12 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
   
   const currentMonth = new Date().toISOString().slice(0, 7);
 
-  // מציאת הדוח של הכיתה הספציפית
   const classReport = useMemo(() => {
     if (!attendanceData || !leaderClass) return null;
     
     return attendanceData.find((rec: any) => rec.classId._id === leaderClass._id);
   }, [attendanceData, leaderClass?._id]);
 
-  // פונקציה לקבלת טקסט סטטוס
   const getStatusText = useCallback((status: string) => {
     switch (status) {
       case 'ממתין':
@@ -132,12 +124,10 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
     }
   }, []);
 
-  // פונקציה לבדיקה אם ניתן למחוק מסמך
   const canDeleteDocument = useCallback((status: string) => {
     return status === 'ממתין' || status === 'נדחה';
   }, []);
 
-  // טיפול בלחיצה על מחיקה
   const handleDeleteClick = useCallback((recordId: string, docType: string, docIndex?: number, fileName?: string) => {
     setDeleteRecordId(recordId);
     setDeleteDocType(docType);
@@ -146,7 +136,6 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
     setDeleteDialogOpen(true);
   }, []);
 
-  // בדיקה אם צריך למחוק את כל הדוח
   const shouldDeleteEntireReport = useCallback((recordId: string, docType: string) => {
     if (!classReport) return false;
     
@@ -163,7 +152,6 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
     return false;
   }, [classReport]);
 
-  // טיפול באישור מחיקה
   const handleConfirmDelete = useCallback(async () => {
     try {
       if (shouldDeleteEntireReport(deleteRecordId, deleteDocType)) {
@@ -175,7 +163,6 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
           docIndex: deleteDocIndex
         });
       }
-      // סגירת הדיאלוג אחרי המחיקה
       setDeleteDialogOpen(false);
       setDeleteRecordId('');
       setDeleteDocType('');
@@ -187,7 +174,6 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
     }
   }, [shouldDeleteEntireReport, deleteRecordId, deleteDocType, deleteDocIndex, deleteMutation, deleteDocumentMutation, refetch]);
 
-  // טיפול בהעלאת דוח חדש
   const handleUploadNewReport = async () => {
     if (!leaderClass) return;
 
@@ -217,13 +203,11 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
     }
   };
 
-  // פונקציות להעלאת מסמכים נפרדת
   const handleUploadWorkerDoc = useCallback(async () => {
     if (!workerFileInput) return;
     
     setUploadingWorkerDoc(true);
     try {
-      // אם אין דוח קיים, צור דוח חדש
       let recordId = classReport?._id;
       if (!recordId) {
         if (!leaderClass) {
@@ -253,14 +237,12 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
         file: workerFileInput
       });
       
-      // ניקוי מידי של ה-state
       setWorkerFileInput(null);
       setUploadingWorkerDoc(false);
       await refetch(); // רענון הנתונים
     } catch (error: any) {
       console.error('שגיאה בהעלאת דוח עובדים:', error);
       setUploadingWorkerDoc(false);
-      // הצגת שגיאה למשתמש
       alert(`שגיאה בהעלאת דוח עובדים: ${error?.response?.data?.error || error.message}`);
     }
   }, [workerFileInput, classReport?._id, leaderClass, coordinatorId, createCampAttendanceSimpleMutation, uploadDocumentMutation, workerId, currentMonth, refetch]);
@@ -270,7 +252,6 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
     
     setUploadingStudentDoc(true);
     try {
-      // אם אין דוח קיים, צור דוח חדש
       let recordId = classReport?._id;
       if (!recordId) {
         if (!leaderClass) {
@@ -300,14 +281,12 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
         file: studentFileInput
       });
       
-      // ניקוי מידי של ה-state
       setStudentFileInput(null);
       setUploadingStudentDoc(false);
       await refetch(); // רענון הנתונים
     } catch (error: any) {
       console.error('שגיאה בהעלאת דוח תלמידים:', error);
       setUploadingStudentDoc(false);
-      // הצגת שגיאה למשתמש
       alert(`שגיאה בהעלאת דוח תלמידים: ${error?.response?.data?.error || error.message}`);
     }
   }, [studentFileInput, classReport?._id, leaderClass, coordinatorId, createCampAttendanceSimpleMutation, uploadDocumentMutation, workerId, currentMonth, refetch]);
@@ -317,7 +296,6 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
     
     setUploadingControlDoc(true);
     try {
-      // אם אין דוח קיים, צור דוח חדש
       let recordId = classReport?._id;
       if (!recordId) {
         if (!leaderClass) {
@@ -347,19 +325,16 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
         file: controlFileInput
       });
       
-      // ניקוי מידי של ה-state
       setControlFileInput(null);
       setUploadingControlDoc(false);
       await refetch(); // רענון הנתונים
     } catch (error: any) {
       console.error('שגיאה בהעלאת דוח בקרה:', error);
       setUploadingControlDoc(false);
-      // הצגת שגיאה למשתמש
       alert(`שגיאה בהעלאת דוח בקרה: ${error?.response?.data?.error || error.message}`);
     }
   }, [controlFileInput, classReport?._id, leaderClass, coordinatorId, createCampAttendanceSimpleMutation, uploadDocumentMutation, workerId, currentMonth, refetch]);
 
-  // טיפול בפתיחת דיאלוג העלאה
   const handleOpenUploadDialog = () => {
     setUploadDialogOpen(true);
     setUploadError('');
@@ -369,7 +344,6 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
     setControlFiles([]);
   };
 
-  // טיפול בסגירת דיאלוג העלאה
   const handleCloseUploadDialog = () => {
     setUploadDialogOpen(false);
     setUploadError('');
@@ -399,7 +373,7 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
     <Box>
       {leaderClass && (
         <Box sx={{ maxWidth: 800, mx: 'auto' }}>
-          {/* כרטיס מידע על המסגרת */}
+
           <Paper sx={{ p: 3, mb: 3, textAlign: 'center' }}>
             <Typography variant="h6" gutterBottom>
               {leaderClass.uniqueSymbol} - {leaderClass.name} - {leaderClass.institutionCode}
@@ -423,9 +397,9 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
             </Typography>
           </Paper>
 
-          {/* כרטיסי מסמכים */}
+
           <Grid container spacing={3}>
-            {/* דוח נוכחות עובדים */}
+
             <Grid item xs={12} md={4}>
               <Paper sx={{ p: 2, minHeight: 200, display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" gutterBottom align="center">
@@ -510,7 +484,7 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
               </Paper>
             </Grid>
 
-            {/* דוח נוכחות תלמידים */}
+
             <Grid item xs={12} md={4}>
               <Paper sx={{ p: 2, minHeight: 200, display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" gutterBottom align="center">
@@ -593,7 +567,7 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
               </Paper>
             </Grid>
 
-            {/* דוחות בקרה */}
+
             <Grid item xs={12} md={4}>
               <Paper sx={{ p: 2, minHeight: 200, display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" gutterBottom align="center">
@@ -741,7 +715,7 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
         </Box>
       )}
 
-      {/* דיאלוג העלאה */}
+
       <Dialog open={uploadDialogOpen} onClose={handleCloseUploadDialog} maxWidth="md" fullWidth>
         <DialogTitle>העלה דוח קייטנת קיץ חדש</DialogTitle>
         <DialogContent>
@@ -869,7 +843,7 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
         </DialogActions>
       </Dialog>
 
-      {/* דיאלוג אישור מחיקה */}
+
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
         <DialogTitle>אישור מחיקה</DialogTitle>
         <DialogContent>

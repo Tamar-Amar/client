@@ -50,9 +50,6 @@ const projectTypes = [
   { label: 'קייטנת פסח 2025', value: 3 },
   { label: 'קייטנת קיץ 2025', value: 4 },
   { label: 'צהרון שוטף 2026', value: 5 },
-  //{ label: 'קייטנת חנוכה 2026', value: 6 },
-  //{ label: 'קייטנת פסח 2026', value: 7 },
-  //{ label: 'קייטנת קיץ 2026', value: 8 },
 ];
 
 interface PreviewWorker extends Omit<WorkerAfterNoon, '_id' | 'isAfterNoon' | 'isBaseWorker' | 'isHanukaCamp' | 'isPassoverCamp' | 'isSummerCamp'> {
@@ -716,7 +713,6 @@ const WorkersImportPage: React.FC = () => {
         alert('הייבוא הושלם בהצלחה! שגיאה ביצירת הדוח');
       }
       
-      // בדיקה אם הקומפוננטה עדיין מונטת לפני עדכון state
       if (isMountedRef.current) {
         setActiveStep(0);
         setAllWorkers([]);
@@ -954,7 +950,7 @@ const WorkersImportPage: React.FC = () => {
               </Accordion>
             )}
 
-            {/* עובדים חדשים ללא סמל */}
+
             {categorizedWorkers.newWorkersWithoutSymbol.length > 0 && (
               <Accordion>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -974,7 +970,7 @@ const WorkersImportPage: React.FC = () => {
               </Accordion>
             )}
 
-            {/* עובדים כפולים */}
+
             {categorizedWorkers.duplicateWorkers.length > 0 && (
               <Accordion>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -998,7 +994,7 @@ const WorkersImportPage: React.FC = () => {
               </Accordion>
             )}
 
-            {/* עובדים לא תקינים */}
+
             {categorizedWorkers.invalidWorkers.length > 0 && (
               <Accordion>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -1031,7 +1027,7 @@ const WorkersImportPage: React.FC = () => {
               </Accordion>
             )}
 
-            {/* עובדים לעדכון */}
+
             {categorizedWorkers.existingWorkers.length > 0 && (
               <Accordion>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -1202,7 +1198,6 @@ const WorkersImportPage: React.FC = () => {
   );
 };
 
-// קומפוננטה לטבלת עובדים
 interface WorkersTableProps {
   workers: PreviewWorker[];
   showImportDecision?: boolean;
@@ -1303,7 +1298,7 @@ const WorkersTable: React.FC<WorkersTableProps> = ({
               {showChanges && worker.changes && (
                 <TableCell>
                   <Box>
-                    {/* פרויקטים */}
+
                     {JSON.stringify(worker.changes.before.projectCodes?.sort()) !== JSON.stringify(worker.changes.after.projectCodes?.sort()) && (
                       <>
                         <Typography variant="caption" display="block" color="text.secondary">
@@ -1322,7 +1317,7 @@ const WorkersTable: React.FC<WorkersTableProps> = ({
                       </>
                     )}
                     
-                    {/* פרטים אישיים */}
+
                     {(worker.changes.before.firstName !== worker.changes.after.firstName ||
                       worker.changes.before.lastName !== worker.changes.after.lastName ||
                       worker.changes.before.phone !== worker.changes.after.phone ||
@@ -1354,7 +1349,7 @@ const WorkersTable: React.FC<WorkersTableProps> = ({
                       </>
                     )}
                     
-                    {/* פרטי תפקיד */}
+
                     {(
                       worker.changes.before.roleName !== worker.changes.after.roleName ||
                       worker.changes.before.status !== worker.changes.after.status ||

@@ -77,7 +77,7 @@ const DownloadOrganizationDialog: React.FC<DownloadOrganizationDialogProps> = ({
 
       <DialogContent>
         <Stack spacing={3}>
-          {/* סיכום המסמכים */}
+
           <Box>
             <Typography variant="h6" gutterBottom>
               סיכום המסמכים שנמצאו
@@ -86,7 +86,7 @@ const DownloadOrganizationDialog: React.FC<DownloadOrganizationDialogProps> = ({
               סה"כ {documentSummary.total} מסמכים
             </Typography>
 
-            {/* לפי סוג מסמך */}
+
             <Box sx={{ mb: 2 }}>
               <Typography variant="subtitle1" gutterBottom>
                 לפי סוג מסמך:
@@ -104,7 +104,7 @@ const DownloadOrganizationDialog: React.FC<DownloadOrganizationDialogProps> = ({
               </Stack>
             </Box>
 
-            {/* לפי עובד */}
+
             <Box>
               <Typography variant="subtitle1" gutterBottom>
                 לפי עובד:
@@ -132,7 +132,7 @@ const DownloadOrganizationDialog: React.FC<DownloadOrganizationDialogProps> = ({
 
           <Divider />
 
-          {/* בחירת ארגון */}
+
           <Box>
             <Typography variant="h6" gutterBottom>
               ארגון תיקיות
@@ -178,7 +178,7 @@ const DownloadOrganizationDialog: React.FC<DownloadOrganizationDialogProps> = ({
 
           <Divider />
 
-          {/* בחירת פורמט שם קובץ */}
+
           <Box>
             <Typography variant="h6" gutterBottom>
               פורמט שם קובץ

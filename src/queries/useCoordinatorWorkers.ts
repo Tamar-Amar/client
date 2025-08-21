@@ -7,7 +7,6 @@ import { Document, DocumentStatus } from '../types/Document';
 export function useCoordinatorWorkers(coordinatorId: string) {
   const queryClient = useQueryClient();
 
-  // עובדים
   const {
     data: workers = [],
     isLoading: workersLoading,
@@ -25,7 +24,6 @@ export function useCoordinatorWorkers(coordinatorId: string) {
     enabled: !!coordinatorId
   });
 
-  // מסמכים
   const {
     data: allWorkerDocuments = [],
     isLoading: documentsLoading,
@@ -43,7 +41,6 @@ export function useCoordinatorWorkers(coordinatorId: string) {
     enabled: !!coordinatorId
   });
 
-  // סטטיסטיקות מסמכים
   const documentsSummary = useMemo(() => {
     let totalUploaded = 0;
     let totalApproved = 0;
@@ -69,7 +66,6 @@ export function useCoordinatorWorkers(coordinatorId: string) {
     return { totalUploaded, totalApproved, totalPending, totalRejected };
   }, [allWorkerDocuments]);
 
-  // רענון כללי
   const refetchAll = useCallback(() => {
     refetchWorkers();
     refetchDocuments();

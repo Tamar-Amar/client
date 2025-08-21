@@ -132,18 +132,14 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
                   onChange={(e) => setManualUploadData({ ...manualUploadData, tag: e.target.value })}
                 >
                   {(() => {
-                    // נרמול התפקיד לצורך קביעת מסמכים נדרשים
                     const normalizedRole = manualUploadData.worker?.roleName?.trim().replace(/\s+/g, ' ');
                     
-                    // מסמכים בסיסיים לכל העובדים
                     let filteredDocTags = [...REQUIRED_DOC_TAGS];
                     
-                    // תעודת השכלה נדרשת רק עבור מובילים ורכזים
                     if (normalizedRole && (normalizedRole.includes('מוביל') || normalizedRole.includes('רכז'))) {
                       filteredDocTags.push('תעודת השכלה');
                     }
                     
-                    // אישור וותק נדרש רק עבור רכזים
                     if (normalizedRole && normalizedRole.includes('רכז')) {
                       filteredDocTags.push('אישור וותק');
                     }

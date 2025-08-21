@@ -56,7 +56,6 @@ const statusTabs = [
 ];
 
 const SummerCampAttendancePage: React.FC = () => {
-  // סינונים
   const [searchTerm, setSearchTerm] = useState('');
   const [filterInstitutionCode, setFilterInstitutionCode] = useState('');
   const [filterClassCode, setFilterClassCode] = useState('');
@@ -155,33 +154,24 @@ const SummerCampAttendancePage: React.FC = () => {
       });
   }, [campAttendance, classes, workers, searchTerm, filterInstitutionCode, filterClassCode, filterStatus, tabStatus]);
 
-  // הוספת סינון לפי חשב שכר (קודי מוסד)
   const filteredTableData = useMemo(() => {
     return tableData.filter((row: any) => {
       if (!filterAccountant) return true;
-      // מצא את חשב השכר
       const accountant = users.find((u: any) => u._id === filterAccountant && u.role === 'accountant');
       if (!accountant || !Array.isArray(accountant.accountantInstitutionCodes)) return false;
-      // בדוק אם קוד המוסד של הכיתה נמצא ברשימת קודי המוסד של החשב
       const cls = classes.find((c: Class) => c._id === row.classId?._id || c._id === row.classId);
       return cls && accountant.accountantInstitutionCodes.includes(cls.institutionCode);
     });
   }, [tableData, filterAccountant, users, classes]);
 
-  // חישוב סמלים (כיתות) ללא דיווח כלל (רק כיתות קיץ)
   const classIdsWithAttendance = useMemo(() => new Set(campAttendance.map((row: any) => (row.classId?._id || row.classId))), [campAttendance]);
 
-  // סינון מתקדם: קוד מוסד/סמל משפיע גם על missing
   const filteredSummerClasses = useMemo(() => {
     return summerClasses.filter((cls: Class) => {
-      // סינון לפי קוד מוסד
       if (filterInstitutionCode && cls.institutionCode !== filterInstitutionCode) return false;
-      // סינון לפי סמל
       if (filterClassCode && cls.uniqueSymbol !== filterClassCode) return false;
-      // חיפוש חופשי
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase();
-        // שם מוביל
         let leaderName = '';
         const leaderUser = users.find((u: any) => u.role === 'worker' && cls.workers?.some((w: any) => w.workerId === u._id && w.roleType?.includes('מוביל')));
         if (leaderUser) leaderName = `${leaderUser.firstName} ${leaderUser.lastName}`;
@@ -196,12 +186,10 @@ const SummerCampAttendancePage: React.FC = () => {
     });
   }, [summerClasses, filterInstitutionCode, filterClassCode, searchTerm, users]);
 
-  // סמלים ללא דיווח (רק כאלה שתואמים לסינון ולחשב שכר)
   const classesWithoutAttendance = useMemo(() => {
     return filteredSummerClasses.filter((cls: Class) => {
       if (!classIdsWithAttendance.has(cls._id)) {
         if (!filterAccountant) return true;
-        // בדוק אם קוד המוסד של הכיתה נמצא ברשימת קודי המוסד של החשב
         const accountant = users.find((u: any) => u._id === filterAccountant && u.role === 'accountant');
         if (!accountant || !Array.isArray(accountant.accountantInstitutionCodes)) return false;
         return accountant.accountantInstitutionCodes.includes(cls.institutionCode);
@@ -210,7 +198,6 @@ const SummerCampAttendancePage: React.FC = () => {
     });
   }, [filteredSummerClasses, classIdsWithAttendance, filterAccountant, users]);
 
-  // סמלים עם דיווח (רק כאלה שתואמים לסינון)
   const reported = useMemo(() => {
     return filteredTableData
       .map((row: any) => {
@@ -220,7 +207,6 @@ const SummerCampAttendancePage: React.FC = () => {
       .filter(Boolean);
   }, [filteredTableData, filteredSummerClasses]);
 
-  // טבלת נתונים מלאה: גם סמלים ללא דיווח (רק כיתות קיץ שתואמות לסינון)
   const fullTableData = useMemo(() => {
     const missing = classesWithoutAttendance.map((cls: Class) => ({
       _id: 'missing-' + cls._id,
@@ -233,13 +219,11 @@ const SummerCampAttendancePage: React.FC = () => {
       missing: true
     }));
     let allRows = [...reported, ...missing];
-    // סינון לפי סטטוס
     if (filterStatus === 'חסר') {
       allRows = allRows.filter(row => row.missing);
     } else if (filterStatus) {
       allRows = allRows.filter(row => {
         if (row.missing) return false;
-        // בדוק אם יש מסמך מתאים לסטטוס
         const docs = [row.workerAttendanceDoc, row.studentAttendanceDoc, ...(row.controlDocs || [])];
         return docs.some(doc => doc && doc.status === filterStatus);
       });
@@ -251,26 +235,22 @@ const SummerCampAttendancePage: React.FC = () => {
     });
   }, [reported, classesWithoutAttendance, filterStatus]);
 
-  // סטטיסטיקות מסמכים מכל הסוגים (עובדים, תלמידים, בקרה)
   const stats = useMemo(() => {
     let total = 0, pending = 0, approved = 0, rejected = 0;
     campAttendance.forEach((row: any) => {
       if (row.projectCode !== PROJECT_CODE) return;
-      // עובדים
       if (row.workerAttendanceDoc) {
         total++;
         if (row.workerAttendanceDoc.status === 'ממתין') pending++;
         else if (row.workerAttendanceDoc.status === 'מאושר') approved++;
         else if (row.workerAttendanceDoc.status === 'נדחה') rejected++;
       }
-      // תלמידים
       if (row.studentAttendanceDoc) {
         total++;
         if (row.studentAttendanceDoc.status === 'ממתין') pending++;
         else if (row.studentAttendanceDoc.status === 'מאושר') approved++;
         else if (row.studentAttendanceDoc.status === 'נדחה') rejected++;
       }
-      // בקרה (יכול להיות מערך)
       if (Array.isArray(row.controlDocs)) {
         row.controlDocs.forEach((doc: any) => {
           total++;
@@ -283,20 +263,16 @@ const SummerCampAttendancePage: React.FC = () => {
     return { total, pending, approved, rejected };
   }, [campAttendance]);
 
-  // עמודים (pagination)
   const [page, setPage] = useState(0);
   const rowsPerPage = 18;
   const paginatedData = useMemo(() => fullTableData.slice(page * rowsPerPage, (page + 1) * rowsPerPage), [fullTableData, page, rowsPerPage]);
 
-  // איפוס עמוד בכל שינוי סינון/חיפוש
   useEffect(() => {
     setPage(0);
   }, [searchTerm, filterInstitutionCode, filterClassCode, filterStatus, filterAccountant]);
 
-  // הוק לעדכון סטטוס מסמך נוכחות
   const { mutate: updateStatus, isPending: isUpdatingStatus } = useUpdateAttendanceDocumentStatus();
 
-  // פונקציה לצפייה במסמך (יצירת URL בלחיצה)
   const handleViewDocument = async (docId: string) => {
     try {
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/attendance/document/${docId}/url`, {
@@ -316,9 +292,7 @@ const SummerCampAttendancePage: React.FC = () => {
     }
   };
 
-  // שינוי סטטוס מסמך בפועל
   const handleApprove = (row: any) => {
-    // קבע איזה מסמך לאשר
     let docId = null;
     if (row.docType === 'workerAttendanceDoc' && row.workerAttendanceDoc?._id) docId = row.workerAttendanceDoc._id;
     else if (row.docType === 'studentAttendanceDoc' && row.studentAttendanceDoc?._id) docId = row.studentAttendanceDoc._id;
@@ -333,7 +307,6 @@ const SummerCampAttendancePage: React.FC = () => {
     if (docId) updateStatus({ documentId: docId, status: 'נדחה' });
   };
 
-  // פונקציה לצפייה במסמכי בקרה
   const handleViewControlDocuments = (controlDocs: any[], row: any) => {
     setControlDocsDialog({
       open: true,
@@ -342,7 +315,6 @@ const SummerCampAttendancePage: React.FC = () => {
     });
   };
 
-  // פונקציה לסגירת הדיאלוג
   const handleCloseControlDocsDialog = () => {
     setControlDocsDialog({
       open: false,
@@ -351,12 +323,10 @@ const SummerCampAttendancePage: React.FC = () => {
     });
   };
 
-  // פונקציה לאישור מסמך בודד
   const handleApproveSingleDoc = (doc: any) => {
     updateStatus({ documentId: doc._id, status: 'מאושר' });
   };
 
-  // פונקציה לדחיית מסמך בודד
   const handleRejectSingleDoc = (doc: any) => {
     updateStatus({ documentId: doc._id, status: 'נדחה' });
   };
@@ -368,7 +338,7 @@ const SummerCampAttendancePage: React.FC = () => {
   return (
     <Box sx={{ p: 4 }}>
 
-      {/* סרגל סינון מתקדם */}
+
       <Paper sx={{ p: 4, mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
         <TextField
           size="small"
@@ -420,7 +390,7 @@ const SummerCampAttendancePage: React.FC = () => {
       </Paper>
 
       <Grid container spacing={2}>
-        {/* קופסאות מידע קטנות בעמודה מימין */}
+
         <Grid item xs={12} md={2} lg={1} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', pr: 1 }}>
           <Stack spacing={1} sx={{ width: '100%' }}>
             <Card sx={{ minWidth: 60, p: 0.5, boxShadow: 1, borderRight: 3, borderColor: 'primary.main' }}>
@@ -449,7 +419,7 @@ const SummerCampAttendancePage: React.FC = () => {
             </Card>
           </Stack>
         </Grid>
-        {/* טבלה */}
+
         <Grid item xs={12} md={10} lg={11}>
           <TableContainer component={Paper} sx={{ boxShadow: 3, borderRadius: 2,minHeight: 600 }}>
             <Table size="small" stickyHeader>
@@ -469,32 +439,28 @@ const SummerCampAttendancePage: React.FC = () => {
                 {paginatedData.map((row: any) => {
                   const cls = row._class || classes.find((c: Class) => c._id === row.classId?._id || c._id === row.classId);
                   const leader = row.leaderId ? workers.find((w: WorkerAfterNoon) => w._id === row.leaderId?._id || w._id === row.leaderId) : null;
-                  // עובדים
                   const workerDoc = row.workerAttendanceDoc;
-                  // תלמידים
                   const studentDoc = row.studentAttendanceDoc;
-                  // בקרה
                   const controlDocs = row.controlDocs || [];
                   return (
                     <TableRow key={row._id} sx={{ height: 32 }}>
-                      {/* קוד מוסד */}
+
                       <TableCell sx={{ py: 0.2, minHeight: 28, maxHeight: 28, width: 60, minWidth: 60, maxWidth: 60 }}>{cls?.institutionCode || '-'}</TableCell>
-                      {/* סמל */}
+
                       <TableCell sx={{ py: 0.2, minHeight: 28, maxHeight: 28, width: 80, minWidth: 80, maxWidth: 80 }}>{cls?.uniqueSymbol || '-'}</TableCell>
-                      {/* שם */}
+
                       <TableCell sx={{ py: 0.2, minHeight: 28, maxHeight: 28, width: 180, minWidth: 120, maxWidth: 220 }}>{cls?.name || '-'}</TableCell>
-                      {/* רכז */}
+
                       <TableCell sx={{ py: 0.2, minHeight: 28, maxHeight: 28, width: 180, minWidth: 120, maxWidth: 220 }}>
                         {(() => {
-                          // מצא רכזים של קוד המוסד
                           const coordinators = users.filter((u: any) => u.role === 'coordinator' && Array.isArray(u.projectCodes) && u.projectCodes.some((pc: any) => pc.institutionCode === cls?.institutionCode));
                           if (coordinators.length === 0) return '-';
                           return coordinators.map((c: any) => `${c.firstName} ${c.lastName}`).join(', ');
                         })()}
                       </TableCell>
-                      {/* מוביל */}
+
                       <TableCell sx={{ py: 0.2, minHeight: 28, maxHeight: 28, width: 120, minWidth: 100, maxWidth: 160 }}>{leader ? `${leader.firstName} ${leader.lastName}` : '-'}</TableCell>
-                      {/* עובדים */}
+
                       <TableCell sx={{ py: 0.2, minHeight: 28, maxHeight: 28, width: 100, minWidth: 80, maxWidth: 120 }}>
                         {workerDoc && workerDoc.status === 'ממתין' ? (
                           <Stack direction="row" spacing={0.25} alignItems="center">
@@ -540,7 +506,7 @@ const SummerCampAttendancePage: React.FC = () => {
                           <Typography variant="body2" color="text.secondary">-</Typography>
                         )}
                       </TableCell>
-                      {/* תלמידים */}
+
                       <TableCell sx={{ py: 0.2, minHeight: 28, maxHeight: 28, width: 100, minWidth: 80, maxWidth: 120 }}>
                         {studentDoc && studentDoc.status === 'ממתין' ? (
                           <Stack direction="row" spacing={0.25} alignItems="center">
@@ -586,7 +552,7 @@ const SummerCampAttendancePage: React.FC = () => {
                           <Typography variant="body2" color="text.secondary">-</Typography>
                         )}
                       </TableCell>
-                      {/* בקרה */}
+
                       <TableCell sx={{ py: 0.2, minHeight: 28, maxHeight: 28, width: 100, minWidth: 80, maxWidth: 120 }}>
                         {controlDocs.length > 0 ? (
                           <Box>
@@ -604,7 +570,7 @@ const SummerCampAttendancePage: React.FC = () => {
                                 <Typography variant="caption" color="primary" sx={{ fontWeight: 'bold' }}>
                                   {controlDocs.length} 
                                 </Typography>
-                                {/* הצגת סטטוס כללי */}
+
                                 {controlDocs.every((doc: any) => doc.status === 'מאושר') && (
                                   <Chip label="כולם מאושרים" color="success" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
                                 )}
@@ -616,7 +582,6 @@ const SummerCampAttendancePage: React.FC = () => {
                                 )}
                               </Stack>
                             ) : (
-                              // מסמך בודד - הצגה רגילה
                               <Box display="flex" alignItems="center" gap={0.1}>
                                 {controlDocs[0].status === 'ממתין' ? (
                                   <>
@@ -700,7 +665,7 @@ const SummerCampAttendancePage: React.FC = () => {
         </Grid>
       </Grid>
       
-      {/* דיאלוג מסמכי בקרה */}
+
       <Dialog 
         open={controlDocsDialog.open} 
         onClose={handleCloseControlDocsDialog}

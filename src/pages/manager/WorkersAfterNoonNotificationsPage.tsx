@@ -37,7 +37,6 @@ import * as XLSX from 'xlsx';
 import { useQuery } from '@tanstack/react-query';
 import { attendanceService } from '../../services/attendanceService';
 
-// אייקונים
 import PersonIcon from '@mui/icons-material/Person';
 import ClassIcon from '@mui/icons-material/Class';
 import DescriptionIcon from '@mui/icons-material/Description';
@@ -59,7 +58,6 @@ const PROJECT_OPTIONS = [
   { value: '4', label: 'קייטנת קיץ 2025' },
 ];
 
-// קומפוננטה חדשה להורדות דוחות
 interface ReportsDownloadProps {
   workers: WorkerAfterNoon[];
   documents: any[];
@@ -68,14 +66,12 @@ interface ReportsDownloadProps {
 }
 
 const ReportsDownload: React.FC<ReportsDownloadProps> = ({ workers, documents, classes, selectedProject }) => {
-  // קבלת נתוני נוכחות קייטנה
   const { data: campAttendanceData = [] } = useQuery({
     queryKey: ['campAttendanceData'],
     queryFn: () => attendanceService.getCampAttendanceReports(),
     enabled: true
   });
 
-  // קבלת נתוני משתמשים (לרכזים)
   const { data: allUsers = [] } = useFetchAllUsers();
 
   const filteredWorkers = useMemo(() => {
@@ -105,29 +101,24 @@ const ReportsDownload: React.FC<ReportsDownloadProps> = ({ workers, documents, c
     const projectName = PROJECT_OPTIONS.find(p => p.value === selectedProject)?.label || '';
     
     const rows = filteredClasses.map(classItem => {
-      // מצא עובדים לכיתה זו
       const classWorkers = filteredWorkers.filter(worker => 
         classItem.workers?.some(w => w.workerId === worker._id)
       );
       
-      // מצא רכז לפי קוד מוסד
       const coordinator = allUsers.find((user: any) => 
         user.role === 'coordinator' && 
         user.projectCodes?.some((pc: any) => pc.institutionCode === classItem.institutionCode)
       );
 
-      // מצא חשב שכר לפי קוד מוסד
       const salaryAccount = allUsers.find((user: any) => 
         user.role === 'accountant' && 
         user.accountantInstitutionCodes?.includes(classItem.institutionCode)
       );
 
-      // מצא דוח נוכחות קייטנה לכיתה זו
       const campAttendanceRecord = campAttendanceData.find((record: any) => 
         record.classId?._id === classItem._id
       );
       
-      // יצירת עמודות דינמיות לעובדים - רק שם ותז
       const workerColumns: any = {};
       classWorkers.forEach((worker, index) => {
         workerColumns[`עובד ${index + 1} - שם`] = `${worker.firstName} ${worker.lastName}`;
@@ -171,12 +162,10 @@ const ReportsDownload: React.FC<ReportsDownloadProps> = ({ workers, documents, c
       const workerDocs = documents.filter(doc => doc.operatorId === worker._id);
       const projectName = PROJECT_OPTIONS.find(p => p.value === selectedProject)?.label || '';
       
-      // מצא כיתה של העובד
       const workerClass = filteredClasses.find(cls => 
         cls.workers?.some(w => w.workerId === worker._id)
       );
       
-      // מצא חשב שכר לפי קוד מוסד של הכיתה
       const salaryAccount = workerClass ? allUsers.find((user: any) => 
         user.role === 'accountant' && 
         user.accountantInstitutionCodes?.includes(workerClass.institutionCode)
@@ -188,7 +177,6 @@ const ReportsDownload: React.FC<ReportsDownloadProps> = ({ workers, documents, c
         return doc && doc.url ? '✓' : '✗';
       };
 
-      // לוגיקה מיוחדת לוותק - רק לרכזים
       const getVeteranStatus = () => {
         if (worker.roleName === 'רכז') {
           const doc = workerDocs.find(d => d.tag === 'אישור וותק');
@@ -197,7 +185,6 @@ const ReportsDownload: React.FC<ReportsDownloadProps> = ({ workers, documents, c
         return '-----';
       };
 
-      // לוגיקה מיוחדת לתעודת השכלה - לא נדרש לסייע/סייע משלים/מד״צ
       const getEducationStatus = () => {
         const rolesNotRequiringEducation = ['סייע', 'סייע משלים', 'מד״צ'];
         if (rolesNotRequiringEducation.includes(worker.roleName)) {
@@ -421,7 +408,6 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
   const { data: documents = [] } = useFetchAllDocuments();
   const { data: classes = [] } = useFetchClasses();
 
-  // סינון לפי פרויקט
   const filteredWorkers = useMemo(() => {
     if (!selectedProject) return workers;
     return workers.filter(worker => 
@@ -432,9 +418,7 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
   const filteredClasses = useMemo(() => {
     if (!selectedProject) return classes;
     return classes.filter((classItem: Class) => 
-      // בדוק אם יש עובדים בכיתה עם הפרויקט הנבחר
       classItem.workers?.some(w => w.project === parseInt(selectedProject)) ||
-      // או אם הכיתה עצמה מוגדרת לפרויקט
       (classItem.projectCodes && classItem.projectCodes.includes(parseInt(selectedProject)))
     );
   }, [classes, selectedProject]);
@@ -445,14 +429,12 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
     return documents.filter(doc => filteredWorkerIds.includes(doc.operatorId));
   }, [documents, filteredWorkers]);
 
-  // חישוב סטטיסטיקות כלליות
   const statistics = useMemo(() => {
     const totalWorkers = filteredWorkers.length;
     const activeWorkers = filteredWorkers.filter(w => w.isActive).length;
     const totalClasses = filteredClasses.length;
     const classesWithWorkers = filteredClasses.filter((c: Class) => c.workers && c.workers.length > 0).length;
     
-    // חישוב מסמכים
     const workersWithAllDocs = filteredWorkers.filter(worker => {
       const workerDocs = filteredDocuments.filter(doc => doc.operatorId === worker._id);
       return REQUIRED_DOCUMENTS.every(tag => 
@@ -465,7 +447,6 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
       return REQUIRED_DOCUMENTS.some(tag => !workerDocs.some(doc => doc.tag === tag));
     }).length;
 
-    // חישוב מסמכים לפי סטטוס
     const approvedDocs = filteredDocuments.filter(doc => doc.status === DocumentStatus.APPROVED).length;
     const pendingDocs = filteredDocuments.filter(doc => doc.status === DocumentStatus.PENDING).length;
     const rejectedDocs = filteredDocuments.filter(doc => doc.status === DocumentStatus.REJECTED).length;
@@ -484,7 +465,6 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
     };
   }, [filteredWorkers, filteredClasses, filteredDocuments]);
 
-  // עובדים עם מסמכים חסרים
   const workersWithMissingDocs = useMemo(() => {
     return filteredWorkers.filter(worker => {
       const workerDocs = filteredDocuments.filter(doc => doc.operatorId === worker._id);
@@ -497,14 +477,12 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
     }));
   }, [filteredWorkers, filteredDocuments]);
 
-  // כיתות ללא עובדים
   const classesWithoutWorkers = useMemo(() => {
     return filteredClasses.filter((classItem: Class) => {
       return !classItem.workers || classItem.workers.length === 0;
     });
   }, [filteredClasses]);
 
-  // עובדים ללא כיתה
   const workersWithoutClass = useMemo(() => {
     return filteredWorkers.filter(worker => {
       return !filteredClasses.some((c: Class) => 
@@ -513,7 +491,6 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
     });
   }, [filteredWorkers, filteredClasses, selectedProject]);
 
-  // התראות חשובות
   const importantAlerts = useMemo(() => {
     const alerts = [];
     
@@ -570,7 +547,7 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
 
   return (
     <Box sx={{ p: 3, mt:5 }}>
-      {/* סינון לפי פרויקט - מובלט יותר */}
+
       <Card sx={{ 
         mb: 3, 
         bgcolor: 'primary.50', 
@@ -619,7 +596,7 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* התראות חשובות */}
+
       {importantAlerts.length > 0 && (
         <Box sx={{ mb: 3 }}>
           <Grid container spacing={2}>
@@ -657,7 +634,7 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
         </Box>
       )}
 
-      {/* סטטיסטיקות כלליות */}
+
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} md={3}>
           <Card sx={{ bgcolor: 'primary.50', border: '2px solid', borderColor: 'primary.main' }}>
@@ -759,7 +736,7 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* הורדות דוחות */}
+
       <ReportsDownload 
         workers={workers} 
         documents={documents} 
@@ -774,7 +751,7 @@ const WorkersAfterNoonNotificationsPage: React.FC = () => {
         workers={workers}
       />
 
-      {/* דיאלוג פרטי התראה */}
+
       <Dialog 
         open={detailsDialogOpen} 
         onClose={() => {

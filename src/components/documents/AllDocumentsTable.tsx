@@ -72,17 +72,13 @@ const getStatusChip = (status: DocumentStatus) => {
 const getRequiredDocumentsForWorker = (worker: WorkerAfterNoon) => {
   const baseDocuments = ['אישור משטרה', 'חוזה', 'תעודת זהות'];
   
-  // תעודת השכלה נדרשת רק עבור מובילים ורכזים
   if (worker.roleName && (worker.roleName.includes('מוביל') || worker.roleName.includes('רכז'))) {
-    // אם התפקיד הוא רכז - צריך גם אישור וותק
     if (worker.roleName.includes('רכז')) {
       return [...baseDocuments, 'תעודת השכלה', 'אישור וותק'];
     }
-    // אם התפקיד הוא מוביל - רק תעודת השכלה
     return [...baseDocuments, 'תעודת השכלה'];
   }
   
-  // אחרת - רק מסמכים בסיסיים
   return baseDocuments;
 };
 
@@ -137,7 +133,6 @@ const AllDocumentsTable: React.FC = () => {
     { value: '4', label: 'קייטנת קיץ 2025' },
   ];
 
-  // אפשרויות קודי מוסד עם שמות
   const institutionOptions = useMemo(() => {
     const institutionMap = new Map<string, { code: string; name: string }>();
     classes.forEach((cls: Class) => {
@@ -159,7 +154,6 @@ const AllDocumentsTable: React.FC = () => {
     ];
   }, [classes]);
 
-  // אפשרויות סמלי כיתה עם שמות
   const classCodeOptions = useMemo(() => {
     const classMap = new Map<string, { symbol: string; name: string }>();
     classes.forEach((cls: Class) => {
@@ -181,12 +175,10 @@ const AllDocumentsTable: React.FC = () => {
     ];
   }, [classes]);
 
-  // אפשרויות תפקידים
   const roleOptions = useMemo(() => {
     const roles = new Set<string>();
     workers.forEach(worker => {
       if (worker.roleName) {
-        // נרמול התפקיד - הסרת רווחים מיותרים ותווי בלתי נראים
         const normalizedRole = worker.roleName.trim();
         if (normalizedRole) {
           roles.add(normalizedRole);
@@ -199,7 +191,6 @@ const AllDocumentsTable: React.FC = () => {
     ];
   }, [workers]);
 
-  // אפשרויות חשבי שכר מתוך המשתמשים
   const accountantUserOptions = useMemo(() => {
     return [
       { value: '', label: 'כל חשבי השכר', accountant: null },
@@ -224,7 +215,6 @@ const AllDocumentsTable: React.FC = () => {
     
       const projectMatch = !filterProject || (worker.projectCodes && worker.projectCodes.includes(parseInt(filterProject)));
       
-      // סינון לפי חשב שכר
       let accountantMatch = true;
       if (filterAccountant) {
         const accountant = users.find((u: any) => u._id === filterAccountant && u.role === 'accountant');
@@ -239,7 +229,6 @@ const AllDocumentsTable: React.FC = () => {
         }
       }
 
-      // סינון לפי קוד מוסד
       let institutionMatch = true;
       if (filterInstitutionCode) {
         const workerClasses = classes.filter((cls: any) =>
@@ -248,7 +237,6 @@ const AllDocumentsTable: React.FC = () => {
         institutionMatch = workerClasses.some((cls: any) => cls.institutionCode === filterInstitutionCode);
       }
 
-      // סינון לפי סמל כיתה
       let classCodeMatch = true;
       if (filterClassCode) {
         const workerClasses = classes.filter((cls: Class) =>
@@ -257,7 +245,6 @@ const AllDocumentsTable: React.FC = () => {
         classCodeMatch = workerClasses.some((cls: Class) => cls.uniqueSymbol === filterClassCode);
       }
 
-      // סינון לפי תפקיד
       const roleMatch = !filterRole || worker.roleName === filterRole;
 
       if (!nameMatch || !projectMatch || !accountantMatch || !institutionMatch || !classCodeMatch || !roleMatch) return false;
@@ -278,7 +265,6 @@ const AllDocumentsTable: React.FC = () => {
     setPage(newPage);
   };
 
-  // סטטיסטיקות מותאמות לסינון
   const filteredWorkers = workers.filter(worker => {
     const searchLower = searchTerm.toLowerCase();
     const nameMatch = !searchTerm ||
@@ -319,13 +305,11 @@ const AllDocumentsTable: React.FC = () => {
       classCodeMatch = workerClasses.some((cls: any) => cls.uniqueSymbol === filterClassCode);
     }
 
-    // סינון לפי תפקיד
     const roleMatch = !filterRole || worker.roleName === filterRole;
     
     return nameMatch && projectMatch && accountantMatch && institutionMatch && classCodeMatch && roleMatch;
   });
 
-  // מסמכים של העובדים המסוננים
   const filteredDocuments = personalDocuments.filter(doc => {
     const worker = workers.find(w => w._id === doc.operatorId);
     if (!worker) return false;
@@ -419,7 +403,6 @@ const AllDocumentsTable: React.FC = () => {
     navigate(`/workers/${workerId}`);
   };
 
-  // פונקציה ליצירת תגיות סינון פעילות
   const getActiveFilters = () => {
     const filters = [];
     
@@ -495,7 +478,7 @@ const AllDocumentsTable: React.FC = () => {
   return (
     <MainContainer>
       
-      {/* סרגל סינון מתקדם בראש העמוד */}
+
       <FilterCard>
         <FilterHeader>
           <FilterTitle variant="h6">
@@ -647,7 +630,7 @@ const AllDocumentsTable: React.FC = () => {
                   </Grid>
         </FilterCard>
 
-      {/* הטבלה והסטטיסטיקות */}
+
       <Grid container spacing={2}>
         <Grid item xs={16} md={11}>
           <Card component={Paper} elevation={3}>
@@ -697,7 +680,7 @@ const AllDocumentsTable: React.FC = () => {
                           <SmallTypography variant="body2">חסר</SmallTypography>
                         )}
                       </TableCell>
-                      {/* אישור משטרה */}
+
                       <TableCell>
                         {(() => {
                           const doc = docs['אישור משטרה'];
@@ -735,7 +718,7 @@ const AllDocumentsTable: React.FC = () => {
                         })()}
                       </TableCell>
                       
-                      {/* תעודת השכלה */}
+
                       <TableCell>
                         {(() => {
                           const requiredDocs = getRequiredDocumentsForWorker(worker);
@@ -784,7 +767,7 @@ const AllDocumentsTable: React.FC = () => {
                         })()}
                       </TableCell>
                       
-                      {/* חוזה */}
+
                       <TableCell>
                         {(() => {
                           const doc = docs['חוזה'];
@@ -822,7 +805,7 @@ const AllDocumentsTable: React.FC = () => {
                         })()}
                       </TableCell>
                       
-                      {/* תעודת זהות */}
+
                       <TableCell>
                         {(() => {
                           const doc = docs['תעודת זהות'];
@@ -860,7 +843,7 @@ const AllDocumentsTable: React.FC = () => {
                         })()}
                       </TableCell>
                       
-                      {/* אישור וותק */}
+
                       <TableCell>
                         {(() => {
                           const requiredDocs = getRequiredDocumentsForWorker(worker);
@@ -906,10 +889,9 @@ const AllDocumentsTable: React.FC = () => {
                           );
                         })()}
                       </TableCell>
-                      {/* אישור רפואי */}
+
                       <TableCell>
                         {(() => {
-                          // הצגה רק אם התפקיד הוא מד"צ
                           if (worker.roleName && worker.roleName.includes('מד"צ')) {
                             const doc = docs['אישור רפואי'];
                             return doc ? (
@@ -944,7 +926,6 @@ const AllDocumentsTable: React.FC = () => {
                               </Tooltip>
                             );
                           }
-                          // אם לא נדרש
                           return (
                             <Tooltip title="לא נדרש">
                               <UploadButton size="small">-----</UploadButton>
@@ -952,10 +933,9 @@ const AllDocumentsTable: React.FC = () => {
                           );
                         })()}
                       </TableCell>
-                      {/* נוכחות קייטנת קיץ */}
+
                       <TableCell>
                         {(() => {
-                          // הצגה רק אם התפקיד הוא רכז או סגן רכז
                           if (worker.roleName && (worker.roleName.includes('רכז') || worker.roleName.includes('סגן רכז'))) {
                             const doc = docs['נוכחות קייטנה רכז'];
                             return doc ? (
@@ -990,7 +970,6 @@ const AllDocumentsTable: React.FC = () => {
                               </Tooltip>
                             );
                           }
-                          // אם לא נדרש
                           return (
                             <Tooltip title="לא נדרש">
                               <UploadButton size="small">-----</UploadButton>
@@ -1018,7 +997,7 @@ const AllDocumentsTable: React.FC = () => {
       </Card>
         </Grid>
         <Grid item xs={8} md={1}>
-          {/* סטטיסטיקות לצד הטבלה */}
+
           <Stack spacing={2}>
             <DownloadCard onClick={() => setIsDownloadDialogOpen(true)}>
               <CenteredCardContent>

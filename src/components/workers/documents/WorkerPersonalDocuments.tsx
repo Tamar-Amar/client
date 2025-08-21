@@ -75,26 +75,21 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
   ];
 
   const getMissingDocuments = () => {
-    // נרמול התפקיד לצורך קביעת מסמכים נדרשים
     const normalizedRole = workerRoleName?.trim().replace(/\s+/g, ' ');
     let filteredRequiredDocuments = requiredDocuments;
 
-    // תעודת השכלה רק למוביל/רכז/סגן רכז
     if (!(normalizedRole && (normalizedRole.includes('מוביל') || normalizedRole.includes('רכז') || normalizedRole.includes('סגן רכז')))) {
       filteredRequiredDocuments = filteredRequiredDocuments.filter(doc => doc.tag !== 'תעודת השכלה');
     }
 
-    // אישור רפואי רק למד"צ
     if (!(normalizedRole && normalizedRole.includes('מד"צ'))) {
       filteredRequiredDocuments = filteredRequiredDocuments.filter(doc => doc.tag !== 'אישור רפואי');
     }
 
-    // נוכחות קייטנה רכז רק לרכז/סגן רכז
     if (!(normalizedRole && (normalizedRole.includes('רכז') || normalizedRole.includes('סגן רכז')))) {
       filteredRequiredDocuments = filteredRequiredDocuments.filter(doc => doc.tag !== 'נוכחות קייטנה רכז');
     }
 
-    // אישור וותק רק לרכז
     if (!(normalizedRole && normalizedRole.includes('רכז'))) {
       filteredRequiredDocuments = filteredRequiredDocuments.filter(doc => doc.tag !== 'אישור וותק');
     }
@@ -107,24 +102,19 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
 
   const missingDocs = getMissingDocuments();
 
-  // פונקציה לקבלת סוגי מסמכים זמינים להעלאה
   const getAvailableDocumentTypes = () => {
     const normalizedRole = workerRoleName?.trim().replace(/\s+/g, ' ');
     
-    // מסמכים בסיסיים לכל העובדים
     let filteredDocTags = [...REQUIRED_DOC_TAGS];
     
-    // תעודת השכלה נדרשת רק עבור מובילים ורכזים
     if (normalizedRole && (normalizedRole.includes('מוביל') || normalizedRole.includes('רכז'))) {
       filteredDocTags.push('תעודת השכלה');
     }
 
-    // אישור וותק נדרש רק עבור רכזים
     if (normalizedRole && normalizedRole.includes('רכז')) {
       filteredDocTags.push('אישור וותק');
     }
     
-    // הסר סוגי מסמכים שכבר קיימים אצל העובד (לא משנה מה הסטטוס)
     const existingDocTags = documents.map(doc => doc.tag);
     return filteredDocTags.filter(tag => !existingDocTags.includes(tag));
   };
@@ -134,7 +124,6 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
   const [docToDelete, setDocToDelete] = useState<any>(null);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
-  // שליפת העובד מה-localStorage
   const currentWorker = JSON.parse(localStorage.getItem("user") || "{}");
 
   const refetchDocuments = async () => {
@@ -166,7 +155,7 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      {/* דיאלוג העלאת מסמך חדש */}
+
       <UploadWorkerDocumentDialog
         open={uploadDialogOpen}
         onClose={() => setUploadDialogOpen(false)}
@@ -176,7 +165,7 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
         setDialogOpen={setUploadDialogOpen}
       />
 
-      {/* דיאלוג אישור מחיקת מסמך */}
+
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
         <DialogTitle>אישור מחיקת מסמך</DialogTitle>
         <DialogContent>
@@ -188,7 +177,7 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
         </DialogActions>
       </Dialog>
       
-      {/* אזהרת טופס 101 */}
+
       {!is101 && (
         <Alert severity="warning" sx={{ mt: 2, mb: 3 }}>
           <AlertTitle>שימו לב</AlertTitle>
@@ -225,7 +214,7 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
         </Grid>
         {/* Main table - now on the left */}
         <Grid item xs={12} md={9} order={{ xs: 2, md: 1 }}>
-          {/* מסמכים חסרים */}
+
           {missingDocs.length > 0 && (
             <Paper sx={{
               p: 1.5,
@@ -267,7 +256,7 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
             </Paper>
           )}
 
-          {/* טבלת מסמכים */}
+
           <Paper sx={{ 
             p: 2, 
             borderRadius: 2,

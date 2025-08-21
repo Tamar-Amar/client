@@ -199,7 +199,6 @@ export const attendanceService = {
       return response.data;
     },
 
-  // פונקציות לדוחות נוכחות אישיים
   getPersonalAttendanceReports: async () => {
     const response = await axiosInstance.get(`${API_URL}/personal`, {
       headers: { 

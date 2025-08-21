@@ -161,7 +161,6 @@ const UsersManagementPage: React.FC = () => {
   const [institutionNames, setInstitutionNames] = useState<string[]>([]);
   const [loadingInstitutions, setLoadingInstitutions] = useState(false);
   
-  // ייבוא רכזים
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<number>(1);
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -169,11 +168,9 @@ const UsersManagementPage: React.FC = () => {
   const [importError, setImportError] = useState('');
   const [importSuccess, setImportSuccess] = useState('');
 
-  // סינון לפי תפקיד
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
-  // דיאלוג פרטים מלאים
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedUserForDetails, setSelectedUserForDetails] = useState<User | null>(null);
 
@@ -184,15 +181,12 @@ const UsersManagementPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // סינון המשתמשים לפי התפקיד שנבחר וחיפוש חופשי
     let filtered = users;
     
-    // סינון לפי תפקיד
     if (roleFilter !== 'all') {
       filtered = filtered.filter(user => user.role === roleFilter);
     }
     
-    // סינון לפי חיפוש חופשי
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter(user => 
@@ -227,7 +221,6 @@ const UsersManagementPage: React.FC = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      // יצירת Map של קוד מוסד -> שם מוסד
       const institutionMap = new Map<string, string>();
       response.data.forEach((cls: any) => {
         if (cls.institutionCode && cls.institutionName) {
@@ -344,7 +337,6 @@ const UsersManagementPage: React.FC = () => {
       [field]: value
     };
     
-    // אם השתנה קוד המוסד, עדכן גם את שם המוסד
     if (field === 'institutionCode') {
       const codeIndex = institutionCodes.indexOf(value as string);
       if (codeIndex !== -1) {
@@ -418,7 +410,6 @@ const UsersManagementPage: React.FC = () => {
     return new Date(dateString).toLocaleDateString('he-IL');
   };
 
-  // פונקציות ייבוא רכזים
   const handleImportDialogOpen = () => {
     setImportDialogOpen(true);
     setImportError('');
@@ -481,7 +472,6 @@ const UsersManagementPage: React.FC = () => {
     }
   };
 
-  // פונקציות לטיפול בדיאלוג פרטים מלאים
   const handleOpenDetailsDialog = (user: User) => {
     setSelectedUserForDetails(user);
     setDetailsDialogOpen(true);
@@ -492,7 +482,6 @@ const UsersManagementPage: React.FC = () => {
     setSelectedUserForDetails(null);
   };
 
-  // פונקציה להצגת מספר מוגבל של פריטים
   const renderLimitedItems = (items: any[], maxItems: number = 2) => {
     if (items.length <= maxItems) {
       return items;
@@ -510,7 +499,7 @@ const UsersManagementPage: React.FC = () => {
 
   return (
     <Box sx={{ p: 3, mt: 5 }}>
-        {/* שורת הכפתורים והסינון */}
+
         <Box sx={{ 
           display: 'flex', 
           flexDirection: 'row',
@@ -686,7 +675,6 @@ const UsersManagementPage: React.FC = () => {
                     {user.role === 'coordinator' && user.projectCodes && user.projectCodes.length > 0 ? (
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                         {(() => {
-                          // קיבוץ לפי פרויקט
                           const groupedByProject = user.projectCodes.reduce((acc, assignment) => {
                             const projectCode = assignment.projectCode;
                             if (!acc[projectCode]) {
@@ -976,7 +964,7 @@ const UsersManagementPage: React.FC = () => {
               </Select>
             </FormControl>
 
-            {/* שיוכי פרויקטים - רק לרכזים */}
+
             {formData.role === 'coordinator' && (
               <Box sx={{ mt: 3 }}>
                 <Typography variant="h6" gutterBottom>
@@ -1053,7 +1041,7 @@ const UsersManagementPage: React.FC = () => {
               </Box>
             )}
 
-            {/* קודי מוסד לחשבי שכר */}
+
             {formData.role === 'accountant' && (
               <Box sx={{ mt: 3 }}>
                 <Typography variant="h6" gutterBottom>
@@ -1111,7 +1099,7 @@ const UsersManagementPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* דיאלוג ייבוא רכזים */}
+
       <Dialog open={importDialogOpen} onClose={handleImportDialogClose} maxWidth="sm" fullWidth>
         <DialogTitle>
           ייבוא רכזים מקובץ אקסל
@@ -1189,7 +1177,7 @@ const UsersManagementPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* דיאלוג פרטים מלאים */}
+
       <Dialog open={detailsDialogOpen} onClose={handleCloseDetailsDialog} maxWidth="md" fullWidth>
         <DialogTitle>
           פרטים מלאים - {selectedUserForDetails ? `${selectedUserForDetails.firstName} ${selectedUserForDetails.lastName}` : ''}
@@ -1198,7 +1186,7 @@ const UsersManagementPage: React.FC = () => {
           {selectedUserForDetails && (
             <Box sx={{ pt: 1 }}>
               <Grid container spacing={3}>
-                {/* פרטי משתמש בסיסיים */}
+
                 <Grid item xs={12} md={6}>
                   <Card variant="outlined">
                     <CardContent>
@@ -1232,7 +1220,7 @@ const UsersManagementPage: React.FC = () => {
                   </Card>
                 </Grid>
 
-                {/* שיוכי פרויקטים */}
+
                 {selectedUserForDetails.role === 'coordinator' && selectedUserForDetails.projectCodes && selectedUserForDetails.projectCodes.length > 0 && (
                   <Grid item xs={12} md={6}>
                     <Card variant="outlined">
@@ -1242,7 +1230,6 @@ const UsersManagementPage: React.FC = () => {
                         </Typography>
                         <List dense>
                           {(() => {
-                            // קיבוץ לפי פרויקט
                             const groupedByProject = selectedUserForDetails.projectCodes.reduce((acc, assignment) => {
                               const projectCode = assignment.projectCode;
                               if (!acc[projectCode]) {
@@ -1280,7 +1267,7 @@ const UsersManagementPage: React.FC = () => {
                   </Grid>
                 )}
 
-                {/* קודי מוסד לחשבי שכר */}
+
                 {selectedUserForDetails.role === 'accountant' && selectedUserForDetails.accountantInstitutionCodes && selectedUserForDetails.accountantInstitutionCodes.length > 0 && (
                   <Grid item xs={12} md={6}>
                     <Card variant="outlined">

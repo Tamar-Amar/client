@@ -35,7 +35,6 @@ const DownloadReportDialog: React.FC<Props> = ({ open, onClose, workers, documen
       Array.isArray(cls.workers) && cls.workers.some(w => w.workerId === worker._id)
     );
     
-    // מצא את הכיתה של הפרויקט הנבחר
     const projectClass = workerClasses.find(cls => 
       cls.projectCodes && cls.projectCodes.includes(parseInt(selectedProject))
     );

@@ -38,7 +38,6 @@ const MainNav: React.FC = () => {
   const adminGeneralTabs: TabInfo[] = [
     { label: 'ניהול עובדים', path: '/workers' },
     { label: 'מצבת', path: '/matsevet' },
-   // { label: 'ניהול קבוצות', path: '/classes', icon: <GroupWorkIcon fontSize="small" /> },
     { label: ' מסמכים אישיים', path: '/documents', },
     { label: 'הורדת מסמכים', path: '/download-doc' },
     { label: 'דיווחי קיץ', path: '/summer-camp-attendance' },
@@ -50,7 +49,6 @@ const MainNav: React.FC = () => {
   const adminActivityTabs: TabInfo[] = [
     { label: 'דוח הפעלות', path: '/activities' },
     { label: 'ניהול מפעילים', path: '/operators' },
-    //{ label: 'ניהול קבוצות', path: '/classes', icon: <GroupWorkIcon fontSize="small" /> },
     { label: ' מסמכים אישיים', path: '/documents' },
     { label: 'הורדת מסמכים', path: '/download-doc' },
     { label: 'מיילים', path: '/emails' },
@@ -121,7 +119,6 @@ const MainNav: React.FC = () => {
               idNumber: data.id || ''
             });
             
-            // בדיקה אם העובד הוא מוביל
             if (data.roleName === 'מוביל') {
               setIsLeader(true);
             }
@@ -352,7 +349,7 @@ const MainNav: React.FC = () => {
               </Box>
            )}
 
-          {/* תפריט למוביל */}
+
           {role === 'worker' && isLeader && tabs.length === 0 && (
             <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
               <Button
@@ -442,7 +439,7 @@ const MainNav: React.FC = () => {
           <Button onClick={() => setImpersonateDialogOpen(false)} sx={{ mt: 2 }}>סגור</Button>
         </Box>
       </Dialog>
-      {/* דיאלוג התחזות אמיתי */}
+
       <ImpersonateDialog
         open={impersonateDialogOpen}
         onClose={() => setImpersonateDialogOpen(false)}

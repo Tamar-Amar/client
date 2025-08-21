@@ -2,7 +2,6 @@ import { WorkerAfterNoon } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL+ '/api/worker-after-noon' || "https://server-manage.onrender.com" + '/api/worker-after-noon';
 
-// פונקציה לקבלת headers עם token
 const getHeaders = () => {
   const token = localStorage.getItem('token');
   return {

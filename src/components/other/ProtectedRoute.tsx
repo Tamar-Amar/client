@@ -43,17 +43,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
     }
   }, []);
   
-  // עדיין בודקים טוקן
   if (isTokenValid === null) {
     return <div>טוען...</div>;
   }
   
-  // טוקן לא תקף
   if (!isTokenValid) {
     return <Navigate to="/login" replace />;
   }
   
-  // אין role או role לא מורשה
   if (!userRole || !allowedRoles.includes(userRole)) {
     return <Navigate to="/" replace />; 
   }

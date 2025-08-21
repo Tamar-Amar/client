@@ -112,10 +112,10 @@ const handleRemoveClassFromDay = (day: string, classId: string) => {
           const selectedClass = null; // לאתחל ערך ברירת מחדל לבחירת סמל חדש
           return (
             <TableRow key={schedule.day}>
-              {/* יום בשבוע */}
+
               <TableCell>{schedule.day}</TableCell>
 
-              {/* סמלים קיימים */}
+
               <TableCell>
                 <Box display="flex" flexDirection="column" gap={1}>
                   {schedule.classes.length > 0 ? (
@@ -142,7 +142,7 @@ const handleRemoveClassFromDay = (day: string, classId: string) => {
                 </Box>
               </TableCell>
 
-              {/* הוספת סמל חדש */}
+
               <TableCell>
                 <Autocomplete
                   options={availableClasses} // שימוש ברשימת סמלים שלא נמצאים במערכת של אף מפעיל
@@ -205,7 +205,7 @@ const handleRemoveClassFromDay = (day: string, classId: string) => {
         </Table>
       </TableContainer>
 
-      {/* דיאלוג הוספת פעילות עם המפעיל הנוכחי כברירת מחדל */}
+
       {/* <AddActivity open={openDialog} onClose={handleCloseDialog} onAdd={() => {}} defaultOperatorId={operator._id} /> */}
     </Paper>
   );

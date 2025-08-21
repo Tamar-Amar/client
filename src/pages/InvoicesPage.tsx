@@ -12,7 +12,7 @@ const InvoicesPage: React.FC = () => {
   return (
     <div>
       <h1>ניהול חשבוניות</h1>
-      {/* כפתור לפתיחת החלון */}
+
       <Button
         variant="contained"
         color="primary"
@@ -22,10 +22,10 @@ const InvoicesPage: React.FC = () => {
         הוספת חשבונית חדשה
       </Button>
       
-      {/* רשימת מפעילים */}
+
       <InvoiceList />
 
-      {/* פופאפ של הוספת מפעיל */}
+
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
         <DialogTitle>הוספת חשבונית חדשה</DialogTitle>
         <DialogContent>

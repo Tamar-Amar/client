@@ -37,7 +37,7 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd, operato
     >
       <DialogTitle>דיווח נוכחות</DialogTitle>
       <DialogContent>
-        {/* שלב ראשון: בחירת סוג דיווח */}
+
         <Box mb={2}>
           <RadioGroup
             value={selectedOption}
@@ -46,13 +46,13 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd, operato
           >
             <FormControlLabel value="pdf" control={<Radio />} label="מילוי דוח PDF" />
             <FormControlLabel value="weekly" control={<Radio />} label="דיווח שבועי" />
-            {/* <FormControlLabel value="single" control={<Radio />} label="דיווח יחיד" /> */}
+
           </RadioGroup>
         </Box>
 
         <Divider sx={{ my: 2 }} />
 
-        {/* שלב שני: בחירת חודש ומפעיל */}
+
         <MonthAndOperatorPickers
           selectedMonth={selectedMonth}
           onSelectedMonthChange={setSelectedMonth}
@@ -66,7 +66,7 @@ const AddActivity: React.FC<AddActivityProps> = ({ open, onClose, onAdd, operato
 
         <Divider sx={{ my: 2 }} />
 
-        {/* שלב שלישי: טופס דיווח */}
+
         {selectedOption === 'weekly' && (
           <WeeklyForm
             onAdd={onAdd}

@@ -140,7 +140,6 @@ export const useWorkerDocuments = (workerId: string) => {
   };
 };
 
-// הוקים חדשים לניהול מסמכים מתקדם
 
 export const useDocumentStats = () => {
   return useQuery({
@@ -166,7 +165,6 @@ export const useDocumentTypes = () => {
 
 
 
-// מוטציות לניהול מסמכים מתקדם
 
 export const useDownloadMultipleDocuments = () => {
   return useMutation({
@@ -191,7 +189,6 @@ export const useDownloadMultipleDocuments = () => {
       return response.data;
     },
     onSuccess: (blob) => {
-      // יצירת URL להורדת ה-ZIP
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -217,7 +214,6 @@ export const useBulkUpdateDocumentStatus = () => {
       return response.data;
     },
     onSuccess: () => {
-      // רענון כל הקוויריז הקשורים למסמכים
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       queryClient.invalidateQueries({ queryKey: ['documentStats'] });
       queryClient.invalidateQueries({ queryKey: ['documentsWithFilters'] });
@@ -236,7 +232,6 @@ export const useBulkDeleteDocuments = () => {
       return response.data;
     },
     onSuccess: () => {
-      // רענון כל הקוויריז הקשורים למסמכים
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       queryClient.invalidateQueries({ queryKey: ['documentStats'] });
       queryClient.invalidateQueries({ queryKey: ['documentsWithFilters'] });

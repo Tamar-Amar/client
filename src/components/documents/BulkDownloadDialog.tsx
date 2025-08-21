@@ -108,7 +108,7 @@ const BulkDownloadDialog: React.FC<BulkDownloadDialogProps> = ({
 
         <DialogContent>
           <Stack spacing={3}>
-            {/* בחירת מצב הורדה */}
+
             <Box>
               <Typography variant="subtitle1" gutterBottom>
                 בחר מצב הורדה:
@@ -132,7 +132,7 @@ const BulkDownloadDialog: React.FC<BulkDownloadDialogProps> = ({
 
             <Divider />
 
-            {/* פילטרים */}
+
             {downloadMode === 'filtered' && (
               <Box>
                 <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
@@ -229,7 +229,7 @@ const BulkDownloadDialog: React.FC<BulkDownloadDialogProps> = ({
                   </Grid>
                 </Grid>
 
-                {/* תצוגת פילטרים פעילים */}
+
                 {hasActiveFilters && (
                   <Box sx={{ mt: 2 }}>
                     <Typography variant="body2" color="textSecondary" gutterBottom>
@@ -281,7 +281,7 @@ const BulkDownloadDialog: React.FC<BulkDownloadDialogProps> = ({
               </Box>
             )}
 
-            {/* הודעות */}
+
             {downloadMode === 'selected' && selectedDocumentIds.length === 0 && (
               <Alert severity="warning">
                 לא נבחרו מסמכים להורדה

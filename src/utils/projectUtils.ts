@@ -1,4 +1,3 @@
-// פונקציות עזר לעבודה עם פרויקטים
 
 export const projectNames: { [key: number]: string } = {
   1: "צהרון שוטף 2025",
@@ -7,7 +6,6 @@ export const projectNames: { [key: number]: string } = {
   4: "קייטנת קיץ 2025"
 };
 
-// המרת שדות בוליאניים ישנים ל-projectCodes
 export const convertBooleanFieldsToProjectCodes = (worker: any): number[] => {
   const projectCodes: number[] = [];
   
@@ -19,7 +17,6 @@ export const convertBooleanFieldsToProjectCodes = (worker: any): number[] => {
   return projectCodes;
 };
 
-// בדיקה אם עובד שייך לפרויקט מסוים
 export const isWorkerInProject = (worker: any, projectCode: number): boolean => {
   if (!worker.projectCodes || !Array.isArray(worker.projectCodes)) {
     return false;
@@ -27,7 +24,6 @@ export const isWorkerInProject = (worker: any, projectCode: number): boolean => 
   return worker.projectCodes.includes(projectCode);
 };
 
-// קבלת שמות הפרויקטים של עובד
 export const getWorkerProjectNames = (worker: any): string[] => {
   if (!worker.projectCodes || !Array.isArray(worker.projectCodes)) {
     return [];
@@ -38,12 +34,10 @@ export const getWorkerProjectNames = (worker: any): string[] => {
     .filter(Boolean);
 };
 
-// בדיקה אם עובד פעיל בפרויקטים
 export const hasActiveProjects = (worker: any): boolean => {
   return worker.projectCodes && Array.isArray(worker.projectCodes) && worker.projectCodes.length > 0;
 };
 
-// קבלת מספר הפרויקטים של עובד
 export const getWorkerProjectCount = (worker: any): number => {
   if (!worker.projectCodes || !Array.isArray(worker.projectCodes)) {
     return 0;

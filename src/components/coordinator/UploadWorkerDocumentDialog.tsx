@@ -43,7 +43,6 @@ const UploadWorkerDocumentDialog: React.FC<Props> = ({
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // אילו סוגי מסמכים להציע
   const availableDocTypes = useMemo(() => {
     if (!worker) return [];
     const normalizedRole = worker.roleName?.trim().replace(/\s+/g, ' ');
@@ -65,13 +64,11 @@ const UploadWorkerDocumentDialog: React.FC<Props> = ({
     if (normalizedRole && normalizedRole.includes('מד"צ')) {
       requiredDocuments.push(DocumentType.MEDICAL_APPROVAL);
     }
-    // הסר סוגי מסמכים שכבר קיימים
     const workerDocs = allWorkerDocuments.filter(doc => doc.operatorId === worker._id);
     const existingTags = workerDocs.map(doc => doc.tag);
     return requiredDocuments.filter(tag => !existingTags.includes(tag));
   }, [worker, allWorkerDocuments]);
 
-  // בדוק אם כבר קיים מסמך כזה
   const isDocExists = useMemo(() => {
     if (!worker || !selectedDocumentType) return false;
     const workerDocs = allWorkerDocuments.filter(doc => doc.operatorId === worker._id);
@@ -113,7 +110,6 @@ const UploadWorkerDocumentDialog: React.FC<Props> = ({
     }
   };
 
-  // איפוס סטייטים בסגירה
   React.useEffect(() => {
     if (!open) {
       setSelectedDocumentType('');
@@ -152,7 +148,7 @@ const UploadWorkerDocumentDialog: React.FC<Props> = ({
             </Select>
           </FormControl>
 
-          {/* הודעה אם נבחר מסמך שכבר קיים */}
+
           {isDocExists && (
             <Typography variant="body2" color="error" sx={{ mt: 1 }}>
               לא ניתן להעלות מסמך מסוג זה מפני שקיים לעובד קובץ זהה במערכת.

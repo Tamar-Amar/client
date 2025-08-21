@@ -105,20 +105,16 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
     workerName: ''
   });
 
-  // הסר את useEffect, useState, fetchCoordinatorWorkers, fetchAllWorkerDocuments, calculateDocumentsSummary
-  // עדכון סטטיסטיקות כאשר המסמכים או העובדים משתנים
   useEffect(() => {
     if (workers.length > 0) {
       // calculateDocumentsSummary(workers); // This function is no longer needed
     }
   }, [allWorkerDocuments, workers]);
 
-  // אפשרויות תפקידים
   const roleOptions = useMemo(() => {
     const roles = new Set<string>();
     workers.forEach((worker: WorkerWithClassInfo) => {
       if (worker.roleName) {
-        // נרמול התפקיד - הסרת רווחים מיותרים ותווי בלתי נראים
         const normalizedRole = worker.roleName.trim().replace(/\s+/g, ' ');
         if (normalizedRole) {
           roles.add(normalizedRole);
@@ -131,7 +127,6 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
     ];
   }, [workers]);
 
-  // אפשרויות קודי מוסד
   const institutionCodeOptions = useMemo(() => {
     const codes = new Set<string>();
     workers.forEach((worker: WorkerWithClassInfo) => {
@@ -145,7 +140,6 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
     ];
   }, [workers]);
 
-  // סינון עובדים לפי חיפוש וסינונים
   const filteredWorkers = workers.filter(worker => {
     const searchLower = searchTerm.toLowerCase();
     const normalizedWorkerRole = worker.roleName?.trim().replace(/\s+/g, ' ');
@@ -167,7 +161,6 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
     return matchesSearch && matchesRole && matchesInstitutionCode;
   });
 
-  // חישוב דפדוף
   const totalPages = Math.ceil(filteredWorkers.length / workersPerPage);
   const startIndex = (currentPage - 1) * workersPerPage;
   const endIndex = startIndex + workersPerPage;
@@ -203,7 +196,6 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
   const handleWorkerClick = async (worker: WorkerWithClassInfo) => {
     setSelectedWorker(worker);
     setDocumentsDialogOpen(true);
-    // המסמכים כבר נטענים ב-fetchAllWorkerDocuments
   };
 
   const handleCloseDialog = () => {
@@ -242,7 +234,6 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
       });
 
       if (response.status === 201) {
-        // רענון רשימת הטפסים
         await refetchDocuments();
         setUploadDialogOpen(false);
         setSelectedFile(null);
@@ -298,7 +289,6 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
         }
       });
       
-      // רענון המסמכים
       await refetchDocuments();
       
       setDeleteConfirmDialog({
@@ -331,23 +321,19 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
   };
 
   const getMissingDocuments = (worker: WorkerWithClassInfo) => {
-    // מסמכים בסיסיים שכל עובד צריך
     const baseDocuments = [
       DocumentType.ID,
       DocumentType.POLICE_APPROVAL, 
       DocumentType.CONTRACT
     ];
     
-    // נרמול התפקיד לצורך השוואה
     const normalizedRole = worker.roleName?.trim().replace(/\s+/g, ' ');
     
-    // תעודת השכלה נדרשת רק עבור מובילים ורכזים
     let requiredDocuments = [...baseDocuments];
     if (worker.roleName && !(worker.roleName.includes('סייע') || worker.roleName.includes('משלים') || worker.roleName.includes('מד"צ'))) {
       requiredDocuments.push(DocumentType.TEACHING_CERTIFICATE);
     }
     
-    // אם התפקיד הוא רכז - צריך גם אישור וותק
     if (worker.roleName && worker.roleName.includes('רכז')) {
       requiredDocuments.push('אישור וותק' as any);
     }
@@ -358,7 +344,6 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
     
     const missingDocs = requiredDocuments.filter(doc => !uploadedDocuments.includes(doc));
     
-    // הוספת מידע על קישור 101 אם חסר
     const result: Array<{
       tag: string;
       hasLink: boolean;
@@ -369,7 +354,6 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
       hasLink: false
     }));
     
-    // אם אין מסמך 101 שהועלה וגם אין לעובד 101 - הוסף את זה
     if (!worker.is101) {
       result.push({
         tag: 'טופס 101',
@@ -379,7 +363,6 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
       });
     }
 
-    // הוספת מידע על קישור נוכחות קייטנה אם חסר
     if (normalizedRole && (normalizedRole.includes('רכז') || normalizedRole.includes('סגן רכז'))) {
       requiredDocuments.push(DocumentType.CAMP_ATTENDANCE_COORDINATOR);
     }
@@ -437,7 +420,7 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
 
 
 
-        {/* סינון */}
+
         <Box sx={{ mb: 3 }}>
           <Grid container spacing={2} sx={{ mb: 2 }}>
             <Grid item xs={12} md={3}>
@@ -529,7 +512,7 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
           </Box>
         ) : (
           <>
-            {/* טאבים לסיכום מסמכים */}
+
             <Card sx={{ mb: 3 }}>
               <CardContent>
                 <Typography variant="h6" gutterBottom color="primary">
@@ -580,7 +563,7 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
               </CardContent>
             </Card>
 
-            {/* הטבלה */}
+
             <Box>
               <TableContainer sx={{ bgcolor: '#f9fbfd', borderRadius: 1, minHeight: '400px' }}>
                 <Table size="small" sx={{ tableLayout: 'fixed' }}>
@@ -600,7 +583,6 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
                   </TableHead>
                   <TableBody>
                                        {currentWorkers.map((worker) => {
-                      // קבלת המסמכים של העובד
                       const workerDocs = allWorkerDocuments.filter(doc => doc.operatorId === worker._id);
                       
                       return (
@@ -654,7 +636,7 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
                             </Typography>
                           )}
                         </TableCell>
-                          {/* אישור משטרה */}
+
                           <TableCell sx={{ py: 1, px: 1, width: '12%' }}>
                             {(() => {
                               const doc = workerDocs.find(d => d.tag === 'אישור משטרה');
@@ -707,7 +689,6 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
                                   </Stack>
                                 );
                               }
-                              // אם אין בכלל מסמך כזה - אפשר להעלות
                               return (
                                 <Tooltip title="העלה אישור משטרה">
                                   <IconButton 
@@ -726,12 +707,10 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
                               );
                             })()}
                           </TableCell>
-                          {/* תעודת השכלה */}
+
                           <TableCell sx={{ py: 1, px: 1, width: '12%' }}>
                             {(() => {
-                              // נרמול התפקיד
                               const normalizedRole = worker.roleName?.trim().replace(/\s+/g, ' ');
-                              // האם העובד צריך תעודת השכלה?
                               const needsEducation = normalizedRole && !(normalizedRole.includes('סייע') || normalizedRole.includes('משלים') || normalizedRole.includes('מד"צ'));
                               if (!needsEducation) {
                                 return (
@@ -740,7 +719,6 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
                                   </Typography>
                                 );
                               }
-                              // יש מסמך תעודת השכלה?
                               const doc = workerDocs.find(d => d.tag === 'תעודת השכלה');
                               if (doc) {
                                 return (
@@ -791,7 +769,6 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
                                   </Stack>
                                 );
                               }
-                              // אם אין בכלל מסמך כזה - אפשר להעלות
                               return (
                                 <Tooltip title="העלה תעודת השכלה">
                                   <IconButton 
@@ -810,7 +787,7 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
                               );
                             })()}
                           </TableCell>
-                          {/* חוזה */}
+
                           <TableCell sx={{ py: 1, px: 1, width: '10%' }}>
                             {(() => {
                               const doc = workerDocs.find(d => d.tag === 'חוזה');
@@ -865,7 +842,6 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
                                   </Stack>
                                 );
                               }
-                              // אם אין בכלל מסמך כזה - אפשר להעלות
                               return (
                                 <Tooltip title="העלה חוזה">
                                   <IconButton 
@@ -884,7 +860,7 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
                               );
                             })()}
                           </TableCell>
-                          {/* תעודת זהות */}
+
                           <TableCell sx={{ py: 1, px: 1, width: '12%' }}>
                             {(() => {
                               const doc = workerDocs.find(d => d.tag === 'תעודת זהות');
@@ -939,7 +915,6 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
                                   </Stack>
                                 );
                               }
-                              // אם אין בכלל מסמך כזה - אפשר להעלות
                               return (
                                 <Tooltip title="העלה תעודת זהות">
                                   <IconButton 
@@ -958,10 +933,9 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
                               );
                             })()}
                           </TableCell>
-                          {/* אישור וותק */}
+
                           <TableCell sx={{ py: 1, px: 1, width: '7%' }}>
                             {(() => {
-                              // בדיקה אם התפקיד הוא רכז
                               const isCoordinator = worker.roleName && worker.roleName.includes('רכז');
                               
                               if (!isCoordinator) {
@@ -1024,7 +998,6 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
                                   </Stack>
                                 );
                               }
-                              // אם אין בכלל מסמך כזה - אפשר להעלות
                               return (
                                 <Tooltip title="העלה אישור וותק">
                                   <IconButton 
@@ -1043,7 +1016,7 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
                               );
                             })()}
                           </TableCell>
-                          {/* נוכחות קייטנה */}
+
                           <TableCell sx={{ py: 1, px: 1, width: '10%' }}>
                             {(() => {
                               const normalizedRole = worker.roleName?.trim().replace(/\s+/g, ' ');
@@ -1105,7 +1078,6 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
                                   </Stack>
                                 );
                               }
-                              // אם אין בכלל מסמך כזה - אפשר להעלות
                               return (
                                 <Tooltip title="העלה נוכחות קייטנה">
                                   <IconButton 
@@ -1133,7 +1105,7 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
             </Box>
           </>
         )}          
-        {/* דפדוף */}
+
         {totalPages > 1 && (
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
             <Pagination
@@ -1147,7 +1119,7 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
           </Box>
         )}
 
-      {/* דיאלוג טפסים של עובד */}
+
       <Dialog 
         open={documentsDialogOpen} 
         onClose={handleCloseDialog}
@@ -1179,14 +1151,14 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
             </Box>
           ) : (
             <Box>
-              {/* טפסים חסרים */}
+
               {selectedWorker && (
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="h6" color="error" gutterBottom>
                     טפסים חסרים:
                   </Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {/* טופס 101 - מוצג בנפרד ומיוחד */}
+
                     {getMissingDocuments(selectedWorker).filter((doc: {tag: string}) => doc.tag === 'טופס 101').map((doc, index) => (
                       <Alert 
                         key={index} 
@@ -1216,7 +1188,7 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
                       </Alert>
                     ))}
                     
-                    {/* שאר הטפסים החסרים */}
+
                     {getMissingDocuments(selectedWorker).filter((doc: {tag: string}) => doc.tag !== 'טופס 101').length > 0 && (
                       <Box>
 
@@ -1245,7 +1217,7 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
 
               <Divider sx={{ my: 2 }} />
 
-              {/* טפסים שהועלו */}
+
               <Typography variant="h6" gutterBottom>
                 טפסים שהועלו:
               </Typography>
@@ -1324,7 +1296,7 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
         </DialogActions>
       </Dialog>
 
-      {/* דיאלוג העלאת טפס */}
+
       <UploadWorkerDocumentDialog
         open={uploadDialogOpen}
         onClose={handleCloseUploadDialog}
@@ -1334,7 +1306,7 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
         setDialogOpen={setUploadDialogOpen}
       />
 
-      {/* דיאלוג טופס 101 */}
+
       <Dialog
         open={form101Dialog.open}
         onClose={() => setForm101Dialog({ open: false, workerName: '' })}
@@ -1381,7 +1353,7 @@ const CoordinatorWorkers: React.FC<CoordinatorWorkersProps> = ({ coordinatorId }
         </DialogActions>
       </Dialog>
 
-      {/* דיאלוג אישור מחיקת מסמך */}
+
       <Dialog
         open={deleteConfirmDialog.open}
         onClose={closeDeleteConfirmDialog}

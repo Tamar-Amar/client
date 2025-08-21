@@ -616,7 +616,7 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
                               )}
                             </Stack>
                           ))}
-                          {/* כפתור הוספת מסמך בקרה נוסף אם יש פחות מ-5 */}
+
                           {rec.controlDocs.length < 5 && (
                             <Button
                               size="small"
@@ -669,7 +669,7 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
         </Card>
       )}
 
-      {/* דיאלוג העלאת מסמך */}
+
       <Dialog open={uploadDialogOpen} onClose={() => setUploadDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
           העלאת {getDocumentTypeText(selectedMissingDocType)}
@@ -715,7 +715,7 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
         </DialogActions>
       </Dialog>
 
-      {/* דיאלוג אישור מחיקה */}
+
       <Dialog open={deleteDialogOpen} onClose={() => !deleteMutation.isPending && setDeleteDialogOpen(false)}>
         <DialogTitle>
           {deleteMutation.isPending ? 'מוחק מסמך...' : 'אישור מחיקה'}
@@ -747,7 +747,7 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
         </DialogActions>
       </Dialog>
 
-      {/* דיאלוג מורחב להעלאת דוח חדש */}
+
       <Dialog 
         open={newReportDialogOpen} 
         onClose={() => {
@@ -762,7 +762,7 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
           העלאת דוח נוכחות חדש
         </DialogTitle>
         <DialogContent>
-          {/* שורה ראשונה - סמל כיתה ומוביל */}
+
           <Grid container spacing={2} sx={{ mt: 1, mb: 3 }}>
             <Grid item xs={12} md={6}>
               <TextField
@@ -794,7 +794,7 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
             </Grid>
           </Grid>
 
-          {/* שורה שנייה - העלאת דוחות */}
+
           <Typography variant="h6" gutterBottom>
             בחירת מסמכים להעלאה
           </Typography>

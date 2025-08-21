@@ -97,7 +97,7 @@ const DocumentStats: React.FC<DocumentStatsProps> = ({ stats }) => {
 
   return (
     <Box>
-      {/* סטטיסטיקות כלליות */}
+
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid item xs={12} md={4}>
           <Card>
@@ -155,7 +155,7 @@ const DocumentStats: React.FC<DocumentStatsProps> = ({ stats }) => {
       </Grid>
 
       <Grid container spacing={3}>
-        {/* סטטיסטיקות לפי סטטוס */}
+
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
@@ -192,7 +192,7 @@ const DocumentStats: React.FC<DocumentStatsProps> = ({ stats }) => {
           </Card>
         </Grid>
 
-        {/* סטטיסטיקות לפי סוג מסמך */}
+
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
@@ -232,7 +232,7 @@ const DocumentStats: React.FC<DocumentStatsProps> = ({ stats }) => {
           </Card>
         </Grid>
 
-        {/* סטטיסטיקות לפי חודש */}
+
         <Grid item xs={12}>
           <Card>
             <CardContent>

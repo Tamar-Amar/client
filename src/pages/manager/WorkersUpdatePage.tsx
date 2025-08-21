@@ -42,7 +42,6 @@ import {
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 
-// שדות אפשריים לעדכון
 const UPDATEABLE_FIELDS = [
   { value: 'firstName', label: 'שם פרטי' },
   { value: 'lastName', label: 'שם משפחה' },
@@ -95,7 +94,6 @@ const WorkersUpdatePage: React.FC = () => {
   const [showUpdateDetails, setShowUpdateDetails] = useState(false);
   const [selectedToUpdate, setSelectedToUpdate] = useState<string[]>([]);
 
-  // מצב לעדכון כללי
   const [generalUpdateData, setGeneralUpdateData] = useState<Array<{
     id: string;
     firstName?: string;
@@ -119,7 +117,6 @@ const WorkersUpdatePage: React.FC = () => {
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
-    // איפוס מצב כאשר עוברים בין טאבים
     setUploadedFile(null);
     setPreviewData([]);
     setValidationResults([]);
@@ -150,17 +147,14 @@ const WorkersUpdatePage: React.FC = () => {
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-        // בדיקה שיש לפחות 2 עמודות
         if (jsonData.length < 2 || (jsonData[0] as any[]).length < 2) {
           alert('הקובץ חייב להכיל לפחות 2 עמודות: תעודת זהות וערך חדש');
           return;
         }
 
-        // המרה לפורמט הנדרש - רק שורות עם תז תקין (מעל 7 ספרות)
         const processedData = jsonData.slice(1)
           .map((row: any, index: number) => {
             let newValue = row[1];
-            // נרמול התפקיד אם זה השדה שמתעדכן
             if (selectedField === 'roleName' && typeof newValue === 'string') {
               newValue = newValue.trim().replace(/\s+/g, ' ');
             }
@@ -174,7 +168,6 @@ const WorkersUpdatePage: React.FC = () => {
 
         setPreviewData(processedData);
         
-        // בדיקת קיום עובדים
         if (processedData.length > 0) {
           validateWorkersExist(processedData);
         }
@@ -196,7 +189,6 @@ const WorkersUpdatePage: React.FC = () => {
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-        // בדיקה שיש לפחות עמודות בסיסיות (כמו בייבוא מתקדם)
         if (jsonData.length < 2 || (jsonData[0] as any[]).length < 14) {
           alert('הקובץ חייב להכיל את כל העמודות הנדרשות כמו בייבוא מתקדם');
           return;
@@ -215,26 +207,15 @@ const WorkersUpdatePage: React.FC = () => {
             const changes: string[] = [];
             const workerData: any = { id, changes };
 
-            // בדיקת שינויים בשדות השונים - באותו סדר כמו ייבוא מתקדם
-            // row[0] - סמל מוסד (לא משתנה בעדכון כללי)
-            // row[1] - חשב שכר (לא משתנה בעדכון כללי)
-            // row[2] - מודל (לא משתנה בעדכון כללי)
-            // row[3] - סוג תפקיד (לא משתנה בעדכון כללי)
             
-            // row[4] - שם תפקיד
             if (row[4] && row[4] !== '') {
               workerData.roleName = row[4].trim().replace(/\s+/g, ' ');
-              // נבדוק אם יש שינוי אמיתי אחרי קבלת הנתונים הקיימים
             }
             
-            // row[5] - תעודת זהות (לא משתנה)
-            // row[6] - שם משפחה
             if (row[6] && row[6] !== '') {
               workerData.lastName = row[6].trim();
-              // נבדוק אם יש שינוי אמיתי אחרי קבלת הנתונים הקיימים
             }
             
-            // row[7] - שם פרטי
             if (row[7] && row[7] !== '') {
               workerData.firstName = row[7].trim();
             }
@@ -293,17 +274,14 @@ const WorkersUpdatePage: React.FC = () => {
                   realChanges.push('תפקיד');
                 }
                 
-                // בדיקת שינוי בסמל כיתה - נחפש את הכיתה שבה העובד משויך לפרויקט 4
                 if (worker.classSymbol && existingWorker.classSymbol && worker.classSymbol !== existingWorker.classSymbol) {
                   realChanges.push('סמל כיתה');
                 }
                 
-                // בדיקה נוספת - אם יש סמל באקסל אבל לא במערכת
                 if (worker.classSymbol && !existingWorker.classSymbol) {
                   realChanges.push('סמל כיתה');
                 }
                 
-                // בדיקה נוספת - אם אין סמל באקסל אבל היה במערכת
                 if (!worker.classSymbol && existingWorker.classSymbol) {
                   realChanges.push('סמל כיתה');
                 }
@@ -335,7 +313,6 @@ const WorkersUpdatePage: React.FC = () => {
     reader.readAsArrayBuffer(file);
   };
 
-  // פונקציה לסינון עובדים עם שינויים אמיתיים
   const workersWithRealChanges = generalUpdateData.filter(worker => 
     worker.changes && worker.changes.length > 0
   );
@@ -346,19 +323,16 @@ const WorkersUpdatePage: React.FC = () => {
       return;
     }
 
-    // בדיקה שהשדה נתמך
     if (selectedField === 'projectCodes') {
       alert('עדכון קודי פרויקט לא נתמך במערכת זו');
       return;
     }
 
-    // עדכון: שלח רק את העובדים שנבחרו
     const filteredUpdatePreview = updatePreview.filter(w => selectedToUpdate.includes(w.id));
     if (filteredUpdatePreview.length === 0) {
       alert('לא נבחרו עובדים לעדכון');
       return;
     }
-    // המרת ערכים בוליאניים לפני שליחה לשרת
     const processedUpdates = filteredUpdatePreview.map(worker => {
       let processedNewValue = worker.newValue;
       if (selectedField === 'is101' || selectedField === 'isActive') {
@@ -474,13 +448,11 @@ const WorkersUpdatePage: React.FC = () => {
 
       const result = await response.json();
       
-      // יצירת תוצאות עם סטטוס וערכים קיימים
       const validationResults = workersData.map(worker => {
         const existingWorker = result.existingWorkers.find((w: any) => w.id === worker.id);
         const exists = !!existingWorker;
         let oldValue = existingWorker ? existingWorker[selectedField] : undefined;
         
-        // נרמול התפקיד אם זה השדה שמתעדכן
         if (selectedField === 'roleName' && typeof oldValue === 'string') {
           oldValue = oldValue.trim().replace(/\s+/g, ' ');
         }
@@ -494,7 +466,6 @@ const WorkersUpdatePage: React.FC = () => {
 
       setValidationResults(validationResults);
       
-      // יצירת תצוגה מקדימה של עדכונים
       const updatePreview = validationResults
         .filter(w => w.status === 'קיים במערכת')
         .map(worker => {
@@ -620,7 +591,7 @@ const WorkersUpdatePage: React.FC = () => {
 
         {/* Tab Panels */}
         <TabPanel value={tabValue} index={0}>
-          {/* עדכון שדה בודד */}
+
           <Alert severity="info" sx={{ mb: 3 }}>
             <Typography variant="body1" fontWeight="bold">
               הוראות לעדכון שדה בודד:
@@ -774,7 +745,7 @@ const WorkersUpdatePage: React.FC = () => {
         </TabPanel>
 
         <TabPanel value={tabValue} index={1}>
-          {/* עדכון כללי */}
+
           <Alert severity="info" sx={{ mb: 3 }}>
             <Typography variant="body1" fontWeight="bold">
               הוראות לעדכון כללי (קייטנת קיץ):

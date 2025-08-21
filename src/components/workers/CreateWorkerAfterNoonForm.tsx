@@ -21,14 +21,12 @@ const WorkerAfterNoonForm: React.FC<WorkerAfterNoonFormProps> = ({ onSuccess }) 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // נרמול התפקיד אם זה השדה שמתעדכן
     const normalizedValue = name === 'roleName' ? value.trim().replace(/\s+/g, ' ') : value;
     setForm({ ...form, [name]: normalizedValue });
   };
 
   const handleSelectChange = (e: SelectChangeEvent<string>) => {
     const { name, value } = e.target;
-    // נרמול התפקיד אם זה השדה שמתעדכן
     const normalizedValue = name === 'roleName' ? value.trim().replace(/\s+/g, ' ') : value;
     setForm({ ...form, [name]: normalizedValue });
   };
@@ -57,7 +55,6 @@ const WorkerAfterNoonForm: React.FC<WorkerAfterNoonFormProps> = ({ onSuccess }) 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // בדיקה שיש לפחות פרויקט אחד נבחר
     if (projectSelection.projectCodes.length === 0) {
       alert('יש לבחור לפחות פרויקט אחד');
       return;

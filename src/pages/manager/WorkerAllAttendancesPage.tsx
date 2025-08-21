@@ -466,7 +466,6 @@ const WorkerAttendancePage: React.FC = () => {
 
 export default WorkerAttendancePage;
 
-// דף חדש לדוחות נוכחות קייטנת קיץ
 export const CampAttendancePage: React.FC = () => {
   const { data: campAttendanceData = [] } = useAllCampAttendanceReports();
   const { mutate: updateDocumentStatus, isPending: isUpdatingStatus } = useUpdateAttendanceDocumentStatus();
@@ -483,7 +482,6 @@ export const CampAttendancePage: React.FC = () => {
 
   const ROWS_PER_PAGE = 15;
 
-  // פונקציה לקבלת סטטוס מסמך
   const getDocumentStatus = (doc: any) => {
     if (!doc) return { text: 'חסר', color: 'error' as const, icon: <WarningIcon fontSize="small" /> };
     
@@ -499,27 +497,22 @@ export const CampAttendancePage: React.FC = () => {
     }
   };
 
-  // פונקציה לקבלת שם המוביל או הרכז
   const getLeaderOrCoordinatorName = (record: any) => {
     if (record.classId?.type === 'גן') {
-      // לגן - שם המוביל (לחיץ)
       return record.leaderId ? 
         `${record.leaderId.firstName || ''} ${record.leaderId.lastName || ''} (${record.leaderId.id || ''})` : 
         'לא נמצא';
     } else {
-      // לכיתה - שם הרכז (לא לחיץ, בלי סוגריים)
       return record.coordinatorId ? 
         `${record.coordinatorId.firstName || ''} ${record.coordinatorId.lastName || ''}` : 
         'לא נמצא';
     }
   };
 
-  // פונקציה לבדיקה אם זה מוביל (לחיץ) או רכז (לא לחיץ)
   const isLeader = (record: any) => {
     return record.classId?.type === 'גן';
   };
 
-  // פונקציה לקבלת סמל המסגרת
   const getClassSymbol = (record: any) => {
     if (record.classId) {
       return `${record.classId.uniqueSymbol || ''} ${record.classId.name || ''}`;
@@ -527,13 +520,11 @@ export const CampAttendancePage: React.FC = () => {
     return 'לא נמצא';
   };
 
-  // פונקציה לבדיקה אם יש מסמכים
   const hasAnyDocuments = (record: any) => {
     return record.workerAttendanceDoc || record.studentAttendanceDoc || 
            (record.controlDocs && record.controlDocs.length > 0);
   };
 
-  // פונקציה לעדכון סטטוס מסמך
   const handleUpdateDocumentStatus = async (documentId: string, newStatus: string) => {
     try {
       updateDocumentStatus({ documentId, status: newStatus });
@@ -542,7 +533,6 @@ export const CampAttendancePage: React.FC = () => {
     }
   };
 
-  // סינון הנתונים
   const filteredData = useMemo(() => {
     return campAttendanceData
       .filter((record: any) => record.projectCode === 4) // רק קייטנת קיץ 2025

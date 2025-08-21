@@ -79,7 +79,6 @@ const WorkersDocumentsList: React.FC = () => {
     { value: '4', label: 'קייטנת קיץ 2025' },
   ];
 
-  // אפשרויות חשבי שכר
   const accountantOptions = useMemo(() => {
     return [
       { value: '', label: 'כל חשבי השכר' },
@@ -92,7 +91,6 @@ const WorkersDocumentsList: React.FC = () => {
     ];
   }, [allUsers]);
 
-  // אפשרויות קודי מוסד עם שמות
   const institutionOptions = useMemo(() => {
     const institutionMap = new Map<string, { code: string; name: string }>();
     classes.forEach((cls: Class) => {
@@ -114,7 +112,6 @@ const WorkersDocumentsList: React.FC = () => {
     ];
   }, [classes]);
 
-  // אפשרויות סמלי כיתה עם שמות
   const classCodeOptions = useMemo(() => {
     const classMap = new Map<string, { symbol: string; name: string }>();
     classes.forEach((cls: Class) => {
@@ -136,12 +133,10 @@ const WorkersDocumentsList: React.FC = () => {
     ];
   }, [classes]);
 
-  // אפשרויות תפקידים
   const roleOptions = useMemo(() => {
     const roles = new Set<string>();
     workers.forEach(worker => {
       if (worker.roleName) {
-        // נרמול התפקיד - הסרת רווחים מיותרים ותווי בלתי נראים
         const normalizedRole = worker.roleName.trim();
         if (normalizedRole) {
           roles.add(normalizedRole);
@@ -172,7 +167,6 @@ const WorkersDocumentsList: React.FC = () => {
 
       const matchesProject = !projectFilter || (worker.projectCodes && worker.projectCodes.includes(parseInt(projectFilter)));
 
-      // סינון לפי חשב שכר
       let matchesAccountant = true;
       if (salaryAccountFilter) {
         const accountant = allUsers.find((u: any) => u._id === salaryAccountFilter && u.role === 'accountant');
@@ -187,25 +181,19 @@ const WorkersDocumentsList: React.FC = () => {
         }
       }
 
-      // סינון לפי קוד מוסד
       let institutionMatch = true;
       if (filterInstitutionCode) {
-        // נסה למצוא את קוד המוסד דרך הכיתות
         const workerClasses = classes.filter((cls: any) =>
           Array.isArray(cls.workers) && cls.workers.some((w: any) => w.workerId === worker._id)
         );
         
         if (workerClasses.length > 0) {
-          // אם העובד משויך לכיתות, בדוק אם אחת מהן מתאימה לקוד המוסד
           institutionMatch = workerClasses.some((cls: any) => cls.institutionCode === filterInstitutionCode);
         } else {
-          // אם העובד לא משויך לכיתות, נציג אותו רק אם לא נבחר פילטר מוסד
-          // או אם יש לו accountantCode שמתאים
           institutionMatch = !filterInstitutionCode || Boolean(worker.accountantCode && worker.accountantCode === filterInstitutionCode);
         }
       }
 
-      // סינון לפי סמל כיתה
       let classCodeMatch = true;
       if (filterClassCode) {
         const workerClasses = classes.filter((cls: any) =>
@@ -214,7 +202,6 @@ const WorkersDocumentsList: React.FC = () => {
         classCodeMatch = workerClasses.some((cls: any) => cls.uniqueSymbol === filterClassCode);
       }
 
-      // סינון לפי תפקיד
       const roleMatch = !filterRole || worker.roleName === filterRole;
 
       return matchesSearch && matchesProject && matchesAccountant && institutionMatch && classCodeMatch && roleMatch;
@@ -312,7 +299,6 @@ const WorkersDocumentsList: React.FC = () => {
   // Check if some current page workers are selected
   const isSomeSelected = filteredWorkers.some(worker => selectedWorkers.has(worker._id));
 
-  // פונקציה ליצירת תגיות סינון פעילות
   const getActiveFilters = () => {
     const filters = [];
     
@@ -376,7 +362,7 @@ const WorkersDocumentsList: React.FC = () => {
 
   return (
     <Box>
-      {/* סרגל סינון מתקדם בראש העמוד */}
+
       <Card sx={{ mb: 3, bgcolor: 'primary.50', border: '2px solid', borderColor: 'primary.main' }}>
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
