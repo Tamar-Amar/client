@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { useRecoilValue } from 'recoil';
 import {
   Typography,
   Paper,
@@ -23,6 +24,7 @@ import { useCreateCampAttendanceWithFiles, useCreateCampAttendance, useDeleteCam
 import { fetchClasses } from '../../services/ClassService';
 import { Class, User} from '../../types';
 import { useFetchAllUsers } from '../../queries/useUsers';
+import { userRoleState } from '../../recoil/storeAtom';
 
 interface WorkerCampReportsProps {
   workerId: string;
@@ -31,6 +33,7 @@ interface WorkerCampReportsProps {
 
 export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, workerData }) => {
   const queryClient = useQueryClient();
+  const userRole = useRecoilValue(userRoleState);
 
   // State
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -413,16 +416,18 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
                           סטטוס: {getStatusText(classReport.workerAttendanceDoc.status)}
                         </Typography>
                       </Box>
-                      <Box sx={{ mb: 1 }}>
-                        <Typography variant="body2" color="text.secondary">
-                          צפייה: <span 
-                            style={{ color: 'primary.main', cursor: 'pointer', textDecoration: 'underline' }}
-                            onClick={() => window.open(classReport.workerAttendanceDoc.url, '_blank')}
-                          >
-                            צפייה במסמך
-                          </span>
-                        </Typography>
-                      </Box>
+                      {((userRole === 'admin' || userRole === 'manager_project' || userRole === 'accountant') || classReport.workerAttendanceDoc.status !== 'מאושר') && (
+                        <Box sx={{ mb: 1 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            צפייה: <span 
+                              style={{ color: 'primary.main', cursor: 'pointer', textDecoration: 'underline' }}
+                              onClick={() => window.open(classReport.workerAttendanceDoc.url, '_blank')}
+                            >
+                              צפייה במסמך
+                            </span>
+                          </Typography>
+                        </Box>
+                      )}
                       {canDeleteDocument(classReport.workerAttendanceDoc.status) && (
                         <Box>
                           <Typography variant="body2" color="text.secondary">
@@ -498,16 +503,18 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
                           סטטוס: {getStatusText(classReport.studentAttendanceDoc.status)}
                         </Typography>
                       </Box>
-                      <Box sx={{ mb: 1 }}>
-                        <Typography variant="body2" color="text.secondary">
-                          צפייה: <span 
-                            style={{ color: 'primary.main', cursor: 'pointer', textDecoration: 'underline' }}
-                            onClick={() => window.open(classReport.studentAttendanceDoc.url, '_blank')}
-                          >
-                            צפייה במסמך
-                          </span>
-                        </Typography>
-                      </Box>
+                      {((userRole === 'admin' || userRole === 'manager_project' || userRole === 'accountant') || classReport.studentAttendanceDoc.status !== 'מאושר') && (
+                        <Box sx={{ mb: 1 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            צפייה: <span 
+                              style={{ color: 'primary.main', cursor: 'pointer', textDecoration: 'underline' }}
+                              onClick={() => window.open(classReport.studentAttendanceDoc.url, '_blank')}
+                            >
+                              צפייה במסמך
+                            </span>
+                          </Typography>
+                        </Box>
+                      )}
                       {canDeleteDocument(classReport.studentAttendanceDoc.status) && (
                         <Box>
                           <Typography variant="body2" color="text.secondary">
@@ -596,16 +603,18 @@ export const WorkerCampReports: React.FC<WorkerCampReportsProps> = ({ workerId, 
                               סטטוס: {getStatusText(doc.status)}
                             </Typography>
                           </Box>
-                          <Box sx={{ mb: 1 }}>
-                            <Typography variant="body2" color="text.secondary">
-                              צפייה: <span 
-                                style={{ color: 'primary.main', cursor: 'pointer', textDecoration: 'underline' }}
-                                onClick={() => window.open(doc.url, '_blank')}
-                              >
-                                צפייה במסמך
-                              </span>
-                            </Typography>
-                          </Box>
+                          {((userRole === 'admin' || userRole === 'manager_project' || userRole === 'accountant') || doc.status !== 'מאושר') && (
+                            <Box sx={{ mb: 1 }}>
+                              <Typography variant="body2" color="text.secondary">
+                                צפייה: <span 
+                                  style={{ color: 'primary.main', cursor: 'pointer', textDecoration: 'underline' }}
+                                  onClick={() => window.open(doc.url, '_blank')}
+                                >
+                                  צפייה במסמך
+                                </span>
+                              </Typography>
+                            </Box>
+                          )}
                           {canDeleteDocument(doc.status) && (
                             <Box>
                               <Typography variant="body2" color="text.secondary">

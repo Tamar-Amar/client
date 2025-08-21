@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useRecoilValue } from 'recoil';
 import {
   Box,
   Typography,
@@ -45,6 +46,7 @@ import {
   useCreateCampAttendanceWithFiles,
   useDeleteCampAttendanceRecord
 } from '../../queries/useCampAttendance';
+import { userRoleState } from '../../recoil/storeAtom';
 
 interface CoordinatorAttendanceReportsProps {
   coordinatorId: string;
@@ -80,6 +82,7 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
 
   const { data, isLoading, refetch } = useCampAttendanceByCoordinator(coordinatorId);
   const { data: allClasses, isLoading: classesLoading } = useClassesByCoordinatorInstitutionCodes(coordinatorId);
+  const userRole = useRecoilValue(userRoleState);
   const uploadMutation = useUploadAttendanceDocument();
   const deleteMutation = useDeleteAttendanceDocument();
   const deleteRecordMutation = useDeleteCampAttendanceRecord();
@@ -497,10 +500,16 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
                         </Button>
                       ) : rec.workerAttendanceDoc ? (
                         <Stack direction="row" alignItems="center" spacing={1}>
-                          <IconButton size="small" color="primary" onClick={() => window.open(rec.workerAttendanceDoc.url, '_blank')}>
-                            <VisibilityIcon />
-                          </IconButton>
-                          {getStatusText(rec.workerAttendanceDoc.status)}
+                          {(userRole === 'admin' || userRole === 'manager_project' || userRole === 'accountant') || rec.workerAttendanceDoc.status !== 'מאושר' ? (
+                            <>
+                              <IconButton size="small" color="primary" onClick={() => window.open(rec.workerAttendanceDoc.url, '_blank')}>
+                                <VisibilityIcon />
+                              </IconButton>
+                              {getStatusText(rec.workerAttendanceDoc.status)}
+                            </>
+                          ) : (
+                            getStatusText(rec.workerAttendanceDoc.status)
+                          )}
                           {canDeleteDocument(rec.workerAttendanceDoc.status) && (
                             <IconButton 
                               size="small" 
@@ -545,10 +554,16 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
                         </Button>
                       ) : rec.studentAttendanceDoc ? (
                         <Stack direction="row" alignItems="center" spacing={1}>
-                          <IconButton size="small" color="primary" onClick={() => window.open(rec.studentAttendanceDoc.url, '_blank')}>
-                            <VisibilityIcon />
-                          </IconButton>
-                          {getStatusText(rec.studentAttendanceDoc.status)}
+                          {(userRole === 'admin' || userRole === 'manager_project' || userRole === 'accountant') || rec.studentAttendanceDoc.status !== 'מאושר' ? (
+                            <>
+                              <IconButton size="small" color="primary" onClick={() => window.open(rec.studentAttendanceDoc.url, '_blank')}>
+                                <VisibilityIcon />
+                              </IconButton>
+                              {getStatusText(rec.studentAttendanceDoc.status)}
+                            </>
+                          ) : (
+                            getStatusText(rec.studentAttendanceDoc.status)
+                          )}
                           {canDeleteDocument(rec.studentAttendanceDoc.status) && (
                             <IconButton 
                               size="small" 
@@ -595,10 +610,16 @@ export const CoordinatorAttendanceReports: React.FC<CoordinatorAttendanceReports
                         <Stack direction="row" spacing={1} flexWrap="wrap">
                           {rec.controlDocs.map((doc: any, idx: number) => (
                             <Stack key={doc._id} direction="row" alignItems="center" spacing={0.5}>
-                              <IconButton size="small" color="primary" onClick={() => window.open(doc.url, '_blank')}>
-                                <VisibilityIcon />
-                              </IconButton>
-                              {getStatusText(doc.status)}
+                              {(userRole === 'admin' || userRole === 'manager_project' || userRole === 'accountant') || doc.status !== 'מאושר' ? (
+                                <>
+                                  <IconButton size="small" color="primary" onClick={() => window.open(doc.url, '_blank')}>
+                                    <VisibilityIcon />
+                                  </IconButton>
+                                  {getStatusText(doc.status)}
+                                </>
+                              ) : (
+                                getStatusText(doc.status)
+                              )}
                               {canDeleteDocument(doc.status) && (
                                 <IconButton 
                                   size="small" 

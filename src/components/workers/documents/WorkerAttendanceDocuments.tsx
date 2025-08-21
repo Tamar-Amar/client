@@ -484,11 +484,13 @@ const WorkerAttendanceDocuments: React.FC<WorkerAttendanceDocumentsProps> = ({
                                     </Box>
                                     {classRecords[0]?.studentAttendanceDoc ? (
                                       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                        <Tooltip title="צפייה במסמך">
-                                          <Button startIcon={<VisibilityIcon />} size="small" onClick={() => window.open(classRecords[0].studentAttendanceDoc?.url || '', '_blank')}>
-                                            צפייה
-                                          </Button>
-                                        </Tooltip>
+                                        {(userRole === 'admin' || userRole === 'manager_project' || userRole === 'accountant') || classRecords[0].studentAttendanceDoc.status !== 'מאושר' ? (
+                                          <Tooltip title="צפייה במסמך">
+                                            <Button startIcon={<VisibilityIcon />} size="small" onClick={() => window.open(classRecords[0].studentAttendanceDoc?.url || '', '_blank')}>
+                                              צפייה
+                                            </Button>
+                                          </Tooltip>
+                                        ) : null}
                                         <DocumentActions
                                           doc={classRecords[0].studentAttendanceDoc}
                                           onUpdateStatus={handleStatusUpdate}
@@ -555,11 +557,13 @@ const WorkerAttendanceDocuments: React.FC<WorkerAttendanceDocumentsProps> = ({
                                     </Box>
                                     {classRecords[0]?.workerAttendanceDoc ? (
                                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                        <Tooltip title="צפייה במסמך">
-                                          <Button startIcon={<VisibilityIcon />} size="small" onClick={() => window.open(classRecords[0].workerAttendanceDoc?.url || '', '_blank')}>
-                                            צפייה
-                                          </Button>
-                                        </Tooltip>
+                                        {(userRole === 'admin' || userRole === 'manager_project' || userRole === 'accountant') || classRecords[0].workerAttendanceDoc.status !== 'מאושר' ? (
+                                          <Tooltip title="צפייה במסמך">
+                                            <Button startIcon={<VisibilityIcon />} size="small" onClick={() => window.open(classRecords[0].workerAttendanceDoc?.url || '', '_blank')}>
+                                              צפייה
+                                            </Button>
+                                          </Tooltip>
+                                        ) : null}
                                         <DocumentActions
                                           doc={classRecords[0].workerAttendanceDoc}
                                           onUpdateStatus={handleStatusUpdate}
@@ -626,11 +630,13 @@ const WorkerAttendanceDocuments: React.FC<WorkerAttendanceDocumentsProps> = ({
                                     </Box>
                                     {classRecords[0]?.controlDoc ? (
                                       <Box sx={{ display: 'flex', gap: 1 }}>
-                                        <Tooltip title="צפייה במסמך">
-                                          <Button startIcon={<VisibilityIcon />} size="small" onClick={() => window.open(classRecords[0].controlDoc?.url || '', '_blank')}>
-                                            צפייה
-                                          </Button>
-                                        </Tooltip>
+                                        {classRecords[0].controlDoc.status !== 'מאושר' ? (
+                                          <Tooltip title="צפייה במסמך">
+                                            <Button startIcon={<VisibilityIcon />} size="small" onClick={() => window.open(classRecords[0].controlDoc?.url || '', '_blank')}>
+                                              צפייה
+                                            </Button>
+                                          </Tooltip>
+                                        ) : null}
                                         <DocumentActions
                                           doc={classRecords[0].controlDoc}
                                           onUpdateStatus={handleStatusUpdate}

@@ -16,6 +16,9 @@ import {
   CircularProgress,
   Stack,
   Autocomplete,
+  Dialog,
+  DialogTitle,
+  DialogContent,
 } from '@mui/material';
 import {
   Download as DownloadIcon,
@@ -59,13 +62,12 @@ const DownloadDocPage: React.FC = () => {
   
   const [filters, setFilters] = useState<DocumentFilters>({
     page: 1,
-    limit: 1000, // נביא הרבה מסמכים
+    limit: 1000, 
     sortBy: 'fileName',
     sortOrder: 'asc',
-    tag: '', // ברירת מחדל - הכל
+    tag: '', 
   });
 
-  const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(true);
   const [documentSummary, setDocumentSummary] = useState<{
     total: number;
@@ -104,12 +106,7 @@ const DownloadDocPage: React.FC = () => {
 
 
   React.useEffect(() => {
-    console.log('🔄 useEffect - documentType:', documentType);
-    console.log('🔄 useEffect - personalDocumentsData:', personalDocumentsData);
-    console.log('🔄 useEffect - attendanceDocumentsData:', attendanceDocumentsData);
-    console.log('🔄 useEffect - personalDocumentsError:', personalDocumentsError);
-    console.log('🔄 useEffect - attendanceDocumentsError:', attendanceDocumentsError);
-    
+
 
     if (personalDocumentsError) {
       console.error('❌ שגיאה בטעינת מסמכים אישיים:', personalDocumentsError);
@@ -130,22 +127,17 @@ const DownloadDocPage: React.FC = () => {
     }
     
     if (documentType === 'personal' && personalDocumentsData) {
-      console.log('📄 טוען מסמכים אישיים:', personalDocumentsData);
       const documents = Array.isArray(personalDocumentsData) ? personalDocumentsData : [];
-      console.log('📄 מסמכים אישיים אחרי בדיקה:', documents);
       setAllDocuments(documents);
       setFilteredDocuments(documents);
       updateDocumentSummary(documents);
     } else if (documentType === 'project' && attendanceDocumentsData?.documents) {
-      console.log('📄 טוען מסמכי נוכחות:', attendanceDocumentsData.documents);
       const documents = Array.isArray(attendanceDocumentsData.documents) ? attendanceDocumentsData.documents : [];
-      console.log('📄 מסמכי נוכחות אחרי בדיקה:', documents);
       setAllDocuments(documents);
       setFilteredDocuments(documents);
       updateDocumentSummary(documents);
     } else {
 
-      console.log('📄 אין מסמכים, מנקה מצב');
       setAllDocuments([]);
       setFilteredDocuments([]);
       updateDocumentSummary([]);
@@ -163,17 +155,16 @@ const DownloadDocPage: React.FC = () => {
   const downloadMultipleMutation = useDownloadMultipleDocuments();
   
   const [isDownloading, setIsDownloading] = useState(false);
-  const [maxDocumentsToDownload, setMaxDocumentsToDownload] = useState(100);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [showProgressDialog, setShowProgressDialog] = useState(false);
+  const [currentBatch, setCurrentBatch] = useState(0);
+  const [totalBatches, setTotalBatches] = useState(0);
   const handleFilterChange = (key: keyof DocumentFilters, value: any) => {
-    console.log('🔄 שינוי פילטר:', key, value);
-    console.log('🔄 ערך קודם:', filters[key]);
-    
+
     setFilters(prev => {
       const newFilters = { ...prev, [key]: value, page: 1 };
-      console.log('🔄 פילטרים חדשים:', newFilters);
       
       setTimeout(() => {
-        console.log('🔄 מפעיל applyFiltersWithFilters עם:', newFilters);
         applyFiltersWithFilters(newFilters);
       }, 0);
       
@@ -182,28 +173,22 @@ const DownloadDocPage: React.FC = () => {
   };
 
   const applyFiltersWithFilters = (currentFilters: DocumentFilters) => {
-    console.log('🔍 מפעיל פילטרים עם:', currentFilters);
-    
+  
     let filtered = [...allDocuments];
 
     if (currentFilters.status) {
       filtered = filtered.filter(doc => doc.status === currentFilters.status);
-      console.log('📊 אחרי פילטר סטטוס:', filtered.length);
     }
 
     if (currentFilters.tag) {
-      console.log('🔍 מסנן לפי סוג מסמך:', currentFilters.tag);
-      console.log('🔍 דוגמה למסמך:', filtered[0]);
+
       filtered = filtered.filter(doc => {
         const docTag = doc.tag || doc.type;
-        console.log('🔍 מסמך tag:', docTag, 'מחפש:', currentFilters.tag);
         return docTag === currentFilters.tag;
       });
-      console.log('📊 אחרי פילטר סוג מסמך:', filtered.length);
     }
 
     if (currentFilters.workerId && documentType === 'personal') {
-      console.log('🔍 מחפש עובד עם ID:', currentFilters.workerId);
       
       filtered = filtered.filter(doc => {
         if (!doc.operatorId) return false;
@@ -220,7 +205,6 @@ const DownloadDocPage: React.FC = () => {
         
         return false;
       });
-      console.log('📊 אחרי פילטר עובד:', filtered.length);
     }
 
     if (currentFilters.classId && documentType === 'project') {
@@ -239,7 +223,6 @@ const DownloadDocPage: React.FC = () => {
   const updateDocumentSummary = (documents: any) => {
     
     if (!Array.isArray(documents)) {
-      console.error('❌ documents is not an array:', documents);
       setDocumentSummary({
         total: 0,
         byType: {},
@@ -289,49 +272,86 @@ const DownloadDocPage: React.FC = () => {
   };
 
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     setIsDownloading(true);
+    setDownloadProgress(0);
+    setCurrentBatch(0);
+    setShowProgressDialog(true);
     
     const documentsToDownload = filteredDocuments.length > 0 ? filteredDocuments : allDocuments;
-    const actualCount = Math.min(documentsToDownload.length, maxDocumentsToDownload);
+    const maxDocuments = 5000;
+    const batchSize = 500; 
+    const actualCount = Math.min(documentsToDownload.length, maxDocuments);
     
-    setSnackbar({
-      open: true,
-      message: documentsToDownload.length > maxDocumentsToDownload 
-        ? `מכין קובץ ZIP עם ${actualCount} מסמכים (מתוך ${documentsToDownload.length} - מוגבל לביצועים טובים יותר)...`
-        : `מכין קובץ ZIP עם ${actualCount} מסמכים...`,
-      severity: 'info'
-    });
-
-    const documentIds = documentsToDownload.slice(0, maxDocumentsToDownload).map(doc => doc._id);
-
-                    downloadMultipleMutation.mutate({
-                  documentIds: documentIds, 
-                  documentType: documentType || undefined,
-                  selectedProject: selectedProject,
-                  projectOrganization: organizationType === 'byWorker' ? 'byClass' : 'byType',
-                  organizationType,
-                  fileNameFormat: 'simple',
-                  maxDocuments: maxDocumentsToDownload
-                }, {
-      onSuccess: () => {
+    const calculatedTotalBatches = Math.ceil(actualCount / batchSize);
+    setTotalBatches(calculatedTotalBatches);
+    
+    try {
+      for (let batchIndex = 0; batchIndex < calculatedTotalBatches; batchIndex++) {
+        setCurrentBatch(batchIndex + 1);
+        const batchProgress = ((batchIndex + 1) / calculatedTotalBatches) * 100;
+        setDownloadProgress(batchProgress);
+        
+        // חישוב המסמכים של ה-batch הנוכחי
+        const startIndex = batchIndex * batchSize;
+        const endIndex = Math.min(startIndex + batchSize, actualCount);
+        const currentBatchDocuments = documentsToDownload.slice(startIndex, endIndex);
+        const currentBatchDocumentIds = currentBatchDocuments.map(doc => doc._id);
+        
+        console.log(`📦 מוריד batch ${batchIndex + 1} מתוך ${calculatedTotalBatches} עם ${currentBatchDocuments.length} מסמכים`);
+        
+        const result = await new Promise((resolve, reject) => {
+          downloadMultipleMutation.mutate({
+            documentIds: currentBatchDocumentIds, 
+            documentType: documentType || undefined,
+            selectedProject: selectedProject,
+            projectOrganization: organizationType === 'byWorker' ? 'byClass' : 'byType',
+            organizationType,
+            fileNameFormat: 'simple',
+            maxDocuments: currentBatchDocuments.length,
+            batchSize: batchSize,
+            batchIndex: batchIndex
+          }, {
+            onSuccess: (data) => {
+              resolve(data);
+            },
+            onError: (error: any) => {
+              reject(error);
+            }
+          });
+        });
+        
+        if (batchIndex < calculatedTotalBatches - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
+      
+      setTimeout(() => {
         setIsDownloading(false);
+        setShowProgressDialog(false);
+        setDownloadProgress(0);
+        setCurrentBatch(0);
+        setTotalBatches(0);
         setSnackbar({
           open: true,
-          message: 'יורד קובץ ZIP עם המסמכים הנבחרים',
+          message: `הורדה הושלמה! ירדו ${calculatedTotalBatches} קבצי ZIP`,
           severity: 'success'
         });
-      },
-      onError: (error: any) => {
-        setIsDownloading(false);
-        console.error('❌ שגיאה בהורדה:', error);
-        setSnackbar({
-          open: true,
-          message: `שגיאה בהורדת המסמכים: ${error.message || 'timeout או שגיאת רשת'}`,
-          severity: 'error'
-        });
-      }
-    });
+      }, 1000);
+      
+    } catch (error: any) {
+      console.error('❌ שגיאה בהורדה:', error);
+      setIsDownloading(false);
+      setShowProgressDialog(false);
+      setDownloadProgress(0);
+      setCurrentBatch(0);
+      setTotalBatches(0);
+      setSnackbar({
+        open: true,
+        message: `שגיאה בהורדה: ${error.message || 'timeout או שגיאת רשת'}`,
+        severity: 'error'
+      });
+    }
   };
 
 
@@ -736,6 +756,50 @@ const DownloadDocPage: React.FC = () => {
             </Box>
           </Paper>
         )}
+
+        <Dialog
+          open={showProgressDialog}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: 2,
+              p: 2
+            }
+          }}
+        >
+          <DialogTitle sx={{ textAlign: 'center' }}>
+            מכין קובץ ZIP...
+          </DialogTitle>
+          <DialogContent>
+            <Box sx={{ textAlign: 'center', py: 2 }}>
+              <CircularProgress 
+                variant="determinate" 
+                value={downloadProgress} 
+                size={80}
+                thickness={4}
+                sx={{ mb: 2 }}
+              />
+              <Typography variant="h6" color="primary" gutterBottom>
+                {Math.round(downloadProgress)}%
+              </Typography>
+              {totalBatches > 1 && (
+                <Typography variant="body1" color="secondary" gutterBottom>
+                  Batch {currentBatch} מתוך {totalBatches}
+                </Typography>
+              )}
+              <Typography variant="body2" color="textSecondary">
+                מוריד קובץ ZIP עם המסמכים הנבחרים...
+              </Typography>
+              <Typography variant="caption" color="textSecondary" display="block" sx={{ mt: 1 }}>
+                {totalBatches > 1 
+                  ? `יורדו ${currentBatch} מתוך ${totalBatches} קבצי ZIP`
+                  : 'זה עשוי לקחת כמה רגעים'
+                }
+              </Typography>
+            </Box>
+          </DialogContent>
+        </Dialog>
 
         <Snackbar
           open={snackbar.open}

@@ -360,17 +360,19 @@ const WorkerPersonalDocuments: React.FC<WorkerPersonalDocumentsProps> = ({ docum
                         </TableCell>
                         <TableCell align="center">
                           <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
-                            <Tooltip title="צפייה במסמך">
-                              <IconButton 
-                                onClick={() => window.open(doc.url, '_blank')}
-                                sx={{ 
-                                  bgcolor: '#e3f2fd',
-                                  '&:hover': { bgcolor: '#bbdefb' }
-                                }}
-                              >
-                                <VisibilityIcon color="primary" />
-                              </IconButton>
-                            </Tooltip>
+                            {doc.status !== 'מאושר' && (
+                              <Tooltip title="צפייה במסמך">
+                                <IconButton 
+                                  onClick={() => window.open(doc.url, '_blank')}
+                                  sx={{ 
+                                    bgcolor: '#e3f2fd',
+                                    '&:hover': { bgcolor: '#bbdefb' }
+                                  }}
+                                >
+                                  <VisibilityIcon color="primary" />
+                                </IconButton>
+                              </Tooltip>
+                            )}
                             <Tooltip title="אשר מסמך">
                               <IconButton
                                 color="success"

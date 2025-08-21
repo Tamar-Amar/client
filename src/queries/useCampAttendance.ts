@@ -128,5 +128,11 @@ export const useCreateCampAttendanceWithFiles = () => {
       queryClient.invalidateQueries({ queryKey: ['campAttendanceReports'] });
     },
   });
+};
+
+export const useGetDocumentUrl = () => {
+  return useMutation({
+    mutationFn: attendanceService.getDocumentUrl,
+  });
 }; 
 

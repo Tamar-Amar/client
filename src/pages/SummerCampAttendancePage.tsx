@@ -44,7 +44,7 @@ import { useFetchAllWorkersAfterNoon } from '../queries/workerAfterNoonQueries';
 import { useFetchAllUsers } from '../queries/useUsers';
 import { useUpdateAttendanceDocumentStatus } from '../queries/useAttendanceDocumentStatus';
 import { Class, WorkerAfterNoon } from '../types';
-import { useAllCampAttendanceReports } from '../queries/useCampAttendance';
+import { useAllCampAttendanceReports, useGetDocumentUrl } from '../queries/useCampAttendance';
 
 const PROJECT_CODE = 4; 
 
@@ -272,25 +272,24 @@ const SummerCampAttendancePage: React.FC = () => {
   }, [searchTerm, filterInstitutionCode, filterClassCode, filterStatus, filterAccountant]);
 
   const { mutate: updateStatus, isPending: isUpdatingStatus } = useUpdateAttendanceDocumentStatus();
+  const { mutate: getDocumentUrl, isPending: isGettingUrl } = useGetDocumentUrl();
 
   const handleViewDocument = async (docId: string) => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/attendance/document/${docId}/url`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+      getDocumentUrl(docId, {
+        onSuccess: (url) => {
+          window.open(url, '_blank');
+        },
+        onError: (error) => {
+          console.error('שגיאה ביצירת URL למסמך:', error);
         }
       });
-      
-      if (response.ok) {
-        const { url } = await response.json();
-        window.open(url, '_blank');
-      } else {
-        console.error('שגיאה ביצירת URL למסמך');
-      }
     } catch (error) {
       console.error('שגיאה ביצירת URL למסמך:', error);
     }
   };
+
+
 
   const handleApprove = (row: any) => {
     let docId = null;
@@ -465,8 +464,17 @@ const SummerCampAttendancePage: React.FC = () => {
                         {workerDoc && workerDoc.status === 'ממתין' ? (
                           <Stack direction="row" spacing={0.25} alignItems="center">
                             <Tooltip title="צפה במסמך">
-                              <IconButton size="small" onClick={() => window.open(workerDoc.url, '_blank')} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
-                                <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                              <IconButton 
+                                size="small" 
+                                onClick={() => handleViewDocument(workerDoc._id)} 
+                                disabled={isGettingUrl}
+                                sx={{ p: 0.2, minWidth: 24, height: 24 }}
+                              >
+                                {isGettingUrl ? (
+                                  <CircularProgress size={16} />
+                                ) : (
+                                  <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                                )}
                               </IconButton>
                             </Tooltip>
                             <Stack direction="row" spacing={0.1} alignItems="center">
@@ -486,8 +494,17 @@ const SummerCampAttendancePage: React.FC = () => {
                           <Stack direction="row" spacing={0.25} alignItems="center">
                             <Chip label="מאושר" color="success" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
                             <Tooltip title="צפה במסמך">
-                              <IconButton size="small" onClick={() => handleViewDocument(workerDoc._id)} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
-                                <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                              <IconButton 
+                                size="small" 
+                                onClick={() => handleViewDocument(workerDoc._id)} 
+                                disabled={isGettingUrl}
+                                sx={{ p: 0.2, minWidth: 24, height: 24 }}
+                              >
+                                {isGettingUrl ? (
+                                  <CircularProgress size={16} />
+                                ) : (
+                                  <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                                )}
                               </IconButton>
                             </Tooltip>
                           </Stack>
@@ -495,8 +512,17 @@ const SummerCampAttendancePage: React.FC = () => {
                           <Stack direction="row" spacing={0.25} alignItems="center">
                             <Chip label="נדחה" color="error" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
                             <Tooltip title="צפה במסמך">
-                              <IconButton size="small" onClick={() => handleViewDocument(workerDoc._id)} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
-                                <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                              <IconButton 
+                                size="small" 
+                                onClick={() => handleViewDocument(workerDoc._id)} 
+                                disabled={isGettingUrl}
+                                sx={{ p: 0.2, minWidth: 24, height: 24 }}
+                              >
+                                {isGettingUrl ? (
+                                  <CircularProgress size={16} />
+                                ) : (
+                                  <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                                )}
                               </IconButton>
                             </Tooltip>
                           </Stack>
@@ -511,8 +537,17 @@ const SummerCampAttendancePage: React.FC = () => {
                         {studentDoc && studentDoc.status === 'ממתין' ? (
                           <Stack direction="row" spacing={0.25} alignItems="center">
                             <Tooltip title="צפה במסמך">
-                              <IconButton size="small" onClick={() => window.open(studentDoc.url, '_blank')} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
-                                <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                              <IconButton 
+                                size="small" 
+                                onClick={() => handleViewDocument(studentDoc._id)} 
+                                disabled={isGettingUrl}
+                                sx={{ p: 0.2, minWidth: 24, height: 24 }}
+                              >
+                                {isGettingUrl ? (
+                                  <CircularProgress size={16} />
+                                ) : (
+                                  <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                                )}
                               </IconButton>
                             </Tooltip>
                             <Stack direction="row" spacing={0.1} alignItems="center">
@@ -532,8 +567,17 @@ const SummerCampAttendancePage: React.FC = () => {
                           <Stack direction="row" spacing={0.25} alignItems="center">
                             <Chip label="מאושר" color="success" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
                             <Tooltip title="צפה במסמך">
-                              <IconButton size="small" onClick={() => handleViewDocument(studentDoc._id)} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
-                                <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                              <IconButton 
+                                size="small" 
+                                onClick={() => handleViewDocument(studentDoc._id)} 
+                                disabled={isGettingUrl}
+                                sx={{ p: 0.2, minWidth: 24, height: 24 }}
+                              >
+                                {isGettingUrl ? (
+                                  <CircularProgress size={16} />
+                                ) : (
+                                  <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                                )}
                               </IconButton>
                             </Tooltip>
                           </Stack>
@@ -541,8 +585,17 @@ const SummerCampAttendancePage: React.FC = () => {
                           <Stack direction="row" spacing={0.25} alignItems="center">
                             <Chip label="נדחה" color="error" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
                             <Tooltip title="צפה במסמך">
-                              <IconButton size="small" onClick={() => handleViewDocument(studentDoc._id)} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
-                                <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                              <IconButton 
+                                size="small" 
+                                onClick={() => handleViewDocument(studentDoc._id)} 
+                                disabled={isGettingUrl}
+                                sx={{ p: 0.2, minWidth: 24, height: 24 }}
+                              >
+                                {isGettingUrl ? (
+                                  <CircularProgress size={16} />
+                                ) : (
+                                  <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                                )}
                               </IconButton>
                             </Tooltip>
                           </Stack>
@@ -607,8 +660,17 @@ const SummerCampAttendancePage: React.FC = () => {
                                   <Stack direction="row" spacing={0.25} alignItems="center">
                                     <Chip label="מאושר" color="success" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
                                     <Tooltip title="צפה במסמך">
-                                      <IconButton size="small" onClick={() => handleViewDocument(controlDocs[0]._id)} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
-                                        <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                                      <IconButton 
+                                        size="small" 
+                                        onClick={() => handleViewDocument(controlDocs[0]._id)} 
+                                        disabled={isGettingUrl}
+                                        sx={{ p: 0.2, minWidth: 24, height: 24 }}
+                                      >
+                                        {isGettingUrl ? (
+                                          <CircularProgress size={16} />
+                                        ) : (
+                                          <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                                        )}
                                       </IconButton>
                                     </Tooltip>
                                   </Stack>
@@ -616,8 +678,17 @@ const SummerCampAttendancePage: React.FC = () => {
                                   <Stack direction="row" spacing={0.25} alignItems="center">
                                     <Chip label="נדחה" color="error" size="small" sx={{ height: 18, fontSize: '0.7rem', px: 0.3 }} />
                                     <Tooltip title="צפה במסמך">
-                                      <IconButton size="small" onClick={() => handleViewDocument(controlDocs[0]._id)} sx={{ p: 0.2, minWidth: 24, height: 24 }}>
-                                        <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                                      <IconButton 
+                                        size="small" 
+                                        onClick={() => handleViewDocument(controlDocs[0]._id)} 
+                                        disabled={isGettingUrl}
+                                        sx={{ p: 0.2, minWidth: 24, height: 24 }}
+                                      >
+                                        {isGettingUrl ? (
+                                          <CircularProgress size={16} />
+                                        ) : (
+                                          <VisibilityIcon color="primary" fontSize="inherit" sx={{ fontSize: 16 }} />
+                                        )}
                                       </IconButton>
                                     </Tooltip>
                                   </Stack>
@@ -698,9 +769,14 @@ const SummerCampAttendancePage: React.FC = () => {
                       <Tooltip title="צפה במסמך">
                         <IconButton 
                           size="small" 
-                          onClick={() => window.open(doc.url, '_blank')}
+                          onClick={() => handleViewDocument(doc._id)}
+                          disabled={isGettingUrl}
                         >
-                          <VisibilityIcon />
+                          {isGettingUrl ? (
+                            <CircularProgress size={16} />
+                          ) : (
+                            <VisibilityIcon />
+                          )}
                         </IconButton>
                       </Tooltip>
                       

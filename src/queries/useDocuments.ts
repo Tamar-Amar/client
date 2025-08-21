@@ -159,7 +159,7 @@ export const useDocumentTypes = () => {
       const response = await axiosInstance.get('/api/documents/types');
       return response.data;
     },
-    staleTime: 10 * 60 * 1000, // 10 דקות
+    staleTime: 10 * 60 * 1000, 
   });
 };
 
@@ -181,18 +181,37 @@ export const useDownloadMultipleDocuments = () => {
       selectedProject?: string;
       projectOrganization?: 'byClass' | 'byType';
       maxDocuments?: number;
+      batchSize?: number;
+      batchIndex?: number;
     }) => {
-      const response = await axiosInstance.post('/api/documents/download-multiple', filters, {
-        responseType: 'blob',
-        timeout: 300000, // 5 דקות timeout
-      });
-      return response.data;
+              const response = await axiosInstance.post('/api/documents/download-multiple', filters, {
+          responseType: 'blob',
+          timeout: 600000, // 10 דקות
+        });
+      
+     
+      const totalDocuments = parseInt(response.headers['x-total-documents'] || '0');
+      const batchSize = parseInt(response.headers['x-batch-size'] || '500');
+      const currentBatch = parseInt(response.headers['x-current-batch'] || '1');
+      const totalBatches = parseInt(response.headers['x-total-batches'] || '1');
+      const batchDocuments = parseInt(response.headers['x-batch-documents'] || '0');
+      
+      return {
+        blob: response.data,
+        batchInfo: {
+          totalDocuments,
+          batchSize,
+          currentBatch,
+          totalBatches,
+          batchDocuments
+        }
+      };
     },
-    onSuccess: (blob) => {
-      const url = window.URL.createObjectURL(blob);
+    onSuccess: (data) => {
+      const url = window.URL.createObjectURL(data.blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `documents-${new Date().toISOString().replace(/[:.]/g, '-')}.zip`;
+      link.download = `documents-batch-${data.batchInfo.currentBatch}-${new Date().toISOString().replace(/[:.]/g, '-')}.zip`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

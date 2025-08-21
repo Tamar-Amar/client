@@ -262,6 +262,16 @@ export const attendanceService = {
     }
   },
 
+  getDocumentUrl: async (documentId: string) => {
+    try {
+      const response = await axiosInstance.get(`/api/attendance/document/${documentId}/url`);
+      return response.data.url;
+    } catch (error) {
+      console.error("getDocumentUrl - CLIENT ERROR", error);
+      throw error;
+    }
+  },
+
   getClassesByCoordinatorInstitutionCodes: async (coordinatorId: string) => {
     const token = localStorage.getItem('token');
     const response = await axiosInstance.get(`/api/classes/coordinator-institution-codes/${coordinatorId}`, {
