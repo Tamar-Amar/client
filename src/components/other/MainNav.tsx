@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AppBar, Toolbar, Button, Box, Typography, Stack, Menu, MenuItem,IconButton, Tabs, Tab, Dialog } from '@mui/material';
+import { AppBar, Toolbar, Button, Box, Typography, Stack, Menu, MenuItem,IconButton, Tabs, Tab, Dialog, Chip, Select, FormControl, InputLabel } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import LoginIcon from '@mui/icons-material/Login';
 import { useRecoilValue } from 'recoil';
@@ -11,6 +11,10 @@ import { fetchWorkerById } from '../../services/WorkerAfterNoonService';
 import ImpersonateDialog from './ImpersonateDialog';
 import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import { projectOptions } from '../../utils/projectUtils';
+import BusinessIcon from '@mui/icons-material/Business';
+import { useCurrentProject } from '../../hooks/useCurrentProject';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 interface TabInfo {
   label: string;
@@ -22,28 +26,30 @@ const MainNav: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const role = useRecoilValue(userRoleState);
+  const { currentProject, currentProjectName, setCurrentProject } = useCurrentProject();
   const [operatorName, setOperatorName] = useState<string | null>(null);
   const [workerDetails, setWorkerDetails] = useState<{ idObj:string; name: string; idNumber: string } | null>(null);
   const [selectedSection, setSelectedSection] = useState<string>('general');
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [projectMenuAnchorEl, setProjectMenuAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [personalMenuAnchorEl, setPersonalMenuAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
+  const projectMenuOpen = Boolean(projectMenuAnchorEl);
+  const personalMenuOpen = Boolean(personalMenuAnchorEl);
   const [impersonateDialogOpen, setImpersonateDialogOpen] = useState(false);
   const [isLeader, setIsLeader] = useState(false);
 
-  const sections = [
-    { key: 'general', label: 'כללי' },
-    { key: 'activity', label: 'חוגים' },
-  ];
+  const getAttendanceReportsPath = () => {
+    return [2, 3, 4, 6, 7, 8].includes(currentProject) ? '/camp-attendance' : '/attendance-reports';
+  };
 
   const adminGeneralTabs: TabInfo[] = [
     { label: 'ניהול עובדים', path: '/workers' },
     { label: 'מצבת', path: '/matsevet' },
     { label: ' מסמכים אישיים', path: '/documents', },
     { label: 'הורדת מסמכים', path: '/download-doc' },
-    { label: 'דיווחי קיץ', path: '/summer-camp-attendance' },
-    { label: 'מיילים', path: '/workers-after-noon-email' },
-    { label: 'התראות', path: '/workers-after-noon-notifications' },
-    { label: 'משתמשים', path: '/users' },
+    { label: 'דיווחי נוכחות', path: getAttendanceReportsPath() },
+
   ];
 
   const adminActivityTabs: TabInfo[] = [
@@ -51,18 +57,16 @@ const MainNav: React.FC = () => {
     { label: 'ניהול מפעילים', path: '/operators' },
     { label: ' מסמכים אישיים', path: '/documents' },
     { label: 'הורדת מסמכים', path: '/download-doc' },
-    { label: 'מיילים', path: '/emails' },
+
   ];
 
   const managerTabs: TabInfo[] = [    
     { label: 'מצבת', path: '/matsevet' },
     { label: 'ניהול עובדים', path: '/workers' },
-    { label: 'דיווחי קיץ', path: '/summer-camp-attendance' },
+    { label: 'דיווחי נוכחות', path: getAttendanceReportsPath() },
     { label: 'מסמכים אישיים', path: '/documents' },
     { label: 'הורדת מסמכים', path: '/download-doc' },
-    { label: 'מיילים', path: '/workers-after-noon-email' },
-    { label: 'התראות', path: '/workers-after-noon-notifications' }, 
-    { label: 'משתמשים', path: '/users' },
+
   ];
 
   const accountantTabs: TabInfo[] = [
@@ -70,24 +74,19 @@ const MainNav: React.FC = () => {
     { label: 'הורדת מסמכים', path: '/download-doc' },
     { label: 'מצבת', path: '/matsevet' },
     { label: 'עובדים', path: '/workers' },
-    { label: 'דיווחי קיץ', path: '/summer-camp-attendance' },
-    { label: 'התראות', path: '/workers-after-noon-notifications' }, 
-
+    { label: 'דיווחי נוכחות', path: getAttendanceReportsPath() },
   ];
 
-  const usersTabs: TabInfo[] = [
-    { label: 'משתמשים', path: '/users' },
-  ];
+
 
   const leaderTabs: TabInfo[] = [
     { label: 'דוחות קייטנת קיץ', path: '/leader/camp-reports' },
   ];
 
   const getTabsBySection = () => {
-    if (!selectedSection) return [];
     if (role === 'manager_project') return managerTabs;
-    if (role === 'admin' && selectedSection === 'general') return adminGeneralTabs;
     if (role === 'admin' && selectedSection === 'activity') return adminActivityTabs;
+    if (role === 'admin') return adminGeneralTabs; 
     if (role === 'accountant') return accountantTabs;
     if (role === 'worker' && isLeader) return leaderTabs;
     if (role === 'worker') return [];
@@ -140,20 +139,32 @@ const MainNav: React.FC = () => {
     navigate(`/worker/${workerDetails?.idObj}`);
   };
 
-  const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
   const handleMenuClose = () => {
     setAnchorEl(null);
   };
 
-  const handleMenuItemClick = (section: string) => {
-    setSelectedSection(section);
-    handleMenuClose();
+  const handleProjectMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    setProjectMenuAnchorEl(event.currentTarget);
   };
 
-  const selectedSectionObject = sections.find(s => s.key === selectedSection);
+  const handleProjectMenuClose = () => {
+    setProjectMenuAnchorEl(null);
+  };
+
+  const handlePersonalMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    setPersonalMenuAnchorEl(event.currentTarget);
+  };
+
+  const handlePersonalMenuClose = () => {
+    setPersonalMenuAnchorEl(null);
+  };
+
+  const handleProjectChange = (projectCode: number) => {
+    setCurrentProject(projectCode);
+    setSelectedSection('general'); 
+    navigate('/workers'); 
+    handleProjectMenuClose();
+  };
 
   const handleImpersonate = (user: any, type: any) => {
     if (!localStorage.getItem('original_admin_token')) {
@@ -214,6 +225,85 @@ const MainNav: React.FC = () => {
       >
         <Toolbar sx={{ justifyContent: 'space-between' }}>
           
+          {(role === 'admin' || role === 'manager_project' || role === 'coordinator') && 
+            (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Button
+                onClick={handleProjectMenuClick}
+                startIcon={<BusinessIcon />}
+                sx={{
+                  backgroundColor: '#c58a00',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '1rem',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  '&:hover': {
+                    backgroundColor: '#a07000',
+                  }
+                }}
+              >
+                {currentProjectName}
+              </Button>
+              <Menu
+                anchorEl={projectMenuAnchorEl}
+                open={projectMenuOpen}
+                onClose={handleProjectMenuClose}
+                PaperProps={{
+                  sx: {
+                    minWidth: 250,
+                    maxHeight: 400
+                  }
+                }}
+              >
+                {projectOptions.map((project) => (
+                  <MenuItem
+                    key={project.value}
+                    selected={project.value === currentProject}
+                    onClick={() => handleProjectChange(project.value)}
+                    sx={{
+                      backgroundColor: project.value === currentProject ? 'rgba(197, 138, 0, 0.1)' : 'transparent',
+                      '&:hover': {
+                        backgroundColor: 'rgba(197, 138, 0, 0.05)',
+                      }
+                    }}
+                  >
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <Typography variant="body1">{project.label}</Typography>
+                      {project.value === currentProject && (
+                        <Chip 
+                          label="נוכחי" 
+                          size="small" 
+                          color="warning" 
+                          variant="outlined"
+                        />
+                      )}
+                    </Stack>
+                  </MenuItem>
+                ))}
+                {role === 'admin' && (
+                  <MenuItem
+                    onClick={() => {
+                      setSelectedSection('activity');
+                      navigate('/activities'); 
+                      handleProjectMenuClose();
+                    }}
+                    sx={{
+                      borderTop: '1px solid rgba(0, 0, 0, 0.12)',
+                      backgroundColor: 'rgba(25, 118, 210, 0.05)',
+                      '&:hover': {
+                        backgroundColor: 'rgba(25, 118, 210, 0.1)',
+                      }
+                    }}
+                  >
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <Typography variant="body1" color="primary">חוגים</Typography>
+                    </Stack>
+                  </MenuItem>
+                )}
+              </Menu>
+            </Box>
+          )}
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             {role ? (
@@ -243,49 +333,6 @@ const MainNav: React.FC = () => {
               </>
             ) : null}
 
-            {role === 'admin' && (
-             <Box>
-              <Button
-                id="section-button"
-                aria-controls={open ? 'section-menu' : undefined}
-                aria-haspopup="true"
-                aria-expanded={open ? 'true' : undefined}
-                onClick={handleMenuClick}
-                sx={{
-                  color: '#1976d2',
-                  fontSize: '1.1rem',
-                  '&:hover': {
-                    backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                    color: '#1565c0'
-                  }
-                }}
-              >
-                {selectedSectionObject?.label}
-              </Button>
-              <Menu
-                id="section-menu"
-                anchorEl={anchorEl}
-                open={open}
-                onClose={handleMenuClose}
-                MenuListProps={{
-                  'aria-labelledby': 'section-button',
-                }}
-              >
-                {sections.map((section) => (
-                  <MenuItem
-                    key={section.key}
-                    selected={section.key === selectedSection}
-                    onClick={() => handleMenuItemClick(section.key)}
-                  >
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <Typography>{section.label}</Typography>
-                    </Stack>
-                  </MenuItem>
-                ))}
-              </Menu>
-            </Box>
-          )}
-
           {role === 'accountant' && (
             <Box>
               <Button
@@ -304,9 +351,9 @@ const MainNav: React.FC = () => {
             </Box>
           )}
           </Box>
-          {/* Center: Tabs */}
+
            {tabs.length > 0 && (
-              <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
+              <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2 }}>
                 <Tabs
                   value={tabs.some(tab => tab.path === location.pathname) ? location.pathname : false}
                   onChange={(e, newValue) => navigate(newValue)}
@@ -344,10 +391,30 @@ const MainNav: React.FC = () => {
                       }
                       value={tab.path}
                     />
-                  ))}
+                                    ))}
                 </Tabs>
-              </Box>
-           )}
+                {role === 'admin' && selectedSection === 'activity' && (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => {
+                      setSelectedSection('general');
+                        navigate('/workers'); 
+                    }}
+                    sx={{
+                      color: '#1976d2',
+                      borderColor: '#1976d2',
+                      fontSize: '0.8rem',
+                      '&:hover': {
+                        backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                      }
+                    }}
+                  >
+                    חזרה לכללי
+                  </Button>
+                )}
+                </Box>
+             )}
 
 
           {role === 'worker' && isLeader && tabs.length === 0 && (
@@ -377,6 +444,22 @@ const MainNav: React.FC = () => {
                    role === 'coordinator' ? 'רכז' : ''}
                 </Typography>
              )}
+
+            {(role === 'admin' || role === 'manager_project') && (
+              <IconButton
+                onClick={handlePersonalMenuClick}
+                sx={{ 
+                  color: '#1976d2',
+                  backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                  '&:hover': { 
+                    backgroundColor: 'rgba(25, 118, 210, 0.12)',
+                  }
+                }}
+              >
+                <SettingsIcon />
+              </IconButton>
+            )}
+
             {(role === 'admin' || role === 'manager_project') && (
               <Button
                 variant="contained"
@@ -433,6 +516,65 @@ const MainNav: React.FC = () => {
           </Box>
         </Toolbar>
       </AppBar>
+
+      <Menu
+        anchorEl={personalMenuAnchorEl}
+        open={personalMenuOpen}
+        onClose={handlePersonalMenuClose}
+        PaperProps={{
+          sx: {
+            minWidth: 200,
+            mt: 1
+          }
+        }}
+      >
+        <MenuItem
+          onClick={() => {
+            navigate('/users');
+            handlePersonalMenuClose();
+          }}
+          sx={{
+            '&:hover': {
+              backgroundColor: 'rgba(25, 118, 210, 0.08)',
+            }
+          }}
+        >
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Typography variant="body1">משתמשים</Typography>
+          </Stack>
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            navigate('/workers-after-noon-notifications');
+            handlePersonalMenuClose();
+          }}
+          sx={{
+            '&:hover': {
+              backgroundColor: 'rgba(25, 118, 210, 0.08)',
+            }
+          }}
+        >
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Typography variant="body1">התראות</Typography>
+          </Stack>
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            navigate('/workers-after-noon-email');
+            handlePersonalMenuClose();
+          }}
+          sx={{
+            '&:hover': {
+              backgroundColor: 'rgba(25, 118, 210, 0.08)',
+            }
+          }}
+        >
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Typography variant="body1">מיילים</Typography>
+          </Stack>
+        </MenuItem>
+      </Menu>
+
       <Dialog open={impersonateDialogOpen} onClose={() => setImpersonateDialogOpen(false)}>
         <Box sx={{ p: 4, minWidth: 350 }}>
           <Typography variant="h6">התחברות כמשתמש אחר (בקרוב)</Typography>

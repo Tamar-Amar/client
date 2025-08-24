@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -28,6 +28,8 @@ import {
 import { useFetchAllWorkersAfterNoon } from "../../queries/workerAfterNoonQueries";
 import {  useFetchAllPersonalDocuments } from "../../queries/useDocuments";
 import { WorkerAfterNoon } from "../../types";
+import { useCurrentProject } from "../../hooks/useCurrentProject";
+import { projectOptions, projectNames } from "../../utils/projectUtils";
 import SendIcon from '@mui/icons-material/Send';
 import SearchIcon from '@mui/icons-material/Search';
 
@@ -35,17 +37,13 @@ import SearchIcon from '@mui/icons-material/Search';
 const REQUIRED_TAGS = ["אישור משטרה", "תעודת השכלה", "תעודת זהות", "חוזה"];
 const API_URL = process.env.REACT_APP_API_URL;
 
-const PROJECTS = [
-  { value: 1, label: "צהרון שוטף 2025" },
-  { value: 2, label: "קייטנת חנוכה 2025" },
-  { value: 3, label: "קייטנת פסח 2025" },
-  { value: 4, label: "קייטנת קיץ 2025" },
-];
+const PROJECTS = projectOptions;
 
 const WorkersDocumentsEmailPage: React.FC = () => {
   const [selectedWorkerIds, setSelectedWorkerIds] = useState<string[]>([]);
   const { data: workers = [], isLoading } = useFetchAllWorkersAfterNoon();
   const { data: documents = [] } = useFetchAllPersonalDocuments();
+  const { currentProject } = useCurrentProject();
   const [status, setStatus] = useState<string | null>(null);
   const [results, setResults] = useState<{success: string[], failed: string[]}>({ success: [], failed: [] });
   const [page, setPage] = useState(0);
@@ -55,8 +53,13 @@ const WorkersDocumentsEmailPage: React.FC = () => {
   const [isSending, setIsSending] = useState(false);
   const [isCustomEmail, setIsCustomEmail] = useState(false);
   
-  const [selectedProject, setSelectedProject] = useState<number | "">("");
+  const [selectedProject, setSelectedProject] = useState<number | "">(currentProject);
   const [searchTerm, setSearchTerm] = useState<string>("");
+
+  // Update selected project when current project changes
+  useEffect(() => {
+    setSelectedProject(currentProject);
+  }, [currentProject]);
 
   const documentsByWorkerId = useMemo(() => {
     const map = new Map<string, { tag: string; status: string }[]>();
@@ -71,13 +74,6 @@ const WorkersDocumentsEmailPage: React.FC = () => {
     if (!worker.projectCodes || worker.projectCodes.length === 0) {
       return "לא מוגדר";
     }
-    
-    const projectNames: { [key: number]: string } = {
-      1: "צהרון שוטף 2025",
-      2: "קייטנת חנוכה 2025", 
-      3: "קייטנת פסח 2025",
-      4: "קייטנת קיץ 2025"
-    };
     
     const firstProjectCode = worker.projectCodes[0];
     return projectNames[firstProjectCode] || `פרויקט ${firstProjectCode}`;

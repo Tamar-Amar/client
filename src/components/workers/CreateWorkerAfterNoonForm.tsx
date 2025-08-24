@@ -42,7 +42,7 @@ const WorkerAfterNoonForm: React.FC<WorkerAfterNoonFormProps> = ({ onSuccess }) 
 
   const getProjectDisplayName = (selection: ProjectSelection): string => {
     const projectNames: { [key: number]: string } = {
-      1: "צהרון שוטף 2025",
+      1: "צהרון 2025",
       2: "קייטנת חנוכה 2025", 
       3: "קייטנת פסח 2025",
       4: "קייטנת קיץ 2025"
@@ -140,7 +140,7 @@ const WorkerAfterNoonForm: React.FC<WorkerAfterNoonFormProps> = ({ onSuccess }) 
                   onChange={() => handleProjectSelectionChange(1)}
                 />
               }
-              label="צהרון שוטף 2025"
+              label="צהרון 2025"
             />
             <FormControlLabel
               control={

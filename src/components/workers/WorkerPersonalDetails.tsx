@@ -59,11 +59,11 @@ const EditableField = ({ label, name, value, editing, onChange, icon, select, op
 };
 
 const projectTypes = [
-  { label: 'צהרון שוטף 2025', value: 1 },
+  { label: 'צהרון 2025', value: 1 },
   { label: 'קייטנת חנוכה 2025', value: 2 },
   { label: 'קייטנת פסח 2025', value: 3 },
   { label: 'קייטנת קיץ 2025', value: 4 },
-  { label: 'צהרון שוטף 2026', value: 5 },
+  { label: 'צהרון 2026', value: 5 },
   { label: 'קייטנת חנוכה 2026', value: 6 },
   { label: 'קייטנת פסח 2026', value: 7 },
   { label: 'קייטנת קיץ 2026', value: 8 },
@@ -156,7 +156,7 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
             <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 1 }}>
               {(workerData.projectCodes ?? []).map(code => {
                 const projectNames: { [key: number]: string } = {
-                  1: "צהרון שוטף 2025",
+                  1: "צהרון 2025",
                   2: "קייטנת חנוכה 2025", 
                   3: "קייטנת פסח 2025",
                   4: "קייטנת קיץ 2025"
@@ -218,7 +218,7 @@ const WorkerPersonalDetails: React.FC<WorkerPersonalDetailsProps> = ({ workerDat
                           color="primary" 
                         />
                       } 
-                      label="צהרון שוטף 2025" 
+                      label="צהרון 2025" 
                     />
                     <FormControlLabel 
                       control={

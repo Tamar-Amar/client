@@ -31,3 +31,15 @@ export const userRoleState = atom<string | null>({
     },
   ],
 });
+
+export const currentProjectState = atom<number>({
+  key: "currentProjectState",
+  default: parseInt(localStorage.getItem("currentProject") || "4"),
+  effects_UNSTABLE: [
+    ({ onSet }) => {
+      onSet((newProject) => {
+        localStorage.setItem("currentProject", newProject.toString());
+      });
+    },
+  ],
+});

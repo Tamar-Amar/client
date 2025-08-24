@@ -6,7 +6,7 @@ import { useFetchClasses, useAddClass, useAddMultipleClasses, useUpdateClass, us
 
 const years = [2025, 2026];
 const projectTypes = [
-  { label: 'צהרון שוטף', value: 'afternoon', code: { 2025: 1, 2026: 5 } },
+  { label: 'צהרון', value: 'afternoon', code: { 2025: 1, 2026: 5 } },
   { label: 'קייטנת קיץ', value: 'summer', code: { 2025: 4, 2026: 8 } },
   { label: 'קייטנת חנוכה', value: 'hanuka', code: { 2025: 2, 2026: 6 } },
   { label: 'קייטנת פסח', value: 'passover', code: { 2025: 3, 2026: 7 } },

@@ -35,6 +35,7 @@ import MatsevetImportPage from '../pages/MatsevetImportPage';
 import WorkersImportPage from '../pages/WorkersImportPage';
 import WorkersUpdatePage from '../pages/manager/WorkersUpdatePage';
 import SummerCampAttendancePage from '../pages/SummerCampAttendancePage';
+import AttendanceReportsPage from '../pages/AttendanceReportsPage';
 
 const OperatorDocumentsWrapper = () => {
   const token = localStorage.getItem('token');
@@ -64,19 +65,20 @@ const AppRoutes: React.FC = () => {
         <Route path="/workers/update" element={<WorkersUpdatePage />} />
         <Route path="/workers-email" element={<WorkersDocumentsEmailPage />} />
         <Route path="/worker-attendance" element={<WorkerAttendancePage />} />
-        <Route path="/camp-attendance" element={<CampAttendancePage />} />
+        {/* <Route path="/camp-attendance" element={<CampAttendancePage />} /> */}
         <Route path="/workers-after-noon-email" element={<WorkersAfterNoonEmailPage />} />
         <Route path="/workers-after-noon-notifications" element={<WorkersAfterNoonNotificationsPage />} />
-        <Route path="/classes" element={<ClassesPage />} />
         <Route path="/matsevet" element={<MatsevetPage />} />
         <Route path="/users" element={<UsersManagementPage />} />
         <Route path="/matsevet/edit" element={<MatsevetEditPage />} />
         <Route path="/matsevet/import" element={<MatsevetImportPage />} />
         <Route path="/workers/import" element={<WorkersImportPage />} />
-        <Route path="/summer-camp-attendance" element={<SummerCampAttendancePage />} />
+        <Route path="/camp-attendance" element={<SummerCampAttendancePage />} />
+        <Route path="/attendance-reports" element={<AttendanceReportsPage />} />
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+        <Route path="/classes" element={<ClassesPage />} />
         <Route path="/operators" element={<OperatorsPage />} />
         <Route path="/activities" element={<ActivitiesPage />} />
         <Route path="/invoices" element={<InvoicesPage/>}/>

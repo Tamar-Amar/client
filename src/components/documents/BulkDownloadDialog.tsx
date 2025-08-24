@@ -202,7 +202,7 @@ const BulkDownloadDialog: React.FC<BulkDownloadDialogProps> = ({
                         onChange={(e) => handleFilterChange('project', e.target.value)}
                       >
                         <MenuItem value="">הכל</MenuItem>
-                        <MenuItem value="1">צהרון שוטף 2025</MenuItem>
+                        <MenuItem value="1">צהרון 2025</MenuItem>
                         <MenuItem value="2">קייטנת חנוכה 2025</MenuItem>
                         <MenuItem value="3">קייטנת פסח 2025</MenuItem>
                         <MenuItem value="4">קייטנת קיץ 2025</MenuItem>
@@ -248,7 +248,7 @@ const BulkDownloadDialog: React.FC<BulkDownloadDialogProps> = ({
                                 return `מזהה עובד: ${value}`;
                               case 'project':
                                 const projectNames: { [key: string]: string } = {
-                                  '1': 'צהרון שוטף 2025',
+                                  '1': 'צהרון 2025',
                                   '2': 'קייטנת חנוכה 2025',
                                   '3': 'קייטנת פסח 2025',
                                   '4': 'קייטנת קיץ 2025'

@@ -28,10 +28,6 @@ import {
   ListItem,
   ListItemText,
   ListItemSecondaryAction,
-  Divider,
-  FormControlLabel,
-  Checkbox,
-  Autocomplete,
   Card,
   CardContent
 } from '@mui/material';
@@ -44,10 +40,11 @@ import {
   AddCircle as AddCircleIcon,
   RemoveCircle as RemoveCircleIcon,
   Upload as UploadIcon,
-  FilterList as FilterListIcon,
   Info as InfoIcon
 } from '@mui/icons-material';
 import axios from 'axios';
+import { useCurrentProject } from '../hooks/useCurrentProject';
+import { projectOptions } from '../utils/projectUtils';
 
 const API_URL = process.env.REACT_APP_API_URL + '/api/users';
 
@@ -69,7 +66,7 @@ interface User {
     institutionCode: string;
     institutionName: string;
   }>;
-  accountantInstitutionCodes?: string[]; // קודי מוסד לחשבי שכר
+  accountantInstitutionCodes?: string[]; 
 }
 
 interface UserFormData {
@@ -82,7 +79,7 @@ interface UserFormData {
   phone: string;
   isActive: boolean;
   projectCodes?: ProjectAssignment[];
-  accountantInstitutionCodes?: string[]; // קודי מוסד לחשבי שכר
+    accountantInstitutionCodes?: string[]; 
 }
 
 const roleLabels = {
@@ -93,13 +90,6 @@ const roleLabels = {
 };
 
 
-
-const projectTypes = [
-  { label: 'צהרון שוטף 2025', value: 1 },
-  { label: ' חנוכה 2025', value: 2 },
-  { label: ' פסח 2025', value: 3 },
-  { label: ' קיץ 2025', value: 4 },
-];
 
 interface ProjectAssignment {
   projectCode: number;
@@ -133,6 +123,7 @@ const validatePassword = (password: string): string | null => {
 };
 
 const UsersManagementPage: React.FC = () => {
+  const { currentProject } = useCurrentProject();
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -162,7 +153,7 @@ const UsersManagementPage: React.FC = () => {
   const [loadingInstitutions, setLoadingInstitutions] = useState(false);
   
   const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<number>(1);
+  const [selectedProject, setSelectedProject] = useState<number>(currentProject);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importLoading, setImportLoading] = useState(false);
   const [importError, setImportError] = useState('');
@@ -179,6 +170,10 @@ const UsersManagementPage: React.FC = () => {
     getCurrentUserRole();
     fetchInstitutionCodes();
   }, []);
+
+  useEffect(() => {
+    setSelectedProject(currentProject);
+  }, [currentProject]);
 
   useEffect(() => {
     let filtered = users;
@@ -463,7 +458,7 @@ const UsersManagementPage: React.FC = () => {
       });
 
       setImportSuccess(`יובאו בהצלחה ${response.data.createdCount} רכזים`);
-      fetchUsers(); // רענון רשימת המשתמשים
+      fetchUsers(); 
     } catch (error: any) {
       console.error('Error importing coordinators:', error);
       setImportError(error.response?.data?.message || 'שגיאה בייבוא הרכזים');
@@ -675,48 +670,37 @@ const UsersManagementPage: React.FC = () => {
                     {user.role === 'coordinator' && user.projectCodes && user.projectCodes.length > 0 ? (
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                         {(() => {
-                          const groupedByProject = user.projectCodes.reduce((acc, assignment) => {
-                            const projectCode = assignment.projectCode;
-                            if (!acc[projectCode]) {
-                              acc[projectCode] = [];
-                            }
-                            acc[projectCode].push(assignment);
-                            return acc;
-                          }, {} as Record<number, typeof user.projectCodes>);
+                          const currentProjectAssignments = user.projectCodes.filter(
+                            assignment => assignment.projectCode === currentProject
+                          );
 
-                          const projectEntries = Object.entries(groupedByProject);
-                          const limitedProjects = renderLimitedItems(projectEntries, 2);
-
-                          return limitedProjects.map(([projectCode, assignments]) => {
-                            const project = projectTypes.find(p => p.value === parseInt(projectCode));
-                            const institutionsText = assignments.map((a: any) => a.institutionCode).join(', ');
+                          if (currentProjectAssignments.length === 0) {
                             return (
-                              <Typography 
-                                key={projectCode}
-                                variant="caption" 
-                                sx={{ 
-                                  color: '#666',
-                                  fontSize: '0.75rem'
-                                }}
-                              >
-                                {project?.label || `פרויקט ${projectCode}`} - {institutionsText}
+                              <Typography variant="body2" color="text.secondary" fontStyle="italic">
+                                אין שיוכים לפרויקט זה
                               </Typography>
                             );
-                          });
+                          }
+
+                          const institutionsText = currentProjectAssignments.map((a: any) => a.institutionCode).join(', ');
+                          return (
+                            <Typography 
+                              variant="caption" 
+                              sx={{ 
+                                color: '#666',
+                                fontSize: '0.75rem'
+                              }}
+                            >
+                              {institutionsText}
+                            </Typography>
+                          );
                         })()}
                         {(() => {
-                          const groupedByProject = user.projectCodes.reduce((acc, assignment) => {
-                            const projectCode = assignment.projectCode;
-                            if (!acc[projectCode]) {
-                              acc[projectCode] = [];
-                            }
-                            acc[projectCode].push(assignment);
-                            return acc;
-                          }, {} as Record<number, typeof user.projectCodes>);
-
-                          const projectEntries = Object.entries(groupedByProject);
+                          const otherProjectAssignments = user.projectCodes.filter(
+                            assignment => assignment.projectCode !== currentProject
+                          );
                           
-                          if (projectEntries.length > 2) {
+                          if (otherProjectAssignments.length > 0) {
                             return (
                               <Button
                                 size="small"
@@ -729,23 +713,7 @@ const UsersManagementPage: React.FC = () => {
                                   p: 0.5
                                 }}
                               >
-                                הצג עוד {projectEntries.length - 2} פרויקטים
-                              </Button>
-                            );
-                          } else if (projectEntries.length > 0) {
-                            return (
-                              <Button
-                                size="small"
-                                startIcon={<InfoIcon />}
-                                onClick={() => handleOpenDetailsDialog(user)}
-                                sx={{ 
-                                  mt: 0.5,
-                                  fontSize: '0.7rem',
-                                  minWidth: 'auto',
-                                  p: 0.5
-                                }}
-                              >
-                                הצג פרטים
+                                הצג הכל
                               </Button>
                             );
                           }
@@ -988,7 +956,7 @@ const UsersManagementPage: React.FC = () => {
                                   onChange={(e) => updateProjectAssignment(index, 'projectCode', e.target.value as number)}
                                   label="פרויקט"
                                 >
-                                  {projectTypes.map((project) => (
+                                  {projectOptions.map((project) => (
                                     <MenuItem key={project.value} value={project.value}>
                                       {project.label}
                                     </MenuItem>
@@ -1129,7 +1097,7 @@ const UsersManagementPage: React.FC = () => {
                 onChange={(e) => setSelectedProject(e.target.value as number)}
                 label="פרויקט לייבוא"
               >
-                {projectTypes.map((project) => (
+                {projectOptions.map((project) => (
                   <MenuItem key={project.value} value={project.value}>
                     {project.label}
                   </MenuItem>
@@ -1226,40 +1194,34 @@ const UsersManagementPage: React.FC = () => {
                     <Card variant="outlined">
                       <CardContent>
                         <Typography variant="h6" gutterBottom>
-                          שיוכי פרויקטים ({selectedUserForDetails.projectCodes.length})
+                          שיוכי פרויקטים
                         </Typography>
                         <List dense>
                           {(() => {
-                            const groupedByProject = selectedUserForDetails.projectCodes.reduce((acc, assignment) => {
-                              const projectCode = assignment.projectCode;
-                              if (!acc[projectCode]) {
-                                acc[projectCode] = [];
-                              }
-                              acc[projectCode].push(assignment);
-                              return acc;
-                            }, {} as Record<number, typeof selectedUserForDetails.projectCodes>);
+                            const currentProjectAssignments = selectedUserForDetails.projectCodes.filter(
+                              assignment => assignment.projectCode === currentProject
+                            );
 
-                            return Object.entries(groupedByProject).map(([projectCode, assignments]) => {
-                              const project = projectTypes.find(p => p.value === parseInt(projectCode));
+                            if (currentProjectAssignments.length === 0) {
                               return (
-                                <ListItem key={projectCode} sx={{ px: 0, flexDirection: 'column', alignItems: 'flex-start' }}>
-                                  <Typography variant="body2" sx={{ fontWeight: 'medium', mb: 1 }}>
-                                    {project?.label || `פרויקט ${projectCode}`}
+                                <ListItem sx={{ px: 0 }}>
+                                  <Typography variant="body2" color="text.secondary" fontStyle="italic">
+                                    אין שיוכים לפרויקט זה
                                   </Typography>
-                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, ml: 2 }}>
-                                    {assignments.map((assignment, index) => (
-                                      <Chip
-                                        key={index}
-                                        label={`${assignment.institutionCode}${assignment.institutionName ? ` - ${assignment.institutionName}` : ''}`}
-                                        size="small"
-                                        color="primary"
-                                        variant="outlined"
-                                      />
-                                    ))}
-                                  </Box>
                                 </ListItem>
                               );
-                            });
+                            }
+
+                            return currentProjectAssignments.map((assignment, index) => (
+                              <ListItem key={index} sx={{ px: 0 }}>
+                                <Chip
+                                  label={`${assignment.institutionCode}${assignment.institutionName ? ` - ${assignment.institutionName}` : ''}`}
+                                  size="small"
+                                  color="primary"
+                                  variant="outlined"
+                                />
+                              </ListItem>
+                            ));
                           })()}
                         </List>
                       </CardContent>

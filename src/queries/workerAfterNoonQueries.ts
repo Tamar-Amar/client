@@ -5,7 +5,10 @@ import { WorkerAfterNoon } from '../types';
 export const useFetchAllWorkersAfterNoon = () => {
   return useQuery({
     queryKey: ['workers'],
-    queryFn: fetchWorkers
+    queryFn: async () => {
+      const result = await fetchWorkers();
+      return result;
+    }
   });
 };
 

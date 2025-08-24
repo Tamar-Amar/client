@@ -1,4 +1,4 @@
-import React, { useState} from 'react';
+import React, { useState, useEffect} from 'react';
 import {
   Box,
   Typography,
@@ -34,6 +34,7 @@ import {
 import { useFetchAllWorkersAfterNoon } from '../queries/workerAfterNoonQueries';
 import { useFetchClasses } from '../queries/classQueries';
 import { DocumentStatus } from '../types/Document';
+import { useCurrentProject } from '../hooks/useCurrentProject';
 import {
   Folder as FolderIcon,
   Person as PersonIcon,
@@ -89,7 +90,12 @@ const DownloadDocPage: React.FC = () => {
 
   const { data: workers = [], isLoading: workersLoading } = useFetchAllWorkersAfterNoon();
   const { data: classes = [], isLoading: classesLoading } = useFetchClasses();
+  const { currentProject } = useCurrentProject();
 
+
+  useEffect(() => {
+    setSelectedProject(currentProject.toString());
+  }, [currentProject]);
 
   const { 
     data: personalDocumentsData, 
@@ -292,13 +298,11 @@ const DownloadDocPage: React.FC = () => {
         const batchProgress = ((batchIndex + 1) / calculatedTotalBatches) * 100;
         setDownloadProgress(batchProgress);
         
-        // חישוב המסמכים של ה-batch הנוכחי
         const startIndex = batchIndex * batchSize;
         const endIndex = Math.min(startIndex + batchSize, actualCount);
         const currentBatchDocuments = documentsToDownload.slice(startIndex, endIndex);
         const currentBatchDocumentIds = currentBatchDocuments.map(doc => doc._id);
         
-        console.log(`📦 מוריד batch ${batchIndex + 1} מתוך ${calculatedTotalBatches} עם ${currentBatchDocuments.length} מסמכים`);
         
         const result = await new Promise((resolve, reject) => {
           downloadMultipleMutation.mutate({
@@ -404,7 +408,7 @@ const DownloadDocPage: React.FC = () => {
                       setSelectedProject(e.target.value);
                     }}
                   >
-                    <MenuItem value="1">צהרון שוטף 2025</MenuItem>
+                    <MenuItem value="1">צהרון 2025</MenuItem>
                     <MenuItem value="2">קייטנת חנוכה 2025</MenuItem>
                     <MenuItem value="3">קייטנת פסח 2025</MenuItem>
                     <MenuItem value="4">קייטנת קיץ 2025</MenuItem>

@@ -10,11 +10,16 @@ import { WorkerAfterNoon, Class } from '../../types';
 import { normalizePhone, isValidPhone, formatDate, validateIsraeliID, parseDate } from './excelImportUtils';
 
 
-interface PreviewWorker extends Omit<WorkerAfterNoon, '_id' | 'isAfterNoon' | 'isBaseWorker' | 'isHanukaCamp' | 'isPassoverCamp' | 'isSummerCamp'> {
+interface PreviewWorker extends Omit<WorkerAfterNoon, '_id' | 'isAfterNoon' | 'isBaseWorker' | 'isHanukaCamp' | 'isPassoverCamp' | 'isSummerCamp' | 'startDate' | 'endDate' | 'roleName'> {
   _id?: string;
   isDuplicate?: boolean;
   workingSymbol?: string;
   projectCodes?: number[];
+  assignmentData?: {
+    startDate: Date;
+    endDate?: Date;
+    roleName: string;
+  };
 }
 
 interface ExcelImportProps {
@@ -23,11 +28,11 @@ interface ExcelImportProps {
 
 
 const projectTypes = [
-  { label: 'צהרון שוטף 2025', value: 1 },
+  { label: 'צהרון 2025', value: 1 },
   { label: 'קייטנת חנוכה 2025', value: 2 },
   { label: 'קייטנת פסח 2025', value: 3 },
   { label: 'קייטנת קיץ 2025', value: 4 },
-  { label: 'צהרון שוטף 2026', value: 5 },
+  { label: 'צהרון 2026', value: 5 },
   { label: 'קייטנת חנוכה 2026', value: 6 },
   { label: 'קייטנת פסח 2026', value: 7 },
   { label: 'קייטנת קיץ 2026', value: 8 },
@@ -48,7 +53,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
   const queryClient = useQueryClient();
 
   const [invalidWorkers, setInvalidWorkers] = useState<PreviewWorker[]>([]);
-  const [validForImportWorkers, setValidForImportWorkers] = useState<PreviewWorker[]>([]);
   const [showSummaryDialog, setShowSummaryDialog] = useState(false);
   const [showProjectSelectionDialog, setShowProjectSelectionDialog] = useState(false);
   const [importInvalidId, setImportInvalidId] = useState(false);
@@ -85,14 +89,14 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
 
 
   const convertExcelRowToWorker = (row: any): PreviewWorker => {
-    let id = row[5]?.toString()?.trim() || '';
+    let id = row[3]?.toString()?.trim() || '';
     if (id.includes('E') || id.includes('e')) {
-      const originalValue = row[5];
+      const originalValue = row[3];
       id = Number(originalValue).toString();
     }
     
-    const firstName = row[7]?.toString()?.trim() || '';
-    const lastName = row[6]?.toString()?.trim() || '';
+    const firstName = row[5]?.toString()?.trim() || '';
+    const lastName = row[4]?.toString()?.trim() || '';
     
     if (!id || !firstName || !lastName) {
       throw new Error(`נתונים חסרים: תעודת זהות: ${id}, שם פרטי: ${firstName}, שם משפחה: ${lastName}`);
@@ -103,31 +107,34 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
     }
     
     const now = new Date().toISOString();
-    const startDate = new Date(parseDate(row[10]));
-    const endDate = new Date(parseDate(row[11]));
-    
     const symbol = row[0]?.toString().trim();
-    const is101 = row[13]?.toString()?.trim() ? true : false;
+    const is101 = row[11]?.toString()?.trim() ? true : false;
+
+
+    const assignmentData = {
+      startDate: parseDate(row[8]) ? new Date(parseDate(row[8])) : new Date(now),
+      endDate: parseDate(row[9]) ? new Date(parseDate(row[9])) : undefined,
+      roleName: row[2] || 'לא נבחר'
+    };
 
     return {
       firstName: firstName,
       lastName: lastName,
       id: id,
-      phone: row[8]?.toString() || '',
-      email: row[9]?.toString() || '',
+      phone: row[6]?.toString() || '',
+      email: row[7]?.toString() || '',
       isActive: true,
       createDate: new Date(now),
-      startDate: startDate || new Date(now),
-      endDate: endDate || new Date(now),
       updateDate: new Date(now),
       updateBy: 'מערכת',
-      status: row[12] || 'לא נבחר',
-      roleName: row[4] || 'לא נבחר',
+      status: row[10] || 'לא נבחר',
       notes:'לא נבחר',     
       workingSymbol: symbol || '',
       is101: is101,
       projectCodes: projectSelection.selectedProjects,
-      modelCode: row[3]?.toString() || 'לא נבחר'
+      modelCode: row[1]?.toString() || 'לא נבחר',
+
+      assignmentData: assignmentData
     };
   };
 
@@ -180,9 +187,9 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
         const dataRows = jsonData.slice(1);
 
         const filteredData = dataRows.filter(row => {
-          const id = row[5]?.toString()?.trim(); 
-          const firstName = row[7]?.toString()?.trim(); 
-          const lastName = row[6]?.toString()?.trim(); 
+          const id = row[3]?.toString()?.trim(); 
+          const firstName = row[5]?.toString()?.trim(); 
+          const lastName = row[4]?.toString()?.trim(); 
           
           
           return id && firstName && lastName && id !== '' && firstName !== '' && lastName !== '';
@@ -192,7 +199,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
           try {
             return convertExcelRowToWorker(row);
           } catch (error) {
-            return { id: row[5]?.toString() || '', firstName: row[7] || '', lastName: row[6] || '', isActive: false } as PreviewWorker;
+            return { id: row[3]?.toString() || '', firstName: row[5] || '', lastName: row[4] || '', isActive: false } as PreviewWorker;
           }
         });
 
@@ -275,23 +282,22 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
         (!w.phone || isValidPhone(w.phone))
       );
 
-      let toImport = [...validNewWorkers];
-      if (importInvalidId) toImport = toImport.concat(invalidByReason.invalidId);
-      if (importInvalidPhone) toImport = toImport.concat(invalidByReason.invalidPhone);
-      if (importMissingPhone) toImport = toImport.concat(invalidByReason.missingPhone);
-
 
       for (const worker of validNewWorkers) {
         try {
           const normalizedWorker = {
             ...worker,
             phone: normalizePhone(worker.phone),
-            projectCodes: projectSelection.selectedProjects,
+
             isAfterNoon: false,
             isBaseWorker: false,
             isHanukaCamp: false,
             isPassoverCamp: false,
-            isSummerCamp: false
+            isSummerCamp: false,
+
+            startDate: new Date(),
+            endDate: new Date(),
+            roleName: 'לא נבחר'
           };
           const savedWorker = await addWorkerMutation.mutateAsync(normalizedWorker);
 
@@ -302,7 +308,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
             for (const projectCode of projectSelection.selectedProjects) {
               const workerAssignment = {
                 workerId: savedWorker._id,
-                roleName: worker.roleName,
+                roleName: worker.assignmentData?.roleName || 'לא נבחר',
                 project: projectCode
               };
               await updateClassWithWorker(classObj._id, {
@@ -320,16 +326,8 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
         if (!existingWorker) continue;
 
         const updateFields: Partial<WorkerAfterNoon> = {};
-        let shouldUpdate = false;
+        const shouldUpdate = normalizePhone(worker.phone) !== normalizePhone(existingWorker.phone);
         
-        if (projectSelection.selectedProjects.length > 0) {
-          const existingProjectCodes = existingWorker.projectCodes || [];
-          const newProjectCodes = [...new Set([...existingProjectCodes, ...projectSelection.selectedProjects])];
-          if (JSON.stringify(existingProjectCodes) !== JSON.stringify(newProjectCodes)) {
-            updateFields.projectCodes = newProjectCodes;
-            shouldUpdate = true;
-          }
-        }
         if (shouldUpdate) {
           await updateWorkerMutation.mutateAsync({
             id: existingWorker._id,
@@ -348,7 +346,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
           for (const projectCode of projectSelection.selectedProjects) {
             const workerAssignment = {
               workerId: savedWorker._id,
-              roleName: worker.roleName,
+              roleName: worker.assignmentData?.roleName || 'לא נבחר',
               project: projectCode
             };
             const isAlreadyAssigned = classObj.workers?.some((w: any) =>
@@ -403,12 +401,8 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       const existingWorker = existingWorkers.find((ew: WorkerAfterNoon) => ew.id === w.id);
       if (!existingWorker) return false;
 
-      
-      const existingProjectCodes = existingWorker.projectCodes || [];
-      const newProjectCodes = projectSelection.selectedProjects.filter(
-        code => !existingProjectCodes.includes(code)
-      );
-      return newProjectCodes.length > 0;
+      const phoneChanged = normalizePhone(w.phone) !== normalizePhone(existingWorker.phone);
+      return phoneChanged || w.workingSymbol; 
     }).length;
 
     let invalidToImport = 0;
@@ -449,12 +443,8 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
       const existingWorker = existingWorkers.find((ew: WorkerAfterNoon) => ew.id === w.id);
       if (!existingWorker) return false;
       
-
-      const existingProjectCodes = existingWorker.projectCodes || [];
-      const newProjectCodes = projectSelection.selectedProjects.filter(
-        code => !existingProjectCodes.includes(code)
-      );
-      return newProjectCodes.length > 0;
+      const phoneChanged = normalizePhone(w.phone) !== normalizePhone(existingWorker.phone);
+      return phoneChanged || w.workingSymbol; 
     }).length;
     
     return newWorkers + existingWorkersToUpdate;
@@ -586,7 +576,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
                   <TableCell>תאריך סיום</TableCell>
                   <TableCell>שם תפקיד</TableCell>
                   <TableCell>סטטוס</TableCell>
-                  <TableCell>חשב שכר</TableCell>
                   <TableCell>פרויקט</TableCell>
                 </TableRow>
               </TableHead>
@@ -617,9 +606,9 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onSuccess }) => {
                     <TableCell>{worker.lastName}</TableCell>
                     <TableCell>{worker.phone}</TableCell>
                     <TableCell>{worker.email}</TableCell>
-                    <TableCell>{formatDate(worker.startDate)}</TableCell>
-                    <TableCell>{formatDate(worker.endDate)}</TableCell>
-                    <TableCell>{worker.roleName}</TableCell>
+                    <TableCell>{formatDate(worker.assignmentData?.startDate)}</TableCell>
+                    <TableCell>{formatDate(worker.assignmentData?.endDate)}</TableCell>
+                    <TableCell>{worker.assignmentData?.roleName || 'לא נבחר'}</TableCell>
                     <TableCell>{worker.status}</TableCell>
                     <TableCell>
                       {worker.projectCodes && worker.projectCodes.length > 0 

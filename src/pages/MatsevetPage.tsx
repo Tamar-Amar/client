@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Container,
   Box,
@@ -51,9 +51,12 @@ import { useNavigate } from 'react-router-dom';
 import { useFetchAllWorkersAfterNoon } from '../queries/workerAfterNoonQueries';
 import { useFetchClasses } from '../queries/classQueries';
 import { useFetchAllUsers } from '../queries/useUsers';
-import { Class, WorkerAfterNoon } from '../types';
+import { useFetchAllWorkerAssignments } from '../queries/workerAssignmentQueries';
+import { Class, WorkerAfterNoon, WorkerAssignmentWithDetails } from '../types';
 import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { jwtDecode } from 'jwt-decode';
+import { useRecoilValue } from 'recoil';
+import { currentProjectState } from '../recoil/storeAtom';
 
 interface ClassWithWorkers {
   class: Class;
@@ -61,7 +64,7 @@ interface ClassWithWorkers {
 }
 
 const projectTypes = [
-  { label: 'צהרון שוטף 2025', value: 1 },
+  { label: 'צהרון 2025', value: 1 },
   { label: 'קייטנת חנוכה 2025', value: 2 },
   { label: 'קייטנת פסח 2025', value: 3 },
   { label: 'קייטנת קיץ 2025', value: 4 },
@@ -75,8 +78,12 @@ const MatsevetPage: React.FC = () => {
   const { data: workers = [], isLoading: workersLoading } = useFetchAllWorkersAfterNoon();
   const { data: classes = [], isLoading: classesLoading } = useFetchClasses();
   const { data: allUsers = [], isLoading: usersLoading } = useFetchAllUsers();
+  const { data: workerAssignments = [], isLoading: assignmentsLoading } = useFetchAllWorkerAssignments();
+  const currentProject = useRecoilValue(currentProjectState);
+
+
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedProject, setSelectedProject] = useState<number | ''>('');
+  const [selectedProject, setSelectedProject] = useState<number | ''>(currentProject);
   const [sortField, setSortField] = useState<SortField>('uniqueSymbol');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [selectedClassDialog, setSelectedClassDialog] = useState<ClassWithWorkers | null>(null);
@@ -86,6 +93,11 @@ const MatsevetPage: React.FC = () => {
   const [filterClassType, setFilterClassType] = useState<string>('');
   const [filterGender, setFilterGender] = useState<string>('');
   const [filterSalaryAccount, setFilterSalaryAccount] = useState<string>('');
+
+
+  useEffect(() => {
+    setSelectedProject(currentProject);
+  }, [currentProject]);
 
   let isAdmin = false;
   try {
@@ -179,64 +191,93 @@ const MatsevetPage: React.FC = () => {
     ];
   }, [allUsers]);
 
-  const classesWithWorkers = useMemo(() => {
+    const classesWithWorkers = useMemo(() => {
+
+
     const result: ClassWithWorkers[] = [];
 
-    classes.forEach((cls: Class) => {
-      let classWorkers = workers.filter(worker => 
-        cls.workers?.some((w: { workerId: string; project: number }) => w.workerId === worker._id)
-      );
-      
-      if (selectedProject !== '') {
-        const hasSelectedProject = cls.projectCodes?.includes(selectedProject as number);
-        if (!hasSelectedProject) {
-          return;
-        }
-        
-        classWorkers = classWorkers.filter(worker => {
-          const workerAssignment = cls.workers?.find(w => w.workerId === worker._id);
-          return workerAssignment && workerAssignment.project === (selectedProject as number);
-        });
+
+    const assignmentsByClass = new Map<string, WorkerAssignmentWithDetails[]>();
+    workerAssignments.forEach((assignment: WorkerAssignmentWithDetails) => {
+
+      const classId = typeof assignment.classId === 'string' ? assignment.classId : (assignment.classId as any)?._id;
+      if (classId && !assignmentsByClass.has(classId)) {
+        assignmentsByClass.set(classId, []);
       }
+      if (classId) {
+        assignmentsByClass.get(classId)!.push(assignment);
+      }
+    });
+
+
+    classes.forEach((cls: Class) => {
+      const classAssignments = assignmentsByClass.get(cls._id || '') || [];
+      
+
+      let filteredAssignments = classAssignments;
+      if (selectedProject !== '') {
+        filteredAssignments = classAssignments.filter(assignment => 
+          assignment.projectCode === selectedProject && assignment.isActive
+        );
+      } else {
+        filteredAssignments = classAssignments.filter(assignment => assignment.isActive);
+      }
+
+
+      const classWorkers = workers.filter(worker => 
+        filteredAssignments.some(assignment => {
+
+          const assignmentWorkerId = typeof assignment.workerId === 'object' ? (assignment.workerId as any)?._id : assignment.workerId;
+          return assignmentWorkerId === worker._id;
+        })
+      );
+
+
+
+      const workersWithRoles = classWorkers.map(worker => {
+        const assignment = filteredAssignments.find(a => {
+
+          const assignmentWorkerId = typeof a.workerId === 'object' ? (a.workerId as any)?._id : a.workerId;
+          return assignmentWorkerId === worker._id;
+        });
+        return {
+          ...worker,
+          roleName: assignment?.roleName || worker.roleName
+        };
+      });
       
       result.push({
         class: cls,
-        workers: classWorkers
+        workers: workersWithRoles
       });
     });
 
-    const workersWithClasses = new Set<string>();
-    classes.forEach((cls: Class) => {
-      cls.workers?.forEach((w: { workerId: string; project: number }) => workersWithClasses.add(w.workerId));
+
+    const assignedWorkerIds = new Set<string>();
+    workerAssignments.forEach((assignment: WorkerAssignmentWithDetails) => {
+      if (assignment.isActive) {
+
+        const workerId = typeof assignment.workerId === 'object' ? (assignment.workerId as any)?._id : assignment.workerId;
+        if (workerId) {
+          assignedWorkerIds.add(workerId);
+        }
+      }
     });
     
-    const workersWithoutClasses = workers.filter(worker => !workersWithClasses.has(worker._id));
+    const workersWithoutClasses = workers.filter(worker => !assignedWorkerIds.has(worker._id));
 
+
+
+    let filteredWorkersWithoutClasses = workersWithoutClasses;
     if (selectedProject !== '') {
-      const filteredWorkersWithoutClasses = workersWithoutClasses.filter(worker => 
+      filteredWorkersWithoutClasses = workersWithoutClasses.filter(worker => 
         worker.projectCodes?.includes(selectedProject as number)
       );
-      if (filteredWorkersWithoutClasses.length > 0) {
-        result.push({
-          class: {
-            _id: 'no-class',
-            name: 'עובדים ללא מסגרת',
-            uniqueSymbol: 'ללא מסגרת',
-            institutionName: 'לא משויכים',
-            institutionCode: '000000',
-            coordinatorId: '',
-            type: 'כיתה',
-            gender: 'בנים',
-            education: 'רגיל',
-            isActive: true,
-            hasAfternoonCare: false,
-            projectCodes: [],
-            workers: []
-          } as Class,
-          workers: filteredWorkersWithoutClasses
-        });
-      }
-    } else if (workersWithoutClasses.length > 0) {
+    }
+
+
+
+    if (filteredWorkersWithoutClasses.length > 0) {
       result.push({
         class: {
           _id: 'no-class',
@@ -253,12 +294,12 @@ const MatsevetPage: React.FC = () => {
           projectCodes: [],
           workers: []
         } as Class,
-        workers: workersWithoutClasses
+        workers: filteredWorkersWithoutClasses
       });
     }
     
     return result;
-  }, [classes, workers, selectedProject]);
+  }, [classes, workers, workerAssignments, selectedProject]);
 
   const filteredClasses = useMemo(() => {
     let filtered = classesWithWorkers;
@@ -412,7 +453,7 @@ const MatsevetPage: React.FC = () => {
 
   const activeFilters = getActiveFilters();
 
-  if (workersLoading || classesLoading || usersLoading) {
+  if (workersLoading || classesLoading || usersLoading || assignmentsLoading) {
     return (
       <Container maxWidth="xl" sx={{ mt: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>

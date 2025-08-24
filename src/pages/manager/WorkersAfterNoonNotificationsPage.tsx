@@ -52,7 +52,7 @@ const REQUIRED_DOCUMENTS = ["אישור משטרה", "תעודת השכלה", "�
 
 const PROJECT_OPTIONS = [
   { value: '', label: 'כל הפרויקטים' },
-  { value: '1', label: 'צהרון שוטף 2025' },
+  { value: '1', label: 'צהרון 2025' },
   { value: '2', label: 'קייטנת חנוכה 2025' },
   { value: '3', label: 'קייטנת פסח 2025' },
   { value: '4', label: 'קייטנת קיץ 2025' },

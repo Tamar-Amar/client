@@ -1,10 +1,25 @@
 
 export const projectNames: { [key: number]: string } = {
-  1: "צהרון שוטף 2025",
+  1: "צהרון 2025",
   2: "קייטנת חנוכה 2025", 
   3: "קייטנת פסח 2025",
-  4: "קייטנת קיץ 2025"
+  4: "קייטנת קיץ 2025",
+  5: "צהרון 2026",
+  6: "קייטנת חנוכה 2026",
+  7: "קייטנת פסח 2026",
+  8: "קייטנת קיץ 2026"
 };
+
+export const projectOptions = [
+  //{ value: 1, label: "צהרון 2025" },
+  //{ value: 2, label: "קייטנת חנוכה 2025" },
+  //{ value: 3, label: "קייטנת פסח 2025" },
+  { value: 4, label: "קייטנת קיץ 2025" },
+  { value: 5, label: "צהרון 2026" },
+  //{ value: 6, label: "קייטנת חנוכה 2026" },
+  //{ value: 7, label: "קייטנת פסח 2026" },
+  //{ value: 8, label: "קייטנת קיץ 2026" }
+];
 
 export const convertBooleanFieldsToProjectCodes = (worker: any): number[] => {
   const projectCodes: number[] = [];

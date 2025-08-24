@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -11,15 +11,12 @@ import {
   Typography,
   Box,
   TextField,
-  InputAdornment,
   TablePagination,
   Select,
   MenuItem,
   FormControl,
   InputLabel,
   Checkbox,
-  Button,
-  Tooltip,
   LinearProgress,
   Grid,
   Card,
@@ -28,15 +25,16 @@ import {
   Chip,
   Autocomplete
 } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { useFetchAllWorkersAfterNoon, useDeleteWorkerAfterNoon, useUpdateWorkerAfterNoon } from '../../queries/workerAfterNoonQueries';
+import { useFetchAllWorkersAfterNoon} from '../../queries/workerAfterNoonQueries';
 import { useFetchClasses } from '../../queries/classQueries';
 import { useFetchAllUsers } from '../../queries/useUsers';
-import { WorkerAfterNoon, Class } from '../../types';
+import { useFetchAllWorkerAssignments } from '../../queries/workerAssignmentQueries';
+import { WorkerAfterNoon, Class, WorkerAssignment } from '../../types';
 import { useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
+import { useCurrentProject } from '../../hooks/useCurrentProject';
+import { projectOptions } from '../../utils/projectUtils';
 
 const ROWS_PER_PAGE = 15;
 
@@ -44,12 +42,11 @@ const WorkersDocumentsList: React.FC = () => {
   const { data: workers = [], isLoading, error } = useFetchAllWorkersAfterNoon();
   const { data: classes = [] } = useFetchClasses();
   const { data: allUsers = [] } = useFetchAllUsers();
-  const queryClient = useQueryClient();
-  const deleteWorkerMutation = useDeleteWorkerAfterNoon();
-  const updateWorkerMutation = useUpdateWorkerAfterNoon();
+  const { data: workerAssignments = [] } = useFetchAllWorkerAssignments();
+  const { currentProject } = useCurrentProject();
   const [searchQuery, setSearchQuery] = useState('');
   const [salaryAccountFilter, setSalaryAccountFilter] = useState<string>('');
-  const [projectFilter, setProjectFilter] = useState<string>('');
+  const [projectFilter, setProjectFilter] = useState<string>(currentProject.toString());
   const [filterInstitutionCode, setFilterInstitutionCode] = useState('');
   const [filterClassCode, setFilterClassCode] = useState('');
   const [filterRole, setFilterRole] = useState('');
@@ -60,23 +57,14 @@ const WorkersDocumentsList: React.FC = () => {
   const navigate = useNavigate();
 
 
-  
+  useEffect(() => {
+    setProjectFilter(currentProject.toString());
+  }, [currentProject]);
 
-  // Create a map of class IDs to symbols for quick lookup
-  const classSymbolMap = useMemo(() => {
-    const map = new Map<string, string>();
-    classes.forEach((cls: Class) => {
-      map.set(cls._id || '', cls.uniqueSymbol || '');
-    });
-    return map;
-  }, [classes]);
 
-  const projectOptions = [
+  const allProjectOptions = [
     { value: '', label: 'כל הפרויקטים' },
-    { value: '1', label: 'צהרון שוטף 2025' },
-    { value: '2', label: 'קייטנת חנוכה 2025' },
-    { value: '3', label: 'קייטנת פסח 2025' },
-    { value: '4', label: 'קייטנת קיץ 2025' },
+    ...projectOptions
   ];
 
   const accountantOptions = useMemo(() => {
@@ -150,22 +138,85 @@ const WorkersDocumentsList: React.FC = () => {
   }, [workers]);
 
 
-  // Filter workers based on search query and salary account
+  const getWorkerRoleFromAssignment = (workerId: string): string => {
+    if (!projectFilter || !workerAssignments.length) {
+      return 'לא נבחר';
+    }
+    
+    const assignment = workerAssignments.find((assignment: any) => {
+      const assignmentWorkerId = typeof assignment.workerId === 'object' ? assignment.workerId._id : assignment.workerId;
+      return assignmentWorkerId === workerId && 
+             assignment.projectCode === parseInt(projectFilter) && 
+             assignment.isActive;
+    });
+    
+    return assignment?.roleName?.trim().replace(/\s+/g, ' ') || 'לא נבחר';
+  };
+
+
+  const getWorkerSymbolFromAssignment = (workerId: string): string => {
+    if (!projectFilter || !workerAssignments.length || !classes.length) {
+      return 'לא נבחר';
+    }
+    
+    const assignment = workerAssignments.find((assignment: any) => {
+      const assignmentWorkerId = typeof assignment.workerId === 'object' ? assignment.workerId._id : assignment.workerId;
+      return assignmentWorkerId === workerId && 
+             assignment.projectCode === parseInt(projectFilter) && 
+             assignment.isActive;
+    });
+    
+    if (!assignment) return 'לא נבחר';
+    
+
+    const classObj = classes.find((cls: any) => {
+      const classId = typeof assignment.classId === 'object' ? assignment.classId._id : assignment.classId;
+      return cls._id === classId;
+    });
+    
+    return classObj?.uniqueSymbol || 'לא נבחר';
+  };
+
+
+  const getWorkerProjects = (workerId: string): number[] => {
+    if (!workerAssignments.length) return [];
+    
+    const projectCodes = workerAssignments
+      .filter((assignment: any) => {
+        const assignmentWorkerId = typeof assignment.workerId === 'object' ? assignment.workerId._id : assignment.workerId;
+        return assignmentWorkerId === workerId && assignment.isActive;
+      })
+      .map((assignment: any) => assignment.projectCode)
+      .filter((code: number, index: number, array: number[]) => array.indexOf(code) === index) 
+      .sort();
+    
+    return projectCodes;
+  };
+
+
   const filteredWorkers = useMemo(() => {
     return workers.filter((worker) => {
       const searchLower = searchQuery.toLowerCase();
-      const normalizedWorkerRole = worker.roleName?.trim().replace(/\s+/g, ' ');
+      const roleForSearch = projectFilter ? 
+        getWorkerRoleFromAssignment(worker._id) : 
+        (worker.roleName?.trim().replace(/\s+/g, ' ') || '');
       const matchesSearch = (
         (worker.id ?? '').toLowerCase().includes(searchLower) ||
         (worker.firstName ?? '').toLowerCase().includes(searchLower) ||
         (worker.lastName ?? '').toLowerCase().includes(searchLower) ||
         (worker.phone ?? '').toLowerCase().includes(searchLower) ||
         (worker.email ?? '').toLowerCase().includes(searchLower) ||
-        (normalizedWorkerRole ?? '').toLowerCase().includes(searchLower) ||
+        (roleForSearch ?? '').toLowerCase().includes(searchLower) ||
         (worker.status ?? '').toLowerCase().includes(searchLower)
       );
 
-      const matchesProject = !projectFilter || (worker.projectCodes && worker.projectCodes.includes(parseInt(projectFilter)));
+
+      const matchesProject = !projectFilter || workerAssignments.some((assignment: WorkerAssignment) => {
+        const assignmentWorkerId = typeof assignment.workerId === 'object' ? (assignment.workerId as any)?._id : assignment.workerId;
+        return assignmentWorkerId === worker._id && 
+               assignment.projectCode === parseInt(projectFilter) && 
+               assignment.isActive;
+      });
 
       let matchesAccountant = true;
       if (salaryAccountFilter) {
@@ -202,13 +253,13 @@ const WorkersDocumentsList: React.FC = () => {
         classCodeMatch = workerClasses.some((cls: any) => cls.uniqueSymbol === filterClassCode);
       }
 
-      const roleMatch = !filterRole || worker.roleName === filterRole;
+      const roleMatch = !filterRole || !projectFilter || getWorkerRoleFromAssignment(worker._id) === filterRole;
 
       return matchesSearch && matchesProject && matchesAccountant && institutionMatch && classCodeMatch && roleMatch;
     });
-  }, [workers, searchQuery, salaryAccountFilter, projectFilter, filterInstitutionCode, filterClassCode, filterRole, allUsers, classes]);
+  }, [workers, searchQuery, salaryAccountFilter, projectFilter, filterInstitutionCode, filterClassCode, filterRole, allUsers, classes, workerAssignments]);
 
-  // Calculate pagination
+
   const paginatedWorkers = useMemo(() => {
     const startIndex = page * ROWS_PER_PAGE;
     return filteredWorkers.slice(startIndex, startIndex + ROWS_PER_PAGE);
@@ -218,21 +269,13 @@ const WorkersDocumentsList: React.FC = () => {
     setPage(newPage);
   };
 
-  const handleDelete = async (workerId: string) => {
-    if (window.confirm('האם אתה בטוח שברצונך למחוק עובד זה?')) {
-      try {
-        await deleteWorkerMutation.mutateAsync(workerId);
-      } catch (error) {
-        console.error('Error deleting worker:', error);
-      }
-    }
-  };
+
 
   const handleViewWorker = (worker: WorkerAfterNoon) => {
     navigate(`/workers/${worker._id}`);
   };
   
-  // Handle individual worker selection
+
   const handleWorkerSelect = (workerId: string) => {
     const newSelected = new Set(selectedWorkers);
     if (newSelected.has(workerId)) {
@@ -243,60 +286,28 @@ const WorkersDocumentsList: React.FC = () => {
     setSelectedWorkers(newSelected);
   };
 
-  // Handle select all workers on current page
+
   const handleSelectAll = () => {
     const allWorkerIds = filteredWorkers.map(worker => worker._id);
     const allSelected = allWorkerIds.every(id => selectedWorkers.has(id));
     
     const newSelected = new Set(selectedWorkers);
     if (allSelected) {
-      // Deselect all workers
+
       allWorkerIds.forEach(id => newSelected.delete(id));
     } else {
-      // Select all workers
+
       allWorkerIds.forEach(id => newSelected.add(id));
     }
     setSelectedWorkers(newSelected);
   };
 
-  // Handle delete selected workers
-  const handleDeleteSelected = async () => {
-    if (selectedWorkers.size === 0) return;
-    
-    const confirmMessage = `האם אתה בטוח שברצונך למחוק ${selectedWorkers.size} עובדים?`;
-    if (!window.confirm(confirmMessage)) return;
 
-    try {
-      setIsDeletingSelected(true);
-      setDeleteProgress(0);
-      
-      const selectedWorkerIds = Array.from(selectedWorkers);
-      const totalWorkers = selectedWorkerIds.length;
-      
-      for (let i = 0; i < selectedWorkerIds.length; i++) {
-        await deleteWorkerMutation.mutateAsync(selectedWorkerIds[i]);
-        queryClient.invalidateQueries({ queryKey: ['workers'] });
-        const progress = ((i + 1) / totalWorkers) * 100;
 
-        setDeleteProgress(progress);
-      }
-      
-      setSelectedWorkers(new Set());
-      alert(`נמחקו ${totalWorkers} עובדים בהצלחה!`);
-    } catch (error) {
-      console.error('Error deleting selected workers:', error);
-      alert('שגיאה במחיקת העובדים');
-    } finally {
-      setIsDeletingSelected(false);
-      setDeleteProgress(0);
-    }
-  };
 
-  // Check if all current page workers are selected
   const isAllSelected = filteredWorkers.length > 0 && 
     filteredWorkers.every(worker => selectedWorkers.has(worker._id));
 
-  // Check if some current page workers are selected
   const isSomeSelected = filteredWorkers.some(worker => selectedWorkers.has(worker._id));
 
   const getActiveFilters = () => {
@@ -311,7 +322,7 @@ const WorkersDocumentsList: React.FC = () => {
     }
     
     if (projectFilter) {
-      const project = projectOptions.find(p => p.value === projectFilter);
+      const project = projectOptions.find(p => p.value === parseInt(projectFilter));
       filters.push({
         key: 'project',
         label: `פרויקט: ${project?.label}`,
@@ -414,7 +425,7 @@ const WorkersDocumentsList: React.FC = () => {
                     setPage(0);
                   }}
                 >
-                  {projectOptions.map(opt => (
+                  {allProjectOptions.map(opt => (
                     <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                   ))}
                 </Select>
@@ -477,46 +488,30 @@ const WorkersDocumentsList: React.FC = () => {
                 isOptionEqualToValue={(option, value) => option.value === value.value}
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={1.5}>
-              <FormControl fullWidth size="small">
-                <InputLabel>תפקיד</InputLabel>
-                <Select 
-                  value={filterRole} 
-                  label="תפקיד" 
-                  onChange={(e) => {
-                    setFilterRole(e.target.value);
-                    setPage(0);
-                  }}
-                >
-                  {roleOptions.map(opt => (
-                    <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
+            {projectFilter && (
+              <Grid item xs={12} sm={6} md={1.5}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>תפקיד</InputLabel>
+                  <Select 
+                    value={filterRole} 
+                    label="תפקיד" 
+                    onChange={(e) => {
+                      setFilterRole(e.target.value);
+                      setPage(0);
+                    }}
+                  >
+                    {roleOptions.map(opt => (
+                      <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            )}
           </Grid>
         </CardContent>
       </Card>
 
-      {selectedWorkers.size > 0 && (
-        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Typography variant="body2" color="primary">
-            נבחרו {selectedWorkers.size} עובדים
-          </Typography>
-          <Tooltip title="מחק עובדים נבחרים">
-            <Button
-              variant="outlined"
-              color="error"
-              size="small"
-              disabled={isDeletingSelected}
-              onClick={handleDeleteSelected}
-              startIcon={<DeleteIcon />}
-            >
-              {isDeletingSelected ? 'מוחק...' : `מחק ${selectedWorkers.size} עובדים`}
-            </Button>
-          </Tooltip>
-        </Box>
-      )}
+
 
       {isDeletingSelected && (
         <Box sx={{ width: '100%', mb: 2 }}>
@@ -560,8 +555,9 @@ const WorkersDocumentsList: React.FC = () => {
               <TableCell sx={{ fontWeight: 'bold' }}>שם מלא</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>טלפון</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>אימייל</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>תפקיד</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>קוד מוסד</TableCell>
+              {projectFilter && <TableCell sx={{ fontWeight: 'bold' }}>תפקיד</TableCell>}
+              {projectFilter && <TableCell sx={{ fontWeight: 'bold' }}>סמל</TableCell>}
+              {!projectFilter && <TableCell sx={{ fontWeight: 'bold' }}>פרויקטים</TableCell>}
               <TableCell sx={{ fontWeight: 'bold' }}>סטטוס</TableCell>
 
 
@@ -581,13 +577,6 @@ const WorkersDocumentsList: React.FC = () => {
                   <TableCell padding="checkbox">
                     <Box sx={{ display: 'flex', gap: 0.5 }}>
                       <IconButton
-                        color="error"
-                        onClick={() => handleDelete(worker._id)}
-                        size="small"
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
                         color="info"
                         onClick={() => handleViewWorker(worker)}
                         size="small"
@@ -601,21 +590,37 @@ const WorkersDocumentsList: React.FC = () => {
                   <TableCell>{` ${worker.lastName} ${worker.firstName}`}</TableCell>
                   <TableCell>{worker.phone}</TableCell>
                   <TableCell>{worker.email}</TableCell>
-                  <TableCell>{worker.roleName?.trim().replace(/\s+/g, ' ') || 'לא נבחר'}</TableCell>
-                  <TableCell>
-                    {(() => {
-                      const workerClasses = classes.filter((cls: any) =>
-                        Array.isArray(cls.workers) && cls.workers.some((w: any) => w.workerId === worker._id)
-                      );
-                      if (workerClasses.length > 0) {
-                        return workerClasses.map((cls: any) => cls.institutionCode).join(', ');
-                      } else if (worker.accountantCode) {
-                        return worker.accountantCode;
-                      } else {
-                        return 'לא משויך';
-                      }
-                    })()}
-                  </TableCell>
+                  {projectFilter && (
+                    <TableCell>
+                      {getWorkerRoleFromAssignment(worker._id)}
+                    </TableCell>
+                  )}
+                  {projectFilter && (
+                    <TableCell>
+                      {getWorkerSymbolFromAssignment(worker._id)}
+                    </TableCell>
+                  )}
+                  {!projectFilter && (
+                    <TableCell>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {getWorkerProjects(worker._id).length > 0 ? (
+                          getWorkerProjects(worker._id).map((projectCode, idx) => (
+                            <Chip 
+                              key={idx}
+                              label={`${projectCode}`}
+                              size="small" 
+                              color="primary"
+                              variant="outlined"
+                            />
+                          ))
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">
+                            לא משויך לפרויקטים
+                          </Typography>
+                        )}
+                      </Box>
+                    </TableCell>
+                  )}
                   <TableCell>{!worker.status || worker.status === "לא נבחר" ? "פעיל" : worker.status}</TableCell>
 
 

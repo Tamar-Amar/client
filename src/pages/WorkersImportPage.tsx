@@ -35,24 +35,26 @@ import {
   ExpandMore as ExpandMoreIcon,
   Refresh as RefreshIcon,
   Save as SaveIcon,
-  Update as UpdateIcon
+  Update as UpdateIcon,
+  Download as DownloadIcon
 } from '@mui/icons-material';
 import * as XLSX from 'xlsx';
 import { useQueryClient } from '@tanstack/react-query';
-import { useFetchClasses, useBulkAddWorkersToClasses } from '../queries/classQueries';
+import { useFetchClasses } from '../queries/classQueries';
 import { useAddMultipleWorkersAfterNoon, useFetchAllWorkersAfterNoon, useUpdateWorkerAfterNoon } from '../queries/workerAfterNoonQueries';
+import { useCreateMultipleAssignments, useCheckAssignmentExists, useFetchAllWorkerAssignments } from '../queries/workerAssignmentQueries';
 import { WorkerAfterNoon, Class } from '../types';
 import { normalizePhone, isValidPhone,validateIsraeliID, parseDate } from '../components/workers/excelImportUtils';
 
 const projectTypes = [
-  { label: 'צהרון שוטף 2025', value: 1 },
+  { label: 'צהרון 2025', value: 1 },
   { label: 'קייטנת חנוכה 2025', value: 2 },
   { label: 'קייטנת פסח 2025', value: 3 },
   { label: 'קייטנת קיץ 2025', value: 4 },
-  { label: 'צהרון שוטף 2026', value: 5 },
+  { label: 'צהרון 2026', value: 5 },
 ];
 
-interface PreviewWorker extends Omit<WorkerAfterNoon, '_id' | 'isAfterNoon' | 'isBaseWorker' | 'isHanukaCamp' | 'isPassoverCamp' | 'isSummerCamp'> {
+interface PreviewWorker extends Omit<WorkerAfterNoon, '_id' | 'isAfterNoon' | 'isBaseWorker' | 'isHanukaCamp' | 'isPassoverCamp' | 'isSummerCamp' | 'startDate' | 'endDate' | 'roleName'> {
   _id?: string;
   isDuplicate?: boolean;
   isBestDuplicate?: boolean;
@@ -70,6 +72,11 @@ interface PreviewWorker extends Omit<WorkerAfterNoon, '_id' | 'isAfterNoon' | 'i
   changes?: {
     before: Partial<PreviewWorker>;
     after: Partial<PreviewWorker>;
+  };  
+  assignmentData?: {
+    startDate: Date;
+    endDate?: Date;
+    roleName: string;
   };
 }
 
@@ -86,8 +93,33 @@ interface ImportSummary {
 
     const normalize = (val: string | undefined | null) => (val ?? '').trim().toLowerCase();
 
-const getCurrentSymbolsForWorker = (workerId: string, classes: Class[]) =>
-  classes.filter(c => (c.workers || []).some(w => w.workerId === workerId)).map(c => c.uniqueSymbol);
+const getCurrentSymbolsForWorker = (workerId: string, classes: Class[], workerAssignments: any[], selectedProjects: number[]) => {
+  const workerSymbols: string[] = [];
+  
+  selectedProjects.forEach(projectCode => {
+    const assignment = workerAssignments.find((a: any) => {
+      const assignmentWorkerId = typeof a.workerId === 'object' ? a.workerId._id : a.workerId;
+      return assignmentWorkerId === workerId && 
+             a.projectCode === projectCode && 
+             a.isActive;
+    });
+    
+    if (assignment) {
+      const classObj = classes.find(c => {
+        const classId = typeof assignment.classId === 'object' ? assignment.classId._id : assignment.classId;
+        return c._id === classId;
+      });
+      
+      if (classObj && !workerSymbols.includes(classObj.uniqueSymbol)) {
+        workerSymbols.push(classObj.uniqueSymbol);
+      }
+    }
+  });
+  
+  return workerSymbols;
+};
+
+
 
 const WorkersImportPage: React.FC = () => {
   const isMountedRef = useRef(true);
@@ -110,9 +142,11 @@ const WorkersImportPage: React.FC = () => {
 
   const addMultipleWorkersMutation = useAddMultipleWorkersAfterNoon();
   const updateWorkerMutation = useUpdateWorkerAfterNoon();
-  const bulkAddWorkersMutation = useBulkAddWorkersToClasses();
+  const createMultipleAssignmentsMutation = useCreateMultipleAssignments();
+  const checkAssignmentExistsMutation = useCheckAssignmentExists();
   const { data: classes = [], isLoading: isLoadingClasses } = useFetchClasses();
   const { data: existingWorkers = [] } = useFetchAllWorkersAfterNoon();
+  const { data: workerAssignments = [] } = useFetchAllWorkerAssignments();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -146,14 +180,14 @@ const WorkersImportPage: React.FC = () => {
   };
 
   const convertExcelRowToWorker = (row: any): PreviewWorker => {
-    let id = row[5]?.toString()?.trim() || '';
+    let id = row[3]?.toString()?.trim() || '';
     if (id.includes('E') || id.includes('e')) {
-      const originalValue = row[5];
+      const originalValue = row[3];
       id = Number(originalValue).toString();
     }
     
-    const firstName = row[7]?.toString()?.trim() || '';
-    const lastName = row[6]?.toString()?.trim() || '';
+    const firstName = row[5]?.toString()?.trim() || '';
+    const lastName = row[4]?.toString()?.trim() || '';
     
     if (!id || !firstName || !lastName) {
       throw new Error(`נתונים חסרים: תעודת זהות: ${id}, שם פרטי: ${firstName}, שם משפחה: ${lastName}`);
@@ -164,36 +198,37 @@ const WorkersImportPage: React.FC = () => {
     }
     
     const now = new Date().toISOString();
-    const startDate = new Date(parseDate(row[10]));
-    const endDate = new Date(parseDate(row[11]));
-    
     const symbol = row[0]?.toString().trim();
-    const is101 = row[13]?.toString()?.trim() === 'יש' || row[13]?.toString()?.trim() === 'כן' ? true : false;
+    const is101 = row[11]?.toString()?.trim() === 'יש' || row[11]?.toString()?.trim() === 'כן' ? true : false;
+
+    const assignmentData = {
+      startDate: parseDate(row[8]) ? new Date(parseDate(row[8])) : new Date(now),
+      endDate: parseDate(row[9]) ? new Date(parseDate(row[9])) : undefined,
+      roleName: row[2] || 'לא נבחר'
+    };
 
     return {
       firstName: firstName,
       lastName: lastName,
       id: id,
-      phone: row[8]?.toString() || '',
-      email: row[9]?.toString() || '',
+      phone: row[6]?.toString() || '',
+      email: row[7]?.toString() || '',
       isActive: true,
       createDate: new Date(now),
-      startDate: startDate || new Date(now),
-      endDate: endDate || new Date(now),
       updateDate: new Date(now),
       updateBy: 'מערכת',
-      status: row[12] || 'לא נבחר',
-      roleName: row[4] || 'לא נבחר',
+      status: row[10] || 'לא נבחר',
       notes: 'לא נבחר',     
       workingSymbol: symbol || '',
       is101: is101,
       projectCodes: [],
       validationErrors: [],
-      modelCode: row[2]?.toString() || 'לא נבחר'
+      modelCode: row[1]?.toString() || 'לא נבחר',
+      assignmentData: assignmentData
     };
   };
 
-  const validateWorker = (worker: PreviewWorker): string[] => {
+  const validateWorker = (worker: PreviewWorker, existingWorker?: WorkerAfterNoon): string[] => {
     const errors: string[] = [];
     
     if (!validateIsraeliID(worker.id)) {
@@ -204,7 +239,7 @@ const WorkersImportPage: React.FC = () => {
       errors.push('מספר טלפון לא תקין');
     }
     
-    if (!worker.phone) {
+    if (!worker.phone && (!existingWorker || !existingWorker.phone)) {
       errors.push('מספר טלפון חסר');
     }
     
@@ -213,7 +248,7 @@ const WorkersImportPage: React.FC = () => {
 
   const generateStatusReport = (originalData: any[], categorizedWorkers: any, importResults: any) => {
     const reportData = originalData.map((row, index) => {
-      const workerId = row[5]?.toString()?.trim() || '';
+      const workerId = row[3]?.toString()?.trim() || '';
       const worker = allWorkers.find(w => w.id === workerId);
       
       let status = 'לא עובד';
@@ -267,8 +302,6 @@ const WorkersImportPage: React.FC = () => {
         row[9] || '', 
         row[10] || '', 
         row[11] || '', 
-        row[12] || '', 
-        row[13] || '', 
         status, 
         details 
       ];
@@ -278,9 +311,7 @@ const WorkersImportPage: React.FC = () => {
     const worksheet = XLSX.utils.aoa_to_sheet([
       [
         'סמל מוסד',
-        'חשב שכר',
         'מודל',
-        'סוג תפקיד',
         'שם תפקיד',
         'תעודת זהות',
         'שם משפחה',
@@ -349,7 +380,7 @@ const WorkersImportPage: React.FC = () => {
           worker.phone,
           worker.email,
           worker.workingSymbol,
-          worker.roleName,
+          worker.assignmentData?.roleName,
           worker.status
         ].filter(field => field && field !== '' && field !== 'לא נבחר').length;
 
@@ -374,7 +405,6 @@ const WorkersImportPage: React.FC = () => {
     });
 
     
-    const processedDuplicateIds = new Set<string>();
     
     workers.forEach(worker => {
       
@@ -391,11 +421,8 @@ const WorkersImportPage: React.FC = () => {
               after: { ...existingWorker }
             };
             
-            const existingProjectCodes = existingWorker.projectCodes || [];
-            const newProjectCodes = [...new Set([...existingProjectCodes, ...selectedProjects])];
-            changes.after.projectCodes = newProjectCodes;
             
-            const currentSymbols = getCurrentSymbolsForWorker(worker.id, classes);
+            const currentSymbols = getCurrentSymbolsForWorker(worker.id, classes, workerAssignments, selectedProjects);
             const importedSymbols = worker.allSymbols && worker.allSymbols.length > 0
               ? worker.allSymbols
               : worker.workingSymbol ? [worker.workingSymbol] : [];
@@ -405,10 +432,8 @@ const WorkersImportPage: React.FC = () => {
               importedSymbols.some(s => !currentSymbols.includes(s));
 
             const hasChanges = 
-              JSON.stringify((existingProjectCodes ?? []).sort()) !== JSON.stringify((newProjectCodes ?? []).sort()) ||
               normalize(existingWorker.phone) !== normalize(worker.phone) ||
               normalize(existingWorker.email) !== normalize(worker.email) ||
-              normalize(existingWorker.roleName) !== normalize(worker.roleName) ||
               normalize(existingWorker.status) !== normalize(worker.status) ||
               normalize(existingWorker.firstName) !== normalize(worker.firstName) ||
               normalize(existingWorker.lastName) !== normalize(worker.lastName) ||
@@ -420,6 +445,14 @@ const WorkersImportPage: React.FC = () => {
               categorized.existingWorkers.push(worker); 
             }
           } else {
+            const validationErrors = validateWorker(worker);
+            if (validationErrors.length > 0) {
+              worker.validationErrors = validationErrors;
+              worker.isInvalid = true;
+              categorized.invalidWorkers.push(worker);
+              return;
+            }
+
             worker.isNew = true;
             
             if (worker.workingSymbol) {
@@ -440,15 +473,8 @@ const WorkersImportPage: React.FC = () => {
         return;
       }
 
-      const validationErrors = validateWorker(worker);
-      if (validationErrors.length > 0) {
-        worker.validationErrors = validationErrors;
-        worker.isInvalid = true;
-        categorized.invalidWorkers.push(worker);
-        return;
-      }
-
       const existingWorker = existingWorkers.find(w => w.id === worker.id);
+      
       if (existingWorker) {
         worker.isExisting = true;
         worker.existingWorker = existingWorker;
@@ -458,11 +484,8 @@ const WorkersImportPage: React.FC = () => {
           after: { ...existingWorker }
         };
         
-        const existingProjectCodes = existingWorker.projectCodes || [];
-        const newProjectCodes = [...new Set([...existingProjectCodes, ...selectedProjects])];
-        changes.after.projectCodes = newProjectCodes;
         
-        const currentSymbols = getCurrentSymbolsForWorker(worker.id, classes);
+        const currentSymbols = getCurrentSymbolsForWorker(worker.id, classes, workerAssignments, selectedProjects);
         const importedSymbols = worker.allSymbols && worker.allSymbols.length > 0
           ? worker.allSymbols
           : worker.workingSymbol ? [worker.workingSymbol] : [];
@@ -472,10 +495,8 @@ const WorkersImportPage: React.FC = () => {
           importedSymbols.some(s => !currentSymbols.includes(s));
 
         const hasChanges = 
-          JSON.stringify((existingProjectCodes ?? []).sort()) !== JSON.stringify((newProjectCodes ?? []).sort()) ||
           normalize(existingWorker.phone) !== normalize(worker.phone) ||
           normalize(existingWorker.email) !== normalize(worker.email) ||
-          normalize(existingWorker.roleName) !== normalize(worker.roleName) ||
           normalize(existingWorker.status) !== normalize(worker.status) ||
           normalize(existingWorker.firstName) !== normalize(worker.firstName) ||
           normalize(existingWorker.lastName) !== normalize(worker.lastName) ||
@@ -486,6 +507,14 @@ const WorkersImportPage: React.FC = () => {
           worker.changes = changes;
           categorized.existingWorkers.push(worker); 
         }
+        return;
+      }
+
+      const validationErrors = validateWorker(worker);
+      if (validationErrors.length > 0) {
+        worker.validationErrors = validationErrors;
+        worker.isInvalid = true;
+        categorized.invalidWorkers.push(worker);
         return;
       }
 
@@ -517,6 +546,63 @@ const WorkersImportPage: React.FC = () => {
     });
   };
 
+  const downloadTemplate = () => {
+    const templateData = [
+      [
+        'סמל מוסד',
+        'מודל',
+        'שם תפקיד',
+        'תעודת זהות',
+        'שם משפחה',
+        'שם פרטי',
+        'טלפון',
+        'אימייל',
+        'תאריך התחלה',
+        'תאריך סיום',
+        'סטטוס',
+        'טופס 101'
+      ],
+      [
+        '123',
+        'דוגמה מודל',
+        'מורה',
+        '123456789',
+        'כהן',
+        'יוסי',
+        '050-1234567',
+        'yossi@example.com',
+        '01/09/2024',
+        '31/08/2025',
+        'פעיל',
+        'כן'
+      ]
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.aoa_to_sheet(templateData);
+    
+    const wscols = [
+      { wch: 12 }, // סמל מוסד
+      { wch: 12 }, // מודל
+      { wch: 15 }, // שם תפקיד
+      { wch: 12 }, // תעודת זהות
+      { wch: 12 }, // שם משפחה
+      { wch: 12 }, // שם פרטי
+      { wch: 13 }, // טלפון
+      { wch: 20 }, // אימייל
+      { wch: 12 }, // תאריך התחלה
+      { wch: 12 }, // תאריך סיום
+      { wch: 10 }, // סטטוס
+      { wch: 10 }  // טופס 101
+    ];
+    worksheet['!cols'] = wscols;
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'תבנית עובדים');
+    
+    const fileName = `תבנית_ייבוא_עובדים_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+  };
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -534,9 +620,9 @@ const WorkersImportPage: React.FC = () => {
 
         const dataRows = jsonData.slice(1);
         const filteredData = dataRows.filter(row => {
-          const id = row[5]?.toString()?.trim(); 
-          const firstName = row[7]?.toString()?.trim(); 
-          const lastName = row[6]?.toString()?.trim(); 
+          const id = row[3]?.toString()?.trim(); 
+          const firstName = row[5]?.toString()?.trim(); 
+          const lastName = row[4]?.toString()?.trim(); 
           
           return id && firstName && lastName && id !== '' && firstName !== '' && lastName !== '';
         });
@@ -571,7 +657,7 @@ const WorkersImportPage: React.FC = () => {
 
   const categorizedWorkers = useMemo(() => {
     return categorizeWorkers(allWorkers);
-  }, [allWorkers, selectedProjects, existingWorkers]);
+  }, [allWorkers, selectedProjects, existingWorkers, workerAssignments, classes]);
 
   const importSummary: ImportSummary = useMemo(() => ({
     totalWorkers: allWorkers.length,
@@ -580,8 +666,7 @@ const WorkersImportPage: React.FC = () => {
     newWorkersWithoutSymbol: categorizedWorkers.newWorkersWithoutSymbol.length,
     invalidWorkers: categorizedWorkers.invalidWorkers.length,
     existingWorkers: categorizedWorkers.existingWorkers.length,
-    updatedWorkers: categorizedWorkers.existingWorkers.filter(w => w.changes && 
-      JSON.stringify(w.changes.before.projectCodes) !== JSON.stringify(w.changes.after.projectCodes)).length,
+    updatedWorkers: categorizedWorkers.existingWorkers.length,
     duplicateWorkers: categorizedWorkers.duplicateWorkers.length
   }), [categorizedWorkers]);
 
@@ -601,19 +686,22 @@ const WorkersImportPage: React.FC = () => {
           isUnrecognizedSymbol, 
           validationErrors, 
           existingWorker, 
-          changes, 
+          changes,
+          assignmentData, 
           ...cleanData 
         } = worker;
         
         return {
           ...cleanData,
           phone: normalizePhone(worker.phone),
-          projectCodes: selectedProjects,
           isAfterNoon: false,
           isBaseWorker: false,
           isHanukaCamp: false,
           isPassoverCamp: false,
-          isSummerCamp: false
+          isSummerCamp: false,
+          startDate: new Date(),
+          endDate: new Date(),
+          roleName: 'לא נבחר'
         };
       };
 
@@ -647,11 +735,13 @@ const WorkersImportPage: React.FC = () => {
       if (workersToImport.length > 0) {
         const savedWorkers = await addMultipleWorkersMutation.mutateAsync(workersToImport);
         
-        const classToWorkersMap: Record<string, any[]> = {};
+        const assignmentsToCreate: any[] = [];
+        
         for (let i = 0; i < savedWorkers.length; i++) {
           const savedWorker = savedWorkers[i];
           let originalWorker: PreviewWorker | undefined;
           let workerIndex = 0;
+          
           for (const category of [
             categorizedWorkers.newWorkersWithSymbol,
             categorizedWorkers.newWorkersUnrecognizedSymbol.filter(w => importDecisions.unrecognizedSymbols.includes(w.id)),
@@ -665,41 +755,86 @@ const WorkersImportPage: React.FC = () => {
             }
             workerIndex += category.length;
           }
-          const symbols = originalWorker?.allSymbols && originalWorker.allSymbols.length > 0
+          
+          if (!originalWorker) continue;
+          
+          const symbols = originalWorker.allSymbols && originalWorker.allSymbols.length > 0
             ? originalWorker.allSymbols
-            : originalWorker?.workingSymbol ? [originalWorker.workingSymbol] : [];
+            : originalWorker.workingSymbol ? [originalWorker.workingSymbol] : [];
+            
           for (const symbol of symbols) {
             const classObj = classes.find((c: Class) => c.uniqueSymbol === symbol);
             if (classObj) {
               for (const projectCode of selectedProjects) {
-                const workerAssignment = {
+                const assignment = {
                   workerId: savedWorker._id,
-                  roleName: originalWorker?.roleName,
-                  project: projectCode
+                  classId: classObj._id,
+                  projectCode: projectCode,
+                  roleName: originalWorker.assignmentData?.roleName || 'לא נבחר',
+                  startDate: originalWorker.assignmentData?.startDate || new Date(),
+                  endDate: originalWorker.assignmentData?.endDate,
+                  updateBy: 'מערכת'
                 };
-                if (!classToWorkersMap[classObj._id]) {
-                  classToWorkersMap[classObj._id] = [];
-                }
-                classToWorkersMap[classObj._id].push(workerAssignment);
+                assignmentsToCreate.push(assignment);
               }
             }
           }
         }
-        if (Object.keys(classToWorkersMap).length > 0) {
-          await bulkAddWorkersMutation.mutateAsync(classToWorkersMap);
+        
+        if (assignmentsToCreate.length > 0) {
+          await createMultipleAssignmentsMutation.mutateAsync(assignmentsToCreate);
         }
       }
 
+      const existingWorkerAssignments: any[] = [];
+      
       for (const worker of categorizedWorkers.existingWorkers) {
         if (importDecisions.existingWorkers.includes(worker.id) && worker.changes) {
           await updateWorkerMutation.mutateAsync({
             id: worker.existingWorker!._id,
             data: {
-              projectCodes: worker.changes.after.projectCodes,
               phone: normalizePhone(worker.phone)
             }
           });
+          
+          const symbols = worker.allSymbols && worker.allSymbols.length > 0
+            ? worker.allSymbols
+            : worker.workingSymbol ? [worker.workingSymbol] : [];
+            
+          for (const symbol of symbols) {
+            const classObj = classes.find((c: Class) => c.uniqueSymbol === symbol);
+            if (classObj) {
+              for (const projectCode of selectedProjects) {
+                try {
+                  const assignmentExists = await checkAssignmentExistsMutation.mutateAsync({
+                    workerId: worker.existingWorker!._id,
+                    classId: classObj._id,
+                    projectCode: projectCode
+                  });
+                  
+                  if (!assignmentExists) {
+                    const assignment = {
+                      workerId: worker.existingWorker!._id,
+                      classId: classObj._id,
+                      projectCode: projectCode,
+                      roleName: worker.assignmentData?.roleName || 'לא נבחר',
+                      startDate: worker.assignmentData?.startDate || new Date(),
+                      endDate: worker.assignmentData?.endDate,
+                      updateBy: 'מערכת'
+                    };
+                    existingWorkerAssignments.push(assignment);
+                  }
+                } catch (error) {
+                  console.error('Error checking assignment existence:', error);
+                }
+              }
+            }
+          }
         }
+      }
+      
+      if (existingWorkerAssignments.length > 0) {
+        await createMultipleAssignmentsMutation.mutateAsync(existingWorkerAssignments);
       }
 
       queryClient.invalidateQueries({ queryKey: ['workers'] });
@@ -804,14 +939,12 @@ const WorkersImportPage: React.FC = () => {
             />
             <CardContent>
               <Typography variant="body1" gutterBottom>
-                הקובץ צריך להכיל את העמודות הבאות:
+                הקובץ צריך להכיל את העמודות הבאות בסדר הזה:
               </Typography>
               
-              <Box component="ul" sx={{ pl: 2 }}>
+              <Box component="ol" sx={{ pl: 2 }}>
                 <li>סמל מוסד</li>
-                <li>חשב שכר</li>
                 <li>מודל</li>
-                <li>סוג תפקיד</li>
                 <li>שם תפקיד</li>
                 <li>תעודת זהות</li>
                 <li>שם משפחה</li>
@@ -824,7 +957,21 @@ const WorkersImportPage: React.FC = () => {
                 <li>טופס 101</li>
               </Box>
               
-              <Box sx={{ mt: 3 }}>
+              <Alert severity="info" sx={{ mt: 2 }}>
+                <Typography variant="body2">
+                  <strong>הערה:</strong> סדר העמודות חשוב! ודא שהעמודות בקובץ שלך מופיעות בדיוק בסדר הזה.
+                </Typography>
+              </Alert>
+              
+              <Box sx={{ mt: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                <Button
+                  variant="outlined"
+                  onClick={downloadTemplate}
+                  startIcon={<DownloadIcon />}
+                >
+                  הורד תבנית אקסל
+                </Button>
+                
                 <Button
                   variant="contained"
                   component="label"
@@ -914,7 +1061,7 @@ const WorkersImportPage: React.FC = () => {
                   </Box>
                 </AccordionSummary>
                 <AccordionDetails>
-                  <WorkersTable workers={categorizedWorkers.newWorkersWithSymbol} />
+                  <WorkersTable workers={categorizedWorkers.newWorkersWithSymbol} showRole={true} />
                 </AccordionDetails>
               </Accordion>
             )}
@@ -945,6 +1092,7 @@ const WorkersImportPage: React.FC = () => {
                       }));
                     }}
                     importDecisions={importDecisions.unrecognizedSymbols}
+                    showRole={true}
                   />
                 </AccordionDetails>
               </Accordion>
@@ -989,6 +1137,7 @@ const WorkersImportPage: React.FC = () => {
                     workers={categorizedWorkers.duplicateWorkers}
                     showValidationErrors={true}
                     showDuplicateHighlight={true}
+                    showRole={true}
                   />
                 </AccordionDetails>
               </Accordion>
@@ -1055,6 +1204,8 @@ const WorkersImportPage: React.FC = () => {
                     }}
                     importDecisions={importDecisions.existingWorkers}
                     showChanges={true}
+                    selectedProjects={selectedProjects}
+                    workerAssignments={workerAssignments}
                   />
                 </AccordionDetails>
               </Accordion>
@@ -1206,6 +1357,10 @@ interface WorkersTableProps {
   showValidationErrors?: boolean;
   showChanges?: boolean;
   showDuplicateHighlight?: boolean;
+  selectedProjects?: number[];
+  workerAssignments?: any[];
+  currentProject?: number;
+  showRole?: boolean;
 }
 
 const WorkersTable: React.FC<WorkersTableProps> = ({ 
@@ -1215,8 +1370,28 @@ const WorkersTable: React.FC<WorkersTableProps> = ({
   importDecisions = [],
   showValidationErrors,
   showChanges,
-  showDuplicateHighlight
+  showDuplicateHighlight,
+  selectedProjects = [],
+  workerAssignments = [],
+  showRole = false
 }) => {
+
+
+  const getExistingWorkerProjectsInTable = (workerId: string): number[] => {
+    if (!workerAssignments.length) return [];
+    
+    const projectCodes = workerAssignments
+      .filter((assignment: any) => {
+        const assignmentWorkerId = typeof assignment.workerId === 'object' ? assignment.workerId._id : assignment.workerId;
+        return assignmentWorkerId === workerId && assignment.isActive;
+      })
+      .map((assignment: any) => assignment.projectCode)
+      .filter((code: number, index: number, array: number[]) => array.indexOf(code) === index) 
+      .sort();
+        
+    return projectCodes;
+  };
+
   return (
     <TableContainer component={Paper} > 
       <Table size="small">
@@ -1228,8 +1403,8 @@ const WorkersTable: React.FC<WorkersTableProps> = ({
             <TableCell>טלפון</TableCell>
             <TableCell>אימייל</TableCell>
             <TableCell>סמל כיתה</TableCell>
-            <TableCell>סוג תפקיד</TableCell>
-            <TableCell>שם תפקיד</TableCell>
+            <TableCell>פרויקטים</TableCell>
+            {(showChanges || showRole) && <TableCell>תפקיד</TableCell>}
             {showValidationErrors && <TableCell>שגיאות</TableCell>}
             {showChanges && <TableCell>שינויים</TableCell>}
           </TableRow>
@@ -1287,7 +1462,59 @@ const WorkersTable: React.FC<WorkersTableProps> = ({
                   <Chip label="ללא סמל" size="small" color="default" />
                 )}
               </TableCell>
-              <TableCell>{worker.roleName}</TableCell>
+              <TableCell>
+                <Box>
+                  {(() => {
+                    const existingProjects = worker.existingWorker ? 
+                      getExistingWorkerProjectsInTable(worker.existingWorker._id) : [];
+                    return existingProjects.length > 0 && (
+                      <Box>
+                        <Typography variant="caption" color="text.secondary" fontWeight="bold">
+                          קיים:
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                          {existingProjects.map((code, idx) => (
+                            <Chip 
+                              key={idx}
+                              label={`פרויקט ${code}`}
+                              size="small" 
+                              color="default"
+                              variant="outlined"
+                            />
+                          ))}
+                        </Box>
+                      </Box>
+                    );
+                  })()}
+                  {selectedProjects.length > 0 && (
+                    <Box sx={{ mt: (() => {
+                      const existingProjects = worker.existingWorker ? 
+                        getExistingWorkerProjectsInTable(worker.existingWorker._id) : [];
+                      return existingProjects.length > 0 ? 1 : 0;
+                    })() }}>
+                      <Typography variant="caption" color="success.main" fontWeight="bold">
+                        חדש:
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                        {selectedProjects.map((code, idx) => (
+                          <Chip 
+                            key={idx}
+                            label={`פרויקט ${code} - ${worker.workingSymbol || worker.allSymbols?.join(',') || 'ללא סמל'}`}
+                            size="small" 
+                            color="success"
+                            variant="filled"
+                          />
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
+                </Box>
+              </TableCell>
+              {(showChanges || showRole) && (
+                <TableCell>
+                  {worker.assignmentData?.roleName || 'לא נבחר'}
+                </TableCell>
+              )}
               {showValidationErrors && (
                 <TableCell>
                   {worker.validationErrors?.map((error, i) => (
@@ -1298,26 +1525,6 @@ const WorkersTable: React.FC<WorkersTableProps> = ({
               {showChanges && worker.changes && (
                 <TableCell>
                   <Box>
-
-                    {JSON.stringify(worker.changes.before.projectCodes?.sort()) !== JSON.stringify(worker.changes.after.projectCodes?.sort()) && (
-                      <>
-                        <Typography variant="caption" display="block" color="text.secondary">
-                          <strong>פרויקטים:</strong>
-                        </Typography>
-                        <Typography variant="caption" display="block" color="error">
-                          לפני: {worker.changes.before.projectCodes?.map(p => 
-                            projectTypes.find(pt => pt.value === p)?.label || p
-                          ).join(', ') || 'אין'}
-                        </Typography>
-                        <Typography variant="caption" display="block" color="success.main">
-                          אחרי: {worker.changes.after.projectCodes?.map(p => 
-                            projectTypes.find(pt => pt.value === p)?.label || p
-                          ).join(', ') || 'אין'}
-                        </Typography>
-                      </>
-                    )}
-                    
-
                     {(worker.changes.before.firstName !== worker.changes.after.firstName ||
                       worker.changes.before.lastName !== worker.changes.after.lastName ||
                       worker.changes.before.phone !== worker.changes.after.phone ||
@@ -1351,7 +1558,7 @@ const WorkersTable: React.FC<WorkersTableProps> = ({
                     
 
                     {(
-                      worker.changes.before.roleName !== worker.changes.after.roleName ||
+                      normalize(worker.existingWorker?.roleName) !== normalize(worker.assignmentData?.roleName) ||
                       worker.changes.before.status !== worker.changes.after.status ||
                       worker.changes.before.is101 !== worker.changes.after.is101) && (
                       <>
@@ -1359,9 +1566,9 @@ const WorkersTable: React.FC<WorkersTableProps> = ({
                           <strong>פרטי תפקיד:</strong>
                         </Typography>
 
-                        {worker.changes.before.roleName !== worker.changes.after.roleName && (
+                        {normalize(worker.existingWorker?.roleName) !== normalize(worker.assignmentData?.roleName) && (
                           <Typography variant="caption" display="block">
-                            שם תפקיד: {worker.changes.before.roleName} → {worker.changes.after.roleName}
+                            שם תפקיד: {worker.existingWorker?.roleName || 'לא נבחר'} → {worker.assignmentData?.roleName || 'לא נבחר'}
                           </Typography>
                         )}
                         {worker.changes.before.status !== worker.changes.after.status && (

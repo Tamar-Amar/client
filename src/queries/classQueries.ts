@@ -9,7 +9,10 @@ const API_URL = process.env.REACT_APP_API_URL+ '/api/classes' || "https://server
 export const useFetchClasses = () => {
   return useQuery({
     queryKey: ['classes'],
-    queryFn: fetchClasses,
+    queryFn: async () => {
+      const result = await fetchClasses();
+      return result;
+    },
     staleTime: 1000 * 60 * 5,
   });
 };

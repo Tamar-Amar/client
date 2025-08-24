@@ -193,7 +193,7 @@ const CoordinatorPersonalDetails: React.FC<CoordinatorPersonalDetailsProps> = ({
             <Grid container spacing={2}>
               {coordinator.projectCodes.map((assignment, index) => {
                 const projectTypes = [
-                  { value: 1, label: 'צהרון שוטף 2025' },
+                  { value: 1, label: 'צהרון 2025' },
                   { value: 2, label: 'קייטנת חנוכה 2025' },
                   { value: 3, label: 'קייטנת פסח 2025' },
                   { value: 4, label: 'קייטנת קיץ 2025' },

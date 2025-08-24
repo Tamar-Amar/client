@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   TableBody, TableCell, 
   TableHead, TableRow, Paper, TextField, Select,
@@ -23,6 +23,8 @@ import { useFetchAllUsers } from '../../queries/useUsers';
 import { useFetchClasses } from '../../queries/classQueries';
 import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
+import { useCurrentProject } from '../../hooks/useCurrentProject';
+import { projectOptions } from '../../utils/projectUtils';
 import BusinessIcon from '@mui/icons-material/Business';
 import WorkIcon from '@mui/icons-material/Work';
 import FilterListIcon from '@mui/icons-material/FilterList';
@@ -90,11 +92,12 @@ const AllDocumentsTable: React.FC = () => {
   const { mutate: uploadDocument, isPending: isUploading } = useUploadDocument();
   const { data: users = [] } = useFetchAllUsers();
   const { data: classes = [], isLoading: isLoadingClasses } = useFetchClasses();
+  const { currentProject } = useCurrentProject();
 
   // Basic filters
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<DocumentStatus | ''>('');
-  const [filterProject, setFilterProject] = useState('');
+  const [filterProject, setFilterProject] = useState(currentProject.toString());
   const [filterAccountant, setFilterAccountant] = useState('');
   
   // Advanced filters
@@ -109,6 +112,11 @@ const AllDocumentsTable: React.FC = () => {
   const [page, setPage] = useState(0);
 
   const [isDownloadDialogOpen, setIsDownloadDialogOpen] = useState(false);
+
+  // Update project filter when current project changes
+  useEffect(() => {
+    setFilterProject(currentProject.toString());
+  }, [currentProject]);
 
   const workerDocumentsData = useMemo(() => {
     const workerMap = new Map<string, { worker: WorkerAfterNoon; docs: { [key: string]: any } }>();
@@ -127,10 +135,7 @@ const AllDocumentsTable: React.FC = () => {
 
   const PROJECT_OPTIONS = [
     { value: '', label: 'הכל' },
-    { value: '1', label: 'צהרון שוטף 2025' },
-    { value: '2', label: 'קייטנת חנוכה 2025' },
-    { value: '3', label: 'קייטנת פסח 2025' },
-    { value: '4', label: 'קייטנת קיץ 2025' },
+    ...projectOptions
   ];
 
   const institutionOptions = useMemo(() => {
